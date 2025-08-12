@@ -1,0 +1,38 @@
+# Lightweight Dockerfile for pre-built application
+# Usage: First run `./mvnw package -DskipTests -pl lightning-engine/webservice/quarkus-web-api -am`
+#        Then build with: docker build -f Dockerfile.prebuilt -t lightning-backend .
+
+FROM eclipse-temurin:25-jre-alpine
+
+WORKDIR /app
+
+# Create a non-root user for security
+RUN addgroup -S quarkus && adduser -S quarkus -G quarkus
+
+# Copy the built artifacts from local build
+COPY lightning-engine/webservice/quarkus-web-api/target/quarkus-app/lib/ ./lib/
+COPY lightning-engine/webservice/quarkus-web-api/target/quarkus-app/*.jar ./
+COPY lightning-engine/webservice/quarkus-web-api/target/quarkus-app/app/ ./app/
+COPY lightning-engine/webservice/quarkus-web-api/target/quarkus-app/quarkus/ ./quarkus/
+
+# Create modules directory and copy module JARs
+RUN mkdir -p /app/modules
+COPY lightning-engine/webservice/quarkus-web-api/modules/*.jar ./modules/
+
+# Set proper permissions
+RUN chown -R quarkus:quarkus /app
+
+USER quarkus
+
+# Expose the default Quarkus port
+EXPOSE 8080
+
+# Set environment variables
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/simulation/tick || exit 1
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]

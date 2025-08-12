@@ -1,0 +1,327 @@
+================================================================================
+CLAUDE SESSION SUMMARY - 2025-12-18
+Lightning Engine - Selenium-like GUI Test Framework POC
+================================================================================
+
+PROJECT OVERVIEW
+================================================================================
+
+Lightning Engine is a modular Entity-Component-System (ECS) game engine with:
+- Real-time game simulation via tick-based execution
+- WebSocket streaming for live snapshot updates
+- REST API for resource and match management
+- Desktop GUI client for visualization and debugging (OpenGL/NanoVG)
+
+Key Modules:
+- engine-core/          - Core abstractions (interfaces, domain models)
+- engine-internal/      - Implementation details (stores, services)
+- rendering-core/       - GUI framework (OpenGL/NanoVG rendering)
+- rendering-test/       - NEW: Selenium-like test framework (created this session)
+- gui/                  - Desktop GUI application
+- webservice/           - Quarkus REST/WebSocket endpoints
+
+The GUI uses an abstraction layer where client code uses interfaces (Window,
+WindowComponent, Button, Panel, etc.) and the OpenGL implementation (GL*.java)
+is kept separate. This enables testing without OpenGL.
+
+================================================================================
+WHAT WAS ACCOMPLISHED THIS SESSION
+================================================================================
+
+Created a Selenium-like GUI test framework POC that:
+1. Mirrors Selenium's established patterns (WebDriver -> GuiDriver, etc.)
+2. Is fully decoupled from OpenGL via interfaces
+3. Supports both headless testing (fast, CI-friendly) and live OpenGL testing
+4. Enables building and testing GUIs without touching OpenGL code
+
+The goal: Keep the OpenGL core stable and rarely changed, while building
+GUIs and game scenes on top using only interfaces.
+
+================================================================================
+FILES CREATED
+================================================================================
+
+NEW MODULE: lightning-engine/rendering-test/
+├── pom.xml
+└── src/
+    ├── main/java/com/lightningfirefly/engine/rendering/testing/
+    │   ├── GuiDriver.java              # Main entry point (like WebDriver)
+    │   ├── GuiElement.java             # Element wrapper (like WebElement)
+    │   ├── By.java                     # Locator strategies
+    │   ├── Actions.java                # Complex interactions builder
+    │   ├── Wait.java                   # Explicit wait utility
+    │   ├── ExpectedCondition.java      # Functional interface
+    │   ├── ExpectedConditions.java     # Pre-built wait conditions
+    │   ├── ComponentRegistry.java      # ID-based component lookup
+    │   ├── KeyCodes.java               # Key constants (GLFW-compatible)
+    │   ├── NoSuchElementException.java # Custom exception
+    │   ├── TimeoutException.java       # Custom exception
+    │   └── headless/
+    │       ├── HeadlessWindow.java         # Window without OpenGL
+    │       ├── HeadlessComponentFactory.java
+    │       ├── MockButton.java
+    │       ├── MockLabel.java
+    │       ├── MockTextField.java
+    │       ├── MockPanel.java
+    │       ├── MockListView.java
+    │       ├── MockTreeView.java
+    │       └── MockTreeNode.java
+    └── test/java/com/lightningfirefly/engine/rendering/testing/
+        └── HeadlessGuiDriverTest.java  # 26 comprehensive tests
+
+MODIFIED FILES:
+- rendering-core/.../WindowComponent.java - Added getId()/setId() methods
+- rendering-core/.../AbstractWindowComponent.java - Added id field
+- gui/pom.xml - Added rendering-test dependency for integration tests
+- gui/.../EngineGuiIntegrationTest.java - Created OpenGL integration test
+
+================================================================================
+KEY TECHNICAL PATTERNS
+================================================================================
+
+1. SELENIUM PATTERN MAPPING:
+   - WebDriver      -> GuiDriver
+   - WebElement     -> GuiElement
+   - By             -> By (locator strategies)
+   - Actions        -> Actions (interaction builder)
+   - WebDriverWait  -> Wait + ExpectedConditions
+
+2. LOCATOR STRATEGIES (By class):
+   - By.id("elementId")           - Find by unique ID
+   - By.text("Button Text")       - Exact text match
+   - By.textContaining("partial") - Partial text match
+   - By.type(Button.class)        - By component type
+   - By.title("Panel Title")      - Panel by title
+   - By.and(loc1, loc2)           - Combine with AND
+   - By.or(loc1, loc2)            - Combine with OR
+   - By.type(X).within(By.title("Panel")) - Scoped search
+
+3. HEADLESS TESTING PATTERN:
+   HeadlessWindow window = new HeadlessWindow(800, 600);
+   ComponentFactory factory = HeadlessComponentFactory.getInstance();
+
+   Button button = factory.createButton(10, 10, 100, 30, "Save");
+   button.setOnClick(() -> clicked.set(true));
+   window.addComponent((WindowComponent) button);
+
+   GuiDriver driver = GuiDriver.connect(window);
+   driver.findElement(By.text("Save")).click();
+
+4. WAIT CONDITIONS:
+   driver.waitFor(Duration.ofSeconds(5))
+       .until(ExpectedConditions.visibilityOf(By.id("element")));
+
+   driver.waitFor(Duration.ofSeconds(2))
+       .until(ExpectedConditions.textToBe(By.id("label"), "Complete"));
+
+5. ARCHITECTURE (OpenGL Decoupling):
+
+   Test Framework Layer
+          │
+          ▼
+   Interface Layer (Window, WindowComponent, Panel, Button, etc.)
+          │
+     ┌────┴────┐
+     ▼         ▼
+   OpenGL    Headless
+   (GL*)     (Mock*)
+
+================================================================================
+IMPORTANT NOTES / GOTCHAS
+================================================================================
+
+1. WAIT() METHOD CONFLICT:
+   GuiDriver uses waitFor() instead of wait() because wait() is a final
+   method in java.lang.Object. This was a compilation issue that was resolved.
+
+2. PANEL.GETTITLE() NOT IN INTERFACE:
+   The Panel interface doesn't expose getTitle(). ComponentRegistry uses
+   reflection to call getTitle() when searching by title.
+
+3. MAVEN LOCAL REPOSITORY:
+   Changes to rendering-core must be installed (mvn install) before
+   rendering-test or gui can use them at runtime. Otherwise you get
+   NoSuchMethodError at runtime even if compilation succeeds.
+
+4. MACOS OPENGL:
+   Requires -XstartOnFirstThread JVM argument. Configured in surefire plugin.
+
+5. COMPONENT REGISTRATION:
+   HeadlessWindow.addComponent() automatically registers components with
+   ComponentRegistry via registerTree() which recursively registers children.
+
+6. FINDALLBYTEXT FIX:
+   Added findAllByText() to ComponentRegistry because findByText() only
+   returns the first match. This was needed for By.and() to work correctly
+   when combining text locators.
+
+================================================================================
+HOW TO RUN TESTS
+================================================================================
+
+# Headless tests (no display needed, fast, CI-friendly)
+./mvnw test -pl lightning-engine/rendering-test
+
+# Specific test class
+./mvnw test -pl lightning-engine/rendering-test -Dtest=HeadlessGuiDriverTest
+
+# OpenGL integration tests (requires display)
+./mvnw test -pl lightning-engine/gui -DenableGLTests=true
+
+# With live backend
+./mvnw test -pl lightning-engine/gui \
+    -DenableGLTests=true \
+    -DBACKEND_URL=http://localhost:8080
+
+# Install modules after changes
+./mvnw install -pl lightning-engine/rendering-core -DskipTests
+./mvnw install -pl lightning-engine/rendering-test -DskipTests
+
+================================================================================
+TEST COVERAGE (HeadlessGuiDriverTest)
+================================================================================
+
+26 tests covering:
+- Button clicks (by text, by ID)
+- TextField input and clearing
+- Label text finding
+- Panel hierarchy and nested components
+- TreeView navigation and selection
+- Wait conditions (visibility, text change, timeout)
+- Compound locators (AND, OR)
+- Actions builder (click, sendKeys)
+- Component tree debugging
+- Real-world scenarios (login form, navigation, counter)
+
+================================================================================
+FUTURE WORK SUGGESTIONS
+================================================================================
+
+1. Add PageFactory and @FindBy annotation support for Page Object pattern
+2. Add screenshot capability for OpenGL window (debugging)
+3. Add drag-and-drop support in Actions builder
+4. Add more ExpectedConditions (attributeEquals, elementToBeClickable)
+5. Add MockTreeView click handling (currently simulated via simulateMouseClick)
+6. Expose Window from EngineGuiApplication for full integration testing
+7. Add TestBackendServer utility for managing Quarkus test container
+
+================================================================================
+DEPENDENCIES ADDED
+================================================================================
+
+rendering-test/pom.xml depends on:
+- engine-rendering (for interfaces)
+- junit-jupiter (testing)
+- assertj-core (assertions)
+
+gui/pom.xml added:
+- engine-rendering-test (test scope, for integration tests)
+
+================================================================================
+SUREFIRE CONFIGURATION FOR MACOS (FINAL - WORKING)
+================================================================================
+
+The gui/pom.xml is configured with Maven Surefire for real OpenGL testing:
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-surefire-plugin</artifactId>
+    <version>3.2.5</version>
+    <configuration>
+        <!-- Required for LWJGL/GLFW on macOS:
+             - argLine sets -XstartOnFirstThread for macOS OpenGL
+             Tests run OpenGL on the main thread (test thread) -->
+        <argLine>-XstartOnFirstThread</argLine>
+        <systemPropertyVariables>
+            <java.awt.headless>true</java.awt.headless>
+        </systemPropertyVariables>
+    </configuration>
+</plugin>
+```
+
+ADDED TO WINDOW INTERFACE:
+- runFrames(int frameCount) - Runs OpenGL event loop for N frames then returns
+
+HOW THE TESTS WORK:
+1. Tests run with -XstartOnFirstThread via Surefire's argLine
+2. Tests initialize OpenGL directly on the test thread (which is the main thread)
+3. Tests use window.runFrames(10) to verify real OpenGL rendering works
+4. All tests run in a single forked JVM (reuseForks=true, the default)
+
+IMPORTANT: Do NOT use reuseForks=false - it causes JVM crashes due to
+LWJGL/GLFW state issues when creating multiple separate JVMs.
+
+TEST RESULTS:
+- CapabilitiesDocumentation: 2 tests (no OpenGL)
+- PageObjectExamples: 1 test (real OpenGL)
+- FullIntegrationTests: 3 tests (real OpenGL with EngineGuiApplication)
+- OpenGLWindowTests: 2 tests (real OpenGL with basic windows)
+Total: 8 tests, all passing with real OpenGL rendering
+
+================================================================================
+END OF SESSION SUMMARY
+================================================================================
+
+
+================================================================================
+ADDITIONAL WORK - INTEGRATION TEST FIXES
+================================================================================
+
+Fixed the disabled integration tests by refactoring EngineGuiApplication:
+
+PROBLEM:
+The integration tests needed access to the Window before the event loop started,
+but run() created the window and immediately blocked on window.run().
+
+SOLUTION:
+Split run() into initialize() and start():
+
+  // Before (blocking, can't access window)
+  app.run();  // Creates window AND starts event loop
+
+  // After (non-blocking initialization)
+  app.initialize();  // Creates window, sets up UI
+  Window window = app.getWindow();  // Now accessible!
+  app.start();  // Starts event loop (blocking)
+
+CHANGES TO EngineGuiApplication:
+1. Added initialize() - creates window and sets up UI without blocking
+2. Added start() - runs the event loop (blocking)
+3. Added getWindow() - returns the window after initialize()
+4. Added isInitialized() - checks if initialize() was called
+5. run() now just calls initialize() then start()
+
+ENABLED INTEGRATION TESTS:
+1. launchApplication_verifyPanels - verifies panels are created
+2. navigateBetweenPanels - clicks nav buttons and verifies panel visibility
+3. findAndInteractWithComponents - uses locators to find components
+4. demonstratePageObjectUsage - shows Page Object pattern with real app
+
+TEST PATTERN FOR OPENGL INTEGRATION:
+```java
+CountDownLatch appInitialized = new CountDownLatch(1);
+
+windowThread = new Thread(() -> {
+    app = new EngineGuiApplication(backendUrl);
+    app.initialize();  // Creates window
+    appInitialized.countDown();  // Signal ready
+    app.start();  // Blocks on event loop
+}, "App-Thread");
+
+windowThread.start();
+appInitialized.await(10, TimeUnit.SECONDS);
+
+// Now we can access the window
+driver = GuiDriver.connect(app.getWindow());
+driver.findElement(By.text("Snapshot")).click();
+```
+
+HOW TO RUN THE NEW INTEGRATION TESTS:
+```bash
+# With display and backend
+./mvnw test -pl lightning-engine/gui \
+    -Dtest=EngineGuiIntegrationTest \
+    -DenableGLTests=true \
+    -DBACKEND_URL=http://localhost:8080
+```

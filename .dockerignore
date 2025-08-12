@@ -1,0 +1,41 @@
+# Exclude build outputs from all modules except quarkus-api
+utils/target/
+auth/target/
+ecs/target/
+simulation/target/
+rts-domain/target/
+rts-simulation/target/
+spring-api/target/
+application/target/
+integration-test/target/
+simulation-lean/target/
+simulation-lean-modules/target/
+
+# Exclude most of quarkus-api target but keep quarkus-app
+quarkus-api/target/*
+!quarkus-api/target/quarkus-app/
+
+# Git
+.git/
+.gitignore
+
+# IDE files
+**/.idea/
+**/*.iml
+**/.vscode/
+**/.project
+**/.classpath
+**/.settings/
+
+# Node modules (if any)
+**/node_modules/
+
+# Maven wrapper (container has maven)
+.mvn/
+mvnw
+mvnw.cmd
+
+# Documentation and misc
+**/LICENSE
+**/*.md
+!**/src/**/*.md

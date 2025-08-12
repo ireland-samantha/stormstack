@@ -1,0 +1,395 @@
+{
+  "info": {
+    "name": "Lightning Engine API",
+    "description": "REST API for the Lightning Engine ECS game server.\n\n## Workflow\n1. Create a match with enabled modules\n2. Queue commands (spawn entities, etc.)\n3. Advance ticks to process commands\n4. Query snapshots to see ECS state\n\nFor real-time updates, use WebSocket: `ws://localhost:8080/snapshots/{matchId}`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "matchId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Simulation",
+      "description": "Control the tick-based simulation",
+      "item": [
+        {
+          "name": "Get Current Tick",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/simulation/tick"
+          }
+        },
+        {
+          "name": "Advance Tick",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/simulation/tick"
+          }
+        },
+        {
+          "name": "Start Auto-Advance (60 FPS)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/api/simulation/play?intervalMs=16",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "simulation", "play"],
+              "query": [{"key": "intervalMs", "value": "16"}]
+            }
+          }
+        },
+        {
+          "name": "Stop Auto-Advance",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/simulation/stop"
+          }
+        },
+        {
+          "name": "Get Playback Status",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/simulation/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Matches",
+      "description": "Manage game instances",
+      "item": [
+        {
+          "name": "List All Matches",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/matches"
+          }
+        },
+        {
+          "name": "Create Match (Spawn + Move)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/matches",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 0,\n  \"enabledModuleNames\": [\"SpawnModule\", \"MoveModule\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Match (Checkers)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/matches",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 0,\n  \"enabledModuleNames\": [\"CheckersModule\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Match",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/matches/{{matchId}}"
+          }
+        },
+        {
+          "name": "Delete Match",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/matches/{{matchId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Commands",
+      "description": "Queue commands for execution on next tick",
+      "item": [
+        {
+          "name": "List Available Commands",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/commands"
+          }
+        },
+        {
+          "name": "Spawn Entity",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/commands",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commandName\": \"spawn\",\n  \"payload\": {\n    \"matchId\": 1,\n    \"entityType\": 1,\n    \"playerId\": 1\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Attach Movement",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/commands",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commandName\": \"attachMovement\",\n  \"payload\": {\n    \"entityId\": 1,\n    \"positionX\": 100.0,\n    \"positionY\": 50.0,\n    \"velocityX\": 1.0,\n    \"velocityY\": 0.5\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Start Checkers Game",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/commands",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commandName\": \"CheckersStartGame\",\n  \"payload\": {\n    \"matchId\": 1\n  }\n}"
+            }
+          }
+        },
+        {
+          "name": "Checkers Move",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/commands",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commandName\": \"CheckersMove\",\n  \"payload\": {\n    \"matchId\": 1,\n    \"fromRow\": 2,\n    \"fromCol\": 1,\n    \"toRow\": 3,\n    \"toCol\": 0\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Snapshots",
+      "description": "Query ECS state",
+      "item": [
+        {
+          "name": "Get All Snapshots",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/snapshots"
+          }
+        },
+        {
+          "name": "Get Match Snapshot",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/snapshots/match/{{matchId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Modules",
+      "description": "Manage hot-reloadable game logic",
+      "item": [
+        {
+          "name": "List Installed Modules",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/modules"
+          }
+        },
+        {
+          "name": "Get Module Details",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/modules/SpawnModule"
+          }
+        },
+        {
+          "name": "Upload Module JAR",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/modules/upload",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Select a .jar file"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reload All Modules",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/modules/reload"
+          }
+        },
+        {
+          "name": "Uninstall Module",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/modules/MyModule"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resources",
+      "description": "Manage textures and assets",
+      "item": [
+        {
+          "name": "List Resources",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/resources"
+          }
+        },
+        {
+          "name": "Upload Texture",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/resources",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Select an image file"
+                },
+                {
+                  "key": "resourceName",
+                  "value": "player-sprite",
+                  "type": "text"
+                },
+                {
+                  "key": "resourceType",
+                  "value": "TEXTURE",
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Resource Metadata",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/resources/1"
+          }
+        },
+        {
+          "name": "Download Resource",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/resources/1/data"
+          }
+        },
+        {
+          "name": "Delete Resource",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/resources/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GUI",
+      "description": "Debug GUI client download",
+      "item": [
+        {
+          "name": "Get GUI Info",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/gui/info"
+          }
+        },
+        {
+          "name": "Download GUI (ZIP)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/gui/download",
+            "description": "Downloads ZIP with JAR + server.properties auto-config"
+          }
+        },
+        {
+          "name": "Download GUI (JAR only)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/gui/download/jar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workflows",
+      "description": "Common multi-step operations",
+      "item": [
+        {
+          "name": "1. Create Match",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/matches",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 0,\n  \"enabledModuleNames\": [\"SpawnModule\", \"MoveModule\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "2. Spawn Entity",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/commands",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commandName\": \"spawn\",\n  \"payload\": {\"matchId\": 1, \"entityType\": 1, \"playerId\": 1}\n}"
+            }
+          }
+        },
+        {
+          "name": "3. Advance Tick",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/simulation/tick"
+          }
+        },
+        {
+          "name": "4. View Snapshot",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/snapshots/match/1"
+          }
+        }
+      ]
+    }
+  ]
+}

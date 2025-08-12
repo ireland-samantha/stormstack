@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Spring Boot Parent -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.5.7</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.lightningfirefly</groupId>
+    <artifactId>backend</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>backend</name>
+    <description>Lightning Firefly Backend</description>
+
+    <modules>
+        <module>utils</module>
+        <module>lightning-engine/engine-core</module>
+        <module>lightning-engine/engine-internal</module>
+        <module>lightning-engine/rendering-core</module>
+        <module>lightning-engine/rendering-test</module>
+        <module>lightning-engine-extensions/modules</module>
+        <module>lightning-engine-extensions/game-masters</module>
+        <module>lightning-engine/webservice/quarkus-web-api</module>
+<!--        <module>lightning-engine-extensions/games</module>-->
+        <module>lightning-engine/gui</module>
+        <module>lightning-engine/api-acceptance-test</module>
+        <module>lightning-engine/e2e-live-rendering-and-backend-acceptance-test</module>
+<!--        <module>game-renderer</module>-->
+        <module>lightning-engine/engine-adapter</module>
+    </modules>
+
+    <properties>
+        <java.version>25</java.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- Lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.42</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>2.20</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.20.1</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>2.20.1</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>1.21.3</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Tyrus WebSocket Client -->
+            <dependency>
+                <groupId>org.glassfish.tyrus.bundles</groupId>
+                <artifactId>tyrus-standalone-client</artifactId>
+                <version>2.1.3</version>
+            </dependency>
+
+            <!-- Fastutil -->
+            <dependency>
+                <groupId>it.unimi.dsi</groupId>
+                <artifactId>fastutil</artifactId>
+                <version>8.5.16</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.14.0</version>
+                    <configuration>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>1.18.42</version>
+                            </path>
+                        </annotationProcessorPaths>
+                        <release>${java.version}</release>
+                    </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                    <configuration>
+                        <excludes>
+                            <exclude>**/*PerformanceTest.java</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>io.fabric8</groupId>
+                    <artifactId>docker-maven-plugin</artifactId>
+                    <version>0.48.0</version>
+                    <executions>
+                        <execution>
+                            <id>build-docker-image</id>
+                            <phase>install</phase> <!-- runs after the JAR is packaged -->
+                            <goals>
+                                <goal>build</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <images>
+                            <image>
+                                <name>lightning-backend-lean:latest</name>
+                                <build>
+                                    <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                                    <contextDir>${project.basedir}</contextDir>
+                                </build>
+                            </image>
+                        </images>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>
