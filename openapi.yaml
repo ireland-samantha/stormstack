@@ -1,0 +1,722 @@
+openapi: 3.0.3
+info:
+  title: Lightning Engine API
+  description: |
+    REST API for the Lightning Engine ECS game server.
+
+    ## Overview
+
+    The engine uses a tick-based simulation model:
+    1. **Commands** are queued via POST requests
+    2. **Tick** advances process commands and run all module systems
+    3. **Snapshots** return the current ECS state
+
+    For real-time updates, connect via WebSocket at `ws://localhost:8080/snapshots/{matchId}`.
+
+  version: 1.0.0
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+tags:
+  - name: Simulation
+    description: Tick control and playback
+  - name: Commands
+    description: Queue commands for execution
+  - name: Matches
+    description: Game instance management
+  - name: Snapshots
+    description: ECS state queries
+  - name: Modules
+    description: Hot-reloadable game logic
+  - name: Resources
+    description: Texture and asset management
+  - name: GUI
+    description: Debug GUI client download
+
+paths:
+  # Simulation endpoints
+  /api/simulation/tick:
+    get:
+      tags: [Simulation]
+      summary: Get current tick
+      operationId: getCurrentTick
+      responses:
+        '200':
+          description: Current simulation tick
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickResponse'
+    post:
+      tags: [Simulation]
+      summary: Advance one tick
+      description: Processes all queued commands, runs all module systems, increments tick counter
+      operationId: advanceTick
+      responses:
+        '200':
+          description: New tick number after advancement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TickResponse'
+
+  /api/simulation/play:
+    post:
+      tags: [Simulation]
+      summary: Start auto-advance
+      description: Begins continuous tick advancement at specified interval
+      operationId: startPlay
+      parameters:
+        - name: intervalMs
+          in: query
+          description: Milliseconds between ticks (default 10ms = 100 FPS)
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+      responses:
+        '200':
+          description: Playback started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayStatusResponse'
+
+  /api/simulation/stop:
+    post:
+      tags: [Simulation]
+      summary: Stop auto-advance
+      operationId: stopPlay
+      responses:
+        '200':
+          description: Playback stopped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayStatusResponse'
+
+  /api/simulation/status:
+    get:
+      tags: [Simulation]
+      summary: Get playback status
+      operationId: getPlayStatus
+      responses:
+        '200':
+          description: Current playback state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayStatusResponse'
+
+  # Command endpoints
+  /api/commands:
+    get:
+      tags: [Commands]
+      summary: List available commands
+      description: Returns all registered commands with their parameter schemas
+      operationId: listCommands
+      responses:
+        '200':
+          description: List of command signatures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                example:
+                  - "spawn(long matchId, long entityType, long playerId)"
+                  - "damage(long entityId, float amount)"
+                  - "CheckersMove(long matchId, int fromRow, int fromCol, int toRow, int toCol)"
+    post:
+      tags: [Commands]
+      summary: Queue a command
+      description: |
+        Commands are queued and executed on the next tick advance.
+        The command name must match a registered command from a loaded module.
+      operationId: enqueueCommand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRequest'
+            example:
+              commandName: spawn
+              payload:
+                matchId: 1
+                entityType: 1
+                playerId: 1
+      responses:
+        '202':
+          description: Command accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandResponse'
+        '404':
+          description: Referenced entity not found
+
+  # Match endpoints
+  /api/matches:
+    get:
+      tags: [Matches]
+      summary: List all matches
+      operationId: listMatches
+      responses:
+        '200':
+          description: All active matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MatchResponse'
+    post:
+      tags: [Matches]
+      summary: Create a match
+      description: Creates a new game instance with specified modules enabled
+      operationId: createMatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchRequest'
+            example:
+              id: 0
+              enabledModuleNames:
+                - SpawnModule
+                - MoveModule
+      responses:
+        '201':
+          description: Match created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchResponse'
+
+  /api/matches/{matchId}:
+    get:
+      tags: [Matches]
+      summary: Get match by ID
+      operationId: getMatch
+      parameters:
+        - $ref: '#/components/parameters/matchId'
+      responses:
+        '200':
+          description: Match details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchResponse'
+        '404':
+          description: Match not found
+    delete:
+      tags: [Matches]
+      summary: Delete a match
+      description: Deletes match and all associated entities
+      operationId: deleteMatch
+      parameters:
+        - $ref: '#/components/parameters/matchId'
+      responses:
+        '204':
+          description: Match deleted
+        '404':
+          description: Match not found
+
+  # Snapshot endpoints
+  /api/snapshots:
+    get:
+      tags: [Snapshots]
+      summary: Get all snapshots
+      description: Returns ECS state for all matches
+      operationId: getAllSnapshots
+      responses:
+        '200':
+          description: Snapshots for all matches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SnapshotResponse'
+
+  /api/snapshots/match/{matchId}:
+    get:
+      tags: [Snapshots]
+      summary: Get snapshot for match
+      description: Returns current ECS state filtered to a specific match
+      operationId: getMatchSnapshot
+      parameters:
+        - $ref: '#/components/parameters/matchId'
+      responses:
+        '200':
+          description: Match snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnapshotResponse'
+              example:
+                matchId: 1
+                tick: 42
+                data:
+                  MoveModule:
+                    POSITION_X: [100.0, 200.0, 150.0]
+                    POSITION_Y: [50.0, 75.0, 100.0]
+                    VELOCITY_X: [1.0, -1.0, 0.0]
+                  SpawnModule:
+                    ENTITY_TYPE: [1.0, 2.0, 1.0]
+                    OWNER_ID: [1.0, 1.0, 2.0]
+        '404':
+          description: Match not found
+
+  # Module endpoints
+  /api/modules:
+    get:
+      tags: [Modules]
+      summary: List installed modules
+      operationId: listModules
+      responses:
+        '200':
+          description: All available modules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModuleResponse'
+
+  /api/modules/{moduleName}:
+    get:
+      tags: [Modules]
+      summary: Get module details
+      operationId: getModule
+      parameters:
+        - name: moduleName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Module details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleResponse'
+        '404':
+          description: Module not found
+    delete:
+      tags: [Modules]
+      summary: Uninstall module
+      operationId: uninstallModule
+      parameters:
+        - name: moduleName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Module uninstalled
+        '404':
+          description: Module not found
+
+  /api/modules/upload:
+    post:
+      tags: [Modules]
+      summary: Upload module JAR
+      description: Upload a JAR file containing ModuleFactory implementations
+      operationId: uploadModule
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: JAR file to upload
+              required:
+                - file
+      responses:
+        '201':
+          description: Module uploaded and installed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModuleResponse'
+        '400':
+          description: Invalid file (must be .jar)
+
+  /api/modules/reload:
+    post:
+      tags: [Modules]
+      summary: Reload all modules
+      description: Resets and reloads all modules from disk
+      operationId: reloadModules
+      responses:
+        '200':
+          description: Modules reloaded
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ModuleResponse'
+
+  # Resource endpoints
+  /api/resources:
+    get:
+      tags: [Resources]
+      summary: List all resources
+      operationId: listResources
+      responses:
+        '200':
+          description: All uploaded resources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ResourceResponse'
+    post:
+      tags: [Resources]
+      summary: Upload resource
+      description: Upload a texture or other binary resource
+      operationId: uploadResource
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                resourceName:
+                  type: string
+                  description: Optional name (defaults to filename)
+                resourceType:
+                  type: string
+                  enum: [TEXTURE]
+                  default: TEXTURE
+              required:
+                - file
+      responses:
+        '201':
+          description: Resource uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceResponse'
+
+  /api/resources/{resourceId}:
+    get:
+      tags: [Resources]
+      summary: Get resource metadata
+      operationId: getResource
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+      responses:
+        '200':
+          description: Resource metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceResponse'
+        '404':
+          description: Resource not found
+    delete:
+      tags: [Resources]
+      summary: Delete resource
+      operationId: deleteResource
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+      responses:
+        '204':
+          description: Resource deleted
+        '404':
+          description: Resource not found
+
+  /api/resources/{resourceId}/data:
+    get:
+      tags: [Resources]
+      summary: Download resource data
+      operationId: downloadResource
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+      responses:
+        '200':
+          description: Resource binary data
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Resource not found
+
+  /api/resources/{resourceId}/stream:
+    get:
+      tags: [Resources]
+      summary: Stream resource data
+      description: Streams resource in chunks for large files
+      operationId: streamResource
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+      responses:
+        '200':
+          description: Streamed resource data
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Resource not found
+
+  # GUI endpoints
+  /api/gui/info:
+    get:
+      tags: [GUI]
+      summary: Get GUI availability info
+      description: Returns information about the GUI client availability and download URL
+      operationId: getGuiInfo
+      responses:
+        '200':
+          description: GUI info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuiInfoResponse'
+
+  /api/gui/download:
+    get:
+      tags: [GUI]
+      summary: Download GUI client
+      description: |
+        Downloads the GUI client as a ZIP with auto-configuration.
+
+        The ZIP contains:
+        - `lightning-gui.jar` - The GUI application
+        - `server.properties` - Pre-configured with this server's URL
+        - `README.txt` - Usage instructions
+
+        Example usage:
+        ```bash
+        curl -O http://server:8080/api/gui/download
+        unzip lightning-gui.zip
+        java -XstartOnFirstThread -jar lightning-gui.jar  # macOS
+        java -jar lightning-gui.jar                        # Linux/Windows
+        ```
+      operationId: downloadGui
+      responses:
+        '200':
+          description: GUI ZIP file
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: GUI client not available
+
+  /api/gui/download/jar:
+    get:
+      tags: [GUI]
+      summary: Download GUI JAR only
+      description: Downloads just the GUI JAR without auto-configuration
+      operationId: downloadGuiJar
+      responses:
+        '200':
+          description: GUI JAR file
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: GUI client not available
+
+components:
+  parameters:
+    matchId:
+      name: matchId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    resourceId:
+      name: resourceId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    TickResponse:
+      type: object
+      properties:
+        tick:
+          type: integer
+          format: int64
+          description: Current simulation tick number
+      required:
+        - tick
+
+    PlayStatusResponse:
+      type: object
+      properties:
+        playing:
+          type: boolean
+          description: Whether auto-advance is active
+        tick:
+          type: integer
+          format: int64
+          description: Current tick number
+        intervalMs:
+          type: integer
+          format: int64
+          description: Tick interval in milliseconds (0 if stopped)
+      required:
+        - playing
+        - tick
+        - intervalMs
+
+    CommandRequest:
+      type: object
+      properties:
+        commandName:
+          type: string
+          description: Name of the command to execute
+        payload:
+          type: object
+          additionalProperties: true
+          description: Command parameters (varies by command)
+      required:
+        - commandName
+        - payload
+
+    CommandResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted]
+        commandName:
+          type: string
+
+    MatchRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Match ID (0 for auto-generated)
+          default: 0
+        enabledModuleNames:
+          type: array
+          items:
+            type: string
+          description: List of module names to enable for this match
+      required:
+        - enabledModuleNames
+
+    MatchResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        enabledModuleNames:
+          type: array
+          items:
+            type: string
+
+    SnapshotResponse:
+      type: object
+      properties:
+        matchId:
+          type: integer
+          format: int64
+        tick:
+          type: integer
+          format: int64
+        data:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: number
+                format: float
+          description: |
+            Columnar ECS data organized by module.
+            Structure: { "ModuleName": { "COMPONENT_NAME": [value1, value2, ...] } }
+            Each array contains one value per entity, in entity order.
+
+    ModuleResponse:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Module name (e.g., "SpawnModule")
+        flagComponentName:
+          type: string
+          nullable: true
+          description: Name of the module's flag component
+        enabledMatches:
+          type: integer
+          description: Number of matches with this module enabled
+
+    ResourceResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          type: string
+          enum: [TEXTURE]
+        size:
+          type: integer
+          description: Size in bytes
+
+    GuiInfoResponse:
+      type: object
+      properties:
+        available:
+          type: boolean
+          description: Whether the GUI JAR is available for download
+        jarSizeBytes:
+          type: integer
+          format: int64
+          description: Size of the JAR file in bytes
+        fileName:
+          type: string
+          description: Name of the download file
+        downloadUrl:
+          type: string
+          description: Relative URL to download the GUI
+        configuredServerUrl:
+          type: string
+          description: Server URL that will be pre-configured in the download
+        usageHint:
+          type: string
+          description: Instructions for running the GUI

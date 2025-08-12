@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # Main Quarkus API backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lightning-backend:latest
+    container_name: lightning-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms256m -Xmx512m
+      - QUARKUS_LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/simulation/tick"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - lightning-network
+
+  # Pre-built variant (use when you've already built locally with mvn package)
+  # Usage: docker compose --profile prebuilt up backend-prebuilt
+  backend-prebuilt:
+    build:
+      context: .
+      dockerfile: Dockerfile.prebuilt
+    image: lightning-backend:prebuilt
+    container_name: lightning-backend-prebuilt
+    profiles:
+      - prebuilt
+    ports:
+      - "8080:8080"
+    environment:
+      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms256m -Xmx512m
+      - QUARKUS_LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/simulation/tick"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - lightning-network
+
+  # GUI client (optional - requires X11 or headless mode)
+  # Usage: docker compose --profile gui up gui
+  # For X11: DISPLAY=$DISPLAY docker compose --profile gui up gui
+  gui:
+    build:
+      context: .
+      dockerfile: lightning-engine/gui/Dockerfile
+    image: lightning-gui:latest
+    container_name: lightning-gui
+    profiles:
+      - gui
+    environment:
+      - BACKEND_URL=http://backend:8080
+      - HEADLESS=${HEADLESS:-true}
+      - DISPLAY=${DISPLAY:-:0}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - lightning-network
+
+networks:
+  lightning-network:
+    driver: bridge

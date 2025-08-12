@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.lightningfirefly</groupId>
+        <artifactId>engine-ext-games</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>engine-ext-games-checkers</artifactId>
+    <name>Lightning Engine - Checkers Game</name>
+    <description>Checkers game implementation using Lightning Engine ECS</description>
+
+    <properties>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- Games Common -->
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>engine-ext-games-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Engine Core -->
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>engine</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Engine Internal (for in-memory implementations) -->
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>engine-internal</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Rendering Core (for GUI) -->
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>engine-rendering</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Web API Adapter (for resource loading) -->
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>web-api-adapter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- SLF4J -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>
