@@ -195,8 +195,7 @@ public class CommandService {
     }
 
     private CommandInfo parseCommandSignature(String signature) {
-        // Parse "commandName(paramType paramName, ...)" format
-        // Also handles "class java.lang.Type name" format from server
+        // Parse "commandName(class java.lang.Type paramName, ...)" format from server
         int parenOpen = signature.indexOf('(');
         int parenClose = signature.lastIndexOf(')');
         if (parenOpen == -1 || parenClose == -1) {
@@ -213,18 +212,10 @@ public class CommandService {
             for (String param : paramParts) {
                 param = param.trim();
                 String[] parts = param.split("\\s+");
-                if (parts.length >= 2) {
-                    // Handle "class java.lang.Type name" format
-                    // or simple "type name" format
-                    String paramName = parts[parts.length - 1]; // Last part is always the name
-                    String paramType;
-                    if (parts.length >= 3 && "class".equals(parts[0])) {
-                        // Format: "class java.lang.Long id" -> type is java.lang.Long
-                        paramType = parts[1];
-                    } else {
-                        // Format: "long entityId" -> type is long
-                        paramType = parts[0];
-                    }
+                // Server format: "class java.lang.Long id" -> 3 parts
+                if (parts.length >= 3 && "class".equals(parts[0])) {
+                    String paramType = parts[1];
+                    String paramName = parts[parts.length - 1];
                     params.add(new ParameterInfo(paramName, paramType));
                 }
             }
