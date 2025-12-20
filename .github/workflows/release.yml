@@ -1,0 +1,121 @@
+name: Release
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'temurin'
+        cache: maven
+
+    - name: Build with Maven
+      run: mvn -B package -DskipTests --file pom.xml
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=tag
+          type=sha,prefix=
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Upload GUI JAR
+      uses: actions/upload-artifact@v4
+      with:
+        name: lightning-gui
+        path: lightning-engine/gui/target/engine-gui-*.jar
+        if-no-files-found: error
+
+    - name: Upload Server Quarkus App
+      uses: actions/upload-artifact@v4
+      with:
+        name: lightning-server
+        path: lightning-engine/webservice/quarkus-web-api/target/quarkus-app/
+        if-no-files-found: error
+
+    - name: Upload Modules JAR
+      uses: actions/upload-artifact@v4
+      with:
+        name: lightning-modules
+        path: lightning-engine-extensions/modules/target/engine-ext-modules-*.jar
+        if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download GUI artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: lightning-gui
+        path: artifacts/gui
+
+    - name: Download Modules artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: lightning-modules
+        path: artifacts/modules
+
+    - name: Prepare release assets
+      run: |
+        mv artifacts/gui/engine-gui-*.jar artifacts/lightning-gui.jar
+        mv artifacts/modules/engine-ext-modules-*.jar artifacts/lightning-modules.jar
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/lightning-gui.jar
+          artifacts/lightning-modules.jar
+        generate_release_notes: true
+        draft: false
+        prerelease: ${{ contains(github.ref, '-') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
