@@ -1,4 +1,4 @@
-package com.lightningfirefly.engine.quarkus.api;
+package com.lightningfirefly.engine.acceptance;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -60,7 +60,7 @@ class GuiDownloadDockerIT {
         }
 
         container = new GenericContainer<>(
-            new ImageFromDockerfile("lightning-backend-test", false)
+            new ImageFromDockerfile("lightning-backend:latest", false)
                 .withDockerfile(dockerfile)
         )
             .withExposedPorts(CONTAINER_PORT)

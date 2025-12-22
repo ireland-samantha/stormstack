@@ -4,6 +4,7 @@ import com.lightningfirefly.engine.core.system.EngineSystem;
 import com.lightningfirefly.engine.ext.module.EngineModule;
 import com.lightningfirefly.engine.ext.module.ModuleResolver;
 import com.lightningfirefly.engine.internal.core.command.CommandQueueExecutor;
+import com.lightningfirefly.engine.internal.ext.gamemaster.GameMasterTickService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -35,6 +36,7 @@ public class GameLoop {
 
     private final ModuleResolver moduleResolver;
     private final CommandQueueExecutor commandQueueExecutor;
+    private final GameMasterTickService gameMasterTickService;
     private final int maxCommandsPerTick;
 
     // Cached list of systems for performance - volatile for thread visibility
@@ -48,7 +50,7 @@ public class GameLoop {
      * @throws NullPointerException if moduleResolver is null
      */
     public GameLoop(ModuleResolver moduleResolver, CommandQueueExecutor commandQueueExecutor) {
-        this(moduleResolver, commandQueueExecutor, DEFAULT_MAX_COMMANDS_PER_TICK);
+        this(moduleResolver, commandQueueExecutor, null, DEFAULT_MAX_COMMANDS_PER_TICK);
     }
 
     /**
@@ -61,8 +63,24 @@ public class GameLoop {
      * @throws IllegalArgumentException if maxCommandsPerTick is not positive
      */
     public GameLoop(ModuleResolver moduleResolver, CommandQueueExecutor commandQueueExecutor, int maxCommandsPerTick) {
+        this(moduleResolver, commandQueueExecutor, null, maxCommandsPerTick);
+    }
+
+    /**
+     * Create a new game loop with game master support.
+     *
+     * @param moduleResolver resolver for loaded modules (must not be null)
+     * @param commandQueueExecutor executor for processing commands (may be null to disable commands)
+     * @param gameMasterTickService service for executing game masters (may be null to disable game masters)
+     * @param maxCommandsPerTick maximum number of commands to execute per tick
+     * @throws NullPointerException if moduleResolver is null
+     * @throws IllegalArgumentException if maxCommandsPerTick is not positive
+     */
+    public GameLoop(ModuleResolver moduleResolver, CommandQueueExecutor commandQueueExecutor,
+                    GameMasterTickService gameMasterTickService, int maxCommandsPerTick) {
         this.moduleResolver = Objects.requireNonNull(moduleResolver, "moduleResolver must not be null");
         this.commandQueueExecutor = commandQueueExecutor;
+        this.gameMasterTickService = gameMasterTickService;
         if (maxCommandsPerTick <= 0) {
             throw new IllegalArgumentException("maxCommandsPerTick must be positive, got: " + maxCommandsPerTick);
         }
@@ -76,7 +94,7 @@ public class GameLoop {
      * @throws NullPointerException if moduleResolver is null
      */
     public GameLoop(ModuleResolver moduleResolver) {
-        this(moduleResolver, null, DEFAULT_MAX_COMMANDS_PER_TICK);
+        this(moduleResolver, null, null, DEFAULT_MAX_COMMANDS_PER_TICK);
     }
 
     /**
@@ -103,7 +121,19 @@ public class GameLoop {
         List<EngineSystem> systems = getOrBuildSystems();
         int systemsRun = runSystems(systems);
 
+        // Run game masters
+        executeGameMasters(tick);
+
         log.trace("Tick {} complete, {} systems executed", tick, systemsRun);
+    }
+
+    /**
+     * Execute game masters for all active matches.
+     */
+    private void executeGameMasters(long tick) {
+        if (gameMasterTickService != null) {
+            gameMasterTickService.onTick(tick);
+        }
     }
 
     /**

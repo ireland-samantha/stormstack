@@ -28,11 +28,16 @@
         <module>lightning-engine/rendering-test</module>
         <module>lightning-engine/webservice/web-api-adapter</module>
         <module>lightning-engine-extensions/modules</module>
+        <module>lightning-engine-extensions/game-masters</module>
         <module>lightning-engine/webservice/quarkus-web-api</module>
 <!--        <module>lightning-engine-extensions/games</module>-->
         <module>lightning-engine/gui</module>
         <module>lightning-engine/api-acceptance-test</module>
         <module>lightning-engine/gui-acceptance-test</module>
+        <module>game-renderer</module>
+        <module>engine-api</module>
+        <module>test-game-module</module>
+        <module>game-app</module>
     </modules>
 
     <properties>

@@ -70,7 +70,7 @@ class InMemoryMatchServiceTest {
         @Test
         @DisplayName("should delegate to repository when no modules")
         void shouldDelegateToRepositoryWhenNoModules() {
-            Match match = new Match(1L, List.of());
+            Match match = new Match(1L, List.of(), List.of());
             when(matchRepository.save(match)).thenReturn(match);
 
             Match result = service.createMatch(match);
@@ -82,7 +82,7 @@ class InMemoryMatchServiceTest {
         @Test
         @DisplayName("should throw when module not found")
         void shouldThrowWhenModuleNotFound() {
-            Match match = new Match(1L, List.of("nonexistent"));
+            Match match = new Match(1L, List.of("nonexistent"), List.of());
             when(moduleResolver.hasModule("nonexistent")).thenReturn(false);
 
             assertThatThrownBy(() -> service.createMatch(match))
@@ -93,7 +93,7 @@ class InMemoryMatchServiceTest {
         @Test
         @DisplayName("should create match when module exists")
         void shouldCreateMatchWhenModuleExists() {
-            Match match = new Match(1L, List.of("existingModule"));
+            Match match = new Match(1L, List.of("existingModule"), List.of());
             when(matchRepository.save(match)).thenReturn(match);
             when(moduleResolver.hasModule("existingModule")).thenReturn(true);
 
@@ -144,7 +144,7 @@ class InMemoryMatchServiceTest {
         @Test
         @DisplayName("should return match when found")
         void shouldReturnMatchWhenFound() {
-            Match match = new Match(1L, List.of());
+            Match match = new Match(1L, List.of(), List.of());
             when(matchRepository.findById(1L)).thenReturn(Optional.of(match));
 
             Optional<Match> result = service.getMatch(1L);
@@ -172,7 +172,7 @@ class InMemoryMatchServiceTest {
         @Test
         @DisplayName("should return match when found")
         void shouldReturnMatchWhenFound() {
-            Match match = new Match(1L, List.of());
+            Match match = new Match(1L, List.of(), List.of());
             when(matchRepository.findById(1L)).thenReturn(Optional.of(match));
 
             Match result = service.getMatchOrThrow(1L);
@@ -198,7 +198,7 @@ class InMemoryMatchServiceTest {
         @Test
         @DisplayName("should delegate to repository")
         void shouldDelegateToRepository() {
-            List<Match> matches = List.of(new Match(1L, List.of()), new Match(2L, List.of()));
+            List<Match> matches = List.of(new Match(1L, List.of(), List.of()), new Match(2L, List.of(), List.of()));
             when(matchRepository.findAll()).thenReturn(matches);
 
             List<Match> result = service.getAllMatches();

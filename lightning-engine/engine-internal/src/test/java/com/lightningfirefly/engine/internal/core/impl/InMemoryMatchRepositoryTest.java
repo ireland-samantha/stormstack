@@ -35,7 +35,7 @@ class InMemoryMatchRepositoryTest {
         @Test
         @DisplayName("should store match")
         void shouldStoreMatch() {
-            Match match = new Match(1L, List.of());
+            Match match = new Match(1L, List.of(), List.of());
 
             Match result = repository.save(match);
 
@@ -46,8 +46,8 @@ class InMemoryMatchRepositoryTest {
         @Test
         @DisplayName("should overwrite existing match with same id")
         void shouldOverwriteExistingMatch() {
-            Match match1 = new Match(1L, List.of());
-            Match match2 = new Match(1L, List.of("module1"));
+            Match match1 = new Match(1L, List.of(), List.of());
+            Match match2 = new Match(1L, List.of("module1"), List.of());
 
             repository.save(match1);
             Match result = repository.save(match2);
@@ -72,7 +72,7 @@ class InMemoryMatchRepositoryTest {
         @Test
         @DisplayName("should remove match")
         void shouldRemoveMatch() {
-            Match match = new Match(1L, List.of());
+            Match match = new Match(1L, List.of(), List.of());
             repository.save(match);
 
             repository.deleteById(1L);
@@ -97,7 +97,7 @@ class InMemoryMatchRepositoryTest {
         @Test
         @DisplayName("should return match when found")
         void shouldReturnMatchWhenFound() {
-            Match match = new Match(1L, List.of());
+            Match match = new Match(1L, List.of(), List.of());
             repository.save(match);
 
             Optional<Match> result = repository.findById(1L);
@@ -122,9 +122,9 @@ class InMemoryMatchRepositoryTest {
         @Test
         @DisplayName("should return all matches")
         void shouldReturnAllMatches() {
-            repository.save(new Match(1L, List.of()));
-            repository.save(new Match(2L, List.of()));
-            repository.save(new Match(3L, List.of()));
+            repository.save(new Match(1L, List.of(), List.of()));
+            repository.save(new Match(2L, List.of(), List.of()));
+            repository.save(new Match(3L, List.of(), List.of()));
 
             List<Match> result = repository.findAll();
 
@@ -148,7 +148,7 @@ class InMemoryMatchRepositoryTest {
         @Test
         @DisplayName("should return true when match exists")
         void shouldReturnTrueWhenMatchExists() {
-            repository.save(new Match(1L, List.of()));
+            repository.save(new Match(1L, List.of(), List.of()));
 
             assertThat(repository.existsById(1L)).isTrue();
         }
@@ -169,10 +169,10 @@ class InMemoryMatchRepositoryTest {
         void shouldReturnCorrectCount() {
             assertThat(repository.count()).isEqualTo(0);
 
-            repository.save(new Match(1L, List.of()));
+            repository.save(new Match(1L, List.of(), List.of()));
             assertThat(repository.count()).isEqualTo(1);
 
-            repository.save(new Match(2L, List.of()));
+            repository.save(new Match(2L, List.of(), List.of()));
             assertThat(repository.count()).isEqualTo(2);
         }
     }
@@ -184,9 +184,9 @@ class InMemoryMatchRepositoryTest {
         @Test
         @DisplayName("should remove all matches")
         void shouldRemoveAllMatches() {
-            repository.save(new Match(1L, List.of()));
-            repository.save(new Match(2L, List.of()));
-            repository.save(new Match(3L, List.of()));
+            repository.save(new Match(1L, List.of(), List.of()));
+            repository.save(new Match(2L, List.of(), List.of()));
+            repository.save(new Match(3L, List.of(), List.of()));
 
             repository.clear();
 

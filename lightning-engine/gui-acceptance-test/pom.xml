@@ -31,6 +31,22 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Game Renderer Module -->
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>game-renderer</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Game API Module -->
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>game-api</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Rendering Test Utilities -->
         <dependency>
             <groupId>com.lightningfirefly</groupId>

@@ -61,6 +61,16 @@
             <artifactId>engine-ext-modules</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>engine-ext-game-masters</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>game-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Quarkus core -->
         <dependency>

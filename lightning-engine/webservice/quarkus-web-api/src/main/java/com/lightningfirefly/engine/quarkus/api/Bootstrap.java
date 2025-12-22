@@ -2,11 +2,13 @@ package com.lightningfirefly.engine.quarkus.api;
 
 import com.lightningfirefly.engine.core.match.MatchService;
 import com.lightningfirefly.engine.core.store.EntityComponentStore;
+import com.lightningfirefly.engine.ext.gamemasters.TickCounterGameMasterFactory;
 import com.lightningfirefly.engine.ext.module.ModuleContext;
 import com.lightningfirefly.engine.ext.module.ModuleResolver;
 import com.lightningfirefly.engine.ext.modules.MoveModuleFactory;
 import com.lightningfirefly.engine.ext.modules.RenderingModuleFactory;
 import com.lightningfirefly.engine.ext.modules.SpawnModuleFactory;
+import com.lightningfirefly.engine.internal.ext.gamemaster.GameMasterManager;
 import com.lightningfirefly.engine.internal.ext.module.ModuleManagementModuleImpl;
 import com.lightningfirefly.engine.internal.ext.module.ModuleManager;
 import io.quarkus.runtime.Startup;
@@ -30,6 +32,9 @@ public class Bootstrap {
     ModuleManager moduleManager;
 
     @Inject
+    GameMasterManager gameMasterManager;
+
+    @Inject
     ModuleResolver moduleResolver;
 
     @Inject
@@ -42,8 +47,12 @@ public class Bootstrap {
         moduleManager.installModule(MoveModuleFactory.class);
         moduleManager.installModule(RenderingModuleFactory.class);
 
+        // Install sample game masters
+        gameMasterManager.installGameMaster(TickCounterGameMasterFactory.class);
+
         try {
             moduleManager.reloadInstalled();
+            gameMasterManager.reloadInstalled();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

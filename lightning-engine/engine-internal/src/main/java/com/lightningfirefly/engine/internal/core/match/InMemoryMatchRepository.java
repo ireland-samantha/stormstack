@@ -33,7 +33,7 @@ public class InMemoryMatchRepository implements MatchRepository {
         Match matchToSave = match;
         if (match.id() <= 0) {
             long newId = idGenerator.getAndIncrement();
-            matchToSave = new Match(newId, match.enabledModules());
+            matchToSave = new Match(newId, match.enabledModules(), match.enabledGameMasters());
             log.debug("Generated new match ID: {}", newId);
         }
         log.debug("Saving match: {}", matchToSave.id());

@@ -93,10 +93,20 @@ public class GLImage extends AbstractWindowComponent implements Image {
     public boolean loadFromResource(String resourcePath) {
         long nvg = GLContext.getNvgContext();
         if (nvg == 0) {
-            log.warn("Cannot load image - no NVG context available");
-            return false;
+            log.warn("Cannot load image - no NVG context available. Will retry during render.");
+            return deferredLoadFromResource(resourcePath);
         }
+        return doLoadFromResource(nvg, resourcePath);
+    }
 
+    private String deferredResourcePath = null;
+
+    private boolean deferredLoadFromResource(String resourcePath) {
+        this.deferredResourcePath = resourcePath;
+        return true;
+    }
+
+    private boolean doLoadFromResource(long nvg, String resourcePath) {
         try {
             // Dispose previous image if any
             disposeImage(nvg);
@@ -211,12 +221,20 @@ public class GLImage extends AbstractWindowComponent implements Image {
             return;
         }
 
-        // Handle deferred loading
-        if (deferredFilePath != null && imageHandle <= 0) {
-            log.info("GLImage.render() - performing deferred load from: {}", deferredFilePath);
+        // Handle deferred loading from file (always process if path is set, replacing any existing image)
+        if (deferredFilePath != null) {
+            log.info("GLImage.render() - performing deferred load from file: {}", deferredFilePath);
             boolean success = doLoadFromFile(nvg, deferredFilePath);
             log.info("GLImage.render() - deferred load result: {}, imageHandle: {}", success, imageHandle);
             deferredFilePath = null;
+        }
+
+        // Handle deferred loading from resource (always process if path is set, replacing any existing image)
+        if (deferredResourcePath != null) {
+            log.info("GLImage.render() - performing deferred load from resource: {}", deferredResourcePath);
+            boolean success = doLoadFromResource(nvg, deferredResourcePath);
+            log.info("GLImage.render() - deferred load result: {}, imageHandle: {}", success, imageHandle);
+            deferredResourcePath = null;
         }
 
         try (var color = org.lwjgl.nanovg.NVGColor.malloc();

@@ -27,8 +27,8 @@ public class MatchResource {
     @POST
     public Response createMatch(MatchRequest request) {
         // Use provided ID or generate one if 0
-        Match match = new Match(request.id(), request.enabledModuleNames());
-        log.info("Creating match with id {} and modules: {}", request.id(), request.enabledModuleNames());
+        Match match = new Match(request.id(), request.enabledModuleNames(), request.enabledGameMasterNames());
+        log.info("Creating match with id {} and modules: {}, gameMasters: {}", request.id(), request.enabledModuleNames(), request.enabledGameMasterNames());
         Match createdMatch = gameSimulation.createMatch(match);
         log.info("Created match with ID: {}", createdMatch.id());
         return Response.status(Response.Status.CREATED)
@@ -65,6 +65,9 @@ public class MatchResource {
         List<String> moduleNames = match.enabledModules() != null
                 ? match.enabledModules()
                 : List.of();
-        return new MatchResponse(match.id(), moduleNames);
+        List<String> gameMasterNames = match.enabledGameMasters() != null
+                ? match.enabledGameMasters()
+                : List.of();
+        return new MatchResponse(match.id(), moduleNames, gameMasterNames);
     }
 }

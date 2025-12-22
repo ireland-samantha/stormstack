@@ -101,7 +101,7 @@ class InMemoryGameSimulationTest {
         @Test
         @DisplayName("createMatch should delegate to service")
         void createMatchShouldDelegateToService() {
-            Match match = new Match(1L, List.of());
+            Match match = new Match(1L, List.of(), List.of());
             when(matchService.createMatch(match)).thenReturn(match);
 
             simulation.createMatch(match);
@@ -134,7 +134,7 @@ class InMemoryGameSimulationTest {
         @Test
         @DisplayName("getMatch should delegate to service")
         void getMatchShouldDelegateToService() {
-            Match match = new Match(1L, List.of());
+            Match match = new Match(1L, List.of(), List.of());
             when(matchService.getMatch(1L)).thenReturn(Optional.of(match));
 
             Optional<Match> result = simulation.getMatch(1L);
@@ -146,7 +146,7 @@ class InMemoryGameSimulationTest {
         @Test
         @DisplayName("getAllMatches should delegate to service")
         void getAllMatchesShouldDelegateToService() {
-            List<Match> matches = List.of(new Match(1L, List.of()), new Match(2L, List.of()));
+            List<Match> matches = List.of(new Match(1L, List.of(), List.of()), new Match(2L, List.of(), List.of()));
             when(matchService.getAllMatches()).thenReturn(matches);
 
             List<Match> result = simulation.getAllMatches();

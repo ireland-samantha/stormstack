@@ -40,7 +40,7 @@ public interface MatchService {
      * @throws com.lightningfirefly.engine.core.exception.EntityNotFoundException if any module doesn't exist
      */
     default Match createMatch(List<String> enabledModules) {
-        return createMatch(new Match(0, enabledModules));
+        return createMatch(new Match(0, enabledModules, List.of()));
     }
 
     /**

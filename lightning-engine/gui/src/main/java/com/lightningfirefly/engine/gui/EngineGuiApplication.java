@@ -30,9 +30,11 @@ public class EngineGuiApplication {
     private Button snapshotNavButton;
     private Button resourceNavButton;
     private Button serverNavButton;
+    private Button gameMasterNavButton;
     private Button matchNavButton;
     private Button commandNavButton;
     private Button renderingNavButton;
+    private Button spriteNavButton;
 
     // Tick controls (top right)
     private Button advanceTickButton;
@@ -49,9 +51,11 @@ public class EngineGuiApplication {
     private SnapshotPanel snapshotPanel;
     private ResourcePanel resourcePanel;
     private ServerPanel serverPanel;
+    private GameMasterPanel gameMasterPanel;
     private MatchPanel matchPanel;
     private CommandPanel commandPanel;
     private RenderingPanel renderingPanel;
+    private SpriteRendererPanel spriteRendererPanel;
 
     // Currently active panel
     private String activePanel = "matches";
@@ -176,18 +180,26 @@ public class EngineGuiApplication {
         serverNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 3, buttonY, buttonWidth, 28, "Modules");
         serverNavButton.setOnClick(() -> switchPanel("server"));
 
-        commandNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 4, buttonY, buttonWidth, 28, "Commands");
+        gameMasterNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 4, buttonY, buttonWidth, 28, "GameMasters");
+        gameMasterNavButton.setOnClick(() -> switchPanel("gamemasters"));
+
+        commandNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 5, buttonY, buttonWidth, 28, "Commands");
         commandNavButton.setOnClick(() -> switchPanel("commands"));
 
-        renderingNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 5, buttonY, buttonWidth, 28, "Rendering");
+        renderingNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 6, buttonY, buttonWidth, 28, "Rendering");
         renderingNavButton.setOnClick(() -> switchPanel("rendering"));
+
+        spriteNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 7, buttonY, buttonWidth, 28, "Sprites");
+        spriteNavButton.setOnClick(() -> switchPanel("sprites"));
 
         navPanel.addChild((WindowComponent) matchNavButton);
         navPanel.addChild((WindowComponent) snapshotNavButton);
         navPanel.addChild((WindowComponent) resourceNavButton);
         navPanel.addChild((WindowComponent) serverNavButton);
+        navPanel.addChild((WindowComponent) gameMasterNavButton);
         navPanel.addChild((WindowComponent) commandNavButton);
         navPanel.addChild((WindowComponent) renderingNavButton);
+        navPanel.addChild((WindowComponent) spriteNavButton);
 
         // Create tick controls on the right side of the nav bar
         int tickButtonWidth = 80;
@@ -288,6 +300,17 @@ public class EngineGuiApplication {
         );
         serverPanel.setVisible(false);
 
+        // Game master panel (initially hidden)
+        gameMasterPanel = new GameMasterPanel(
+            componentFactory,
+            panelMargin,
+            panelY,
+            panelWidth,
+            panelHeight,
+            serverUrl
+        );
+        gameMasterPanel.setVisible(false);
+
         // Command panel (initially hidden)
         commandPanel = new CommandPanel(
             componentFactory,
@@ -310,6 +333,17 @@ public class EngineGuiApplication {
         );
         renderingPanel.setVisible(false);
 
+        // Sprite renderer panel (initially hidden)
+        spriteRendererPanel = new SpriteRendererPanel(
+            componentFactory,
+            panelMargin,
+            panelY,
+            panelWidth,
+            panelHeight,
+            serverUrl
+        );
+        spriteRendererPanel.setVisible(false);
+
         // Add components to window
         window.addComponent((WindowComponent) titleLabel);
         window.addComponent((WindowComponent) serverLabel);
@@ -318,8 +352,10 @@ public class EngineGuiApplication {
         window.addComponent(snapshotPanel);
         window.addComponent(resourcePanel);
         window.addComponent(serverPanel);
+        window.addComponent(gameMasterPanel);
         window.addComponent(commandPanel);
         window.addComponent(renderingPanel);
+        window.addComponent(spriteRendererPanel);
 
         // Set initial active panel
         updateNavButtonStyles();
@@ -336,8 +372,10 @@ public class EngineGuiApplication {
         snapshotPanel.setVisible(false);
         resourcePanel.setVisible(false);
         serverPanel.setVisible(false);
+        gameMasterPanel.setVisible(false);
         commandPanel.setVisible(false);
         renderingPanel.setVisible(false);
+        spriteRendererPanel.setVisible(false);
 
         // Show the selected panel
         switch (panelName) {
@@ -345,8 +383,10 @@ public class EngineGuiApplication {
             case "snapshot" -> snapshotPanel.setVisible(true);
             case "resources" -> resourcePanel.setVisible(true);
             case "server" -> serverPanel.setVisible(true);
+            case "gamemasters" -> gameMasterPanel.setVisible(true);
             case "commands" -> commandPanel.setVisible(true);
             case "rendering" -> renderingPanel.setVisible(true);
+            case "sprites" -> spriteRendererPanel.setVisible(true);
         }
 
         updateNavButtonStyles();
@@ -404,8 +444,10 @@ public class EngineGuiApplication {
         snapshotNavButton.setBackgroundColor(colours.buttonBg());
         resourceNavButton.setBackgroundColor(colours.buttonBg());
         serverNavButton.setBackgroundColor(colours.buttonBg());
+        gameMasterNavButton.setBackgroundColor(colours.buttonBg());
         commandNavButton.setBackgroundColor(colours.buttonBg());
         renderingNavButton.setBackgroundColor(colours.buttonBg());
+        spriteNavButton.setBackgroundColor(colours.buttonBg());
 
         // Highlight active button
         switch (activePanel) {
@@ -413,8 +455,10 @@ public class EngineGuiApplication {
             case "snapshot" -> snapshotNavButton.setBackgroundColor(colours.accent());
             case "resources" -> resourceNavButton.setBackgroundColor(colours.accent());
             case "server" -> serverNavButton.setBackgroundColor(colours.accent());
+            case "gamemasters" -> gameMasterNavButton.setBackgroundColor(colours.accent());
             case "commands" -> commandNavButton.setBackgroundColor(colours.accent());
             case "rendering" -> renderingNavButton.setBackgroundColor(colours.accent());
+            case "sprites" -> spriteNavButton.setBackgroundColor(colours.accent());
         }
     }
 
@@ -524,11 +568,17 @@ public class EngineGuiApplication {
         if (serverPanel != null && serverPanel.isVisible()) {
             serverPanel.update();
         }
+        if (gameMasterPanel != null && gameMasterPanel.isVisible()) {
+            gameMasterPanel.update();
+        }
         if (commandPanel != null && commandPanel.isVisible()) {
             commandPanel.update();
         }
         if (renderingPanel != null && renderingPanel.isVisible()) {
             renderingPanel.update();
+        }
+        if (spriteRendererPanel != null && spriteRendererPanel.isVisible()) {
+            spriteRendererPanel.update();
         }
     }
 
@@ -542,6 +592,9 @@ public class EngineGuiApplication {
         if (serverPanel != null) {
             serverPanel.dispose();
         }
+        if (gameMasterPanel != null) {
+            gameMasterPanel.dispose();
+        }
         if (matchPanel != null) {
             matchPanel.dispose();
         }
@@ -550,6 +603,9 @@ public class EngineGuiApplication {
         }
         if (renderingPanel != null) {
             renderingPanel.dispose();
+        }
+        if (spriteRendererPanel != null) {
+            spriteRendererPanel.dispose();
         }
         if (simulationService != null) {
             simulationService.shutdown();
@@ -578,6 +634,13 @@ public class EngineGuiApplication {
     }
 
     /**
+     * Get the game master panel.
+     */
+    public GameMasterPanel getGameMasterPanel() {
+        return gameMasterPanel;
+    }
+
+    /**
      * Get the match panel.
      */
     public MatchPanel getMatchPanel() {
@@ -599,7 +662,14 @@ public class EngineGuiApplication {
     }
 
     /**
-     * Switch to a panel by name. Available panels: matches, snapshot, resources, server, commands, rendering.
+     * Get the sprite renderer panel.
+     */
+    public SpriteRendererPanel getSpriteRendererPanel() {
+        return spriteRendererPanel;
+    }
+
+    /**
+     * Switch to a panel by name. Available panels: matches, snapshot, resources, server, commands, rendering, sprites.
      */
     public void switchToPanel(String panelName) {
         switchPanel(panelName);

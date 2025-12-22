@@ -25,6 +25,10 @@ import com.lightningfirefly.engine.internal.core.snapshot.SnapshotProviderImpl;
 import com.lightningfirefly.engine.internal.core.store.ArrayEntityComponentStore;
 import com.lightningfirefly.engine.internal.core.store.EcsProperties;
 import com.lightningfirefly.engine.internal.core.resource.OnDiskResourceManager;
+import com.lightningfirefly.engine.internal.ext.gamemaster.GameMasterFactoryFileLoader;
+import com.lightningfirefly.engine.internal.ext.gamemaster.GameMasterManager;
+import com.lightningfirefly.engine.internal.ext.gamemaster.GameMasterTickService;
+import com.lightningfirefly.engine.internal.ext.gamemaster.OnDiskGameMasterManager;
 import com.lightningfirefly.engine.internal.ext.module.DefaultInjector;
 import com.lightningfirefly.engine.internal.ext.module.ModuleFactoryFileLoader;
 import com.lightningfirefly.engine.internal.ext.module.ModuleManager;
@@ -53,6 +57,9 @@ public class SimulationConfig {
     @ConfigProperty(name = "storage.modules-path", defaultValue = "modules")
     String modulesPath;
 
+    @ConfigProperty(name = "storage.gamemasters-path", defaultValue = "gamemasters")
+    String gamemastersPath;
+
     @ConfigProperty(name = "storage.resources-path", defaultValue = "resources")
     String resourcesPath;
 
@@ -80,6 +87,23 @@ public class SimulationConfig {
                         new ModuleFactoryFileLoader(),
                         context);
         return manager;
+    }
+
+    @Produces
+    @ApplicationScoped
+    public GameMasterManager gameMasterManager(ModuleContext context) {
+        OnDiskGameMasterManager manager =
+                new OnDiskGameMasterManager(Path.of(gamemastersPath),
+                        new GameMasterFactoryFileLoader(),
+                        context);
+        return manager;
+    }
+
+    @Produces
+    @ApplicationScoped
+    public GameMasterTickService gameMasterTickService(GameMasterManager gameMasterManager,
+                                                        MatchService matchService) {
+        return new GameMasterTickService(gameMasterManager, matchService);
     }
 
     // ---------- Command queue ----------
@@ -149,8 +173,9 @@ public class SimulationConfig {
     @Produces
     @ApplicationScoped
     public GameLoop gameLoop(ModuleResolver resolver,
-                             CommandQueueExecutor executor) {
-        return new GameLoop(resolver, executor, maxCommandsPerTick);
+                             CommandQueueExecutor executor,
+                             GameMasterTickService gameMasterTickService) {
+        return new GameLoop(resolver, executor, gameMasterTickService, maxCommandsPerTick);
     }
 
     @Produces
