@@ -1,6 +1,7 @@
 package com.lightningfirefly.engine.quarkus.api.config;
 
 import com.lightningfirefly.engine.core.GameSimulation;
+import com.lightningfirefly.engine.core.command.CommandExecutor;
 import com.lightningfirefly.engine.core.command.CommandQueue;
 import com.lightningfirefly.engine.core.match.MatchService;
 import com.lightningfirefly.engine.core.match.PlayerMatchService;
@@ -13,6 +14,7 @@ import com.lightningfirefly.engine.internal.core.command.CommandQueueExecutor;
 import com.lightningfirefly.engine.internal.core.command.CommandResolver;
 import com.lightningfirefly.engine.internal.core.command.InMemoryCommandQueueManager;
 import com.lightningfirefly.engine.internal.core.command.ModuleCommandResolver;
+import com.lightningfirefly.engine.internal.core.command.CommandExecutorFromResolver;
 import com.lightningfirefly.engine.internal.core.match.InMemoryGameSimulation;
 import com.lightningfirefly.engine.internal.core.match.InMemoryMatchRepository;
 import com.lightningfirefly.engine.internal.core.match.InMemoryMatchService;
@@ -91,11 +93,15 @@ public class SimulationConfig {
 
     @Produces
     @ApplicationScoped
-    public GameMasterManager gameMasterManager(ModuleContext context) {
+    public GameMasterManager gameMasterManager(ModuleContext context,
+                                                CommandExecutor commandExecutor,
+                                                OnDiskResourceManager resourceManager) {
         OnDiskGameMasterManager manager =
                 new OnDiskGameMasterManager(Path.of(gamemastersPath),
                         new GameMasterFactoryFileLoader(),
-                        context);
+                        context,
+                        commandExecutor,
+                        resourceManager);
         return manager;
     }
 
@@ -124,6 +130,12 @@ public class SimulationConfig {
     @ApplicationScoped
     public CommandResolver commandResolver(ModuleManager moduleManager) {
         return new ModuleCommandResolver(moduleManager);
+    }
+
+    @Produces
+    @ApplicationScoped
+    public CommandExecutor commandExecutor(CommandResolver commandResolver) {
+        return new CommandExecutorFromResolver(commandResolver);
     }
 
     // ---------- Snapshot ----------

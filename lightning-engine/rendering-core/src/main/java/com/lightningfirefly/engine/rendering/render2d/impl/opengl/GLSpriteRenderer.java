@@ -100,7 +100,12 @@ public class GLSpriteRenderer implements SpriteRenderer {
 
     @Override
     public void draw(Sprite sprite) {
-        GLTexture texture = getOrLoadTexture(sprite.getTexturePath());
+        String texturePath = sprite.getTexturePath();
+        if (texturePath == null || texturePath.isEmpty()) {
+            // Skip sprites without textures
+            return;
+        }
+        GLTexture texture = getOrLoadTexture(texturePath);
         draw(texture, sprite.getX(), sprite.getY(), sprite.getSizeX(), sprite.getSizeY());
     }
 
@@ -153,9 +158,25 @@ public class GLSpriteRenderer implements SpriteRenderer {
 
     /**
      * Get or load a texture from the cache.
+     * Detects whether the path is a file system path or classpath resource.
      */
     private GLTexture getOrLoadTexture(String path) {
-        return textureCache.computeIfAbsent(path, GLTexture::new);
+        return textureCache.computeIfAbsent(path, p -> {
+            // Check if path is an absolute file path
+            if (isFileSystemPath(p)) {
+                return GLTexture.fromFile(java.nio.file.Path.of(p));
+            } else {
+                return new GLTexture(p);
+            }
+        });
+    }
+
+    /**
+     * Check if the path is a file system path rather than a classpath resource.
+     */
+    private boolean isFileSystemPath(String path) {
+        // Unix absolute path or Windows path (e.g., C:\)
+        return path.startsWith("/") || (path.length() > 2 && path.charAt(1) == ':');
     }
 
     /**

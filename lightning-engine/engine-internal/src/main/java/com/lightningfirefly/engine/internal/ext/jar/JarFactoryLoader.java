@@ -56,9 +56,12 @@ public class JarFactoryLoader<F> {
 
         URL jarUrl = jarFile.toURI().toURL();
 
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{jarUrl}, getClass().getClassLoader());
-             JarFile jar = new JarFile(jarFile)) {
+        // NOTE: We intentionally don't close the classloader because the factory
+        // instances may reference inner classes that need to be loaded later.
+        // The classloader must remain open for the factory's lifetime.
+        URLClassLoader classLoader = new URLClassLoader(new URL[]{jarUrl}, getClass().getClassLoader());
 
+        try (JarFile jar = new JarFile(jarFile)) {
             Enumeration<JarEntry> entries = jar.entries();
 
             while (entries.hasMoreElements()) {

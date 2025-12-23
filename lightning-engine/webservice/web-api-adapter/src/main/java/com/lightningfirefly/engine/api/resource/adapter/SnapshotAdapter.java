@@ -74,7 +74,8 @@ public interface SnapshotAdapter {
             long matchId = extractLongValue(json, "matchId");
             long tick = extractLongValue(json, "tick");
             // The snapshot data could be complex; return as raw JSON string
-            String snapshotData = extractObjectValue(json, "snapshot");
+            // Server uses "data" field for snapshot data
+            String snapshotData = extractObjectValue(json, "data");
             return new SnapshotResponse(matchId, tick, snapshotData);
         }
 

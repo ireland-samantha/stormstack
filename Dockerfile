@@ -17,8 +17,23 @@ COPY lightning-engine/webservice/web-api-adapter/pom.xml ./lightning-engine/webs
 COPY lightning-engine/webservice/quarkus-web-api/pom.xml ./lightning-engine/webservice/quarkus-web-api/
 COPY lightning-engine/gui/pom.xml ./lightning-engine/gui/
 COPY lightning-engine-extensions/modules/pom.xml ./lightning-engine-extensions/modules/
+COPY lightning-engine-extensions/game-masters/pom.xml ./lightning-engine-extensions/game-masters/
 COPY lightning-engine/api-acceptance-test/pom.xml ./lightning-engine/api-acceptance-test/
 COPY lightning-engine/gui-acceptance-test/pom.xml ./lightning-engine/gui-acceptance-test/
+COPY engine-api/pom.xml ./engine-api/
+COPY game-renderer/pom.xml ./game-renderer/
+COPY test-game-module/pom.xml ./test-game-module/
+COPY game-app/pom.xml ./game-app/
+COPY examples/pom.xml ./examples/
+COPY examples/checkers-engine-module/pom.xml ./examples/checkers-engine-module/
+COPY examples/checkers-gamemaster/pom.xml ./examples/checkers-gamemaster/
+COPY examples/checkers/pom.xml ./examples/checkers/
+
+# Create empty directories for modules not needed at runtime (to satisfy parent pom)
+RUN mkdir -p engine-api/src/main/java game-renderer/src/main/java test-game-module/src/main/java \
+    game-app/src/main/java lightning-engine-extensions/game-masters/src/main/java \
+    examples/checkers-engine-module/src/main/java examples/checkers-gamemaster/src/main/java \
+    examples/checkers/src/main/java
 
 # Download dependencies (this layer will be cached if poms don't change)
 RUN mvn dependency:go-offline -B -pl lightning-engine/webservice/quarkus-web-api,lightning-engine-extensions/modules,lightning-engine/gui -am || true
@@ -33,9 +48,13 @@ COPY lightning-engine/webservice/web-api-adapter/src ./lightning-engine/webservi
 COPY lightning-engine/webservice/quarkus-web-api/src ./lightning-engine/webservice/quarkus-web-api/src
 COPY lightning-engine/gui/src ./lightning-engine/gui/src
 COPY lightning-engine-extensions/modules/src ./lightning-engine-extensions/modules/src
+COPY lightning-engine-extensions/game-masters/src ./lightning-engine-extensions/game-masters/src
+COPY engine-api/src ./engine-api/src
+COPY examples/checkers-engine-module/src ./examples/checkers-engine-module/src
+COPY examples/checkers-gamemaster/src ./examples/checkers-gamemaster/src
 
-# Build the quarkus-web-api module, engine-ext-modules, and GUI
-RUN mvn package -B -DskipTests -pl lightning-engine/webservice/quarkus-web-api,lightning-engine-extensions/modules,lightning-engine/gui -am
+# Build the quarkus-web-api module, engine-ext-modules, GUI, and checkers modules
+RUN mvn package -B -DskipTests -pl lightning-engine/webservice/quarkus-web-api,lightning-engine-extensions/modules,lightning-engine/gui,examples/checkers-engine-module,examples/checkers-gamemaster -am
 
 # Stage 2: Create the runtime image
 FROM eclipse-temurin:25-jre-alpine
@@ -51,9 +70,11 @@ COPY --from=build /app/lightning-engine/webservice/quarkus-web-api/target/quarku
 COPY --from=build /app/lightning-engine/webservice/quarkus-web-api/target/quarkus-app/app/ ./app/
 COPY --from=build /app/lightning-engine/webservice/quarkus-web-api/target/quarkus-app/quarkus/ ./quarkus/
 
-# Create modules directory and copy built module JARs
-RUN mkdir -p /app/modules /app/gui
+# Create modules and gamemasters directories, copy built JARs
+RUN mkdir -p /app/modules /app/gamemasters /app/gui
 COPY --from=build /app/lightning-engine-extensions/modules/target/engine-ext-modules-*.jar ./modules/
+COPY --from=build /app/examples/checkers-engine-module/target/checkers-engine-module-*.jar ./modules/
+COPY --from=build /app/examples/checkers-gamemaster/target/checkers-gamemaster-*.jar ./gamemasters/
 
 # Copy GUI JAR for download endpoint
 COPY --from=build /app/lightning-engine/gui/target/engine-gui-*.jar ./gui/lightning-gui.jar

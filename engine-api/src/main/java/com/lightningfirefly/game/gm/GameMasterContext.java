@@ -45,5 +45,24 @@ public interface GameMasterContext {
      */
     long getCurrentTick();
 
+    /**
+     * Execute a game master command.
+     *
+     * @param gameMasterCommand the command to execute
+     */
     void executeCommand(GameMasterCommand gameMasterCommand);
+
+    /**
+     * Look up a resource ID by its name.
+     *
+     * <p>Resources are uploaded by the client and stored on the server.
+     * This method allows the game master to look up resource IDs for
+     * attaching sprites to entities.
+     *
+     * @param resourceName the name of the resource (e.g., "red-checker")
+     * @return the resource ID, or -1 if not found
+     */
+    default long getResourceIdByName(String resourceName) {
+        return -1; // Default implementation returns not found
+    }
 }

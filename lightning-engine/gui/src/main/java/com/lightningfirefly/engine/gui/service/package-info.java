@@ -49,7 +49,7 @@
  *   matchId: 1
  *   tick: 42
  *   data:
- *     "GameModule":
+ *     "GameFactory":
  *       "POSITION_X": [100, 200, 300]  // Entity 0, 1, 2
  *       "POSITION_Y": [50, 60, 70]     // Entity 0, 1, 2
  *     "PhysicsModule":

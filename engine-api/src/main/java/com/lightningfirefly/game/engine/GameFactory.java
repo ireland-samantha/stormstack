@@ -3,9 +3,9 @@ package com.lightningfirefly.game.engine;
 import java.util.List;
 
 /**
- * A game module defines a complete game that can be installed and run on the engine.
+ * A game factory defines a complete game that can be installed and run on the engine.
  *
- * <p>A game module provides:
+ * <p>A game factory provides:
  * <ul>
  *   <li>Scene setup - attaching sprites, controls, and game master</li>
  *   <li>Resource definitions - textures and other assets</li>
@@ -13,10 +13,10 @@ import java.util.List;
  *   <li>Game master JAR - the game logic to run on the server</li>
  * </ul>
  */
-public interface GameModule {
+public interface GameFactory {
 
     /**
-     * Attach this game module to a scene.
+     * Attach this game to a scene.
      * Called when the game is started to set up sprites, controls, and game master.
      *
      * @param scene the scene to attach to
@@ -51,13 +51,23 @@ public interface GameModule {
     }
 
     /**
-     * Get the game master JAR bytes if this module bundles a game master.
+     * Get the game master JAR bytes if this factory bundles a game master.
      * Return null if the game master is already installed on the server.
      *
      * @return the JAR bytes, or null if not bundled
      */
     default byte[] getGameMasterJar() {
         return null;
+    }
+
+    /**
+     * Get module JARs that need to be uploaded to the server.
+     * Returns a map of module name to JAR bytes.
+     *
+     * @return map of module names to JAR bytes, empty if no custom modules needed
+     */
+    default java.util.Map<String, byte[]> getModuleJars() {
+        return java.util.Map.of();
     }
 
     /**

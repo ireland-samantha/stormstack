@@ -35,7 +35,7 @@ class HttpSnapshotAdapterTest {
     @Test
     void getMatchSnapshot_found() throws Exception {
         when(stringResponse.statusCode()).thenReturn(200);
-        when(stringResponse.body()).thenReturn("{\"matchId\":100,\"tick\":42,\"snapshot\":{\"entities\":[]}}");
+        when(stringResponse.body()).thenReturn("{\"matchId\":100,\"tick\":42,\"data\":{\"entities\":[]}}");
         when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(stringResponse);
 
@@ -72,7 +72,7 @@ class HttpSnapshotAdapterTest {
     @Test
     void getMatchSnapshot_withArraySnapshot() throws Exception {
         when(stringResponse.statusCode()).thenReturn(200);
-        when(stringResponse.body()).thenReturn("{\"matchId\":100,\"tick\":1,\"snapshot\":[{\"id\":1},{\"id\":2}]}");
+        when(stringResponse.body()).thenReturn("{\"matchId\":100,\"tick\":1,\"data\":[{\"id\":1},{\"id\":2}]}");
         when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(stringResponse);
 
@@ -85,7 +85,7 @@ class HttpSnapshotAdapterTest {
     @Test
     void getMatchSnapshot_withNullSnapshot() throws Exception {
         when(stringResponse.statusCode()).thenReturn(200);
-        when(stringResponse.body()).thenReturn("{\"matchId\":100,\"tick\":1,\"snapshot\":null}");
+        when(stringResponse.body()).thenReturn("{\"matchId\":100,\"tick\":1,\"data\":null}");
         when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
                 .thenReturn(stringResponse);
 

@@ -38,6 +38,7 @@
         <module>engine-api</module>
         <module>test-game-module</module>
         <module>game-app</module>
+        <module>examples</module>
     </modules>
 
     <properties>

@@ -3,7 +3,7 @@ package com.lightningfirefly.game.app;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
 import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.GameModule;
+import com.lightningfirefly.game.engine.GameFactory;
 import com.lightningfirefly.game.engine.GameScene;
 import com.lightningfirefly.game.engine.Sprite;
 import org.junit.jupiter.api.*;
@@ -14,6 +14,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -76,7 +77,7 @@ class GameApplicationIT {
         app.initialize();
 
         assertThat(app.getWindow()).isNotNull();
-        assertThat(app.getLoadedGameModule()).isNull();
+        assertThat(app.getLoadedGameFactory()).isNull();
         assertThat(app.isGameInstalled()).isFalse();
         assertThat(app.isGameRunning()).isFalse();
 
@@ -88,14 +89,14 @@ class GameApplicationIT {
 
     @Test
     @DisplayName("Can set game module programmatically")
-    void canSetGameModuleProgrammatically() {
+    void canSetGameFactoryProgrammatically() {
         app = new GameApplication(backendUrl);
         app.initialize();
 
-        TestGameModule module = new TestGameModule();
-        app.setGameModule(module);
+        TestGameFactory module = new TestGameFactory();
+        app.setGameFactory(module);
 
-        assertThat(app.getLoadedGameModule()).isSameAs(module);
+        assertThat(app.getLoadedGameFactory()).isSameAs(module);
         app.getWindow().runFrames(5);
     }
 
@@ -105,8 +106,8 @@ class GameApplicationIT {
         app = new GameApplication(backendUrl);
         app.initialize();
 
-        TestGameModule module = new TestGameModule();
-        app.setGameModule(module);
+        TestGameFactory module = new TestGameFactory();
+        app.setGameFactory(module);
 
         app.getWindow().runFrames(5);
 
@@ -126,8 +127,8 @@ class GameApplicationIT {
         app = new GameApplication(backendUrl);
         app.initialize();
 
-        TestGameModule module = new TestGameModule();
-        app.setGameModule(module);
+        TestGameFactory module = new TestGameFactory();
+        app.setGameFactory(module);
 
         app.getWindow().runFrames(5);
 
@@ -148,8 +149,8 @@ class GameApplicationIT {
         app = new GameApplication(backendUrl);
         app.initialize();
 
-        TestGameModule module = new TestGameModule();
-        app.setGameModule(module);
+        TestGameFactory module = new TestGameFactory();
+        app.setGameFactory(module);
 
         app.getWindow().runFrames(5);
 
@@ -174,8 +175,8 @@ class GameApplicationIT {
         app = new GameApplication(backendUrl);
         app.initialize();
 
-        TestGameModule module = new TestGameModule();
-        app.setGameModule(module);
+        TestGameFactory module = new TestGameFactory();
+        app.setGameFactory(module);
 
         // Install
         app.clickInstall();
@@ -206,7 +207,7 @@ class GameApplicationIT {
 
     @Test
     @DisplayName("Test game module with sprite and controls")
-    void testGameModule_withSpriteAndControls() {
+    void testGameFactory_withSpriteAndControls() {
         Window window = WindowBuilder.create()
                 .size(800, 600)
                 .title("Test Game Module")
@@ -313,6 +314,147 @@ class GameApplicationIT {
         System.out.println("Sprite moved to click position: (" + playerSprite[0].getX() + ", " + playerSprite[0].getY() + ")");
     }
 
+    @Test
+    @DisplayName("Checkers game renders sprites from backend")
+    void checkersGame_renderSpritesFromBackend() throws Exception {
+        app = new GameApplication(backendUrl);
+        app.initialize();
+
+        // Use minimal factory that references the pre-installed CheckersModule and GameMaster
+        // (these are bundled in the Docker image)
+        BackendCheckersFactory checkersFactory = new BackendCheckersFactory();
+        app.setGameFactory(checkersFactory);
+
+        app.getWindow().runFrames(5);
+
+        // Start the game without closing the launcher window
+        app.startGameForTesting();
+
+        assertThat(app.isGameInstalled()).isTrue();
+        assertThat(app.isGameRunning()).isTrue();
+        assertThat(app.getActiveMatchId()).isGreaterThan(0);
+
+        System.out.println("Match ID: " + app.getActiveMatchId());
+
+        // Poll for sprites with retries - server needs time to set up the match
+        // Wait until we have at least 20 sprites (24 pieces expected, allow some tolerance)
+        boolean hasSprites = false;
+        for (int attempt = 0; attempt < 100; attempt++) {
+            app.getWindow().runFrames(5);
+            Thread.sleep(50);
+
+            hasSprites = app.pollAndRenderSnapshot();
+            int spriteCount = app.getRenderedSprites().size();
+            if (spriteCount >= 20) {
+                System.out.println("Found " + spriteCount + " sprites after " + (attempt + 1) + " attempts");
+                break;
+            }
+            if (attempt % 10 == 0) {
+                System.out.println("Attempt " + attempt + ": " + spriteCount + " sprites");
+            }
+        }
+
+        // Get and verify the actual rendered sprites
+        var renderedSprites = app.getRenderedSprites();
+        System.out.println("Rendered sprites count: " + renderedSprites.size());
+
+        // Checkers should have 24 pieces (12 red + 12 black)
+        // Allow for minor timing variations - at least 20 pieces must be present
+        assertThat(hasSprites)
+                .describedAs("Expected sprites to be rendered from backend")
+                .isTrue();
+        assertThat(renderedSprites.size())
+                .describedAs("Expected at least 20 checkers pieces to be rendered (got %d)", renderedSprites.size())
+                .isGreaterThanOrEqualTo(20);
+
+        // Verify each sprite is within visible window bounds (800x800)
+        int windowWidth = app.getWindow().getWidth();
+        int windowHeight = app.getWindow().getHeight();
+        System.out.println("Window size: " + windowWidth + "x" + windowHeight);
+
+        for (var sprite : renderedSprites) {
+            System.out.println("Sprite " + sprite.getId() + " at (" + sprite.getX() + ", " + sprite.getY() +
+                    ") size " + sprite.getSizeX() + "x" + sprite.getSizeY());
+
+            assertThat(sprite.getX())
+                    .describedAs("Sprite %d X should be within window", sprite.getId())
+                    .isGreaterThanOrEqualTo(0)
+                    .isLessThan(windowWidth);
+
+            assertThat(sprite.getY())
+                    .describedAs("Sprite %d Y should be within window", sprite.getId())
+                    .isGreaterThanOrEqualTo(0)
+                    .isLessThan(windowHeight);
+
+            assertThat(sprite.getSizeX())
+                    .describedAs("Sprite %d should have positive width", sprite.getId())
+                    .isGreaterThan(0);
+
+            assertThat(sprite.getSizeY())
+                    .describedAs("Sprite %d should have positive height", sprite.getId())
+                    .isGreaterThan(0);
+        }
+
+        // Run a few more frames to actually render the sprites visually
+        app.getWindow().runFrames(30);
+
+        app.clickStop();
+        assertThat(app.isGameRunning()).isFalse();
+
+        System.out.println("Checkers sprites rendered successfully from backend");
+    }
+
+    /**
+     * Minimal factory that references the pre-installed CheckersModule and GameMaster
+     * in the backend Docker image. Unlike the real CheckersGameFactory, this doesn't
+     * bundle any JARs - it assumes they're already installed on the server.
+     */
+    static class BackendCheckersFactory implements GameFactory {
+        @Override
+        public void attachScene(GameScene scene) {
+            // No control system needed for this test
+        }
+
+        @Override
+        public List<String> getRequiredModules() {
+            return List.of("CheckersModule", "RenderModule");
+        }
+
+        @Override
+        public String getGameMasterName() {
+            return "CheckersGameMaster";
+        }
+
+        @Override
+        public List<GameResource> getResources() {
+            List<GameResource> resources = new ArrayList<>();
+
+            // Load checker textures from test resources
+            byte[] redTexture = loadResource("textures/red-checker.png");
+            if (redTexture != null) {
+                resources.add(new GameResource("red-checker", "TEXTURE", redTexture, "textures/red-checker.png"));
+            }
+
+            byte[] blackTexture = loadResource("textures/black-checker.png");
+            if (blackTexture != null) {
+                resources.add(new GameResource("black-checker", "TEXTURE", blackTexture, "textures/black-checker.png"));
+            }
+
+            return resources;
+        }
+
+        private byte[] loadResource(String path) {
+            try (var is = getClass().getClassLoader().getResourceAsStream(path)) {
+                if (is != null) {
+                    return is.readAllBytes();
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to load resource: " + path + " - " + e.getMessage());
+            }
+            return null;
+        }
+    }
+
     // ========== Helper Methods ==========
 
     private com.lightningfirefly.engine.rendering.render2d.Sprite convertToRenderingSprite(Sprite gameSprite) {
@@ -331,7 +473,7 @@ class GameApplicationIT {
     /**
      * Simple test game module for testing.
      */
-    static class TestGameModule implements GameModule {
+    static class TestGameFactory implements GameFactory {
         @Override
         public void attachScene(GameScene scene) {
             // Empty implementation
@@ -346,7 +488,7 @@ class GameApplicationIT {
     /**
      * Movable square test module with sprite and controls.
      */
-    static class MovableSquareTestModule implements GameModule {
+    static class MovableSquareTestModule implements GameFactory {
         private static final float MOVE_SPEED = 5.0f;
         private static final float SPRITE_SIZE = 64.0f;
         private static final float INITIAL_X = 400.0f;

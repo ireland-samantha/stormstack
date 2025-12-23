@@ -1,6 +1,8 @@
 package com.lightningfirefly.engine.internal.ext.gamemaster;
 
+import com.lightningfirefly.engine.core.command.CommandExecutor;
 import com.lightningfirefly.engine.core.entity.EntityFactory;
+import com.lightningfirefly.engine.core.resources.ResourceManager;
 import com.lightningfirefly.engine.core.store.EntityComponentStore;
 import com.lightningfirefly.engine.ext.module.ModuleContext;
 import com.lightningfirefly.game.gm.GameMaster;
@@ -29,6 +31,8 @@ public class OnDiskGameMasterManager implements GameMasterManager {
     private final Path scanDirectory;
     private final GameMasterFactoryFileLoader factoryFileLoader;
     private final ModuleContext moduleContext;
+    private final CommandExecutor commandExecutor;
+    private final ResourceManager resourceManager;
 
     private final Map<String, GameMasterFactory> factoryCache = new ConcurrentHashMap<>();
     private volatile boolean scanned = false;
@@ -39,13 +43,19 @@ public class OnDiskGameMasterManager implements GameMasterManager {
      * @param scanDirectory the directory to scan for JAR files
      * @param factoryFileLoader the loader for JAR files
      * @param moduleContext the module context for dependency injection
+     * @param commandExecutor the command executor for game master commands
+     * @param resourceManager the resource manager for resource lookup
      */
     public OnDiskGameMasterManager(Path scanDirectory,
                                     GameMasterFactoryFileLoader factoryFileLoader,
-                                    ModuleContext moduleContext) {
+                                    ModuleContext moduleContext,
+                                    CommandExecutor commandExecutor,
+                                    ResourceManager resourceManager) {
         this.scanDirectory = scanDirectory;
         this.factoryFileLoader = factoryFileLoader;
         this.moduleContext = moduleContext;
+        this.commandExecutor = commandExecutor;
+        this.resourceManager = resourceManager;
     }
 
     @Override
@@ -160,6 +170,8 @@ public class OnDiskGameMasterManager implements GameMasterManager {
         DefaultGameMasterContext context = new DefaultGameMasterContext(matchId);
         context.addDependency(EntityComponentStore.class, moduleContext.getEntityComponentStore());
         context.addDependency(EntityFactory.class, moduleContext.getEntityFactory());
+        context.setCommandExecutor(commandExecutor);
+        context.setResourceManager(resourceManager);
 
         try {
             return factory.create(context);

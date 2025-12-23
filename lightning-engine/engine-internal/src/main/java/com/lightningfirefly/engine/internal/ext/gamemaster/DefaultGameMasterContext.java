@@ -1,5 +1,8 @@
 package com.lightningfirefly.engine.internal.ext.gamemaster;
 
+import com.lightningfirefly.engine.core.command.CommandExecutor;
+import com.lightningfirefly.engine.core.command.CommandPayload;
+import com.lightningfirefly.engine.core.resources.ResourceManager;
 import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterCommand;
 import com.lightningfirefly.game.gm.GameMasterContext;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +22,8 @@ public class DefaultGameMasterContext implements GameMasterContext {
     private final long matchId;
     private final AtomicLong currentTick;
     private final Map<Class<?>, Object> dependencies;
+    private CommandExecutor commandExecutor;
+    private ResourceManager resourceManager;
 
     /**
      * Create a new game master context.
@@ -43,8 +48,57 @@ public class DefaultGameMasterContext implements GameMasterContext {
 
     @Override
     public void executeCommand(GameMasterCommand gameMasterCommand) {
-        // command, payload = toEngineCommand(gameMasterCommand);
-        // CommandExecutor.execute(command, payload);
+        if (commandExecutor == null) {
+            log.warn("CommandExecutor not set, cannot execute command: {}", gameMasterCommand.commandName());
+            return;
+        }
+
+        // Convert GameMasterCommand to CommandPayload
+        CommandPayload payload = new GameMasterCommandPayload(gameMasterCommand.payload());
+
+        // Execute the command
+        try {
+            commandExecutor.executeCommand(gameMasterCommand.commandName(), payload);
+        } catch (Exception e) {
+            log.warn("Failed to execute command '{}': {}", gameMasterCommand.commandName(), e.getMessage());
+        }
+    }
+
+    /**
+     * Set the command executor for this context.
+     *
+     * @param commandExecutor the command executor
+     */
+    public void setCommandExecutor(CommandExecutor commandExecutor) {
+        this.commandExecutor = commandExecutor;
+    }
+
+    /**
+     * Set the resource manager for this context.
+     *
+     * @param resourceManager the resource manager
+     */
+    public void setResourceManager(ResourceManager resourceManager) {
+        this.resourceManager = resourceManager;
+    }
+
+    @Override
+    public long getResourceIdByName(String resourceName) {
+        if (resourceManager == null) {
+            log.warn("ResourceManager not set, cannot look up resource: {}", resourceName);
+            return -1;
+        }
+        return resourceManager.getResourceIdByName(resourceName);
+    }
+
+    /**
+     * Internal payload wrapper for GameMasterCommand payloads.
+     */
+    private record GameMasterCommandPayload(Map<String, Object> payload) implements CommandPayload {
+        @Override
+        public Map<String, Object> getPayload() {
+            return payload;
+        }
     }
 
     /**

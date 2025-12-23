@@ -1,17 +1,17 @@
 package com.lightningfirefly.game.engine.orchestrator;
 
-import com.lightningfirefly.game.engine.GameModule;
+import com.lightningfirefly.game.engine.GameFactory;
 
 // orchestrator between the rendering engine and the backend.
 public interface GameOrchestrator {
 
-    void installGame(GameModule module);
+    void installGame(GameFactory factory);
 
 
-    void startGame(GameModule module);
+    void startGame(GameFactory factory);
 
 
-    void stopGame(GameModule module);
+    void stopGame(GameFactory factory);
 
     void registerWatch(WatchedPropertyUpdate watch);
 }

@@ -23,6 +23,15 @@ public interface MatchAdapter {
     MatchResponse createMatch(List<String> enabledModules) throws IOException;
 
     /**
+     * Create a new match with game masters. Match ID is generated server-side.
+     *
+     * @param enabledModules list of enabled module names
+     * @param enabledGameMasters list of enabled game master names
+     * @return the created match response with server-generated ID
+     */
+    MatchResponse createMatchWithGameMasters(List<String> enabledModules, List<String> enabledGameMasters) throws IOException;
+
+    /**
      * Get a match by ID.
      *
      * @param matchId the match ID
@@ -75,9 +84,15 @@ public interface MatchAdapter {
 
         @Override
         public MatchResponse createMatch(List<String> enabledModules) throws IOException {
+            return createMatchWithGameMasters(enabledModules, List.of());
+        }
+
+        @Override
+        public MatchResponse createMatchWithGameMasters(List<String> enabledModules, List<String> enabledGameMasters) throws IOException {
             // Match ID is generated server-side
             String modulesJson = "[" + String.join(",", enabledModules.stream().map(m -> "\"" + m + "\"").toList()) + "]";
-            String json = "{\"enabledModuleNames\":" + modulesJson + "}";
+            String gameMastersJson = "[" + String.join(",", enabledGameMasters.stream().map(m -> "\"" + m + "\"").toList()) + "]";
+            String json = "{\"enabledModuleNames\":" + modulesJson + ",\"enabledGameMasterNames\":" + gameMastersJson + "}";
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/matches"))

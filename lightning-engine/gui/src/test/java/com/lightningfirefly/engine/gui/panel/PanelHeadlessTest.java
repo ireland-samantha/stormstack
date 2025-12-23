@@ -93,7 +93,7 @@ class PanelHeadlessTest {
         void shouldDisplayMatchList() {
             // Given - matches returned from service
             List<MatchInfo> matches = List.of(
-                new MatchInfo(1, List.of("GameModule")),
+                new MatchInfo(1, List.of("GameFactory")),
                 new MatchInfo(2, List.of("AIModule", "PhysicsModule"))
             );
             when(mockMatchService.listMatches()).thenReturn(CompletableFuture.completedFuture(matches));
@@ -197,7 +197,7 @@ class PanelHeadlessTest {
         void shouldDisplaySnapshotData() {
             // Given - snapshot data
             Map<String, Map<String, List<Float>>> data = Map.of(
-                "GameModule", Map.of(
+                "GameFactory", Map.of(
                     "POSITION_X", List.of(100.0f, 200.0f),
                     "POSITION_Y", List.of(50.0f, 60.0f)
                 )
@@ -356,7 +356,7 @@ class PanelHeadlessTest {
         void shouldDisplayModuleList() {
             // Given
             List<ModuleInfo> modules = List.of(
-                new ModuleInfo("GameModule", "PLAYER_FLAG", 5),
+                new ModuleInfo("GameFactory", "PLAYER_FLAG", 5),
                 new ModuleInfo("AIModule", null, 0)
             );
             when(mockModuleService.listModules()).thenReturn(CompletableFuture.completedFuture(modules));

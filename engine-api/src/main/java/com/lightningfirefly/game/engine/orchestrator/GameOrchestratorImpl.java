@@ -5,13 +5,15 @@ import com.lightningfirefly.engine.api.resource.adapter.GameMasterAdapter;
 import com.lightningfirefly.engine.api.resource.adapter.MatchAdapter;
 import com.lightningfirefly.engine.api.resource.adapter.ModuleAdapter;
 import com.lightningfirefly.engine.api.resource.adapter.ResourceAdapter;
+import com.lightningfirefly.engine.api.resource.adapter.SimulationAdapter;
 import com.lightningfirefly.game.domain.SnapshotObserver;
-import com.lightningfirefly.game.engine.GameModule;
+import com.lightningfirefly.game.engine.GameFactory;
 import com.lightningfirefly.game.engine.renderer.GameRenderer;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 /**
@@ -47,12 +50,14 @@ public class GameOrchestratorImpl implements GameOrchestrator {
     private final ModuleAdapter moduleAdapter;
     private final ResourceAdapter resourceAdapter;
     private final GameMasterAdapter gameMasterAdapter;
+    private final SimulationAdapter simulationAdapter;
     private final SnapshotSubscriber snapshotSubscriber;
     private final SnapshotObserver snapshotObserver;
     private final GameRenderer gameRenderer;
 
-    private final Map<GameModule, GameSession> activeSessions = new ConcurrentHashMap<>();
-    private final Map<GameModule, InstallationInfo> installedGames = new ConcurrentHashMap<>();
+    private final Map<GameFactory, GameSession> activeSessions = new ConcurrentHashMap<>();
+    private final ExecutorService tickExecutor;
+    private final Map<GameFactory, InstallationInfo> installedGames = new ConcurrentHashMap<>();
     private final List<WatchedPropertyUpdate> watches = new CopyOnWriteArrayList<>();
 
     // Resource caching
@@ -70,6 +75,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      * @param moduleAdapter      adapter for module operations
      * @param resourceAdapter    adapter for resource operations
      * @param gameMasterAdapter  adapter for game master operations
+     * @param simulationAdapter  adapter for simulation tick operations
      * @param snapshotSubscriber subscriber for real-time snapshots
      * @param gameRenderer       renderer for displaying the game
      */
@@ -78,10 +84,11 @@ public class GameOrchestratorImpl implements GameOrchestrator {
             ModuleAdapter moduleAdapter,
             ResourceAdapter resourceAdapter,
             GameMasterAdapter gameMasterAdapter,
+            SimulationAdapter simulationAdapter,
             SnapshotSubscriber snapshotSubscriber,
             GameRenderer gameRenderer) {
         this(matchAdapter, moduleAdapter, resourceAdapter, gameMasterAdapter,
-                snapshotSubscriber, new SnapshotObserver(), gameRenderer,
+                simulationAdapter, snapshotSubscriber, new SnapshotObserver(), gameRenderer,
                 Path.of(System.getProperty("user.home"), DEFAULT_CACHE_DIR));
     }
 
@@ -92,6 +99,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      * @param moduleAdapter      adapter for module operations
      * @param resourceAdapter    adapter for resource operations
      * @param gameMasterAdapter  adapter for game master operations
+     * @param simulationAdapter  adapter for simulation tick operations
      * @param snapshotSubscriber subscriber for real-time snapshots
      * @param snapshotObserver   observer for domain object updates
      * @param gameRenderer       renderer for displaying the game
@@ -101,11 +109,12 @@ public class GameOrchestratorImpl implements GameOrchestrator {
             ModuleAdapter moduleAdapter,
             ResourceAdapter resourceAdapter,
             GameMasterAdapter gameMasterAdapter,
+            SimulationAdapter simulationAdapter,
             SnapshotSubscriber snapshotSubscriber,
             SnapshotObserver snapshotObserver,
             GameRenderer gameRenderer) {
         this(matchAdapter, moduleAdapter, resourceAdapter, gameMasterAdapter,
-                snapshotSubscriber, snapshotObserver, gameRenderer,
+                simulationAdapter, snapshotSubscriber, snapshotObserver, gameRenderer,
                 Path.of(System.getProperty("user.home"), DEFAULT_CACHE_DIR));
     }
 
@@ -116,6 +125,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      * @param moduleAdapter      adapter for module operations
      * @param resourceAdapter    adapter for resource operations
      * @param gameMasterAdapter  adapter for game master operations
+     * @param simulationAdapter  adapter for simulation tick operations
      * @param snapshotSubscriber subscriber for real-time snapshots
      * @param snapshotObserver   observer for domain object updates
      * @param gameRenderer       renderer for displaying the game
@@ -126,6 +136,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
             ModuleAdapter moduleAdapter,
             ResourceAdapter resourceAdapter,
             GameMasterAdapter gameMasterAdapter,
+            SimulationAdapter simulationAdapter,
             SnapshotSubscriber snapshotSubscriber,
             SnapshotObserver snapshotObserver,
             GameRenderer gameRenderer,
@@ -134,6 +145,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
         this.moduleAdapter = moduleAdapter;
         this.resourceAdapter = resourceAdapter;
         this.gameMasterAdapter = gameMasterAdapter;
+        this.simulationAdapter = simulationAdapter;
         this.snapshotSubscriber = snapshotSubscriber;
         this.snapshotObserver = snapshotObserver;
         this.gameRenderer = gameRenderer;
@@ -143,17 +155,34 @@ public class GameOrchestratorImpl implements GameOrchestrator {
             t.setDaemon(true);
             return t;
         });
+        this.tickExecutor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "TickAdvancer");
+            t.setDaemon(true);
+            return t;
+        });
     }
 
     @Override
-    public void installGame(GameModule module) {
+    public void installGame(GameFactory factory) {
         try {
             Map<String, Long> uploadedResourceIds = new HashMap<>();
             String installedGameMaster = null;
+            List<String> uploadedModules = new ArrayList<>();
 
-            // 1) Upload resources (sprites/textures) to the server
-            List<GameModule.GameResource> resources = module.getResources();
-            for (GameModule.GameResource resource : resources) {
+            // 1) Upload module JARs if provided
+            Map<String, byte[]> moduleJars = factory.getModuleJars();
+            for (Map.Entry<String, byte[]> entry : moduleJars.entrySet()) {
+                String moduleName = entry.getKey();
+                byte[] jarData = entry.getValue();
+                System.out.println("[GameOrchestrator] Uploading module JAR: " + moduleName + " (" + jarData.length + " bytes)");
+                var response = moduleAdapter.uploadModule(moduleName + ".jar", jarData);
+                System.out.println("[GameOrchestrator] Module upload response: " + response);
+                uploadedModules.add(moduleName);
+            }
+
+            // 2) Upload resources (sprites/textures) to the server
+            List<GameFactory.GameResource> resources = factory.getResources();
+            for (GameFactory.GameResource resource : resources) {
                 long resourceId = resourceAdapter.uploadResource(
                         resource.name(),
                         resource.type(),
@@ -162,9 +191,9 @@ public class GameOrchestratorImpl implements GameOrchestrator {
                 uploadedResourceIds.put(resource.texturePath(), resourceId);
             }
 
-            // 2) Upload GameMaster JAR if bundled with the module
-            byte[] gameMasterJar = module.getGameMasterJar();
-            String gameMasterName = module.getGameMasterName();
+            // 3) Upload GameMaster JAR if bundled with the factory
+            byte[] gameMasterJar = factory.getGameMasterJar();
+            String gameMasterName = factory.getGameMasterName();
             if (gameMasterJar != null && gameMasterName != null) {
                 // Only upload if not already installed
                 if (!gameMasterAdapter.hasGameMaster(gameMasterName)) {
@@ -173,12 +202,12 @@ public class GameOrchestratorImpl implements GameOrchestrator {
                 }
             }
 
-            // 3) Track installation for potential cleanup
+            // 4) Track installation for potential cleanup
             InstallationInfo info = new InstallationInfo(
                     uploadedResourceIds,
                     installedGameMaster
             );
-            installedGames.put(module, info);
+            installedGames.put(factory, info);
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to install game", e);
@@ -189,10 +218,10 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      * Uninstall a previously installed game.
      * This removes uploaded resources and game masters from the server.
      *
-     * @param module the game module to uninstall
+     * @param factory the game factory to uninstall
      */
-    public void uninstallGame(GameModule module) {
-        InstallationInfo info = installedGames.remove(module);
+    public void uninstallGame(GameFactory factory) {
+        InstallationInfo info = installedGames.remove(factory);
         if (info == null) {
             return;
         }
@@ -217,72 +246,108 @@ public class GameOrchestratorImpl implements GameOrchestrator {
     }
 
     /**
-     * Check if a game module is installed.
+     * Check if a game factory is installed.
      *
-     * @param module the game module
+     * @param factory the game factory
      * @return true if installed
      */
-    public boolean isGameInstalled(GameModule module) {
-        return installedGames.containsKey(module);
+    public boolean isGameInstalled(GameFactory factory) {
+        return installedGames.containsKey(factory);
     }
 
     /**
      * Get the resource ID mapping for an installed game.
      * Maps texture paths to server resource IDs.
      *
-     * @param module the game module
+     * @param factory the game factory
      * @return the resource ID mapping, or null if not installed
      */
-    public Map<String, Long> getResourceIdMapping(GameModule module) {
-        InstallationInfo info = installedGames.get(module);
+    public Map<String, Long> getResourceIdMapping(GameFactory factory) {
+        InstallationInfo info = installedGames.get(factory);
         return info != null ? info.uploadedResourceIds() : null;
     }
 
     @Override
-    public void startGame(GameModule module) {
+    public void startGame(GameFactory factory) {
         try {
-            // 1) Create a match with the required modules
-            List<String> enabledModules = getRequiredModules(module);
-            MatchAdapter.MatchResponse match = matchAdapter.createMatch(enabledModules);
+            // 1) Create a match with the required modules and game master
+            List<String> enabledModules = getRequiredModules(factory);
+            String gameMasterName = factory.getGameMasterName();
+            List<String> enabledGameMasters = gameMasterName != null
+                    ? List.of(gameMasterName)
+                    : List.of();
+
+            MatchAdapter.MatchResponse match = matchAdapter.createMatchWithGameMasters(
+                    enabledModules, enabledGameMasters);
             long matchId = match.id();
 
             // 2) Subscribe to snapshots and set up SnapshotObserver for domain objects
             Runnable unsubscribe = snapshotSubscriber.subscribe(matchId, this::onSnapshotReceived);
 
-            // 3) Set up the GameRenderer with Snapshots and call to render the game
-            if (gameRenderer != null) {
-                gameRenderer.startAsync(() -> {
-                    // Frame update callback - rendering handled by snapshot subscription
-                });
-            }
+            // Note: GameRenderer is NOT started here - caller is responsible for
+            // starting the renderer on the appropriate thread (main thread on macOS)
+
+            // 3) Start auto-tick advancement in background (default on)
+            var tickFuture = tickExecutor.submit(() -> runTickLoop(matchId));
 
             // Track the session
-            GameSession session = new GameSession(matchId, unsubscribe);
-            activeSessions.put(module, session);
+            GameSession session = new GameSession(matchId, unsubscribe, tickFuture);
+            activeSessions.put(factory, session);
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to start game", e);
         }
     }
 
+    /**
+     * Background loop that advances ticks at a fixed rate.
+     * Runs until the thread is interrupted (when game is stopped).
+     */
+    private void runTickLoop(long matchId) {
+        try {
+            // Initial tick to set up the game
+            simulationAdapter.advanceTick();
+
+            // Continuous tick advancement at ~60Hz
+            while (!Thread.currentThread().isInterrupted()) {
+                Thread.sleep(16); // ~60 FPS
+                try {
+                    simulationAdapter.advanceTick();
+                } catch (IOException e) {
+                    // Log but continue - server may be temporarily unavailable
+                    System.err.println("[TickLoop] Failed to advance tick: " + e.getMessage());
+                }
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } catch (IOException e) {
+            System.err.println("[TickLoop] Failed initial tick: " + e.getMessage());
+        }
+    }
+
     @Override
-    public void stopGame(GameModule module) {
-        GameSession session = activeSessions.remove(module);
+    public void stopGame(GameFactory factory) {
+        GameSession session = activeSessions.remove(factory);
         if (session == null) {
             return;
         }
 
-        // 1) Unsubscribe from snapshots
+        // 1) Stop the tick loop
+        if (session.tickFuture() != null) {
+            session.tickFuture().cancel(true);
+        }
+
+        // 2) Unsubscribe from snapshots
         session.unsubscribe().run();
 
-        // 2) Delete the match
+        // 3) Delete the match
         try {
             matchAdapter.deleteMatch(session.matchId());
         } catch (IOException e) {
             // Log but don't fail - match may already be deleted
         }
 
-        // 3) Stop the renderer and free resources
+        // 4) Stop the renderer and free resources
         if (gameRenderer != null) {
             gameRenderer.stop();
         }
@@ -303,23 +368,23 @@ public class GameOrchestratorImpl implements GameOrchestrator {
     }
 
     /**
-     * Get the current active session for a module.
+     * Get the current active session for a factory.
      *
-     * @param module the game module
+     * @param factory the game factory
      * @return the session, or null if not active
      */
-    public GameSession getSession(GameModule module) {
-        return activeSessions.get(module);
+    public GameSession getSession(GameFactory factory) {
+        return activeSessions.get(factory);
     }
 
     /**
      * Check if a game is currently running.
      *
-     * @param module the game module
+     * @param factory the game factory
      * @return true if the game is active
      */
-    public boolean isGameRunning(GameModule module) {
-        return activeSessions.containsKey(module);
+    public boolean isGameRunning(GameFactory factory) {
+        return activeSessions.containsKey(factory);
     }
 
     /**
@@ -520,6 +585,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      */
     public void shutdown() {
         downloadExecutor.shutdownNow();
+        tickExecutor.shutdownNow();
         clearResourceCache();
     }
 
@@ -588,10 +654,10 @@ public class GameOrchestratorImpl implements GameOrchestrator {
 
     /**
      * Get the list of required module names for a game.
-     * Delegates to the module's getRequiredModules() method.
+     * Delegates to the factory's getRequiredModules() method.
      */
-    protected List<String> getRequiredModules(GameModule module) {
-        return module.getRequiredModules();
+    protected List<String> getRequiredModules(GameFactory factory) {
+        return factory.getRequiredModules();
     }
 
     /**
@@ -614,8 +680,9 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      *
      * @param matchId     the match ID on the server
      * @param unsubscribe runnable to call to unsubscribe from snapshots
+     * @param tickFuture  the future for the tick loop (null if not running)
      */
-    public record GameSession(long matchId, Runnable unsubscribe) {
+    public record GameSession(long matchId, Runnable unsubscribe, Future<?> tickFuture) {
     }
 
     /**
