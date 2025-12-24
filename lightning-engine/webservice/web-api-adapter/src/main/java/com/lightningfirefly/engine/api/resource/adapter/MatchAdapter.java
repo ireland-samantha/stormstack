@@ -87,6 +87,7 @@ public interface MatchAdapter {
             return createMatchWithGameMasters(enabledModules, List.of());
         }
 
+        // todo: use RestTEmplate
         @Override
         public MatchResponse createMatchWithGameMasters(List<String> enabledModules, List<String> enabledGameMasters) throws IOException {
             // Match ID is generated server-side

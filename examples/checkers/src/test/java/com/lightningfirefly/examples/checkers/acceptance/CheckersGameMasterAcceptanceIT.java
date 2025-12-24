@@ -2,6 +2,7 @@ package com.lightningfirefly.examples.checkers.acceptance;
 
 import com.lightningfirefly.examples.checkers.engine.CheckersGameFactory;
 import com.lightningfirefly.game.app.GameApplication;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ./mvnw test -pl examples/checkers -Dtest=CheckersGameMasterAcceptanceIT
  * </pre>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @Tag("opengl")
@@ -63,7 +65,7 @@ class CheckersGameMasterAcceptanceIT {
         String host = backendContainer.getHost();
         Integer port = backendContainer.getMappedPort(BACKEND_PORT);
         backendUrl = String.format("http://%s:%d", host, port);
-        System.out.println("Backend URL: " + backendUrl);
+        log.info("Backend URL: {}", backendUrl);
     }
 
     @AfterEach
@@ -81,10 +83,10 @@ class CheckersGameMasterAcceptanceIT {
     @Test
     @DisplayName("Load CheckersGameFactory, click Install, click Play, render game with sprites")
     void loadGameFactory_clickInstall_clickPlay_renderGame() throws Exception {
-        System.out.println("=== Checkers GameMaster GUI Acceptance Test ===");
+        log.info("=== Checkers GameMaster GUI Acceptance Test ===");
 
         // Step 1: Create GameApplication with backend URL
-        System.out.println("\n[Step 1] Creating GameApplication...");
+        log.info("[Step 1] Creating GameApplication...");
         gameApplication = new GameApplication(backendUrl);
         gameApplication.initialize();
         assertThat(gameApplication.getWindow())
@@ -93,56 +95,56 @@ class CheckersGameMasterAcceptanceIT {
 
         // Run a few frames to verify window works
         gameApplication.getWindow().runFrames(5);
-        System.out.println("Window initialized and rendered frames successfully!");
+        log.info("Window initialized and rendered frames successfully!");
 
         // Step 2: Load CheckersGameFactory directly (simulating JAR load)
-        System.out.println("\n[Step 2] Loading CheckersGameFactory...");
+        log.info("[Step 2] Loading CheckersGameFactory...");
         CheckersGameFactory checkersFactory = new CheckersGameFactory();
         gameApplication.setGameFactory(checkersFactory);
         assertThat(gameApplication.getLoadedGameFactory())
                 .as("Factory should be loaded")
                 .isEqualTo(checkersFactory);
-        System.out.println("Factory loaded successfully!");
+        log.info("Factory loaded successfully!");
 
         gameApplication.getWindow().runFrames(5);
 
         // Step 3: Verify factory provides all required resources
-        System.out.println("\n[Step 3] Verifying factory resources...");
+        log.info("[Step 3] Verifying factory resources...");
         assertThat(checkersFactory.getGameMasterJar())
                 .as("GameMaster JAR should be bundled")
                 .isNotNull()
                 .hasSizeGreaterThan(1000);
-        System.out.println("  GameMaster JAR: " + checkersFactory.getGameMasterJar().length + " bytes");
+        log.debug("  GameMaster JAR: {} bytes", checkersFactory.getGameMasterJar().length);
 
         var moduleJars = checkersFactory.getModuleJars();
         assertThat(moduleJars)
                 .as("Module JARs should be bundled")
                 .containsKey("CheckersModule");
-        System.out.println("  Module JARs: " + moduleJars.keySet());
-        System.out.println("  CheckersModule JAR: " + moduleJars.get("CheckersModule").length + " bytes");
+        log.debug("  Module JARs: {}", moduleJars.keySet());
+        log.debug("  CheckersModule JAR: {} bytes", moduleJars.get("CheckersModule").length);
 
         // Step 4: Click Install button to upload module and gamemaster JARs
-        System.out.println("\n[Step 4] Clicking Install button...");
+        log.info("[Step 4] Clicking Install button...");
         gameApplication.clickInstall();
         gameApplication.getWindow().runFrames(10);
 
         assertThat(gameApplication.isGameInstalled())
                 .as("Game should be installed after clicking Install")
                 .isTrue();
-        System.out.println("Game installed successfully!");
+        log.info("Game installed successfully!");
 
         // Step 5: Start the game (using test method that doesn't close window)
-        System.out.println("\n[Step 5] Starting game for testing...");
+        log.info("[Step 5] Starting game for testing...");
         gameApplication.startGameForTesting();
         gameApplication.getWindow().runFrames(30);
 
         assertThat(gameApplication.isGameRunning())
                 .as("Game should be running after starting")
                 .isTrue();
-        System.out.println("Game running! Match ID: " + gameApplication.getActiveMatchId());
+        log.info("Game running! Match ID: {}", gameApplication.getActiveMatchId());
 
         // Step 6: Poll for snapshot and render sprites
-        System.out.println("\n[Step 6] Polling for snapshot...");
+        log.info("[Step 6] Polling for snapshot...");
 
         // Give the server time to process game start and generate entities
         Thread.sleep(500);
@@ -152,14 +154,14 @@ class CheckersGameMasterAcceptanceIT {
         for (int attempt = 0; attempt < 10 && !hasSprites; attempt++) {
             hasSprites = gameApplication.pollAndRenderSnapshot();
             if (!hasSprites) {
-                System.out.println("  Attempt " + (attempt + 1) + ": no sprites yet");
+                log.debug("  Attempt {}: no sprites yet", attempt + 1);
                 Thread.sleep(200);
                 gameApplication.getWindow().runFrames(10);
             }
         }
 
         var sprites = gameApplication.getWindow().getSprites();
-        System.out.println("  Sprites in window: " + sprites.size());
+        log.info("  Sprites in window: {}", sprites.size());
 
         assertThat(sprites)
                 .as("Window should have checkers pieces rendered as sprites")
@@ -172,13 +174,12 @@ class CheckersGameMasterAcceptanceIT {
 
         // Print sprite details
         for (var sprite : sprites) {
-            System.out.println("  Sprite id=" + sprite.getId() +
-                    " pos=(" + sprite.getX() + ", " + sprite.getY() + ")" +
-                    " size=(" + sprite.getSizeX() + ", " + sprite.getSizeY() + ")");
+            log.debug("  Sprite id={} pos=({}, {}) size=({}, {})",
+                    sprite.getId(), sprite.getX(), sprite.getY(), sprite.getSizeX(), sprite.getSizeY());
         }
 
         // Step 7: Verify sprite positions are on the board
-        System.out.println("\n[Step 7] Verifying sprite positions...");
+        log.info("[Step 7] Verifying sprite positions...");
         for (var sprite : sprites) {
             assertThat(sprite.getX())
                     .as("Sprite X should be on board")
@@ -189,7 +190,7 @@ class CheckersGameMasterAcceptanceIT {
         }
 
         // Step 8: Run more frames to verify stable rendering
-        System.out.println("\n[Step 8] Running additional frames...");
+        log.info("[Step 8] Running additional frames...");
         gameApplication.getWindow().runFrames(30);
 
         // Verify sprites still present after additional frames
@@ -198,7 +199,7 @@ class CheckersGameMasterAcceptanceIT {
                 .as("Sprites should persist after additional frames")
                 .isEqualTo(sprites.size());
 
-        System.out.println("\n=== Checkers GameMaster GUI Acceptance Test PASSED ===");
+        log.info("=== Checkers GameMaster GUI Acceptance Test PASSED ===");
     }
 
     @Test
@@ -235,11 +236,11 @@ class CheckersGameMasterAcceptanceIT {
                 .isNotNull()
                 .hasSizeGreaterThan(1000);
 
-        System.out.println("CheckersGameFactory provides:");
-        System.out.println("  - Required modules: " + factory.getRequiredModules());
-        System.out.println("  - GameMaster name: " + factory.getGameMasterName());
-        System.out.println("  - GameMaster JAR size: " + gameMasterJar.length + " bytes");
-        System.out.println("  - Module JARs: " + moduleJars.keySet());
-        System.out.println("  - CheckersModule JAR size: " + checkersModuleJar.length + " bytes");
+        log.info("CheckersGameFactory provides:");
+        log.debug("  - Required modules: {}", factory.getRequiredModules());
+        log.debug("  - GameMaster name: {}", factory.getGameMasterName());
+        log.debug("  - GameMaster JAR size: {} bytes", gameMasterJar.length);
+        log.debug("  - Module JARs: {}", moduleJars.keySet());
+        log.debug("  - CheckersModule JAR size: {} bytes", checkersModuleJar.length);
     }
 }

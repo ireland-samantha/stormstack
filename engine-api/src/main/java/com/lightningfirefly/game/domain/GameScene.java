@@ -1,6 +1,4 @@
-package com.lightningfirefly.game.engine;
-
-import com.lightningfirefly.game.gm.GameMaster;
+package com.lightningfirefly.game.domain;
 
 import java.util.List;
 

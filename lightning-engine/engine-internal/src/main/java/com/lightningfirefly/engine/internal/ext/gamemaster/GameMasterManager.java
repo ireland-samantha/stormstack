@@ -1,7 +1,7 @@
 package com.lightningfirefly.engine.internal.ext.gamemaster;
 
-import com.lightningfirefly.game.gm.GameMaster;
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterFactory;
+import com.lightningfirefly.game.domain.GameMaster;
+import com.lightningfirefly.game.backend.installation.GameMasterFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;

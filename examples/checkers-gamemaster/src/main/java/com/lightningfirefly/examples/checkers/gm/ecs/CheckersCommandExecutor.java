@@ -1,7 +1,7 @@
 package com.lightningfirefly.examples.checkers.gm.ecs;
 
-import com.lightningfirefly.game.gm.GameMasterContext;
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterCommand;
+import com.lightningfirefly.game.domain.GameMasterContext;
+import com.lightningfirefly.game.backend.adapter.GameMasterCommand;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;

@@ -5,8 +5,8 @@ import com.lightningfirefly.engine.core.entity.EntityFactory;
 import com.lightningfirefly.engine.core.resources.ResourceManager;
 import com.lightningfirefly.engine.core.store.EntityComponentStore;
 import com.lightningfirefly.engine.ext.module.ModuleContext;
-import com.lightningfirefly.game.gm.GameMaster;
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterFactory;
+import com.lightningfirefly.game.domain.GameMaster;
+import com.lightningfirefly.game.backend.installation.GameMasterFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;

@@ -1,5 +1,6 @@
 package com.lightningfirefly.engine.gui.acceptance;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Debug test to isolate the empty snapshot issue.
  * This test uses only REST API calls without GUI.
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @DisplayName("Spawn Snapshot Debug Tests")
@@ -45,17 +47,17 @@ class SpawnSnapshotDebugIT {
         Integer port = backendContainer.getMappedPort(BACKEND_PORT);
         backendUrl = String.format("http://%s:%d", host, port);
         httpClient = HttpClient.newHttpClient();
-        System.out.println("Backend URL: " + backendUrl);
+        log.info("Backend URL: " + backendUrl);
     }
 
     @Test
     @DisplayName("Spawn entity should appear in snapshot")
     void spawnEntity_shouldAppearInSnapshot() throws Exception {
         // Step 1: Create a match with SpawnModule
-        System.out.println("=== Step 1: Create match ===");
+        log.info("=== Step 1: Create match ===");
         String matchBody = "{\"id\":0,\"enabledModuleNames\":[\"SpawnModule\"]}";
         HttpResponse<String> matchResponse = post("/api/matches", matchBody);
-        System.out.println("Create match response: " + matchResponse.statusCode() + " " + matchResponse.body());
+        log.info("Create match response: " + matchResponse.statusCode() + " " + matchResponse.body());
         assertThat(matchResponse.statusCode()).isIn(200, 201);
 
         // Extract match ID from response (format: {"id":N,"enabledModules":[...]})
@@ -65,60 +67,60 @@ class SpawnSnapshotDebugIT {
         int idEnd = matchResponseBody.indexOf(",", idStart);
         if (idEnd == -1) idEnd = matchResponseBody.indexOf("}", idStart);
         long matchId = Long.parseLong(matchResponseBody.substring(idStart, idEnd).trim());
-        System.out.println("Created match ID: " + matchId);
+        log.info("Created match ID: " + matchId);
 
         // Step 2: Check initial snapshot (should be empty or have no entities)
-        System.out.println("\n=== Step 2: Check initial snapshot ===");
+        log.info("\n=== Step 2: Check initial snapshot ===");
         HttpResponse<String> snapshotResponse1 = get("/api/snapshots");
-        System.out.println("Initial snapshot: " + snapshotResponse1.body());
+        log.info("Initial snapshot: " + snapshotResponse1.body());
 
         // Step 3: Send spawn command
-        System.out.println("\n=== Step 3: Send spawn command ===");
+        log.info("\n=== Step 3: Send spawn command ===");
         String spawnBody = String.format(
             "{\"commandName\":\"spawn\",\"payload\":{\"matchId\":%d,\"playerId\":1,\"entityType\":100}}",
             matchId);
         HttpResponse<String> spawnResponse = post("/api/commands", spawnBody);
-        System.out.println("Spawn command response: " + spawnResponse.statusCode() + " " + spawnResponse.body());
+        log.info("Spawn command response: " + spawnResponse.statusCode() + " " + spawnResponse.body());
 
         // Step 4: Tick the simulation
-        System.out.println("\n=== Step 4: Tick simulation ===");
+        log.info("\n=== Step 4: Tick simulation ===");
         HttpResponse<String> tickResponse = post("/api/simulation/tick", "");
-        System.out.println("Tick response: " + tickResponse.statusCode() + " " + tickResponse.body());
+        log.info("Tick response: " + tickResponse.statusCode() + " " + tickResponse.body());
 
         // Step 5: Tick again to ensure command is processed
-        System.out.println("\n=== Step 5: Tick again ===");
+        log.info("\n=== Step 5: Tick again ===");
         HttpResponse<String> tickResponse2 = post("/api/simulation/tick", "");
-        System.out.println("Tick 2 response: " + tickResponse2.statusCode() + " " + tickResponse2.body());
+        log.info("Tick 2 response: " + tickResponse2.statusCode() + " " + tickResponse2.body());
 
         // Step 6: Check snapshot after spawn
-        System.out.println("\n=== Step 6: Check snapshot after spawn ===");
+        log.info("\n=== Step 6: Check snapshot after spawn ===");
         HttpResponse<String> snapshotResponse2 = get("/api/snapshots");
-        System.out.println("Snapshot after spawn: " + snapshotResponse2.body());
+        log.info("Snapshot after spawn: " + snapshotResponse2.body());
 
         // Step 7: Check match-specific snapshot
-        System.out.println("\n=== Step 7: Check match-specific snapshot ===");
+        log.info("\n=== Step 7: Check match-specific snapshot ===");
         HttpResponse<String> matchSnapshotResponse = get("/api/snapshots/match/" + matchId);
-        System.out.println("Match " + matchId + " snapshot: " + matchSnapshotResponse.body());
+        log.info("Match " + matchId + " snapshot: " + matchSnapshotResponse.body());
 
         // Parse and verify the snapshot has entity data
         String snapshotData = snapshotResponse2.body();
         assertThat(snapshotData).as("Snapshot should not have empty modules array").doesNotContain("\"data\":{}");
 
-        System.out.println("\n=== Test completed ===");
+        log.info("\n=== Test completed ===");
     }
 
     @Test
     @DisplayName("Check what modules are available")
     void checkAvailableModules() throws Exception {
         HttpResponse<String> response = get("/api/modules");
-        System.out.println("Available modules: " + response.body());
+        log.info("Available modules: " + response.body());
     }
 
     @Test
     @DisplayName("Check commands available")
     void checkAvailableCommands() throws Exception {
         HttpResponse<String> response = get("/api/commands");
-        System.out.println("Available commands: " + response.body());
+        log.info("Available commands: " + response.body());
     }
 
     @Test
@@ -127,16 +129,16 @@ class SpawnSnapshotDebugIT {
         // This mimics what MatchService does - sends enabledModuleNames without id
         String matchBody = "{\"enabledModuleNames\":[\"SpawnModule\",\"RenderModule\"]}";
         HttpResponse<String> matchResponse = post("/api/matches", matchBody);
-        System.out.println("Create match response: " + matchResponse.statusCode() + " " + matchResponse.body());
+        log.info("Create match response: " + matchResponse.statusCode() + " " + matchResponse.body());
 
         if (matchResponse.statusCode() == 201) {
             // Try to extract match ID
             String body = matchResponse.body();
-            System.out.println("Match created successfully");
+            log.info("Match created successfully");
 
             // Get the match to verify it has correct modules
             HttpResponse<String> matches = get("/api/matches");
-            System.out.println("All matches: " + matches.body());
+            log.info("All matches: " + matches.body());
         }
     }
 

@@ -1,8 +1,6 @@
-package com.lightningfirefly.game.renderer;
+package com.lightningfirefly.game.orchestrator;
 
-import com.lightningfirefly.engine.core.snapshot.Snapshot;
-import com.lightningfirefly.game.engine.Sprite;
-import com.lightningfirefly.game.engine.renderer.GameRenderer;
+import com.lightningfirefly.game.domain.Sprite;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,7 +26,7 @@ import java.util.function.Function;
  * gameRenderer.setSpriteMapper(mapper);
  * }</pre>
  */
-public class SnapshotSpriteMapper implements GameRenderer.SpriteMapper {
+public class SnapshotSpriteMapper implements SpriteMapper {
 
     // Component name configuration
     private String entityIdComponent = "ENTITY_ID";
@@ -146,6 +144,7 @@ public class SnapshotSpriteMapper implements GameRenderer.SpriteMapper {
     public List<Sprite> map(Object snapshotObj) {
         List<Sprite> sprites = new ArrayList<>();
 
+        // todo: add more robust snapshot DTO
         if (!(snapshotObj instanceof Snapshot snapshot)) {
             return sprites;
         }

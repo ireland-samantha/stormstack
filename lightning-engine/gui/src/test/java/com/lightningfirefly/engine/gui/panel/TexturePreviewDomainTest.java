@@ -6,6 +6,7 @@ import com.lightningfirefly.engine.rendering.render2d.Image;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -35,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *     -Dtest=TexturePreviewDomainTest -DenableGLTests=true
  * </pre>
  */
+@Slf4j
 @Tag("integration")
 @Tag("domain")
 @DisplayName("Texture Preview Domain Integration Test")
@@ -65,9 +67,9 @@ class TexturePreviewDomainTest {
         if (uploadedResourceId > 0 && app != null && app.getResourcePanel() != null) {
             try {
                 app.getResourcePanel().getResourceService().deleteResource(uploadedResourceId).get();
-                System.out.println("Cleaned up resource ID: " + uploadedResourceId);
+                log.info("Cleaned up resource ID: " + uploadedResourceId);
             } catch (Exception e) {
-                System.out.println("Failed to clean up resource: " + e.getMessage());
+                log.info("Failed to clean up resource: " + e.getMessage());
             }
         }
 
@@ -84,7 +86,7 @@ class TexturePreviewDomainTest {
     @Test
     @DisplayName("Complete texture preview workflow: upload, preview, verify, delete")
     void completeTexturePreviewWorkflow() throws Exception {
-        System.out.println("=== Starting Texture Preview test with backend: " + backendUrl + " ===");
+        log.info("=== Starting Texture Preview test with backend: " + backendUrl + " ===");
 
         // Initialize the application
         app = new EngineGuiApplication(backendUrl);
@@ -94,10 +96,10 @@ class TexturePreviewDomainTest {
 
         // Run a few frames to let UI initialize
         window.runFrames(5);
-        System.out.println("Window initialized, running frames...");
+        log.info("Window initialized, running frames...");
 
         // ===== STEP 1: Navigate to Resources panel =====
-        System.out.println("=== STEP 1: Navigate to Resources panel ===");
+        log.info("=== STEP 1: Navigate to Resources panel ===");
         clickButton("Resources");
         waitForUpdate(500);
 
@@ -107,19 +109,19 @@ class TexturePreviewDomainTest {
         assertThat(resourcePanel.isVisible()).as("Resource panel should be visible").isTrue();
 
         // ===== STEP 2: Refresh resources to get current list =====
-        System.out.println("=== STEP 2: Refresh resources ===");
+        log.info("=== STEP 2: Refresh resources ===");
         clickButton("Refresh");
         waitForResourcesLoaded();
 
         int initialResourceCount = resourcePanel.getResources().size();
-        System.out.println("Initial resource count: " + initialResourceCount);
+        log.info("Initial resource count: " + initialResourceCount);
 
         // ===== STEP 3: Upload a texture file =====
-        System.out.println("=== STEP 3: Upload texture file ===");
+        log.info("=== STEP 3: Upload texture file ===");
 
         // Get the absolute path to the test texture
         Path texturePath = getTestTexturePath();
-        System.out.println("Uploading texture from: " + texturePath);
+        log.info("Uploading texture from: " + texturePath);
 
         // Set the file path and trigger upload
         resourcePanel.setFilePath(texturePath.toAbsolutePath().toString());
@@ -136,7 +138,7 @@ class TexturePreviewDomainTest {
         waitForResourcesLoaded();
 
         List<ResourceInfo> resourcesAfterUpload = resourcePanel.getResources();
-        System.out.println("Resources after upload: " + resourcesAfterUpload.size());
+        log.info("Resources after upload: " + resourcesAfterUpload.size());
         assertThat(resourcesAfterUpload.size())
             .as("Resource should be uploaded")
             .isGreaterThan(initialResourceCount);
@@ -159,10 +161,10 @@ class TexturePreviewDomainTest {
             .isNotNull();
 
         uploadedResourceId = uploadedResource.id();
-        System.out.println("Uploaded resource ID: " + uploadedResourceId + ", name: " + uploadedResource.name());
+        log.info("Uploaded resource ID: " + uploadedResourceId + ", name: " + uploadedResource.name());
 
         // ===== STEP 4: Select the uploaded resource =====
-        System.out.println("=== STEP 4: Select the uploaded resource ===");
+        log.info("=== STEP 4: Select the uploaded resource ===");
 
         // Find the index of the uploaded resource
         int resourceIndex = -1;
@@ -181,7 +183,7 @@ class TexturePreviewDomainTest {
             .isEqualTo(resourceIndex);
 
         // ===== STEP 5: Click Preview and verify preview panel shows =====
-        System.out.println("=== STEP 5: Preview the texture ===");
+        log.info("=== STEP 5: Preview the texture ===");
 
         // Trigger preview
         resourcePanel.previewSelectedResource();
@@ -198,7 +200,7 @@ class TexturePreviewDomainTest {
 
         // Verify texture name is set
         String textureName = previewPanel.getTextureName();
-        System.out.println("Preview texture name: " + textureName);
+        log.info("Preview texture name: " + textureName);
         assertThat(textureName)
             .as("Texture name should be set")
             .isNotNull()
@@ -206,14 +208,14 @@ class TexturePreviewDomainTest {
 
         // Verify texture path is set
         String texturePathStr = previewPanel.getTexturePath();
-        System.out.println("Preview texture path: " + texturePathStr);
+        log.info("Preview texture path: " + texturePathStr);
         assertThat(texturePathStr)
             .as("Texture path should be set")
             .isNotNull()
             .isNotEmpty();
 
         // ===== STEP 6: Verify the image component is loaded =====
-        System.out.println("=== STEP 6: Verify image is loaded ===");
+        log.info("=== STEP 6: Verify image is loaded ===");
 
         Image previewImage = previewPanel.getPreviewImage();
         assertThat(previewImage)
@@ -229,8 +231,8 @@ class TexturePreviewDomainTest {
             .isTrue();
 
         // Verify the image was actually loaded (deferred loading should complete during render)
-        System.out.println("Image loaded: " + previewImage.isLoaded());
-        System.out.println("Image dimensions: " + previewImage.getImageWidth() + "x" + previewImage.getImageHeight());
+        log.info("Image loaded: " + previewImage.isLoaded());
+        log.info("Image dimensions: " + previewImage.getImageWidth() + "x" + previewImage.getImageHeight());
 
         // After running frames, the deferred loading should have completed
         assertThat(previewImage.isLoaded())
@@ -246,7 +248,7 @@ class TexturePreviewDomainTest {
             .isGreaterThan(0);
 
         // ===== STEP 7: Close the preview =====
-        System.out.println("=== STEP 7: Close the preview ===");
+        log.info("=== STEP 7: Close the preview ===");
 
         // Click the Close button in the preview panel
         clickButton("Close");
@@ -257,7 +259,7 @@ class TexturePreviewDomainTest {
             .isFalse();
 
         // ===== STEP 8: Delete the uploaded resource =====
-        System.out.println("=== STEP 8: Delete the uploaded resource ===");
+        log.info("=== STEP 8: Delete the uploaded resource ===");
 
         // Re-select the resource (selection might have been lost)
         resourcePanel.selectResource(resourceIndex);
@@ -271,7 +273,7 @@ class TexturePreviewDomainTest {
         waitForResourcesLoaded();
 
         List<ResourceInfo> resourcesAfterDelete = resourcePanel.getResources();
-        System.out.println("Resources after delete: " + resourcesAfterDelete.size());
+        log.info("Resources after delete: " + resourcesAfterDelete.size());
 
         boolean resourceStillExists = resourcesAfterDelete.stream()
             .anyMatch(r -> r.id() == uploadedResourceId);
@@ -283,7 +285,7 @@ class TexturePreviewDomainTest {
         // Mark as cleaned up so tearDown doesn't try to delete again
         uploadedResourceId = -1;
 
-        System.out.println("=== TEST PASSED ===");
+        log.info("=== TEST PASSED ===");
     }
 
     // ========== Helper Methods ==========
@@ -321,7 +323,7 @@ class TexturePreviewDomainTest {
             driver.findElement(By.text(text)).click();
             window.runFrames(2);
         } else {
-            System.out.println("WARNING: Button '" + text + "' not found");
+            log.info("WARNING: Button '" + text + "' not found");
         }
     }
 
@@ -339,7 +341,7 @@ class TexturePreviewDomainTest {
             app.getResourcePanel().update();
             window.runFrames(2);
             if (i % 5 == 0) {
-                System.out.println("  Wait iteration " + i + ": " + app.getResourcePanel().getResources().size() + " resources");
+                log.info("  Wait iteration " + i + ": " + app.getResourcePanel().getResources().size() + " resources");
             }
         }
     }

@@ -6,6 +6,7 @@ import com.lightningfirefly.engine.gui.service.SnapshotWebSocketClient.SnapshotD
 import com.lightningfirefly.engine.rendering.render2d.ComponentFactory;
 import com.lightningfirefly.engine.rendering.render2d.TreeNode;
 import com.lightningfirefly.engine.rendering.render2d.TreeView;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Slf4j
 class SnapshotPanelTest {
 
     private ComponentFactory factory;
@@ -283,7 +285,7 @@ class SnapshotPanelTest {
 
         // Check that module nodes are expanded by default
         for (TreeNode moduleNode : matchNode.getChildren()) {
-            System.out.println("Module: " + moduleNode.getLabel() + " (expanded=" + moduleNode.isExpanded() + ")");
+            log.info("Module: " + moduleNode.getLabel() + " (expanded=" + moduleNode.isExpanded() + ")");
 
             // Module nodes should be expanded by default to show entities
             assertThat(moduleNode.isExpanded())
@@ -297,7 +299,7 @@ class SnapshotPanelTest {
 
             for (TreeNode entityNode : moduleNode.getChildren()) {
                 String label = entityNode.getLabel();
-                System.out.println("  Entity: '" + label + "'");
+                log.info("  Entity: '" + label + "'");
 
                 assertThat(label)
                     .as("Entity label should not be null")
@@ -329,7 +331,7 @@ class SnapshotPanelTest {
         String label = node.getLabel();
         String indent = "  ".repeat(depth);
 
-        System.out.println(indent + "'" + label + "' (expanded=" + node.isExpanded() + ", children=" + node.getChildren().size() + ")");
+        log.info(indent + "'" + label + "' (expanded=" + node.isExpanded() + ", children=" + node.getChildren().size() + ")");
 
         assertThat(label)
             .as("Label at depth %d should not be null", depth)

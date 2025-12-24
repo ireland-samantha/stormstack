@@ -1,15 +1,17 @@
-package com.lightningfirefly.game.engine;
+package com.lightningfirefly.game.domain;
 
-import com.lightningfirefly.game.domain.DomainObject;
-import com.lightningfirefly.game.domain.EcsComponent;
-import com.lightningfirefly.game.domain.EcsEntityId;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * A game sprite representing a visual entity in the game world.
  * This is the game-level abstraction that maps to rendering-core sprites.
  */
+@Getter
+@Setter
 public class Sprite extends DomainObject {
 
+    @Getter
     @EcsEntityId
     private final long entityId;
 
@@ -17,12 +19,16 @@ public class Sprite extends DomainObject {
     private long resourceId;
 
     private String texturePath;
+
     private float x;
     private float y;
+
     private float width;
     private float height;
+
     private float rotation;
     private int zIndex;
+
     private boolean visible;
 
     public Sprite(long entityId) {
@@ -35,73 +41,6 @@ public class Sprite extends DomainObject {
         this.rotation = 0;
     }
 
-    public long getEntityId() {
-        return entityId;
-    }
-
-    public String getTexturePath() {
-        return texturePath;
-    }
-
-    public void setTexturePath(String texturePath) {
-        this.texturePath = texturePath;
-    }
-
-    public float getX() {
-        return x;
-    }
-
-    public void setX(float x) {
-        this.x = x;
-    }
-
-    public float getY() {
-        return y;
-    }
-
-    public void setY(float y) {
-        this.y = y;
-    }
-
-    public float getWidth() {
-        return width;
-    }
-
-    public void setWidth(float width) {
-        this.width = width;
-    }
-
-    public float getHeight() {
-        return height;
-    }
-
-    public void setHeight(float height) {
-        this.height = height;
-    }
-
-    public float getRotation() {
-        return rotation;
-    }
-
-    public void setRotation(float rotation) {
-        this.rotation = rotation;
-    }
-
-    public int getZIndex() {
-        return zIndex;
-    }
-
-    public void setZIndex(int zIndex) {
-        this.zIndex = zIndex;
-    }
-
-    public boolean isVisible() {
-        return visible;
-    }
-
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-    }
 
     public void setPosition(float x, float y) {
         this.x = x;

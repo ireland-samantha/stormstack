@@ -2,7 +2,7 @@ package com.lightningfirefly.engine.internal.ext.gamemaster;
 
 import com.lightningfirefly.engine.core.match.Match;
 import com.lightningfirefly.engine.core.match.MatchService;
-import com.lightningfirefly.game.gm.GameMaster;
+import com.lightningfirefly.game.domain.GameMaster;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

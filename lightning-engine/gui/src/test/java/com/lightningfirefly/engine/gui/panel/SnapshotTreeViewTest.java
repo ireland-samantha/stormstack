@@ -7,6 +7,7 @@ import com.lightningfirefly.engine.rendering.render2d.TreeView;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLComponentFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
@@ -23,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ./mvnw test -pl lightning-engine/gui -Dtest=SnapshotTreeViewTest -DenableGLTests=true
  * </pre>
  */
+@Slf4j
 @Tag("integration")
 @DisplayName("Snapshot TreeView Label Tests")
 @EnabledIfSystemProperty(named = "enableGLTests", matches = "true")
@@ -105,7 +107,7 @@ class SnapshotTreeViewTest {
         window.addComponent(treeView);
         window.runFrames(5);
 
-        System.out.println("TreeView labels verified successfully:");
+        log.info("TreeView labels verified successfully:");
         printTreeStructure(rootNode, 0);
     }
 
@@ -149,23 +151,23 @@ class SnapshotTreeViewTest {
         // Navigate to find module and entity labels
         if (!root.getChildren().isEmpty()) {
             TreeNode summary = root.getChildren().get(0);
-            System.out.println("Summary label: " + summary.getLabel());
+            log.info("Summary label: " + summary.getLabel());
             assertThat(summary.getLabel()).contains("Tick: 42");
 
             if (!summary.getChildren().isEmpty()) {
                 TreeNode module = summary.getChildren().get(0);
-                System.out.println("Module label: " + module.getLabel());
+                log.info("Module label: " + module.getLabel());
                 assertThat(module.getLabel()).isEqualTo("MoveModule");
 
                 if (!module.getChildren().isEmpty()) {
                     TreeNode entity = module.getChildren().get(0);
-                    System.out.println("Entity label: " + entity.getLabel());
+                    log.info("Entity label: " + entity.getLabel());
                     assertThat(entity.getLabel()).isEqualTo("Entity 0");
 
                     // Check component labels
                     for (TreeNode component : entity.getChildren()) {
                         String label = component.getLabel();
-                        System.out.println("Component label: " + label);
+                        log.info("Component label: " + label);
                         assertThat(label).isNotNull();
                         assertThat(label).isNotEmpty();
                         assertThat(label).contains(":");
@@ -177,7 +179,7 @@ class SnapshotTreeViewTest {
         // Render more frames to ensure labels display
         window.runFrames(10);
 
-        System.out.println("SnapshotPanel TreeView labels verified successfully");
+        log.info("SnapshotPanel TreeView labels verified successfully");
     }
 
     @Test
@@ -222,7 +224,7 @@ class SnapshotTreeViewTest {
         // Verify all labels are set correctly
         verifyAllLabelsSet(root);
 
-        System.out.println("All tree node labels are set correctly");
+        log.info("All tree node labels are set correctly");
     }
 
     private void verifyAllLabelsSet(TreeNode node) {
@@ -286,19 +288,19 @@ class SnapshotTreeViewTest {
 
         // Verify component labels are set
         for (TreeNode component : entity.getChildren()) {
-            System.out.println("Component visible: " + component.getLabel());
+            log.info("Component visible: " + component.getLabel());
             assertThat(component.getLabel())
                 .as("Component label should contain value")
                 .contains(":");
         }
 
-        System.out.println("Entity nodes are expanded by default - component labels are visible");
+        log.info("Entity nodes are expanded by default - component labels are visible");
     }
 
     private void printTreeStructure(TreeNode node, int depth) {
         String indent = "  ".repeat(depth);
         String expanded = node.isExpanded() ? "[+]" : "[-]";
-        System.out.println(indent + expanded + " '" + node.getLabel() + "' (" + node.getChildren().size() + " children)");
+        log.info(indent + expanded + " '" + node.getLabel() + "' (" + node.getChildren().size() + " children)");
 
         if (node.isExpanded()) {
             for (TreeNode child : node.getChildren()) {

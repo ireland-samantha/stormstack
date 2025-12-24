@@ -1,4 +1,4 @@
-package com.lightningfirefly.game.engine.orchestrator;
+package com.lightningfirefly.game.orchestrator;
 
 import java.util.function.Consumer;
 
@@ -12,7 +12,7 @@ import java.util.function.Consumer;
  * @param entityId the entity ID to watch
  * @param callback the callback to invoke with the new value
  */
-public record WatchedPropertyUpdate(
+public record WatchedDomainPropertyUpdate(
     String ecsPath,
     long entityId,
     Consumer<Float> callback

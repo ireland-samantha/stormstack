@@ -1,9 +1,9 @@
 package com.lightningfirefly.examples.checkers.gm;
 
 import com.lightningfirefly.examples.checkers.gm.domain.CheckersGameMaster;
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterFactory;
-import com.lightningfirefly.game.gm.GameMaster;
-import com.lightningfirefly.game.gm.GameMasterContext;
+import com.lightningfirefly.game.backend.installation.GameMasterFactory;
+import com.lightningfirefly.game.domain.GameMaster;
+import com.lightningfirefly.game.domain.GameMasterContext;
 
 /**
  * Factory for creating CheckersGameMaster instances.

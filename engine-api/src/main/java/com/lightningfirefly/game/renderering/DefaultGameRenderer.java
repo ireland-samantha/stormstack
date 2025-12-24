@@ -1,12 +1,12 @@
-package com.lightningfirefly.game.renderer;
+package com.lightningfirefly.game.renderering;
 
 import com.lightningfirefly.engine.rendering.render2d.KeyInputHandler;
 import com.lightningfirefly.engine.rendering.render2d.SpriteInputHandler;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
-import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.Sprite;
-import com.lightningfirefly.game.engine.renderer.GameRenderer;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.domain.Sprite;
+import com.lightningfirefly.game.orchestrator.SpriteMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;

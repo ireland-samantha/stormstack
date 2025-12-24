@@ -1,7 +1,7 @@
 package com.lightningfirefly.engine.ext.gamemasters;
 
-import com.lightningfirefly.game.gm.GameMaster;
-import com.lightningfirefly.game.gm.GameMasterContext;
+import com.lightningfirefly.game.domain.GameMaster;
+import com.lightningfirefly.game.domain.GameMasterContext;
 import lombok.extern.slf4j.Slf4j;
 
 /**

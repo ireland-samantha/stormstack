@@ -1,9 +1,9 @@
-package com.lightningfirefly.game.renderer;
+package com.lightningfirefly.game.renderering;
 
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowFactory;
-import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.renderer.GameRenderer;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.orchestrator.SpriteMapper;
 
 /**
  * Builder for creating GameRenderer instances.
@@ -29,7 +29,7 @@ public class GameRendererBuilder {
     private int height = 600;
     private String title = "Game";
     private ControlSystem controlSystem;
-    private GameRenderer.SpriteMapper spriteMapper;
+    private SpriteMapper spriteMapper;
     private Window window; // Optional pre-built window
     private WindowFactory windowFactory;
 
@@ -90,7 +90,7 @@ public class GameRendererBuilder {
     /**
      * Set the sprite mapper for converting snapshots to sprites.
      */
-    public GameRendererBuilder spriteMapper(GameRenderer.SpriteMapper spriteMapper) {
+    public GameRendererBuilder spriteMapper(SpriteMapper spriteMapper) {
         this.spriteMapper = spriteMapper;
         return this;
     }

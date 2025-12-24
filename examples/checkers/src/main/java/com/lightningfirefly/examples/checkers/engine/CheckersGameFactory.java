@@ -1,10 +1,11 @@
 package com.lightningfirefly.examples.checkers.engine;
 
-import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.GameFactory;
-import com.lightningfirefly.game.engine.GameScene;
-import com.lightningfirefly.game.engine.Sprite;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.backend.installation.GameFactory;
+import com.lightningfirefly.game.domain.GameScene;
+import com.lightningfirefly.game.domain.Sprite;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -91,13 +92,6 @@ public class CheckersGameFactory implements GameFactory {
         return modules;
     }
 
-    /**
-     * Get the control system for attaching callbacks.
-     */
-    public CheckersControlSystem getControlSystem() {
-        return controlSystem;
-    }
-
     private byte[] loadResource(String path) {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(path)) {
             if (is != null) {
@@ -122,17 +116,15 @@ public class CheckersGameFactory implements GameFactory {
         @Getter
         private Sprite selectedSprite = null;
 
+        /**
+         * -- SETTER --
+         *  Set callback for move requests.
+         */
         // Callback when user requests a move with raw screen coordinates
+        @Setter
         private Consumer<MoveRequest> onMoveRequested;
 
         public CheckersControlSystem() {}
-
-        /**
-         * Set callback for move requests.
-         */
-        public void setOnMoveRequested(Consumer<MoveRequest> callback) {
-            this.onMoveRequested = callback;
-        }
 
         @Override
         public void onSpriteClicked(Sprite sprite, int button) {
@@ -168,9 +160,6 @@ public class CheckersGameFactory implements GameFactory {
             }
         }
 
-        public void clearSelection() {
-            selectedSprite = null;
-        }
     }
 
     /**

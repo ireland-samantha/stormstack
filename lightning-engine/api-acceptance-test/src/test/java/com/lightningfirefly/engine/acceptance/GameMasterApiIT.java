@@ -2,6 +2,7 @@ package com.lightningfirefly.engine.acceptance;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -40,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ./mvnw verify -pl lightning-engine/api-acceptance-test -Pacceptance-tests
  * </pre>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @DisplayName("Game Master API Acceptance Test")
@@ -67,7 +69,7 @@ class GameMasterApiIT {
         String host = backendContainer.getHost();
         Integer port = backendContainer.getMappedPort(BACKEND_PORT);
         baseUrl = String.format("http://%s:%d", host, port);
-        System.out.println("Backend URL from testcontainers: " + baseUrl);
+        log.info("Backend URL from testcontainers: {}", baseUrl);
 
         httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -89,7 +91,7 @@ class GameMasterApiIT {
     @Test
     @DisplayName("GET /api/gamemasters returns list with TickCounter game master")
     void getGameMasters_returnsTickCounterGameMaster() throws Exception {
-        System.out.println("=== Testing GET /api/gamemasters ===");
+        log.info("=== Testing GET /api/gamemasters ===");
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/gamemasters"))
@@ -99,8 +101,8 @@ class GameMasterApiIT {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        System.out.println("Response status: " + response.statusCode());
-        System.out.println("Response body: " + response.body());
+        log.debug("Response status: {}", response.statusCode());
+        log.debug("Response body: {}", response.body());
 
         assertThat(response.statusCode()).isEqualTo(200);
 
@@ -118,13 +120,13 @@ class GameMasterApiIT {
         }
         assertThat(hasTickCounter).as("TickCounter game master should be installed").isTrue();
 
-        System.out.println("=== GET /api/gamemasters test passed ===");
+        log.info("=== GET /api/gamemasters test passed ===");
     }
 
     @Test
     @DisplayName("POST /api/gamemasters/reload reloads game masters")
     void reloadGameMasters_succeeds() throws Exception {
-        System.out.println("=== Testing POST /api/gamemasters/reload ===");
+        log.info("=== Testing POST /api/gamemasters/reload ===");
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/gamemasters/reload"))
@@ -133,25 +135,25 @@ class GameMasterApiIT {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        System.out.println("Response status: " + response.statusCode());
-        System.out.println("Response body: " + response.body());
+        log.debug("Response status: {}", response.statusCode());
+        log.debug("Response body: {}", response.body());
 
         assertThat(response.statusCode()).isEqualTo(200);
 
         JsonNode gameMasters = objectMapper.readTree(response.body());
         assertThat(gameMasters.isArray()).isTrue();
 
-        System.out.println("=== POST /api/gamemasters/reload test passed ===");
+        log.info("=== POST /api/gamemasters/reload test passed ===");
     }
 
     @Test
     @DisplayName("Match with TickCounter game master runs on tick")
     void matchWithTickCounter_executesOnTick() throws Exception {
-        System.out.println("=== Testing TickCounter game master execution per match ===");
+        log.info("=== Testing TickCounter game master execution per match ===");
 
         // Create a match with the TickCounter game master enabled
         createdMatchId = createMatch(List.of("SpawnModule"), List.of("TickCounter"));
-        System.out.println("Created match with TickCounter: " + createdMatchId);
+        log.info("Created match with TickCounter: {}", createdMatchId);
 
         assertThat(createdMatchId).isGreaterThan(0);
 
@@ -159,7 +161,7 @@ class GameMasterApiIT {
         // TickCounter logs every 100 ticks, but we just verify it doesn't crash
         for (int i = 0; i < 5; i++) {
             long tick = advanceTick();
-            System.out.println("Advanced to tick: " + tick);
+            log.debug("Advanced to tick: {}", tick);
         }
 
         // Verify the match still exists and is functional (game master didn't crash)
@@ -178,14 +180,14 @@ class GameMasterApiIT {
         assertThat(enabledGameMasters.size()).isEqualTo(1);
         assertThat(enabledGameMasters.get(0).asText()).isEqualTo("TickCounter");
 
-        System.out.println("Match response: " + matchResponse.body());
-        System.out.println("=== TickCounter game master execution test passed ===");
+        log.debug("Match response: {}", matchResponse.body());
+        log.info("=== TickCounter game master execution test passed ===");
     }
 
     @Test
     @DisplayName("DELETE /api/gamemasters/{name} returns 404 for non-existent game master")
     void deleteNonExistentGameMaster_returns404() throws Exception {
-        System.out.println("=== Testing DELETE /api/gamemasters/NonExistent ===");
+        log.info("=== Testing DELETE /api/gamemasters/NonExistent ===");
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/gamemasters/NonExistentGameMaster"))
@@ -194,18 +196,18 @@ class GameMasterApiIT {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        System.out.println("Response status: " + response.statusCode());
-        System.out.println("Response body: " + response.body());
+        log.debug("Response status: {}", response.statusCode());
+        log.debug("Response body: {}", response.body());
 
         assertThat(response.statusCode()).isEqualTo(404);
 
-        System.out.println("=== DELETE non-existent game master test passed ===");
+        log.info("=== DELETE non-existent game master test passed ===");
     }
 
     @Test
     @DisplayName("GET /api/gamemasters/{name} returns 404 for non-existent game master")
     void getNonExistentGameMaster_returns404() throws Exception {
-        System.out.println("=== Testing GET /api/gamemasters/NonExistent ===");
+        log.info("=== Testing GET /api/gamemasters/NonExistent ===");
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + "/api/gamemasters/NonExistentGameMaster"))
@@ -214,12 +216,12 @@ class GameMasterApiIT {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        System.out.println("Response status: " + response.statusCode());
-        System.out.println("Response body: " + response.body());
+        log.debug("Response status: {}", response.statusCode());
+        log.debug("Response body: {}", response.body());
 
         assertThat(response.statusCode()).isEqualTo(404);
 
-        System.out.println("=== GET non-existent game master test passed ===");
+        log.info("=== GET non-existent game master test passed ===");
     }
 
     // ========== Helper Methods ==========
@@ -236,7 +238,7 @@ class GameMasterApiIT {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("Create match response: status=" + response.statusCode() + ", body=" + response.body());
+        log.debug("Create match response: status={}, body={}", response.statusCode(), response.body());
         assertThat(response.statusCode()).as("Create match should succeed").isEqualTo(201);
 
         JsonNode responseJson = objectMapper.readTree(response.body());

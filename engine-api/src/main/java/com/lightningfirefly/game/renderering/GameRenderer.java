@@ -1,7 +1,8 @@
-package com.lightningfirefly.game.engine.renderer;
+package com.lightningfirefly.game.renderering;
 
-import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.Sprite;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.domain.Sprite;
+import com.lightningfirefly.game.orchestrator.SpriteMapper;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -126,17 +127,4 @@ public interface GameRenderer {
      */
     void dispose();
 
-    /**
-     * Functional interface for mapping snapshots to sprites.
-     */
-    @FunctionalInterface
-    interface SpriteMapper {
-        /**
-         * Convert a snapshot to a list of sprites.
-         *
-         * @param snapshot the ECS snapshot
-         * @return list of sprites to render
-         */
-        List<Sprite> map(Object snapshot);
-    }
 }

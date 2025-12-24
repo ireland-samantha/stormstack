@@ -2,10 +2,12 @@ package com.lightningfirefly.game.app;
 
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
-import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.GameFactory;
-import com.lightningfirefly.game.engine.GameScene;
-import com.lightningfirefly.game.engine.Sprite;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.backend.installation.GameFactory;
+import com.lightningfirefly.game.domain.GameScene;
+import com.lightningfirefly.game.domain.Sprite;
+import com.lightningfirefly.game.domain.GameMaster;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -30,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Test the complete game lifecycle: load, install, play, stop</li>
  * </ul>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @Tag("opengl")
@@ -84,7 +87,7 @@ class GameApplicationIT {
         // Run a few frames to verify window works
         app.getWindow().runFrames(10);
 
-        System.out.println("GameApplication initialized successfully");
+        log.info("GameApplication initialized successfully");
     }
 
     @Test
@@ -118,7 +121,7 @@ class GameApplicationIT {
 
         app.getWindow().runFrames(5);
 
-        System.out.println("Game installed successfully via orchestrator");
+        log.info("Game installed successfully via orchestrator");
     }
 
     @Test
@@ -140,7 +143,7 @@ class GameApplicationIT {
 
         app.getWindow().runFrames(10);
 
-        System.out.println("Game started successfully");
+        log.info("Game started successfully");
     }
 
     @Test
@@ -166,7 +169,7 @@ class GameApplicationIT {
 
         app.getWindow().runFrames(5);
 
-        System.out.println("Game stopped successfully");
+        log.info("Game stopped successfully");
     }
 
     @Test
@@ -202,7 +205,7 @@ class GameApplicationIT {
         app.clickStop();
         assertThat(app.isGameRunning()).isFalse();
 
-        System.out.println("Full game lifecycle test completed");
+        log.info("Full game lifecycle test completed");
     }
 
     @Test
@@ -235,7 +238,7 @@ class GameApplicationIT {
             }
 
             @Override
-            public void attachGm(com.lightningfirefly.game.gm.GameMaster gameMaster) {
+            public void attachGm(GameMaster gameMaster) {
                 // Not used
             }
         });
@@ -267,7 +270,7 @@ class GameApplicationIT {
 
         window.stop();
 
-        System.out.println("Test game module sprite moved to y=" + playerSprite.getY());
+        log.info("Test game module sprite moved to y={}", playerSprite.getY());
     }
 
     @Test
@@ -290,7 +293,7 @@ class GameApplicationIT {
             }
 
             @Override
-            public void attachGm(com.lightningfirefly.game.gm.GameMaster gameMaster) {
+            public void attachGm(GameMaster gameMaster) {
             }
         });
 
@@ -311,7 +314,7 @@ class GameApplicationIT {
         assertThat(playerSprite[0].getX()).isEqualTo(expectedX);
         assertThat(playerSprite[0].getY()).isEqualTo(expectedY);
 
-        System.out.println("Sprite moved to click position: (" + playerSprite[0].getX() + ", " + playerSprite[0].getY() + ")");
+        log.info("Sprite moved to click position: ({}, {})", playerSprite[0].getX(), playerSprite[0].getY());
     }
 
     @Test
@@ -334,7 +337,7 @@ class GameApplicationIT {
         assertThat(app.isGameRunning()).isTrue();
         assertThat(app.getActiveMatchId()).isGreaterThan(0);
 
-        System.out.println("Match ID: " + app.getActiveMatchId());
+        log.info("Match ID: {}", app.getActiveMatchId());
 
         // Poll for sprites with retries - server needs time to set up the match
         // Wait until we have at least 20 sprites (24 pieces expected, allow some tolerance)
@@ -346,17 +349,17 @@ class GameApplicationIT {
             hasSprites = app.pollAndRenderSnapshot();
             int spriteCount = app.getRenderedSprites().size();
             if (spriteCount >= 20) {
-                System.out.println("Found " + spriteCount + " sprites after " + (attempt + 1) + " attempts");
+                log.info("Found {} sprites after {} attempts", spriteCount, attempt + 1);
                 break;
             }
             if (attempt % 10 == 0) {
-                System.out.println("Attempt " + attempt + ": " + spriteCount + " sprites");
+                log.debug("Attempt {}: {} sprites", attempt, spriteCount);
             }
         }
 
         // Get and verify the actual rendered sprites
         var renderedSprites = app.getRenderedSprites();
-        System.out.println("Rendered sprites count: " + renderedSprites.size());
+        log.info("Rendered sprites count: {}", renderedSprites.size());
 
         // Checkers should have 24 pieces (12 red + 12 black)
         // Allow for minor timing variations - at least 20 pieces must be present
@@ -370,11 +373,11 @@ class GameApplicationIT {
         // Verify each sprite is within visible window bounds (800x800)
         int windowWidth = app.getWindow().getWidth();
         int windowHeight = app.getWindow().getHeight();
-        System.out.println("Window size: " + windowWidth + "x" + windowHeight);
+        log.debug("Window size: {}x{}", windowWidth, windowHeight);
 
         for (var sprite : renderedSprites) {
-            System.out.println("Sprite " + sprite.getId() + " at (" + sprite.getX() + ", " + sprite.getY() +
-                    ") size " + sprite.getSizeX() + "x" + sprite.getSizeY());
+            log.debug("Sprite {} at ({}, {}) size {}x{}",
+                    sprite.getId(), sprite.getX(), sprite.getY(), sprite.getSizeX(), sprite.getSizeY());
 
             assertThat(sprite.getX())
                     .describedAs("Sprite %d X should be within window", sprite.getId())
@@ -401,7 +404,7 @@ class GameApplicationIT {
         app.clickStop();
         assertThat(app.isGameRunning()).isFalse();
 
-        System.out.println("Checkers sprites rendered successfully from backend");
+        log.info("Checkers sprites rendered successfully from backend");
     }
 
     /**
@@ -449,7 +452,7 @@ class GameApplicationIT {
                     return is.readAllBytes();
                 }
             } catch (Exception e) {
-                System.out.println("Failed to load resource: " + path + " - " + e.getMessage());
+                log.warn("Failed to load resource: {} - {}", path, e.getMessage());
             }
             return null;
         }

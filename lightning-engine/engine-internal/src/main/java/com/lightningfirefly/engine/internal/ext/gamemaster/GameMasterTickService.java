@@ -2,7 +2,7 @@ package com.lightningfirefly.engine.internal.ext.gamemaster;
 
 import com.lightningfirefly.engine.core.match.Match;
 import com.lightningfirefly.engine.core.match.MatchService;
-import com.lightningfirefly.game.gm.GameMaster;
+import com.lightningfirefly.game.domain.GameMaster;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;

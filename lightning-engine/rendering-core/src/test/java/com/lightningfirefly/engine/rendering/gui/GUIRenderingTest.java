@@ -1,6 +1,7 @@
 package com.lightningfirefly.engine.rendering.gui;
 
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.*;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * UI rendering tests that verify GUI components render correctly.
  * These tests use off-screen rendering and pixel verification.
  */
+@Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class GUIRenderingTest {
 
@@ -24,9 +26,9 @@ class GUIRenderingTest {
             renderer = new GUITestRenderer(400, 300);
             renderer.init();
             rendererAvailable = true;
-            System.out.println("Test renderer initialized. Fonts available: " + renderer.hasFonts());
+            log.info("Test renderer initialized. Fonts available: " + renderer.hasFonts());
         } catch (Exception e) {
-            System.err.println("Could not initialize test renderer (likely no display): " + e.getMessage());
+            log.warn("Could not initialize test renderer (likely no display): " + e.getMessage());
             rendererAvailable = false;
         }
     }

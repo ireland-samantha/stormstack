@@ -1,7 +1,8 @@
-package com.lightningfirefly.game.renderer;
+package com.lightningfirefly.game.renderering;
 
 import com.lightningfirefly.engine.core.snapshot.Snapshot;
-import com.lightningfirefly.game.engine.Sprite;
+import com.lightningfirefly.game.domain.Sprite;
+import com.lightningfirefly.game.orchestrator.SnapshotSpriteMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

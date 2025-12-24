@@ -1,4 +1,4 @@
-package com.lightningfirefly.game.gm;
+package com.lightningfirefly.game.domain;
 
 /**
  * A game master is where you implement game domain-specific logic.

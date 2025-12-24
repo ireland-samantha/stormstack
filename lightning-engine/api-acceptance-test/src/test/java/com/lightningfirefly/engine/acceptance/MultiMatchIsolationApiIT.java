@@ -2,6 +2,7 @@ package com.lightningfirefly.engine.acceptance;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -44,6 +45,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ./mvnw verify -pl lightning-engine/api-acceptance-test -Pacceptance-tests
  * </pre>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @DisplayName("Multi-Match Isolation API Acceptance Test")
@@ -74,7 +76,7 @@ class MultiMatchIsolationApiIT {
         String host = backendContainer.getHost();
         Integer port = backendContainer.getMappedPort(BACKEND_PORT);
         baseUrl = String.format("http://%s:%d", host, port);
-        System.out.println("Backend URL from testcontainers: " + baseUrl);
+        log.info("Backend URL from testcontainers: " + baseUrl);
 
         httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
@@ -104,47 +106,47 @@ class MultiMatchIsolationApiIT {
     @Test
     @DisplayName("Entities created in separate matches are isolated in snapshots")
     void entitiesInSeparateMatchesAreIsolated() throws Exception {
-        System.out.println("=== Starting multi-match isolation API acceptance test ===" );
+        log.info("=== Starting multi-match isolation API acceptance test ===" );
 
         // ===== STEP 1: Create two matches with SpawnModule and MoveModule =====
-        System.out.println("=== STEP 1: Create two matches with SpawnModule and MoveModule ===");
+        log.info("=== STEP 1: Create two matches with SpawnModule and MoveModule ===");
 
         createdMatch1Id = createMatch(List.of(SPAWN_MODULE_NAME, MOVE_MODULE_NAME));
-        System.out.println("Created match 1: " + createdMatch1Id);
+        log.info("Created match 1: " + createdMatch1Id);
 
         createdMatch2Id = createMatch(List.of(SPAWN_MODULE_NAME, MOVE_MODULE_NAME));
-        System.out.println("Created match 2: " + createdMatch2Id);
+        log.info("Created match 2: " + createdMatch2Id);
 
         assertThat(createdMatch1Id).isGreaterThan(0);
         assertThat(createdMatch2Id).isGreaterThan(0);
         assertThat(createdMatch1Id).isNotEqualTo(createdMatch2Id);
 
         // ===== STEP 2: Spawn entities in each match =====
-        System.out.println("=== STEP 2: Spawn entities in each match ===");
+        log.info("=== STEP 2: Spawn entities in each match ===");
 
         // Spawn 2 entities in match 1
         spawnEntity(createdMatch1Id);
         spawnEntity(createdMatch1Id);
-        System.out.println("Spawned 2 entities in match 1");
+        log.info("Spawned 2 entities in match 1");
 
         // Spawn 3 entities in match 2
         spawnEntity(createdMatch2Id);
         spawnEntity(createdMatch2Id);
         spawnEntity(createdMatch2Id);
-        System.out.println("Spawned 3 entities in match 2");
+        log.info("Spawned 3 entities in match 2");
 
         // ===== STEP 3: Advance tick to process spawn commands =====
-        System.out.println("=== STEP 3: Advance tick to process spawn commands ===");
+        log.info("=== STEP 3: Advance tick to process spawn commands ===");
         advanceTick();
         advanceTick();
 
         // ===== STEP 4: Get entity IDs and attach movement =====
-        System.out.println("=== STEP 4: Get entity IDs and attach movement ===");
+        log.info("=== STEP 4: Get entity IDs and attach movement ===");
 
         // Get entity IDs from match 1 snapshot
         JsonNode snapshot1 = getSnapshot(createdMatch1Id);
         List<Long> match1EntityIds = getEntityIds(snapshot1);
-        System.out.println("Match 1 entity IDs: " + match1EntityIds);
+        log.info("Match 1 entity IDs: " + match1EntityIds);
 
         // Attach movement to match 1 entities
         int posX = 100;
@@ -156,7 +158,7 @@ class MultiMatchIsolationApiIT {
         // Get entity IDs from match 2 snapshot
         JsonNode snapshot2 = getSnapshot(createdMatch2Id);
         List<Long> match2EntityIds = getEntityIds(snapshot2);
-        System.out.println("Match 2 entity IDs: " + match2EntityIds);
+        log.info("Match 2 entity IDs: " + match2EntityIds);
 
         // Attach movement to match 2 entities
         posX = 1000;
@@ -166,26 +168,26 @@ class MultiMatchIsolationApiIT {
         }
 
         // ===== STEP 5: Advance tick to process attachMovement commands =====
-        System.out.println("=== STEP 5: Advance tick to process attachMovement commands ===");
+        log.info("=== STEP 5: Advance tick to process attachMovement commands ===");
         long newTick = advanceTick();
-        System.out.println("Advanced to tick: " + newTick);
+        log.info("Advanced to tick: " + newTick);
 
         // ===== STEP 6: Verify snapshot isolation via REST API =====
-        System.out.println("=== STEP 6: Verify snapshot isolation via REST API ===");
+        log.info("=== STEP 6: Verify snapshot isolation via REST API ===");
 
         JsonNode match1Snapshot = getSnapshot(createdMatch1Id);
         JsonNode match2Snapshot = getSnapshot(createdMatch2Id);
 
         // Verify match 1 has exactly 2 entities
         int match1EntityCount = countEntitiesInSnapshot(match1Snapshot, MOVE_MODULE_NAME);
-        System.out.println("Match 1 entity count: " + match1EntityCount);
+        log.info("Match 1 entity count: " + match1EntityCount);
         assertThat(match1EntityCount)
                 .as("Match 1 should have exactly 2 entities")
                 .isEqualTo(2);
 
         // Verify match 2 has exactly 3 entities
         int match2EntityCount = countEntitiesInSnapshot(match2Snapshot, MOVE_MODULE_NAME);
-        System.out.println("Match 2 entity count: " + match2EntityCount);
+        log.info("Match 2 entity count: " + match2EntityCount);
         assertThat(match2EntityCount)
                 .as("Match 2 should have exactly 3 entities")
                 .isEqualTo(3);
@@ -194,19 +196,19 @@ class MultiMatchIsolationApiIT {
         List<Long> match1Positions = getPositionXValues(match1Snapshot, MOVE_MODULE_NAME);
         List<Long> match2Positions = getPositionXValues(match2Snapshot, MOVE_MODULE_NAME);
 
-        System.out.println("Match 1 positions: " + match1Positions);
-        System.out.println("Match 2 positions: " + match2Positions);
+        log.info("Match 1 positions: " + match1Positions);
+        log.info("Match 2 positions: " + match2Positions);
 
         assertThat(match1Positions).containsExactlyInAnyOrder(100L, 200L);
         assertThat(match2Positions).containsExactlyInAnyOrder(1000L, 2000L, 3000L);
 
-        System.out.println("=== API ACCEPTANCE TEST PASSED: Multi-match isolation verified ===");
+        log.info("=== API ACCEPTANCE TEST PASSED: Multi-match isolation verified ===");
     }
 
     @Test
     @DisplayName("WebSocket snapshot updates respect match isolation")
     void webSocketSnapshotUpdatesRespectMatchIsolation() throws Exception {
-        System.out.println("=== Starting WebSocket isolation test ===");
+        log.info("=== Starting WebSocket isolation test ===");
 
         // Create two matches with SpawnModule and MoveModule
         createdMatch1Id = createMatch(List.of(SPAWN_MODULE_NAME, MOVE_MODULE_NAME));
@@ -281,7 +283,7 @@ class MultiMatchIsolationApiIT {
                     .as("WebSocket snapshot should show only match 1's entity")
                     .isEqualTo(1);
 
-            System.out.println("=== WEBSOCKET ISOLATION TEST PASSED ===");
+            log.info("=== WEBSOCKET ISOLATION TEST PASSED ===");
         } finally {
             wsSession.close();
         }

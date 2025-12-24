@@ -1,4 +1,4 @@
-package com.lightningfirefly.game.engine;
+package com.lightningfirefly.game.domain;
 
 /**
  * Interface for handling game input events.

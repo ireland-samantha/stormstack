@@ -1,9 +1,9 @@
 package com.lightningfirefly.testgame;
 
-import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.GameFactory;
-import com.lightningfirefly.game.engine.GameScene;
-import com.lightningfirefly.game.engine.Sprite;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.backend.installation.GameFactory;
+import com.lightningfirefly.game.domain.GameScene;
+import com.lightningfirefly.game.domain.Sprite;
 
 import java.util.List;
 

@@ -15,6 +15,7 @@ import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.ExpectedConditions;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
 import com.lightningfirefly.engine.rendering.testing.GuiElement;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,6 +59,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>These tests are disabled by default (require {@code -DenableGLTests=true}).
  */
+@Slf4j
 @Tag("integration")
 @DisplayName("Engine GUI Integration Tests")
 class EngineGuiIntegrationTest {
@@ -71,10 +73,10 @@ class EngineGuiIntegrationTest {
     static void checkPrerequisites() {
         // Check if we can create OpenGL context
         // This will fail fast if LWJGL is not properly configured
-        System.out.println("Integration test prerequisites check...");
-        System.out.println("  DISPLAY: " + System.getenv("DISPLAY"));
-        System.out.println("  enableGLTests: " + System.getProperty("enableGLTests"));
-        System.out.println("  BACKEND_URL: " + System.getenv("BACKEND_URL"));
+        log.info("Integration test prerequisites check...");
+        log.info("  DISPLAY: " + System.getenv("DISPLAY"));
+        log.info("  enableGLTests: " + System.getProperty("enableGLTests"));
+        log.info("  BACKEND_URL: " + System.getenv("BACKEND_URL"));
     }
 
     @AfterEach
@@ -316,7 +318,7 @@ class EngineGuiIntegrationTest {
             // Dump component tree for debugging
             String tree = driver.dumpComponentTree();
             assertThat(tree).contains("Lightning Engine");
-            System.out.println("Component Tree:\n" + tree);
+            log.info("Component Tree:\n" + tree);
 
             // Run a few frames to verify OpenGL works
             app.getWindow().runFrames(10);

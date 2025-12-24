@@ -1,6 +1,6 @@
 package com.lightningfirefly.game.app;
 
-import com.lightningfirefly.game.engine.GameFactory;
+import com.lightningfirefly.game.backend.installation.GameFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URL;
@@ -16,7 +16,7 @@ import java.util.jar.Manifest;
  * <p>Supports two loading mechanisms:
  * <ol>
  *   <li>Manifest attribute: JAR contains "Game-Factory-Class" attribute pointing to the class</li>
- *   <li>ServiceLoader: JAR provides META-INF/services/com.lightningfirefly.game.engine.GameFactory</li>
+ *   <li>ServiceLoader: JAR provides META-INF/services/com.lightningfirefly.game.backend.installation.GameFactory</li>
  * </ol>
  *
  * <p>Example manifest:

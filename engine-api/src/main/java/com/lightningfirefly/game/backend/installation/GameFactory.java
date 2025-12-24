@@ -1,4 +1,6 @@
-package com.lightningfirefly.game.engine;
+package com.lightningfirefly.game.backend.installation;
+
+import com.lightningfirefly.game.domain.GameScene;
 
 import java.util.List;
 
@@ -21,6 +23,7 @@ public interface GameFactory {
      *
      * @param scene the scene to attach to
      */
+    // todo please remove this if it's not needed
     void attachScene(GameScene scene);
 
     /**
@@ -46,6 +49,7 @@ public interface GameFactory {
      *
      * @return the game master name, or null if no game master is needed
      */
+    // todo use optional instead of null
     default String getGameMasterName() {
         return null;
     }
@@ -56,6 +60,8 @@ public interface GameFactory {
      *
      * @return the JAR bytes, or null if not bundled
      */
+    // todo return empty instead of null
+
     default byte[] getGameMasterJar() {
         return null;
     }

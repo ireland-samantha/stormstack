@@ -8,6 +8,7 @@ import com.lightningfirefly.engine.rendering.render2d.ComponentFactory;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLComponentFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
@@ -27,6 +28,7 @@ import static org.mockito.Mockito.*;
  * ./mvnw test -pl lightning-engine/gui -Dtest=MockedBackendIntegrationTest -DenableGLTests=true
  * </pre>
  */
+@Slf4j
 @Tag("integration")
 @DisplayName("Mocked Backend GUI Integration Tests")
 @EnabledIfSystemProperty(named = "enableGLTests", matches = "true")
@@ -89,7 +91,7 @@ class MockedBackendIntegrationTest {
         assertThat(modules).hasSize(3);
         assertThat(modules).anyMatch(m -> m.name().equals("MoveModule"));
 
-        System.out.println("ServerPanel test passed with mocked modules: " +
+        log.info("ServerPanel test passed with mocked modules: " +
             modules.stream().map(ModuleService.ModuleInfo::name).toList());
     }
 
@@ -138,7 +140,7 @@ class MockedBackendIntegrationTest {
         assertThat(matches.get(0).id()).isEqualTo(1L);
         assertThat(modules).hasSize(1);
 
-        System.out.println("MatchPanel test passed");
+        log.info("MatchPanel test passed");
     }
 
     @Test
@@ -183,7 +185,7 @@ class MockedBackendIntegrationTest {
         assertThat(commands).hasSize(2);
         assertThat(commands).anyMatch(c -> c.name().equals("attachMovement"));
 
-        System.out.println("CommandPanel test passed with commands: " +
+        log.info("CommandPanel test passed with commands: " +
             commands.stream().map(CommandService.CommandInfo::name).toList());
     }
 
@@ -223,28 +225,28 @@ class MockedBackendIntegrationTest {
 
         // Render with serverPanel
         window.runFrames(3);
-        System.out.println("Rendered serverPanel");
+        log.info("Rendered serverPanel");
 
         // Switch to matchPanel
         serverPanel.setVisible(false);
         matchPanel.setVisible(true);
         window.runFrames(3);
-        System.out.println("Rendered matchPanel");
+        log.info("Rendered matchPanel");
 
         // Switch to commandPanel
         matchPanel.setVisible(false);
         commandPanel.setVisible(true);
         window.runFrames(3);
-        System.out.println("Rendered commandPanel");
+        log.info("Rendered commandPanel");
 
         // Switch back
         commandPanel.setVisible(false);
         serverPanel.setVisible(true);
         window.runFrames(3);
-        System.out.println("Rendered serverPanel again");
+        log.info("Rendered serverPanel again");
 
         // If we get here without crashing, test passed
-        System.out.println("Panel switching test passed");
+        log.info("Panel switching test passed");
     }
 
     @Test
@@ -299,6 +301,6 @@ class MockedBackendIntegrationTest {
         assertThat(matchPanel.getMatches()).isEmpty();
         assertThat(commandPanel.getCommands()).isEmpty();
 
-        System.out.println("Empty data test passed - no crashes with empty lists");
+        log.info("Empty data test passed - no crashes with empty lists");
     }
 }

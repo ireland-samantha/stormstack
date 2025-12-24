@@ -1,4 +1,4 @@
-package com.lightningfirefly.game.engine.orchestrator.gm;
+package com.lightningfirefly.game.backend.adapter;
 
 import java.util.Map;
 

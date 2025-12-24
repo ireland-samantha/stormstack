@@ -1,7 +1,7 @@
-package com.lightningfirefly.game.gm;
+package com.lightningfirefly.game.domain;
 
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterCommand;
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterFactory;
+import com.lightningfirefly.game.backend.adapter.GameMasterCommand;
+import com.lightningfirefly.game.backend.installation.GameMasterFactory;
 
 /**
  * Context provided to game masters for interaction with the server.

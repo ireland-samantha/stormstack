@@ -4,17 +4,20 @@ import com.lightningfirefly.engine.api.resource.adapter.GameMasterAdapter;
 import com.lightningfirefly.engine.api.resource.adapter.MatchAdapter;
 import com.lightningfirefly.engine.api.resource.adapter.ModuleAdapter;
 import com.lightningfirefly.engine.api.resource.adapter.ResourceAdapter;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.domain.Sprite;
 import com.lightningfirefly.game.domain.DomainObject;
 import com.lightningfirefly.game.domain.DomainObjectRegistry;
 import com.lightningfirefly.game.domain.EcsComponent;
 import com.lightningfirefly.game.domain.EcsEntityId;
 import com.lightningfirefly.game.domain.SnapshotObserver;
-import com.lightningfirefly.game.engine.GameFactory;
-import com.lightningfirefly.game.engine.orchestrator.GameOrchestratorImpl;
-import com.lightningfirefly.game.engine.GameScene;
-import com.lightningfirefly.game.engine.orchestrator.WatchedPropertyUpdate;
-import com.lightningfirefly.game.engine.renderer.GameRenderer;
+import com.lightningfirefly.game.backend.installation.GameFactory;
+import com.lightningfirefly.game.orchestrator.GameOrchestratorImpl;
+import com.lightningfirefly.game.domain.GameScene;
+import com.lightningfirefly.game.orchestrator.WatchedDomainPropertyUpdate;
+import com.lightningfirefly.game.renderering.GameRenderer;
 
+import com.lightningfirefly.game.orchestrator.SpriteMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -575,7 +578,7 @@ class GameOrchestratorImplTest {
         @DisplayName("should invoke callback when snapshot received")
         void shouldInvokeCallbackOnSnapshot() {
             AtomicReference<Float> receivedValue = new AtomicReference<>();
-            WatchedPropertyUpdate watch = new WatchedPropertyUpdate(
+            WatchedDomainPropertyUpdate watch = new WatchedDomainPropertyUpdate(
                     "MoveModule.POSITION_X",
                     1L,
                     receivedValue::set
@@ -604,7 +607,7 @@ class GameOrchestratorImplTest {
         @DisplayName("should not invoke callback for wrong entity")
         void shouldNotInvokeForWrongEntity() {
             AtomicBoolean called = new AtomicBoolean(false);
-            WatchedPropertyUpdate watch = new WatchedPropertyUpdate(
+            WatchedDomainPropertyUpdate watch = new WatchedDomainPropertyUpdate(
                     "MoveModule.POSITION_X",
                     999L, // Different entity
                     value -> called.set(true)
@@ -632,9 +635,9 @@ class GameOrchestratorImplTest {
             AtomicReference<Float> posX = new AtomicReference<>();
             AtomicReference<Float> posY = new AtomicReference<>();
 
-            orchestrator.registerWatch(new WatchedPropertyUpdate(
+            orchestrator.registerWatch(new WatchedDomainPropertyUpdate(
                     "MoveModule.POSITION_X", 1L, posX::set));
-            orchestrator.registerWatch(new WatchedPropertyUpdate(
+            orchestrator.registerWatch(new WatchedDomainPropertyUpdate(
                     "MoveModule.POSITION_Y", 1L, posY::set));
 
             GameFactory module = new TestGameFactory();
@@ -663,7 +666,7 @@ class GameOrchestratorImplTest {
         @DisplayName("should stop invoking callback after unregister")
         void shouldStopInvoking() {
             AtomicReference<Float> receivedValue = new AtomicReference<>();
-            WatchedPropertyUpdate watch = new WatchedPropertyUpdate(
+            WatchedDomainPropertyUpdate watch = new WatchedDomainPropertyUpdate(
                     "MoveModule.POSITION_X",
                     1L,
                     receivedValue::set
@@ -1019,7 +1022,7 @@ class GameOrchestratorImplTest {
         boolean stopCalled = false;
 
         @Override
-        public void setControlSystem(com.lightningfirefly.game.engine.ControlSystem controlSystem) {
+        public void setControlSystem(ControlSystem controlSystem) {
         }
 
         @Override
@@ -1031,7 +1034,7 @@ class GameOrchestratorImplTest {
         }
 
         @Override
-        public void renderSprites(List<com.lightningfirefly.game.engine.Sprite> sprites) {
+        public void renderSprites(List<Sprite> sprites) {
         }
 
         @Override

@@ -6,6 +6,7 @@ import com.lightningfirefly.engine.gui.service.ResourceService.ResourceInfo;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -34,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Real-time property reflection</li>
  * </ul>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @DisplayName("Sprite Renderer Panel Acceptance Tests")
@@ -102,7 +104,7 @@ class SpriteRendererPanelIT {
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
         assertThat(spritePanel.isVisible()).as("Sprite panel should be visible").isTrue();
 
-        System.out.println("Sprite Renderer panel loaded successfully");
+        log.info("Sprite Renderer panel loaded successfully");
     }
 
     @Test
@@ -134,7 +136,7 @@ class SpriteRendererPanelIT {
         assertThat(spritePanel.getResourceList()).as("Resource list").isNotNull();
         assertThat(spritePanel.getPreviewImage()).as("Preview image").isNotNull();
 
-        System.out.println("All Sprite Renderer UI components verified");
+        log.info("All Sprite Renderer UI components verified");
     }
 
     @Test
@@ -167,7 +169,7 @@ class SpriteRendererPanelIT {
         assertThat(spritePanel.getWidthField().getText()).isEqualTo("64");
         assertThat(spritePanel.getHeightField().getText()).isEqualTo("64");
 
-        System.out.println("Default property values verified");
+        log.info("Default property values verified");
     }
 
     @Test
@@ -211,7 +213,7 @@ class SpriteRendererPanelIT {
         boolean found = resources.stream().anyMatch(r -> r.id() == resourceId);
         assertThat(found).as("Uploaded resource should be in list").isTrue();
 
-        System.out.println("Uploaded PNG resource ID: " + resourceId);
+        log.info("Uploaded PNG resource ID: " + resourceId);
 
         // Cleanup
         spritePanel.getResourceService().deleteResource(resourceId).get();
@@ -261,7 +263,7 @@ class SpriteRendererPanelIT {
             assertThat(spritePanel.getLoadedResourceId()).as("Loaded resource ID").isEqualTo(resourceId);
             assertThat(spritePanel.getLoadedResourceName()).as("Loaded resource name").isNotNull();
 
-            System.out.println("Resource loaded as sprite: " + uploadedResource.name());
+            log.info("Resource loaded as sprite: " + uploadedResource.name());
         } finally {
             // Cleanup
             spritePanel.getResourceService().deleteResource(resourceId).get();
@@ -296,7 +298,7 @@ class SpriteRendererPanelIT {
 
         window.runFrames(10);
 
-        System.out.println("X property changed from " + initialX + " to " + spritePanel.getSpriteX());
+        log.info("X property changed from " + initialX + " to " + spritePanel.getSpriteX());
     }
 
     @Test
@@ -333,11 +335,11 @@ class SpriteRendererPanelIT {
 
         window.runFrames(10);
 
-        System.out.println("All properties updated:");
-        System.out.println("  Position: " + spritePanel.getSpriteX() + ", " + spritePanel.getSpriteY());
-        System.out.println("  Size: " + spritePanel.getSpriteWidth() + "x" + spritePanel.getSpriteHeight());
-        System.out.println("  Rotation: " + spritePanel.getSpriteRotation());
-        System.out.println("  Z-Index: " + spritePanel.getSpriteZIndex());
+        log.info("All properties updated:");
+        log.info("  Position: " + spritePanel.getSpriteX() + ", " + spritePanel.getSpriteY());
+        log.info("  Size: " + spritePanel.getSpriteWidth() + "x" + spritePanel.getSpriteHeight());
+        log.info("  Rotation: " + spritePanel.getSpriteRotation());
+        log.info("  Z-Index: " + spritePanel.getSpriteZIndex());
     }
 
     @Test
@@ -370,7 +372,7 @@ class SpriteRendererPanelIT {
 
         window.runFrames(5);
 
-        System.out.println("Invalid values handled gracefully");
+        log.info("Invalid values handled gracefully");
     }
 
     @Test
@@ -412,7 +414,7 @@ class SpriteRendererPanelIT {
             assertThat(found1).as("First resource should exist").isTrue();
             assertThat(found2).as("Second resource should exist").isTrue();
 
-            System.out.println("Resource list shows " + resources.size() + " texture resources");
+            log.info("Resource list shows " + resources.size() + " texture resources");
         } finally {
             // Cleanup
             spritePanel.getResourceService().deleteResource(resourceId1).get();
@@ -453,7 +455,7 @@ class SpriteRendererPanelIT {
         assertThat(spritePanel.getSpriteX()).isEqualTo(200f);
         assertThat(spritePanel.getSpriteY()).isEqualTo(150f);
 
-        System.out.println("Panel state preserved after switching");
+        log.info("Panel state preserved after switching");
     }
 
     // ========== Helper Methods ==========

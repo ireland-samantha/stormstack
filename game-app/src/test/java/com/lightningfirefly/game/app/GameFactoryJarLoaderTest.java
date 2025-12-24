@@ -1,14 +1,13 @@
 package com.lightningfirefly.game.app;
 
-import com.lightningfirefly.game.engine.GameFactory;
-import com.lightningfirefly.game.engine.GameScene;
+import com.lightningfirefly.game.backend.installation.GameFactory;
+import com.lightningfirefly.game.domain.GameScene;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.FileOutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.jar.Attributes;

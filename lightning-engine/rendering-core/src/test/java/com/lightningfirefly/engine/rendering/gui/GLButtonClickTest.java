@@ -5,6 +5,7 @@ import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLButton;
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLPanel;
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLTreeNode;
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLTreeView;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Comprehensive tests for button click handling.
  */
+@Slf4j
 class GLButtonClickTest {
 
     @Test
@@ -237,9 +239,9 @@ class GLButtonClickTest {
         int connectCenterX = panelX + 10 + 50;  // 70
         int connectCenterY = panelY + 55 + 14;  // 129
 
-        System.out.println("Connect button: x=" + connectButton.getX() + ", y=" + connectButton.getY());
-        System.out.println("Click position: x=" + connectCenterX + ", y=" + connectCenterY);
-        System.out.println("Contains check: " + connectButton.contains(connectCenterX, connectCenterY));
+        log.info("Connect button: x=" + connectButton.getX() + ", y=" + connectButton.getY());
+        log.info("Click position: x=" + connectCenterX + ", y=" + connectCenterY);
+        log.info("Contains check: " + connectButton.contains(connectCenterX, connectCenterY));
 
         panel.onMouseClick(connectCenterX, connectCenterY, 0, 1);
         panel.onMouseClick(connectCenterX, connectCenterY, 0, 0);

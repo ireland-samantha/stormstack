@@ -3,12 +3,13 @@ package com.lightningfirefly.engine.gui.acceptance;
 import com.lightningfirefly.engine.core.snapshot.Snapshot;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
-import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.Sprite;
-import com.lightningfirefly.game.renderer.DefaultGameRenderer;
-import com.lightningfirefly.game.engine.renderer.GameRenderer;
-import com.lightningfirefly.game.renderer.GameRendererBuilder;
-import com.lightningfirefly.game.renderer.SnapshotSpriteMapper;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.domain.Sprite;
+import com.lightningfirefly.game.renderering.DefaultGameRenderer;
+import com.lightningfirefly.game.renderering.GameRenderer;
+import com.lightningfirefly.game.renderering.GameRendererBuilder;
+import com.lightningfirefly.game.orchestrator.SnapshotSpriteMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -47,6 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>-XstartOnFirstThread JVM argument on macOS</li>
  * </ul>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @Tag("opengl")
@@ -117,7 +119,7 @@ class GameRendererIT {
         // Run a few frames to verify window initializes
         gameRenderer.runFrames(5, () -> {});
 
-        System.out.println("OpenGL window created and initialized successfully");
+        log.info("OpenGL window created and initialized successfully");
     }
 
     @Test
@@ -149,7 +151,7 @@ class GameRendererIT {
         assertThat(renderingSprites).hasSize(3);
         assertThat(frameCount.get()).isEqualTo(30);
 
-        System.out.println("Rendered " + renderingSprites.size() + " sprites over " + frameCount.get() + " frames");
+        log.info("Rendered {} sprites over {} frames", renderingSprites.size(), frameCount.get());
     }
 
     @Test
@@ -178,7 +180,7 @@ class GameRendererIT {
         var renderingSprite = window.getSprites().get(0);
         assertThat(renderingSprite.getX()).isGreaterThan(100);
 
-        System.out.println("Sprite moved to x=" + renderingSprite.getX());
+        log.info("Sprite moved to x={}", renderingSprite.getX());
     }
 
     @Test
@@ -187,7 +189,7 @@ class GameRendererIT {
         // Create a match with SpawnModule
         createdMatchId = createMatch(List.of("SpawnModule"));
         assertThat(createdMatchId).isGreaterThan(0);
-        System.out.println("Created match: " + createdMatchId);
+        log.info("Created match: {}", createdMatchId);
 
         // Spawn multiple entities
         for (int i = 0; i < 5; i++) {
@@ -195,12 +197,12 @@ class GameRendererIT {
         }
         tick();
         tick();
-        System.out.println("Spawned 5 entities");
+        log.info("Spawned 5 entities");
 
         // Fetch snapshot
         Snapshot snapshot = fetchSnapshot(createdMatchId);
         assertThat(snapshot).isNotNull();
-        System.out.println("Fetched snapshot with data: " + snapshot.snapshot().keySet());
+        log.debug("Fetched snapshot with data: {}", snapshot.snapshot().keySet());
 
         // Create OpenGL window and renderer
         window = WindowBuilder.create()
@@ -230,8 +232,8 @@ class GameRendererIT {
 
         // Verify rendering completed (sprites may be empty if backend doesn't return position data)
         var renderingSprites = window.getSprites();
-        System.out.println("Rendered " + renderingSprites.size() + " sprites from server snapshot");
-        System.out.println("Render frames completed: " + frameCount.get());
+        log.info("Rendered {} sprites from server snapshot", renderingSprites.size());
+        log.debug("Render frames completed: {}", frameCount.get());
 
         // The test verifies the rendering pipeline works - sprites depend on backend module data
         assertThat(frameCount.get()).isEqualTo(60);
@@ -242,7 +244,7 @@ class GameRendererIT {
     void gameRenderer_withLiveSnapshotUpdates() throws Exception {
         // Create a match
         createdMatchId = createMatch(List.of("SpawnModule", "MoveModule"));
-        System.out.println("Created match with movement: " + createdMatchId);
+        log.info("Created match with movement: {}", createdMatchId);
 
         // Spawn an entity
         spawnEntity(createdMatchId, 100);
@@ -284,7 +286,7 @@ class GameRendererIT {
             }
         });
 
-        System.out.println("Completed live snapshot rendering over " + tickCount.get() + " frames");
+        log.info("Completed live snapshot rendering over {} frames", tickCount.get());
         // Verify rendering completed - sprites depend on backend module configuration
         assertThat(tickCount.get()).isEqualTo(120);
     }
@@ -304,17 +306,17 @@ class GameRendererIT {
             @Override
             public void onKeyPressed(int key) {
                 pressedKeys.add(key);
-                System.out.println("Key pressed: " + key);
+                log.debug("Key pressed: {}", key);
             }
         });
 
         // Run some frames - user can press arrow keys during this time
-        System.out.println("Running for 60 frames - press arrow keys to test input");
+        log.debug("Running for 60 frames - press arrow keys to test input");
         renderer.runFrames(60, () -> {});
 
         // Note: In automated tests, no keys will be pressed
         // This test verifies the control system is properly connected
-        System.out.println("Input test completed. Keys pressed: " + pressedKeys.size());
+        log.info("Input test completed. Keys pressed: {}", pressedKeys.size());
     }
 
     @Test
@@ -349,7 +351,7 @@ class GameRendererIT {
         // Verify z-indexes are set
         assertThat(renderingSprites.stream().mapToInt(s -> s.getZIndex()).max().orElse(-1)).isEqualTo(10);
 
-        System.out.println("Rendered 3 sprites with z-indexes: " +
+        log.info("Rendered 3 sprites with z-indexes: {}",
                 renderingSprites.stream().map(s -> String.valueOf(s.getZIndex())).toList());
     }
 
@@ -383,7 +385,7 @@ class GameRendererIT {
         var ids = window.getSprites().stream().map(s -> s.getId()).toList();
         assertThat(ids).containsExactlyInAnyOrder(1, 3);
 
-        System.out.println("Sprite removal test passed - remaining sprites: " + ids);
+        log.info("Sprite removal test passed - remaining sprites: {}", ids);
     }
 
     // ========== Helper Methods ==========

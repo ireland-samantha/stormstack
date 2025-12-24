@@ -1,4 +1,4 @@
-package com.lightningfirefly.game.engine.orchestrator;
+package com.lightningfirefly.game.orchestrator;
 
 import com.lightningfirefly.engine.api.resource.Resource;
 import com.lightningfirefly.engine.api.resource.adapter.GameMasterAdapter;
@@ -7,8 +7,9 @@ import com.lightningfirefly.engine.api.resource.adapter.ModuleAdapter;
 import com.lightningfirefly.engine.api.resource.adapter.ResourceAdapter;
 import com.lightningfirefly.engine.api.resource.adapter.SimulationAdapter;
 import com.lightningfirefly.game.domain.SnapshotObserver;
-import com.lightningfirefly.game.engine.GameFactory;
-import com.lightningfirefly.game.engine.renderer.GameRenderer;
+import com.lightningfirefly.game.backend.installation.GameFactory;
+import com.lightningfirefly.game.renderering.GameRenderer;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,6 +42,7 @@ import java.util.function.Consumer;
  *   <li>Caches resources (textures) locally for rendering</li>
  * </ul>
  */
+@Slf4j
 public class GameOrchestratorImpl implements GameOrchestrator {
 
     private static final String DEFAULT_CACHE_DIR = ".game-cache";
@@ -58,7 +60,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
     private final Map<GameFactory, GameSession> activeSessions = new ConcurrentHashMap<>();
     private final ExecutorService tickExecutor;
     private final Map<GameFactory, InstallationInfo> installedGames = new ConcurrentHashMap<>();
-    private final List<WatchedPropertyUpdate> watches = new CopyOnWriteArrayList<>();
+    private final List<WatchedDomainPropertyUpdate> watches = new CopyOnWriteArrayList<>();
 
     // Resource caching
     private final Path cacheDirectory;
@@ -174,9 +176,9 @@ public class GameOrchestratorImpl implements GameOrchestrator {
             for (Map.Entry<String, byte[]> entry : moduleJars.entrySet()) {
                 String moduleName = entry.getKey();
                 byte[] jarData = entry.getValue();
-                System.out.println("[GameOrchestrator] Uploading module JAR: " + moduleName + " (" + jarData.length + " bytes)");
+                log.info("Uploading module JAR: {} ({} bytes)", moduleName, jarData.length);
                 var response = moduleAdapter.uploadModule(moduleName + ".jar", jarData);
-                System.out.println("[GameOrchestrator] Module upload response: " + response);
+                log.debug("Module upload response: {}", response);
                 uploadedModules.add(moduleName);
             }
 
@@ -272,13 +274,13 @@ public class GameOrchestratorImpl implements GameOrchestrator {
         try {
             // 1) Create a match with the required modules and game master
             List<String> enabledModules = getRequiredModules(factory);
-            String gameMasterName = factory.getGameMasterName();
-            List<String> enabledGameMasters = gameMasterName != null
-                    ? List.of(gameMasterName)
-                    : List.of();
 
-            MatchAdapter.MatchResponse match = matchAdapter.createMatchWithGameMasters(
-                    enabledModules, enabledGameMasters);
+            String gameMasterName = factory.getGameMasterName();
+            List<String> enabledGameMasters = gameMasterName != null ? List.of(gameMasterName) : List.of();
+
+            // todo: what if the response fails?
+            MatchAdapter.MatchResponse match = matchAdapter.createMatchWithGameMasters(enabledModules, enabledGameMasters);
+
             long matchId = match.id();
 
             // 2) Subscribe to snapshots and set up SnapshotObserver for domain objects
@@ -288,6 +290,8 @@ public class GameOrchestratorImpl implements GameOrchestrator {
             // starting the renderer on the appropriate thread (main thread on macOS)
 
             // 3) Start auto-tick advancement in background (default on)
+
+            // todo - no need to have a tick loop, please remove this logic
             var tickFuture = tickExecutor.submit(() -> runTickLoop(matchId));
 
             // Track the session
@@ -354,7 +358,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
     }
 
     @Override
-    public void registerWatch(WatchedPropertyUpdate watch) {
+    public void registerWatch(WatchedDomainPropertyUpdate watch) {
         watches.add(watch);
     }
 
@@ -363,7 +367,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      *
      * @param watch the watch to remove
      */
-    public void unregisterWatch(WatchedPropertyUpdate watch) {
+    public void unregisterWatch(WatchedDomainPropertyUpdate watch) {
         watches.remove(watch);
     }
 
@@ -403,9 +407,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
         cacheResourcesFromSnapshot(snapshotData);
     }
 
-    /**
-     * Extract RESOURCE_ID values from snapshot and trigger async downloads.
-     */
+    // todo: refactor resource downloading a caching to a helper class
     private void cacheResourcesFromSnapshot(Map<String, Map<String, List<Float>>> snapshotData) {
         if (snapshotData == null) {
             return;
@@ -543,6 +545,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
         return downloadedResourceIds.contains(resourceId);
     }
 
+    //todo: clean up unused methods
     /**
      * Check if a resource download is pending.
      *
@@ -583,6 +586,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
     /**
      * Shutdown the orchestrator and release resources.
      */
+    // todo add to interface, maybe require try with resources
     public void shutdown() {
         downloadExecutor.shutdownNow();
         tickExecutor.shutdownNow();
@@ -592,12 +596,14 @@ public class GameOrchestratorImpl implements GameOrchestrator {
     /**
      * Process all registered watches against the snapshot.
      */
+    // todo rename "watch" to "observable properties"
+    // todo: define proper DTOs for snapshot data
     private void processWatches(Map<String, Map<String, List<Float>>> snapshotData) {
         if (snapshotData == null || watches.isEmpty()) {
             return;
         }
 
-        for (WatchedPropertyUpdate watch : watches) {
+        for (WatchedDomainPropertyUpdate watch : watches) {
             processWatch(watch, snapshotData);
         }
     }
@@ -605,7 +611,7 @@ public class GameOrchestratorImpl implements GameOrchestrator {
     /**
      * Process a single watch against the snapshot.
      */
-    private void processWatch(WatchedPropertyUpdate watch, Map<String, Map<String, List<Float>>> snapshotData) {
+    private void processWatch(WatchedDomainPropertyUpdate watch, Map<String, Map<String, List<Float>>> snapshotData) {
         String ecsPath = watch.ecsPath();
         String[] parts = ecsPath.split("\\.", 2);
         if (parts.length != 2) {
@@ -656,13 +662,16 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      * Get the list of required module names for a game.
      * Delegates to the factory's getRequiredModules() method.
      */
+    // todo: why protected? class should be final.
     protected List<String> getRequiredModules(GameFactory factory) {
         return factory.getRequiredModules();
     }
 
     /**
+     *
      * Interface for subscribing to snapshot updates.
      */
+    // todo: refactor out to a new file
     @FunctionalInterface
     public interface SnapshotSubscriber {
         /**
@@ -682,6 +691,8 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      * @param unsubscribe runnable to call to unsubscribe from snapshots
      * @param tickFuture  the future for the tick loop (null if not running)
      */
+    // todo: refactor out to a new file
+
     public record GameSession(long matchId, Runnable unsubscribe, Future<?> tickFuture) {
     }
 
@@ -691,6 +702,8 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      * @param uploadedResourceIds maps texture paths to server resource IDs
      * @param installedGameMaster the game master name if we installed it, null otherwise
      */
+    // todo: refactor out to a new file
+
     public record InstallationInfo(
             Map<String, Long> uploadedResourceIds,
             String installedGameMaster
@@ -705,6 +718,8 @@ public class GameOrchestratorImpl implements GameOrchestrator {
      * @param status     the download status
      * @param error      the error if failed (null if completed)
      */
+    // todo: refactor out to a new file
+
     public record ResourceDownloadEvent(
             long resourceId,
             Path localPath,

@@ -1,6 +1,7 @@
 package com.lightningfirefly.engine.gui.service;
 
 import com.lightningfirefly.engine.gui.service.ModuleService.ModuleInfo;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *     -Dtest=ModuleServiceIntegrationTest
  * </pre>
  */
+@Slf4j
 @Tag("integration")
 @DisplayName("ModuleService Live Backend Integration Tests")
 @EnabledIfEnvironmentVariable(named = "BACKEND_URL", matches = ".+")
@@ -39,7 +41,7 @@ class ModuleServiceIntegrationTest {
     @Test
     @DisplayName("listModules returns modules from backend")
     void listModules_returnsModulesFromBackend() throws Exception {
-        System.out.println("Testing with backend URL: " + backendUrl);
+        log.info("Testing with backend URL: " + backendUrl);
 
         // Make the async call
         CompletableFuture<List<ModuleInfo>> future = service.listModules();
@@ -47,9 +49,9 @@ class ModuleServiceIntegrationTest {
         // Wait for result with timeout
         List<ModuleInfo> modules = future.get(10, TimeUnit.SECONDS);
 
-        System.out.println("Received " + modules.size() + " modules:");
+        log.info("Received " + modules.size() + " modules:");
         for (ModuleInfo module : modules) {
-            System.out.println("  - " + module.name() +
+            log.info("  - " + module.name() +
                 " (flag=" + module.flagComponent() +
                 ", matches=" + module.enabledMatches() + ")");
         }
@@ -64,9 +66,9 @@ class ModuleServiceIntegrationTest {
             .anyMatch(m -> m.name().equals("MoveModule"));
 
         if (hasMoveModule) {
-            System.out.println("MoveModule found in response");
+            log.info("MoveModule found in response");
         } else {
-            System.out.println("MoveModule NOT found - available: " +
+            log.info("MoveModule NOT found - available: " +
                 modules.stream().map(ModuleInfo::name).toList());
         }
     }
@@ -74,7 +76,7 @@ class ModuleServiceIntegrationTest {
     @Test
     @DisplayName("listModules handles async correctly")
     void listModules_handlesAsyncCorrectly() throws Exception {
-        System.out.println("Testing async behavior...");
+        log.info("Testing async behavior...");
 
         // Track callback execution
         final boolean[] callbackExecuted = {false};
@@ -85,7 +87,7 @@ class ModuleServiceIntegrationTest {
         future.thenAccept(modules -> {
             callbackExecuted[0] = true;
             receivedModules[0] = modules;
-            System.out.println("Async callback executed with " + modules.size() + " modules");
+            log.info("Async callback executed with " + modules.size() + " modules");
         });
 
         // Wait a bit for async
@@ -99,13 +101,13 @@ class ModuleServiceIntegrationTest {
             .as("Modules should have been received")
             .isNotNull();
 
-        System.out.println("Async test passed - callback executed correctly");
+        log.info("Async test passed - callback executed correctly");
     }
 
     @Test
     @DisplayName("Multiple concurrent requests work correctly")
     void multipleConcurrentRequests_workCorrectly() throws Exception {
-        System.out.println("Testing concurrent requests...");
+        log.info("Testing concurrent requests...");
 
         CompletableFuture<List<ModuleInfo>> future1 = service.listModules();
         CompletableFuture<List<ModuleInfo>> future2 = service.listModules();
@@ -115,13 +117,13 @@ class ModuleServiceIntegrationTest {
         List<ModuleInfo> result2 = future2.get(10, TimeUnit.SECONDS);
         List<ModuleInfo> result3 = future3.get(10, TimeUnit.SECONDS);
 
-        System.out.println("Request 1: " + result1.size() + " modules");
-        System.out.println("Request 2: " + result2.size() + " modules");
-        System.out.println("Request 3: " + result3.size() + " modules");
+        log.info("Request 1: " + result1.size() + " modules");
+        log.info("Request 2: " + result2.size() + " modules");
+        log.info("Request 3: " + result3.size() + " modules");
 
         assertThat(result1.size()).isEqualTo(result2.size());
         assertThat(result2.size()).isEqualTo(result3.size());
 
-        System.out.println("Concurrent requests test passed");
+        log.info("Concurrent requests test passed");
     }
 }

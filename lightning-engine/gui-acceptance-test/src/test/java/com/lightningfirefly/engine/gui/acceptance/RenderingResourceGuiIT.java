@@ -8,6 +8,7 @@ import com.lightningfirefly.engine.gui.service.SnapshotWebSocketClient.SnapshotD
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Verifying the snapshot contains RESOURCE_ID with correct value</li>
  * </ol>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @DisplayName("Rendering Resource GUI Acceptance Tests")
@@ -144,7 +146,7 @@ class RenderingResourceGuiIT {
                 .anyMatch(m -> m.name().equals("RenderModule"));
         assertThat(hasRenderModule).as("RenderModule should be available").isTrue();
 
-        System.out.println("Available modules: " +
+        log.info("Available modules: " +
                 modules.stream().map(m -> m.name()).toList());
     }
 
@@ -172,7 +174,7 @@ class RenderingResourceGuiIT {
                 .anyMatch(c -> c.name().equals("attachSprite"));
         assertThat(hasAttachResource).as("attachSprite command should be available").isTrue();
 
-        System.out.println("Available commands: " +
+        log.info("Available commands: " +
                 commands.stream().map(c -> c.name()).toList());
     }
 
@@ -189,32 +191,32 @@ class RenderingResourceGuiIT {
         // Step 1: Create a match with SpawnModule and RenderModule
         createdMatchId = createMatchWithModules("SpawnModule", "RenderModule");
         assertThat(createdMatchId).as("Match should be created").isGreaterThan(0);
-        System.out.println("Created match with ID: " + createdMatchId);
+        log.info("Created match with ID: " + createdMatchId);
 
         // Step 2: Upload a texture resource
         uploadedResourceId = uploadTexture();
         assertThat(uploadedResourceId).as("Resource should be uploaded").isGreaterThan(0);
-        System.out.println("Uploaded resource with ID: " + uploadedResourceId);
+        log.info("Uploaded resource with ID: " + uploadedResourceId);
 
         // Step 3: Spawn an entity
         sendSpawnCommand(createdMatchId);
-        System.out.println("Sent spawn command");
+        log.info("Sent spawn command");
 
         // Step 4: Tick to process spawn
         tickSimulation();
         tickSimulation();  // Extra tick to ensure command is processed
-        System.out.println("Ticked simulation after spawn");
+        log.info("Ticked simulation after spawn");
 
         // Step 5: Get entity ID from snapshot and send attachResource command
         long entityId = getEntityIdFromSnapshot(createdMatchId);
-        System.out.println("Found entity ID: " + entityId);
+        log.info("Found entity ID: " + entityId);
         sendAttachSpriteCommand(entityId, uploadedResourceId);
-        System.out.println("Sent attachResource command");
+        log.info("Sent attachResource command");
 
         // Step 6: Tick to process attachResource
         tickSimulation();
         tickSimulation();  // Extra tick to ensure command is processed
-        System.out.println("Ticked simulation after attachResource");
+        log.info("Ticked simulation after attachResource");
 
         // Step 7: Navigate to snapshot view and verify
         clickButton("Snapshot");
@@ -226,8 +228,8 @@ class RenderingResourceGuiIT {
         waitForSnapshotLoaded();
 
         // Verify we can see the snapshot data
-        System.out.println("Snapshot panel is visible: " + snapshotPanel.isVisible());
-        System.out.println("Snapshot received - workflow completed successfully");
+        log.info("Snapshot panel is visible: " + snapshotPanel.isVisible());
+        log.info("Snapshot received - workflow completed successfully");
     }
 
     @Test
@@ -251,7 +253,7 @@ class RenderingResourceGuiIT {
         tickSimulation();
         tickSimulation();  // Extra tick to ensure command is processed
         long entityId = getEntityIdFromSnapshot(createdMatchId);
-        System.out.println("Found entity ID: " + entityId);
+        log.info("Found entity ID: " + entityId);
         sendAttachSpriteCommand(entityId, uploadedResourceId);
         tickSimulation();
         tickSimulation();  // Extra tick to ensure command is processed
@@ -267,7 +269,7 @@ class RenderingResourceGuiIT {
         // The snapshot panel should show the entity tree
         assertThat(snapshotPanel.isVisible()).as("Snapshot panel should be visible").isTrue();
 
-        System.out.println("Snapshot panel showing match " + createdMatchId);
+        log.info("Snapshot panel showing match " + createdMatchId);
     }
 
     @Test
@@ -282,11 +284,11 @@ class RenderingResourceGuiIT {
 
         // Create match with RenderModule
         createdMatchId = createMatchWithModules("SpawnModule", "RenderModule");
-        System.out.println("Created match with ID: " + createdMatchId);
+        log.info("Created match with ID: " + createdMatchId);
 
         // Upload texture
         uploadedResourceId = uploadTexture();
-        System.out.println("Uploaded resource with ID: " + uploadedResourceId);
+        log.info("Uploaded resource with ID: " + uploadedResourceId);
 
         // Spawn entity, tick, attach resource
         sendSpawnCommand(createdMatchId);
@@ -316,11 +318,11 @@ class RenderingResourceGuiIT {
             window.runFrames(3);
 
             var matches = renderingPanel.getRenderableMatches();
-            System.out.println("Iteration " + i + ": Found " + matches.size() + " renderable matches");
+            log.info("Iteration " + i + ": Found " + matches.size() + " renderable matches");
 
             if (matches.contains(createdMatchId)) {
                 foundMatch = true;
-                System.out.println("Found our match " + createdMatchId + " in renderable matches list");
+                log.info("Found our match " + createdMatchId + " in renderable matches list");
                 break;
             }
         }
@@ -358,13 +360,13 @@ class RenderingResourceGuiIT {
             window.runFrames(3);
 
             var visualEntities = vizPanel.getVisualEntities();
-            System.out.println("Visualization iteration " + i + ": Found " + visualEntities.size() + " visual entities");
+            log.info("Visualization iteration " + i + ": Found " + visualEntities.size() + " visual entities");
 
             if (!visualEntities.isEmpty()) {
                 foundEntities = true;
                 // Verify entity has the correct resource
                 for (var ve : visualEntities) {
-                    System.out.println("  Visual Entity: entityId=" + ve.entityId +
+                    log.info("  Visual Entity: entityId=" + ve.entityId +
                             ", resourceId=" + ve.resourceId +
                             ", positionX=" + ve.positionX + ", positionY=" + ve.positionY +
                             ", hasPosition=" + ve.hasPosition);
@@ -382,7 +384,7 @@ class RenderingResourceGuiIT {
 
         assertThat(foundEntities).as("Visualization panel should load entities").isTrue();
 
-        System.out.println("Renderable Matches section test with Visualization completed successfully");
+        log.info("Renderable Matches section test with Visualization completed successfully");
     }
 
     @Test
@@ -397,11 +399,11 @@ class RenderingResourceGuiIT {
 
         // Create match with RenderModule
         createdMatchId = createMatchWithModules("SpawnModule", "RenderModule");
-        System.out.println("Created match with ID: " + createdMatchId);
+        log.info("Created match with ID: " + createdMatchId);
 
         // Upload texture
         uploadedResourceId = uploadTexture();
-        System.out.println("Uploaded resource with ID: " + uploadedResourceId);
+        log.info("Uploaded resource with ID: " + uploadedResourceId);
 
         // Spawn entity
         sendSpawnCommand(createdMatchId);
@@ -410,13 +412,13 @@ class RenderingResourceGuiIT {
 
         // Get the entity ID from snapshot
         long entityId = getEntityIdFromSnapshot(createdMatchId);
-        System.out.println("Spawned entity ID: " + entityId);
+        log.info("Spawned entity ID: " + entityId);
 
         // Attach resource to the spawned entity
         sendAttachSpriteCommand(entityId, uploadedResourceId);
         tickSimulation();
         tickSimulation();  // Extra tick to ensure command is processed
-        System.out.println("Entity spawned and resource attached");
+        log.info("Entity spawned and resource attached");
 
         // Navigate to Rendering panel
         clickButton("Rendering");
@@ -437,12 +439,12 @@ class RenderingResourceGuiIT {
             window.runFrames(3);
 
             var entities = renderingPanel.getEntities();
-            System.out.println("Iteration " + i + ": Found " + entities.size() + " entities in rendering panel");
+            log.info("Iteration " + i + ": Found " + entities.size() + " entities in rendering panel");
 
             if (!entities.isEmpty()) {
                 // Log all entities for debugging
                 for (var entity : entities) {
-                    System.out.println("  Entity: matchId=" + entity.matchId() +
+                    log.info("  Entity: matchId=" + entity.matchId() +
                             ", entityId=" + entity.entityId() +
                             ", resourceId=" + entity.resourceId());
                 }
@@ -450,7 +452,7 @@ class RenderingResourceGuiIT {
                 // Verify entity with our resource is present
                 for (var entity : entities) {
                     if (entity.resourceId() == uploadedResourceId && entity.matchId() == createdMatchId) {
-                        System.out.println("Found our entity with resource ID " + uploadedResourceId +
+                        log.info("Found our entity with resource ID " + uploadedResourceId +
                                 " in match " + entity.matchId());
                         foundEntity = true;
                         break;
@@ -485,7 +487,7 @@ class RenderingResourceGuiIT {
         // Select the entity programmatically
         renderingPanel.selectEntity(entityIndex);
         window.runFrames(3);
-        System.out.println("Selected entity at index " + entityIndex);
+        log.info("Selected entity at index " + entityIndex);
 
         // Click Preview Texture button
         clickButton("Preview Texture");
@@ -499,9 +501,9 @@ class RenderingResourceGuiIT {
 
             if (previewPanel.isVisible()) {
                 previewShown = true;
-                System.out.println("Preview panel is now visible");
-                System.out.println("Preview texture name: " + previewPanel.getTextureName());
-                System.out.println("Preview texture path: " + previewPanel.getTexturePath());
+                log.info("Preview panel is now visible");
+                log.info("Preview texture name: " + previewPanel.getTextureName());
+                log.info("Preview texture path: " + previewPanel.getTexturePath());
                 break;
             }
         }
@@ -510,7 +512,7 @@ class RenderingResourceGuiIT {
         assertThat(previewShown).as("Preview panel should become visible after clicking Preview Texture").isTrue();
         assertThat(previewPanel.getTexturePath()).as("Preview should have a texture path").isNotNull();
 
-        System.out.println("Rendering panel preview test completed successfully");
+        log.info("Rendering panel preview test completed successfully");
     }
 
 
@@ -528,19 +530,19 @@ class RenderingResourceGuiIT {
         // Select the required modules
         for (String moduleName : moduleNames) {
             int index = findModuleIndex(modules, moduleName);
-            System.out.println("Selecting module '" + moduleName + "' at index " + index);
+            log.info("Selecting module '" + moduleName + "' at index " + index);
             if (index >= 0) {
                 matchPanel.selectModule(index);
                 window.runFrames(2);
-                System.out.println("  After selectModule, selectedModuleNames: " + matchPanel.getSelectedModuleNames());
+                log.info("  After selectModule, selectedModuleNames: " + matchPanel.getSelectedModuleNames());
             } else {
-                System.out.println("  Module '" + moduleName + "' not found in available modules!");
+                log.info("  Module '" + moduleName + "' not found in available modules!");
             }
         }
 
         // Verify selection before creating match
-        System.out.println("About to create match with selectedModuleNames: " + matchPanel.getSelectedModuleNames());
-        System.out.println("Available modules count: " + modules.size());
+        log.info("About to create match with selectedModuleNames: " + matchPanel.getSelectedModuleNames());
+        log.info("Available modules count: " + modules.size());
 
         // Create the match
         long matchId = matchPanel.createMatchWithSelectedModules().get(10, TimeUnit.SECONDS);
@@ -553,7 +555,7 @@ class RenderingResourceGuiIT {
                 .header("Accept", "application/json")
                 .build();
         var response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
-        System.out.println("Match " + matchId + " details: " + response.body());
+        log.info("Match " + matchId + " details: " + response.body());
 
         return matchId;
     }
@@ -598,7 +600,7 @@ class RenderingResourceGuiIT {
                     .build();
             var response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
             String body = response.body();
-            System.out.println("Iteration " + i + ": Snapshot response: " + body);
+            log.info("Iteration " + i + ": Snapshot response: " + body);
 
             if (response.statusCode() == 200) {
                 // Parse ENTITY_ID from response
@@ -607,7 +609,7 @@ class RenderingResourceGuiIT {
                 java.util.regex.Matcher matcher = entityIdPattern.matcher(body);
                 if (matcher.find()) {
                     long entityId = Long.parseLong(matcher.group(1));
-                    System.out.println("Found entity ID: " + entityId);
+                    log.info("Found entity ID: " + entityId);
                     return entityId;
                 }
             }

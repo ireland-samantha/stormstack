@@ -1,8 +1,8 @@
-package com.lightningfirefly.game.renderer;
+package com.lightningfirefly.game.renderering;
 
 import com.lightningfirefly.engine.rendering.testing.headless.HeadlessWindow;
-import com.lightningfirefly.game.engine.ControlSystem;
-import com.lightningfirefly.game.engine.Sprite;
+import com.lightningfirefly.game.domain.ControlSystem;
+import com.lightningfirefly.game.domain.Sprite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

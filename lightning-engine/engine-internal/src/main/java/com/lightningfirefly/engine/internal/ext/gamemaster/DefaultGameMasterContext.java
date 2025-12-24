@@ -3,8 +3,8 @@ package com.lightningfirefly.engine.internal.ext.gamemaster;
 import com.lightningfirefly.engine.core.command.CommandExecutor;
 import com.lightningfirefly.engine.core.command.CommandPayload;
 import com.lightningfirefly.engine.core.resources.ResourceManager;
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterCommand;
-import com.lightningfirefly.game.gm.GameMasterContext;
+import com.lightningfirefly.game.backend.adapter.GameMasterCommand;
+import com.lightningfirefly.game.domain.GameMasterContext;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;

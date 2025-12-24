@@ -1,8 +1,8 @@
 package com.lightningfirefly.engine.ext.gamemasters;
 
-import com.lightningfirefly.game.gm.GameMaster;
-import com.lightningfirefly.game.gm.GameMasterContext;
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterFactory;
+import com.lightningfirefly.game.domain.GameMaster;
+import com.lightningfirefly.game.domain.GameMasterContext;
+import com.lightningfirefly.game.backend.installation.GameMasterFactory;
 
 /**
  * Factory for creating TickCounterGameMaster instances.

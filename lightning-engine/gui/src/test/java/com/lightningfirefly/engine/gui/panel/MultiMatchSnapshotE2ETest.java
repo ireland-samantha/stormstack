@@ -6,6 +6,7 @@ import com.lightningfirefly.engine.rendering.render2d.TreeNode;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *     -Dtest=MultiMatchSnapshotE2ETest -DenableGLTests=true
  * </pre>
  */
+@Slf4j
 @Tag("integration")
 @Tag("e2e")
 @DisplayName("Multi-Match Snapshot E2E Test")
@@ -85,7 +87,7 @@ class MultiMatchSnapshotE2ETest {
     @Test
     @DisplayName("Auto-connect shows all matches in treeview")
     void autoConnectShowsAllMatchesInTreeview() throws Exception {
-        System.out.println("=== Starting test with backend: " + backendUrl + " ===");
+        log.info("=== Starting test with backend: " + backendUrl + " ===");
 
         // Initialize the application
         app = new EngineGuiApplication(backendUrl);
@@ -95,7 +97,7 @@ class MultiMatchSnapshotE2ETest {
         window.runFrames(5);
 
         // ===== STEP 1: Create two matches =====
-        System.out.println("=== STEP 1: Create two matches ===");
+        log.info("=== STEP 1: Create two matches ===");
         clickButton("Matches");
         waitForUpdate(500);
 
@@ -105,14 +107,14 @@ class MultiMatchSnapshotE2ETest {
 
         // Create first match (ID generated server-side)
         matchId1 = createMatch();
-        System.out.println("Created match 1: " + matchId1);
+        log.info("Created match 1: " + matchId1);
 
         // Create second match (ID generated server-side)
         matchId2 = createMatch();
-        System.out.println("Created match 2: " + matchId2);
+        log.info("Created match 2: " + matchId2);
 
         // ===== STEP 2: Switch to Snapshot panel and load all snapshots =====
-        System.out.println("=== STEP 2: Load all snapshots ===");
+        log.info("=== STEP 2: Load all snapshots ===");
         clickButton("Snapshot");
         waitForUpdate(500);
 
@@ -123,11 +125,11 @@ class MultiMatchSnapshotE2ETest {
         // Verify connected to matches
         SnapshotPanel snapshotPanel = app.getSnapshotPanel();
         int connectedCount = snapshotPanel.getConnectedMatchCount();
-        System.out.println("Connected to " + connectedCount + " matches");
+        log.info("Connected to " + connectedCount + " matches");
         assertThat(connectedCount).as("Should be connected to at least 2 matches").isGreaterThanOrEqualTo(2);
 
         // ===== STEP 3: Verify treeview shows all matches =====
-        System.out.println("=== STEP 3: Verify treeview shows all matches ===");
+        log.info("=== STEP 3: Verify treeview shows all matches ===");
 
         // Request snapshots
         snapshotPanel.requestAllSnapshots();
@@ -140,31 +142,31 @@ class MultiMatchSnapshotE2ETest {
         assertThat(rootNodes).as("Tree should have root nodes").isNotEmpty();
 
         TreeNode matchesRoot = rootNodes.getFirst();
-        System.out.println("Root node: " + matchesRoot.getLabel());
+        log.info("Root node: " + matchesRoot.getLabel());
         assertThat(matchesRoot.getLabel()).as("Root should be 'Matches'").isEqualTo("Matches");
 
         // Verify matches are in the tree
         List<? extends TreeNode> matchNodes = matchesRoot.getChildren();
-        System.out.println("Found " + matchNodes.size() + " match nodes");
+        log.info("Found " + matchNodes.size() + " match nodes");
         for (TreeNode matchNode : matchNodes) {
-            System.out.println("  - " + matchNode.getLabel());
+            log.info("  - " + matchNode.getLabel());
         }
 
         // ===== STEP 4: Verify all snapshots are shown =====
-        System.out.println("=== STEP 4: Verify snapshots from all matches ===");
+        log.info("=== STEP 4: Verify snapshots from all matches ===");
         Map<Long, SnapshotData> allSnapshots = snapshotPanel.getAllSnapshots();
-        System.out.println("Snapshots from " + allSnapshots.size() + " matches");
+        log.info("Snapshots from " + allSnapshots.size() + " matches");
         for (Map.Entry<Long, SnapshotData> entry : allSnapshots.entrySet()) {
-            System.out.println("  Match " + entry.getKey() + ": tick=" + entry.getValue().tick());
+            log.info("  Match " + entry.getKey() + ": tick=" + entry.getValue().tick());
         }
 
-        System.out.println("=== TEST PASSED ===");
+        log.info("=== TEST PASSED ===");
     }
 
     @Test
     @DisplayName("Entity selection shows components in detail panel")
     void entitySelectionShowsComponentsInDetailPanel() throws Exception {
-        System.out.println("=== Starting test with backend: " + backendUrl + " ===");
+        log.info("=== Starting test with backend: " + backendUrl + " ===");
 
         // Initialize the application
         app = new EngineGuiApplication(backendUrl);
@@ -174,7 +176,7 @@ class MultiMatchSnapshotE2ETest {
         window.runFrames(5);
 
         // ===== STEP 1: Create a match with MoveModule =====
-        System.out.println("=== STEP 1: Create match with MoveModule ===");
+        log.info("=== STEP 1: Create match with MoveModule ===");
         clickButton("Matches");
         waitForUpdate(500);
         clickButton("Refresh");
@@ -198,11 +200,11 @@ class MultiMatchSnapshotE2ETest {
 
         // Create match (ID generated server-side)
         matchId1 = matchPanel.createMatchWithSelectedModules().get();
-        System.out.println("Created match: " + matchId1);
+        log.info("Created match: " + matchId1);
         waitForUpdate(500);
 
         // ===== STEP 2: Send CreateMoveableCommand =====
-        System.out.println("=== STEP 2: Send CreateMoveableCommand ===");
+        log.info("=== STEP 2: Send CreateMoveableCommand ===");
         clickButton("Commands");
         waitForUpdate(500);
         clickButton("Refresh");
@@ -242,7 +244,7 @@ class MultiMatchSnapshotE2ETest {
         waitForUpdate(500);
 
         // ===== STEP 3: Go to Snapshot panel and verify entity details =====
-        System.out.println("=== STEP 3: Verify entity detail panel ===");
+        log.info("=== STEP 3: Verify entity detail panel ===");
         clickButton("Snapshot");
         waitForUpdate(500);
 
@@ -258,18 +260,18 @@ class MultiMatchSnapshotE2ETest {
 
         // Get all snapshots
         Map<Long, SnapshotData> snapshots = snapshotPanel.getAllSnapshots();
-        System.out.println("Have " + snapshots.size() + " snapshots");
+        log.info("Have " + snapshots.size() + " snapshots");
 
         // Verify we have snapshot data with components
         if (snapshots.containsKey(matchId1)) {
             SnapshotData snapshot = snapshots.get(matchId1);
-            System.out.println("Snapshot tick: " + snapshot.tick());
+            log.info("Snapshot tick: " + snapshot.tick());
 
             var moveData = snapshot.getModuleData(MOVE_MODULE_NAME);
             if (moveData != null) {
-                System.out.println("MoveModule components:");
+                log.info("MoveModule components:");
                 for (String componentName : moveData.keySet()) {
-                    System.out.println("  " + componentName + ": " + moveData.get(componentName));
+                    log.info("  " + componentName + ": " + moveData.get(componentName));
                 }
 
                 // Verify velocity values
@@ -285,13 +287,13 @@ class MultiMatchSnapshotE2ETest {
         assertThat(snapshotPanel.getDetailPanel()).as("Detail panel should exist").isNotNull();
         assertThat(snapshotPanel.getComponentList()).as("Component list should exist").isNotNull();
 
-        System.out.println("=== TEST PASSED ===");
+        log.info("=== TEST PASSED ===");
     }
 
     @Test
     @DisplayName("Load All via REST fetches snapshots for all matches")
     void loadAllViaRestFetchesSnapshotsForAllMatches() throws Exception {
-        System.out.println("=== Starting REST-based Load All test with backend: " + backendUrl + " ===");
+        log.info("=== Starting REST-based Load All test with backend: " + backendUrl + " ===");
 
         // Initialize the application
         app = new EngineGuiApplication(backendUrl);
@@ -301,7 +303,7 @@ class MultiMatchSnapshotE2ETest {
         window.runFrames(5);
 
         // ===== STEP 1: Create two matches =====
-        System.out.println("=== STEP 1: Create two matches ===");
+        log.info("=== STEP 1: Create two matches ===");
         clickButton("Matches");
         waitForUpdate(500);
 
@@ -311,14 +313,14 @@ class MultiMatchSnapshotE2ETest {
 
         // Create first match (ID generated server-side)
         matchId1 = createMatch();
-        System.out.println("Created match 1: " + matchId1);
+        log.info("Created match 1: " + matchId1);
 
         // Create second match (ID generated server-side)
         matchId2 = createMatch();
-        System.out.println("Created match 2: " + matchId2);
+        log.info("Created match 2: " + matchId2);
 
         // ===== STEP 2: Switch to Snapshot panel and use Load All (REST) =====
-        System.out.println("=== STEP 2: Load All via REST ===");
+        log.info("=== STEP 2: Load All via REST ===");
         clickButton("Snapshot");
         waitForUpdate(500);
 
@@ -327,13 +329,13 @@ class MultiMatchSnapshotE2ETest {
         waitForUpdate(2000); // Wait for REST response
 
         // ===== STEP 3: Verify all matches loaded via REST =====
-        System.out.println("=== STEP 3: Verify snapshots loaded via REST ===");
+        log.info("=== STEP 3: Verify snapshots loaded via REST ===");
         SnapshotPanel snapshotPanel = app.getSnapshotPanel();
         snapshotPanel.update();
         window.runFrames(5);
 
         Map<Long, SnapshotData> allSnapshots = snapshotPanel.getAllSnapshots();
-        System.out.println("Loaded " + allSnapshots.size() + " snapshots via REST");
+        log.info("Loaded " + allSnapshots.size() + " snapshots via REST");
 
         // Should have at least 2 matches
         assertThat(allSnapshots.size())
@@ -348,18 +350,18 @@ class MultiMatchSnapshotE2ETest {
         assertThat(matchesRoot.getLabel()).as("Root should be 'Matches'").isEqualTo("Matches");
 
         List<? extends TreeNode> matchNodes = matchesRoot.getChildren();
-        System.out.println("Found " + matchNodes.size() + " match nodes in tree");
+        log.info("Found " + matchNodes.size() + " match nodes in tree");
         assertThat(matchNodes.size())
             .as("Tree should show at least 2 matches")
             .isGreaterThanOrEqualTo(2);
 
-        System.out.println("=== REST-based Load All TEST PASSED ===");
+        log.info("=== REST-based Load All TEST PASSED ===");
     }
 
     @Test
     @DisplayName("Multi-select modules when creating match")
     void multiSelectModulesWhenCreatingMatch() throws Exception {
-        System.out.println("=== Starting multi-select modules test with backend: " + backendUrl + " ===");
+        log.info("=== Starting multi-select modules test with backend: " + backendUrl + " ===");
 
         // Initialize the application
         app = new EngineGuiApplication(backendUrl);
@@ -369,7 +371,7 @@ class MultiMatchSnapshotE2ETest {
         window.runFrames(5);
 
         // ===== STEP 1: Go to Matches panel and load modules =====
-        System.out.println("=== STEP 1: Load modules ===");
+        log.info("=== STEP 1: Load modules ===");
         clickButton("Matches");
         waitForUpdate(500);
 
@@ -377,10 +379,10 @@ class MultiMatchSnapshotE2ETest {
         waitForModulesLoaded();
 
         // ===== STEP 2: Select multiple modules =====
-        System.out.println("=== STEP 2: Select multiple modules ===");
+        log.info("=== STEP 2: Select multiple modules ===");
         var matchPanel = app.getMatchPanel();
         var modules = matchPanel.getAvailableModules();
-        System.out.println("Available modules: " + modules.size());
+        log.info("Available modules: " + modules.size());
 
         if (modules.size() >= 2) {
             // Select first two modules using multi-select
@@ -394,9 +396,9 @@ class MultiMatchSnapshotE2ETest {
         }
 
         // ===== STEP 3: Create match with selected modules =====
-        System.out.println("=== STEP 3: Create match with selected modules ===");
+        log.info("=== STEP 3: Create match with selected modules ===");
         matchId1 = matchPanel.createMatchWithSelectedModules().get();
-        System.out.println("Created match: " + matchId1);
+        log.info("Created match: " + matchId1);
         assertThat(matchId1).as("Match should be created with server-generated ID").isGreaterThan(0);
 
         // Refresh match list
@@ -411,9 +413,9 @@ class MultiMatchSnapshotE2ETest {
             .findFirst();
 
         assertThat(createdMatch).as("Created match should be in list").isPresent();
-        System.out.println("Created match modules: " + createdMatch.get().enabledModules());
+        log.info("Created match modules: " + createdMatch.get().enabledModules());
 
-        System.out.println("=== Multi-select modules TEST PASSED ===");
+        log.info("=== Multi-select modules TEST PASSED ===");
     }
 
     // ========== Helper Methods ==========
@@ -453,7 +455,7 @@ class MultiMatchSnapshotE2ETest {
             driver.findElement(By.text(text)).click();
             window.runFrames(2);
         } else {
-            System.out.println("WARNING: Button '" + text + "' not found");
+            log.info("WARNING: Button '" + text + "' not found");
         }
     }
 

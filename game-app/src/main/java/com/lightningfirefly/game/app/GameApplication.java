@@ -9,11 +9,11 @@ import com.lightningfirefly.engine.api.resource.adapter.SnapshotAdapter;
 import com.lightningfirefly.engine.rendering.render2d.*;
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLComponentFactory;
 import com.lightningfirefly.game.domain.SnapshotObserver;
-import com.lightningfirefly.game.engine.GameFactory;
-import com.lightningfirefly.game.engine.orchestrator.GameOrchestratorImpl;
-import com.lightningfirefly.game.engine.renderer.GameRenderer;
-import com.lightningfirefly.game.renderer.GameRendererBuilder;
-import com.lightningfirefly.game.renderer.SnapshotSpriteMapper;
+import com.lightningfirefly.game.backend.installation.GameFactory;
+import com.lightningfirefly.game.orchestrator.GameOrchestratorImpl;
+import com.lightningfirefly.game.renderering.GameRenderer;
+import com.lightningfirefly.game.renderering.GameRendererBuilder;
+import com.lightningfirefly.game.orchestrator.SnapshotSpriteMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -316,13 +316,21 @@ public class GameApplication {
         SimulationAdapter simulationAdapter = new SimulationAdapter.HttpSimulationAdapter(serverUrl);
         snapshotAdapter = new SnapshotAdapter.HttpSnapshotAdapter(serverUrl);
 
-        // Create game renderer
+        // Create game renderer with proper texture resolution
         gameRenderer = GameRendererBuilder.create()
                 .windowSize(800, 600)
                 .title("Game")
                 .spriteMapper(new SnapshotSpriteMapper()
                         .defaultSize(64, 64)
-                        .textureResolver(resourceId -> null))
+                        .textureResolver(resourceId -> {
+                            // Look up texture from cache directory
+                            if (resourceId == null) return null;
+                            Path cachedPath = cacheDirectory.resolve("Resource-" + resourceId);
+                            if (Files.exists(cachedPath)) {
+                                return cachedPath.toString();
+                            }
+                            return null;
+                        }))
                 .build();
 
         // Create snapshot subscriber that polls the server
@@ -578,8 +586,8 @@ public class GameApplication {
                         .build();
                 windowSpriteMap.put(data.entityId, sprite);
                 window.addSprite(sprite);
-                System.out.println("[Render] Sprite " + data.entityId + " at (" + screenX + "," + screenY +
-                        ") resource=" + data.resourceId + " texture=" + texturePath);
+                log.debug("Render sprite {} at ({},{}) resource={} texture={}",
+                        data.entityId, screenX, screenY, data.resourceId, texturePath);
             } else {
                 existingSprite.setX(screenX);
                 existingSprite.setY(screenY);
@@ -784,31 +792,35 @@ public class GameApplication {
      */
     public boolean pollAndRenderSnapshot() {
         if (!isGameRunning || activeMatchId <= 0) {
-            System.out.println("[pollAndRenderSnapshot] Cannot poll: game not running or no match ID");
+            log.debug("Cannot poll snapshot: gameRunning={}, matchId={}", isGameRunning, activeMatchId);
             return false;
         }
 
         try {
+            log.trace("Polling snapshot for match {}", activeMatchId);
             Optional<SnapshotAdapter.SnapshotResponse> response = snapshotAdapter.getMatchSnapshot(activeMatchId);
             if (response.isPresent()) {
                 String snapshotData = response.get().snapshotData();
-                System.out.println("[pollAndRenderSnapshot] Received snapshot data length: " + (snapshotData != null ? snapshotData.length() : 0));
-                System.out.println("[pollAndRenderSnapshot] Snapshot data preview: " + (snapshotData != null ? snapshotData.substring(0, Math.min(200, snapshotData.length())) : "null"));
+                log.debug("Received snapshot: tick={}, dataLength={}",
+                        response.get().tick(),
+                        snapshotData != null ? snapshotData.length() : 0);
+                log.trace("Snapshot data preview: {}",
+                        snapshotData != null ? snapshotData.substring(0, Math.min(200, snapshotData.length())) : "null");
 
                 Map<String, Map<String, List<Float>>> parsed = parseSnapshotData(snapshotData);
                 if (parsed != null && !parsed.isEmpty()) {
-                    System.out.println("[pollAndRenderSnapshot] Parsed snapshot with " + parsed.size() + " modules: " + parsed.keySet());
+                    log.debug("Parsed snapshot with {} modules: {}", parsed.size(), parsed.keySet());
                     renderSpritesToWindow(parsed);
-                    System.out.println("[pollAndRenderSnapshot] Sprites in map: " + windowSpriteMap.size());
+                    log.debug("Rendered {} sprites to window", windowSpriteMap.size());
                     return !windowSpriteMap.isEmpty();
                 } else {
-                    System.out.println("[pollAndRenderSnapshot] Parsed snapshot is empty or null");
+                    log.debug("Parsed snapshot is empty or null");
                 }
             } else {
-                System.out.println("[pollAndRenderSnapshot] No snapshot response from server");
+                log.debug("No snapshot response from server for match {}", activeMatchId);
             }
         } catch (IOException e) {
-            System.out.println("[pollAndRenderSnapshot] Failed to poll: " + e.getMessage());
+            log.warn("Failed to poll snapshot for match {}: {}", activeMatchId, e.getMessage());
         }
         return false;
     }

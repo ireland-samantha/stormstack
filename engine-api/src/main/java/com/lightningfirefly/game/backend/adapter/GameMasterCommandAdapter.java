@@ -1,6 +1,6 @@
-package com.lightningfirefly.game.engine.orchestrator.gm;
+package com.lightningfirefly.game.backend.adapter;
 
-import com.lightningfirefly.game.gm.GameMasterContext;
+import com.lightningfirefly.game.domain.GameMasterContext;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -58,6 +58,8 @@ public class GameMasterCommandAdapter {
             throw new IOException("Command interrupted", e);
         }
     }
+
+    // todo: only allow execution via context for now.
 
     /**
      * Execute a command via the GameMasterContext.

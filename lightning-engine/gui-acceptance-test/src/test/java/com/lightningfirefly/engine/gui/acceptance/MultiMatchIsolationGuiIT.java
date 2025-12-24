@@ -6,6 +6,7 @@ import com.lightningfirefly.engine.rendering.render2d.TreeView;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -48,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ./mvnw verify -pl lightning-engine/gui-acceptance-test -Pacceptance-tests
  * </pre>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("testcontainers")
 @DisplayName("Multi-Match Isolation GUI Acceptance Test")
@@ -79,7 +81,7 @@ class MultiMatchIsolationGuiIT {
         String host = backendContainer.getHost();
         Integer port = backendContainer.getMappedPort(BACKEND_PORT);
         backendUrl = String.format("http://%s:%d", host, port);
-        System.out.println("Backend URL from testcontainers: " + backendUrl);
+        log.info("Backend URL from testcontainers: " + backendUrl);
     }
 
     @AfterEach
@@ -114,7 +116,7 @@ class MultiMatchIsolationGuiIT {
     @Test
     @DisplayName("Business Use Case: Entities in separate matches are isolated in GUI TreeView")
     void entitiesInSeparateMatchesAreIsolatedInGuiTreeView() throws Exception {
-        System.out.println("=== GUI ACCEPTANCE TEST: Multi-match isolation ===");
+        log.info("=== GUI ACCEPTANCE TEST: Multi-match isolation ===");
 
         // Initialize the GUI application
         app = new EngineGuiApplication(backendUrl);
@@ -124,7 +126,7 @@ class MultiMatchIsolationGuiIT {
         window.runFrames(5);
 
         // ===== STEP 1: Create two matches with SpawnModule and MoveModule =====
-        System.out.println("=== STEP 1: Create two matches with SpawnModule and MoveModule ===");
+        log.info("=== STEP 1: Create two matches with SpawnModule and MoveModule ===");
         clickButton("Matches");
         waitForUpdate(500);
         clickButton("Refresh");
@@ -142,7 +144,7 @@ class MultiMatchIsolationGuiIT {
         matchPanel.selectModule(moveModuleIndex);
         window.runFrames(2);
         long match1Id = matchPanel.createMatchWithSelectedModules().get();
-        System.out.println("Created match 1: " + match1Id);
+        log.info("Created match 1: " + match1Id);
         createdMatchId = match1Id;
 
         // Clear selection for second match
@@ -153,39 +155,39 @@ class MultiMatchIsolationGuiIT {
         // Create second match
         long match2Id = matchPanel.createMatchWithSelectedModules().get();
         createdMatch2Id = match2Id;
-        System.out.println("Created match 2: " + match2Id);
+        log.info("Created match 2: " + match2Id);
 
         // ===== STEP 2: Spawn entities in each match =====
-        System.out.println("=== STEP 2: Spawn entities in each match ===");
+        log.info("=== STEP 2: Spawn entities in each match ===");
         var commandService = app.getCommandPanel().getCommandService();
 
         // Spawn 2 entities in match 1
         spawnEntity(commandService, match1Id);
         spawnEntity(commandService, match1Id);
-        System.out.println("Spawned 2 entities in match 1");
+        log.info("Spawned 2 entities in match 1");
 
         // Spawn 3 entities in match 2
         spawnEntity(commandService, match2Id);
         spawnEntity(commandService, match2Id);
         spawnEntity(commandService, match2Id);
-        System.out.println("Spawned 3 entities in match 2");
+        log.info("Spawned 3 entities in match 2");
 
         // ===== STEP 3: Advance tick to process spawn commands =====
-        System.out.println("=== STEP 3: Advance tick to process spawn commands ===");
+        log.info("=== STEP 3: Advance tick to process spawn commands ===");
         clickButton("Advance");
         waitForUpdate(500);
         clickButton("Advance");
         waitForUpdate(500);
 
         // ===== STEP 4: Get entity IDs and attach movement =====
-        System.out.println("=== STEP 4: Get entity IDs and attach movement ===");
+        log.info("=== STEP 4: Get entity IDs and attach movement ===");
 
         // Get entity IDs from snapshots via REST API
         var httpClient = java.net.http.HttpClient.newHttpClient();
         List<Long> match1EntityIds = getEntityIdsFromSnapshot(httpClient, match1Id);
         List<Long> match2EntityIds = getEntityIdsFromSnapshot(httpClient, match2Id);
-        System.out.println("Match 1 entity IDs: " + match1EntityIds);
-        System.out.println("Match 2 entity IDs: " + match2EntityIds);
+        log.info("Match 1 entity IDs: " + match1EntityIds);
+        log.info("Match 2 entity IDs: " + match2EntityIds);
 
         // Attach movement to match 1 entities
         int posX = 100;
@@ -200,15 +202,15 @@ class MultiMatchIsolationGuiIT {
             attachMovement(commandService, entityId, posX);
             posX += 1000;
         }
-        System.out.println("Attached movement to entities");
+        log.info("Attached movement to entities");
 
         // ===== STEP 5: Advance tick to process attachMovement commands =====
-        System.out.println("=== STEP 5: Advance tick to process attachMovement commands ===");
+        log.info("=== STEP 5: Advance tick to process attachMovement commands ===");
         clickButton("Advance");
         waitForUpdate(500);
 
         // ===== STEP 6: Verify snapshot isolation via GUI TreeView =====
-        System.out.println("=== STEP 6: Verify snapshot isolation via TreeView ===");
+        log.info("=== STEP 6: Verify snapshot isolation via TreeView ===");
         clickButton("Snapshot");
         waitForUpdate(500);
         clickButton("Load All");
@@ -220,35 +222,35 @@ class MultiMatchIsolationGuiIT {
 
         TreeNode matchesRoot = rootNodes.get(0);
         assertThat(matchesRoot.getLabel()).isEqualTo("Matches");
-        System.out.println("TreeView root: " + matchesRoot.getLabel() + " with " + matchesRoot.getChildren().size() + " children");
+        log.info("TreeView root: " + matchesRoot.getLabel() + " with " + matchesRoot.getChildren().size() + " children");
 
         // Verify Match 1: should have exactly 2 entities
         TreeNode match1MoveModule = findMoveModuleNode(matchesRoot, match1Id);
         assertThat(match1MoveModule).as("Match 1 should have MoveModule").isNotNull();
-        System.out.println("Match 1 MoveModule has " + match1MoveModule.getChildren().size() + " entities");
+        log.info("Match 1 MoveModule has " + match1MoveModule.getChildren().size() + " entities");
         assertThat(match1MoveModule.getChildren())
                 .as("Match 1 should show exactly 2 entity nodes")
                 .hasSize(2);
 
         for (TreeNode entityNode : match1MoveModule.getChildren()) {
-            System.out.println("  Match 1 entity: " + entityNode.getLabel());
+            log.info("  Match 1 entity: " + entityNode.getLabel());
             assertThat(entityNode.getLabel()).as("Entity should have valid label").startsWith("Entity ");
         }
 
         // Verify Match 2: should have exactly 3 entities
         TreeNode match2MoveModule = findMoveModuleNode(matchesRoot, match2Id);
         assertThat(match2MoveModule).as("Match 2 should have MoveModule").isNotNull();
-        System.out.println("Match 2 MoveModule has " + match2MoveModule.getChildren().size() + " entities");
+        log.info("Match 2 MoveModule has " + match2MoveModule.getChildren().size() + " entities");
         assertThat(match2MoveModule.getChildren())
                 .as("Match 2 should show exactly 3 entity nodes")
                 .hasSize(3);
 
         for (TreeNode entityNode : match2MoveModule.getChildren()) {
-            System.out.println("  Match 2 entity: " + entityNode.getLabel());
+            log.info("  Match 2 entity: " + entityNode.getLabel());
             assertThat(entityNode.getLabel()).as("Entity should have valid label").startsWith("Entity ");
         }
 
-        System.out.println("=== GUI ACCEPTANCE TEST PASSED: Multi-match isolation verified ===");
+        log.info("=== GUI ACCEPTANCE TEST PASSED: Multi-match isolation verified ===");
     }
 
     // ========== Helper Methods ==========
@@ -308,7 +310,7 @@ class MultiMatchIsolationGuiIT {
         try {
             commandService.submitCommand("spawn", params).get();
         } catch (Exception e) {
-            System.out.println("WARNING: Failed to spawn entity: " + e.getMessage());
+            log.info("WARNING: Failed to spawn entity: " + e.getMessage());
         }
         waitForUpdate(100);
     }
@@ -326,7 +328,7 @@ class MultiMatchIsolationGuiIT {
         try {
             commandService.submitCommand("attachMovement", params).get();
         } catch (Exception e) {
-            System.out.println("WARNING: Failed to attach movement: " + e.getMessage());
+            log.info("WARNING: Failed to attach movement: " + e.getMessage());
         }
         waitForUpdate(100);
     }
@@ -351,7 +353,7 @@ class MultiMatchIsolationGuiIT {
                 }
             }
         } catch (Exception e) {
-            System.out.println("WARNING: Failed to get entity IDs: " + e.getMessage());
+            log.info("WARNING: Failed to get entity IDs: " + e.getMessage());
         }
         return entityIds;
     }
@@ -362,7 +364,7 @@ class MultiMatchIsolationGuiIT {
             driver.findElement(By.text(text)).click();
             window.runFrames(2);
         } else {
-            System.out.println("WARNING: Button '" + text + "' not found");
+            log.info("WARNING: Button '" + text + "' not found");
         }
     }
 
@@ -404,7 +406,7 @@ class MultiMatchIsolationGuiIT {
         if (field != null) {
             field.setText(value);
         } else {
-            System.out.println("WARNING: Form field '" + paramName + "' not found");
+            log.info("WARNING: Form field '" + paramName + "' not found");
         }
         window.runFrames(2);
     }

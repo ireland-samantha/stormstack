@@ -1,7 +1,7 @@
 package com.lightningfirefly.engine.internal.ext.gamemaster;
 
 import com.lightningfirefly.engine.internal.ext.jar.JarFactoryLoader;
-import com.lightningfirefly.game.engine.orchestrator.gm.GameMasterFactory;
+import com.lightningfirefly.game.backend.installation.GameMasterFactory;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;

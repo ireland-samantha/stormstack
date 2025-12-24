@@ -1,7 +1,7 @@
-package com.lightningfirefly.game.engine.orchestrator.gm;
+package com.lightningfirefly.game.backend.installation;
 
-import com.lightningfirefly.game.gm.GameMaster;
-import com.lightningfirefly.game.gm.GameMasterContext;
+import com.lightningfirefly.game.domain.GameMaster;
+import com.lightningfirefly.game.domain.GameMasterContext;
 
 /**
  * Factory interface for creating game masters.

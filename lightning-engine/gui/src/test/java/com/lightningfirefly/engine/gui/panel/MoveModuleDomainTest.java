@@ -6,6 +6,7 @@ import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
 import com.lightningfirefly.engine.rendering.testing.GuiElement;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -36,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *     -Dtest=MoveModuleDomainTest -DenableGLTests=true
  * </pre>
  */
+@Slf4j
 @Tag("integration")
 @Tag("domain")
 @DisplayName("MoveModule Domain Integration Test")
@@ -94,7 +96,7 @@ class MoveModuleDomainTest {
     @Test
     @DisplayName("Complete MoveModule workflow: create match, spawn entity, verify movement")
     void completeMoveModuleWorkflow() throws Exception {
-        System.out.println("=== Starting test with backend: " + backendUrl + " ===");
+        log.info("=== Starting test with backend: " + backendUrl + " ===");
 
         // Initialize the application
         app = new EngineGuiApplication(backendUrl);
@@ -104,31 +106,31 @@ class MoveModuleDomainTest {
 
         // Run a few frames to let UI initialize
         window.runFrames(5);
-        System.out.println("Window initialized, running frames...");
+        log.info("Window initialized, running frames...");
 
         // ===== STEP 1: Open Modules panel and verify MoveModule exists =====
-        System.out.println("=== STEP 1: Verify MoveModule exists ===");
+        log.info("=== STEP 1: Verify MoveModule exists ===");
 
         clickButton("Modules");
         waitForUpdate(500);
 
         // Call refresh directly on the panel to ensure data loads
-        System.out.println("Calling refreshModules() directly...");
+        log.info("Calling refreshModules() directly...");
         app.getServerPanel().refreshModules();
 
         // Wait for modules to load with more patience
-        System.out.println("Waiting for modules to load...");
+        log.info("Waiting for modules to load...");
         waitForModulesLoadedWithDebug();
 
         // Verify MoveModule is in the list
         var modules = app.getServerPanel().getModules();
-        System.out.println("Available modules: " + modules.stream().map(m -> m.name()).toList());
+        log.info("Available modules: " + modules.stream().map(m -> m.name()).toList());
         assertThat(modules)
             .as("Modules list should contain MoveModule")
             .anyMatch(m -> m.name().equals(MOVE_MODULE_NAME));
 
         // ===== STEP 2: Create a match using MoveModule =====
-        System.out.println("=== STEP 2: Create match with MoveModule ===");
+        log.info("=== STEP 2: Create match with MoveModule ===");
         clickButton("Matches");
         waitForUpdate(500);
 
@@ -138,7 +140,7 @@ class MoveModuleDomainTest {
 
         // Get initial match count
         int initialMatchCount = app.getMatchPanel().getMatches().size();
-        System.out.println("Initial match count: " + initialMatchCount);
+        log.info("Initial match count: " + initialMatchCount);
 
         // Find MoveModule in the available modules list and select it
         var matchPanel = app.getMatchPanel();
@@ -158,7 +160,7 @@ class MoveModuleDomainTest {
 
         // Create match via API (match ID is generated server-side)
         createdMatchId = matchPanel.createMatchWithSelectedModules().get();
-        System.out.println("Created match ID: " + createdMatchId);
+        log.info("Created match ID: " + createdMatchId);
         assertThat(createdMatchId).as("Match ID should be valid").isGreaterThan(0);
 
         // Refresh match list
@@ -166,13 +168,13 @@ class MoveModuleDomainTest {
         waitForUpdate(1000);
 
         var matchesAfterCreate = app.getMatchPanel().getMatches();
-        System.out.println("Matches after create: " + matchesAfterCreate.stream().map(m -> m.id()).toList());
+        log.info("Matches after create: " + matchesAfterCreate.stream().map(m -> m.id()).toList());
         assertThat(matchesAfterCreate)
             .as("Created match should be in the list")
             .anyMatch(m -> m.id() == createdMatchId);
 
         // ===== STEP 3: Spawn an entity first =====
-        System.out.println("=== STEP 3: Spawn entity ===");
+        log.info("=== STEP 3: Spawn entity ===");
         clickButton("Commands");
         waitForUpdate(500);
         clickButton("Refresh");
@@ -180,7 +182,7 @@ class MoveModuleDomainTest {
 
         // Find and use spawn command
         var commands = app.getCommandPanel().getCommands();
-        System.out.println("Available commands: " + commands.stream().map(c -> c.name()).toList());
+        log.info("Available commands: " + commands.stream().map(c -> c.name()).toList());
 
         int spawnCmdIndex = -1;
         for (int i = 0; i < commands.size(); i++) {
@@ -199,7 +201,7 @@ class MoveModuleDomainTest {
         setFormField("entityType", "100");
         clickButton("Send");
         waitForUpdate(500);
-        System.out.println("Spawn command sent!");
+        log.info("Spawn command sent!");
 
         // Advance tick to process spawn
         clickButton("Advance");
@@ -208,7 +210,7 @@ class MoveModuleDomainTest {
         waitForUpdate(500);
 
         // ===== STEP 3b: Get entity ID and attach movement =====
-        System.out.println("=== STEP 3b: Attach movement ===");
+        log.info("=== STEP 3b: Attach movement ===");
 
         // Get entity ID from snapshot (simple approach - use REST API directly)
         var httpClient = java.net.http.HttpClient.newHttpClient();
@@ -217,7 +219,7 @@ class MoveModuleDomainTest {
                 .GET().build();
         var response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString());
         String body = response.body();
-        System.out.println("Snapshot response: " + body);
+        log.info("Snapshot response: " + body);
 
         // Parse entity ID (simple regex)
         long entityId = 1; // Default fallback
@@ -226,7 +228,7 @@ class MoveModuleDomainTest {
         if (matcher.find()) {
             entityId = Long.parseLong(matcher.group(1));
         }
-        System.out.println("Using entity ID: " + entityId);
+        log.info("Using entity ID: " + entityId);
 
         // Find attachMovement command
         commands = app.getCommandPanel().getCommands(); // Refresh list
@@ -255,20 +257,20 @@ class MoveModuleDomainTest {
         // Click Send button
         clickButton("Send");
         waitForUpdate(500);
-        System.out.println("attachMovement command sent!");
+        log.info("attachMovement command sent!");
 
         // ===== STEP 4: Advance tick using UI button =====
-        System.out.println("=== STEP 4: Advance tick ===");
+        log.info("=== STEP 4: Advance tick ===");
         long tickBefore = app.getCurrentTick();
         clickButton("Advance");
         waitForUpdate(500);
 
         // The tick should have advanced
         long tickAfter = app.getCurrentTick();
-        System.out.println("Tick before: " + tickBefore + ", after: " + tickAfter);
+        log.info("Tick before: " + tickBefore + ", after: " + tickAfter);
 
         // ===== STEP 5: Navigate to Snapshots and verify =====
-        System.out.println("=== STEP 5: Verify snapshot ===");
+        log.info("=== STEP 5: Verify snapshot ===");
         clickButton("Snapshot");
         waitForUpdate(500);
 
@@ -278,15 +280,15 @@ class MoveModuleDomainTest {
 
         SnapshotData snapshot = app.getSnapshotPanel().getLatestSnapshot();
         if (snapshot != null) {
-            System.out.println("Snapshot tick: " + snapshot.tick());
+            log.info("Snapshot tick: " + snapshot.tick());
             var moveData = snapshot.getModuleData(MOVE_MODULE_NAME);
             if (moveData != null) {
-                System.out.println("MoveModule data: " + moveData);
+                log.info("MoveModule data: " + moveData);
             }
         }
 
         // ===== STEP 6: Advance tick again and verify positionX=1 =====
-        System.out.println("=== STEP 6: Advance tick again ===");
+        log.info("=== STEP 6: Advance tick again ===");
         clickButton("Advance");
         waitForUpdate(500);
 
@@ -298,12 +300,12 @@ class MoveModuleDomainTest {
         if (finalSnapshot != null && finalSnapshot.data() != null) {
             var moveData = finalSnapshot.getModuleData(MOVE_MODULE_NAME);
             if (moveData != null) {
-                System.out.println("Final MoveModule data: " + moveData);
+                log.info("Final MoveModule data: " + moveData);
 
                 // Check positionX - after 2 ticks with velocityX=1, positionX should be 2
                 List<Float> positionX = moveData.get("POSITION_X");
                 if (positionX != null && !positionX.isEmpty()) {
-                    System.out.println("PositionX = " + positionX.get(0));
+                    log.info("PositionX = " + positionX.get(0));
                     assertThat(positionX.get(0))
                         .as("PositionX should be 2 after 2 ticks with velocityX=1")
                         .isEqualTo(2.0f);
@@ -320,10 +322,10 @@ class MoveModuleDomainTest {
         }
 
         // ===== STEP 7: Verify TreeView labels directly =====
-        System.out.println("=== STEP 7: Verify TreeView labels ===");
+        log.info("=== STEP 7: Verify TreeView labels ===");
         verifyTreeViewLabels();
 
-        System.out.println("=== TEST PASSED ===");
+        log.info("=== TEST PASSED ===");
     }
 
     /**
@@ -336,7 +338,7 @@ class MoveModuleDomainTest {
         assertThat(entityTree).as("EntityTree should not be null").isNotNull();
 
         List<? extends TreeNode> rootNodes = entityTree.getRootNodes();
-        System.out.println("TreeView has " + rootNodes.size() + " root nodes");
+        log.info("TreeView has " + rootNodes.size() + " root nodes");
         assertThat(rootNodes).as("TreeView should have root nodes").isNotEmpty();
 
         // Traverse and verify all labels
@@ -358,7 +360,7 @@ class MoveModuleDomainTest {
                 .orElse(matchesRoot.getChildren().get(0));
 
             String matchLabel = matchNode.getLabel();
-            System.out.println("Match node label: '" + matchLabel + "'");
+            log.info("Match node label: '" + matchLabel + "'");
             assertThat(matchLabel)
                 .as("Match label should contain 'Match'")
                 .contains("Match");
@@ -374,7 +376,7 @@ class MoveModuleDomainTest {
                     .orElse(matchNode.getChildren().get(0));
 
                 String moduleLabel = moduleNode.getLabel();
-                System.out.println("Module node label: '" + moduleLabel + "'");
+                log.info("Module node label: '" + moduleLabel + "'");
                 assertThat(moduleLabel)
                     .as("Module label should be 'MoveModule'")
                     .isEqualTo("MoveModule");
@@ -386,7 +388,7 @@ class MoveModuleDomainTest {
 
                 TreeNode entityNode = moduleNode.getChildren().get(0);
                 String entityLabel = entityNode.getLabel();
-                System.out.println("Entity node label: '" + entityLabel + "'");
+                log.info("Entity node label: '" + entityLabel + "'");
                 // Entity label should show actual ENTITY_ID (not index)
                 assertThat(entityLabel)
                     .as("Entity label should start with 'Entity '")
@@ -399,7 +401,7 @@ class MoveModuleDomainTest {
             }
         }
 
-        System.out.println("All TreeView labels verified successfully!");
+        log.info("All TreeView labels verified successfully!");
     }
 
     /**
@@ -410,7 +412,7 @@ class MoveModuleDomainTest {
         String label = node.getLabel();
         String expandedStr = node.isExpanded() ? "[+]" : "[-]";
 
-        System.out.println(indent + expandedStr + " '" + label + "' (" + node.getChildren().size() + " children)");
+        log.info(indent + expandedStr + " '" + label + "' (" + node.getChildren().size() + " children)");
 
         assertThat(label)
             .as("Node label at depth " + depth + " should not be null")
@@ -430,7 +432,7 @@ class MoveModuleDomainTest {
     @Test
     @DisplayName("Multi-match isolation: each match shows only its own entities")
     void multiMatchIsolation_showsOnlyOwnEntities() throws Exception {
-        System.out.println("=== Starting multi-match isolation test with backend: " + backendUrl + " ===");
+        log.info("=== Starting multi-match isolation test with backend: " + backendUrl + " ===");
 
         // Initialize the application
         app = new EngineGuiApplication(backendUrl);
@@ -440,7 +442,7 @@ class MoveModuleDomainTest {
         window.runFrames(5);
 
         // ===== STEP 1: Create two matches with MoveModule =====
-        System.out.println("=== STEP 1: Create two matches with MoveModule ===");
+        log.info("=== STEP 1: Create two matches with MoveModule ===");
         clickButton("Matches");
         waitForUpdate(500);
         clickButton("Refresh");
@@ -461,16 +463,16 @@ class MoveModuleDomainTest {
         matchPanel.selectModule(moveModuleIndex);
         window.runFrames(2);
         long match1Id = matchPanel.createMatchWithSelectedModules().get();
-        System.out.println("Created match 1: " + match1Id);
+        log.info("Created match 1: " + match1Id);
         createdMatchId = match1Id; // Store for cleanup
 
         // Create second match
         long match2Id = matchPanel.createMatchWithSelectedModules().get();
         createdMatch2Id = match2Id; // Store for cleanup
-        System.out.println("Created match 2: " + match2Id);
+        log.info("Created match 2: " + match2Id);
 
         // ===== STEP 2: Create multiple entities in each match =====
-        System.out.println("=== STEP 2: Create entities in each match ===");
+        log.info("=== STEP 2: Create entities in each match ===");
         clickButton("Commands");
         waitForUpdate(500);
         clickButton("Refresh");
@@ -524,12 +526,12 @@ class MoveModuleDomainTest {
         waitForUpdate(300);
 
         // ===== STEP 3: Advance tick to process commands =====
-        System.out.println("=== STEP 3: Advance tick to process commands ===");
+        log.info("=== STEP 3: Advance tick to process commands ===");
         clickButton("Advance");
         waitForUpdate(500);
 
         // ===== STEP 4: Verify snapshots show correct entities in TreeView =====
-        System.out.println("=== STEP 4: Verify snapshot isolation via TreeView ===");
+        log.info("=== STEP 4: Verify snapshot isolation via TreeView ===");
         clickButton("Snapshot");
         waitForUpdate(500);
 
@@ -544,7 +546,7 @@ class MoveModuleDomainTest {
 
         TreeNode matchesRoot = rootNodes.get(0);
         assertThat(matchesRoot.getLabel()).isEqualTo("Matches");
-        System.out.println("TreeView root: " + matchesRoot.getLabel() + " with " + matchesRoot.getChildren().size() + " children");
+        log.info("TreeView root: " + matchesRoot.getLabel() + " with " + matchesRoot.getChildren().size() + " children");
 
         // Find match 1 node and verify entity count
         TreeNode match1Node = matchesRoot.getChildren().stream()
@@ -565,7 +567,7 @@ class MoveModuleDomainTest {
             .as("Match 1 should have MoveModule")
             .isNotNull();
 
-        System.out.println("Match 1 MoveModule has " + match1MoveModule.getChildren().size() + " entities");
+        log.info("Match 1 MoveModule has " + match1MoveModule.getChildren().size() + " entities");
         assertThat(match1MoveModule.getChildren())
             .as("Match 1 should show exactly 2 entity nodes (not 3 from match 2)")
             .hasSize(2);
@@ -573,7 +575,7 @@ class MoveModuleDomainTest {
         // Verify entity labels show ENTITY_ID format
         for (TreeNode entityNode : match1MoveModule.getChildren()) {
             String label = entityNode.getLabel();
-            System.out.println("  Match 1 entity: " + label);
+            log.info("  Match 1 entity: " + label);
             assertThat(label).as("Entity should have valid label").startsWith("Entity ");
         }
 
@@ -596,7 +598,7 @@ class MoveModuleDomainTest {
             .as("Match 2 should have MoveModule")
             .isNotNull();
 
-        System.out.println("Match 2 MoveModule has " + match2MoveModule.getChildren().size() + " entities");
+        log.info("Match 2 MoveModule has " + match2MoveModule.getChildren().size() + " entities");
         assertThat(match2MoveModule.getChildren())
             .as("Match 2 should show exactly 3 entity nodes (not 2 from match 1)")
             .hasSize(3);
@@ -604,19 +606,19 @@ class MoveModuleDomainTest {
         // Verify entity labels show ENTITY_ID format
         for (TreeNode entityNode : match2MoveModule.getChildren()) {
             String label = entityNode.getLabel();
-            System.out.println("  Match 2 entity: " + label);
+            log.info("  Match 2 entity: " + label);
             assertThat(label).as("Entity should have valid label").startsWith("Entity ");
         }
 
-        System.out.println("=== TreeView correctly shows isolated entities per match ===");
+        log.info("=== TreeView correctly shows isolated entities per match ===");
 
-        System.out.println("=== MULTI-MATCH ISOLATION TEST PASSED ===");
+        log.info("=== MULTI-MATCH ISOLATION TEST PASSED ===");
     }
 
     @Test
     @DisplayName("Play/Stop: tick auto-advances when playing")
     void playStop_tickAutoAdvancesWhenPlaying() throws Exception {
-        System.out.println("=== Starting play/stop test with backend: " + backendUrl + " ===");
+        log.info("=== Starting play/stop test with backend: " + backendUrl + " ===");
 
         // Initialize the application
         app = new EngineGuiApplication(backendUrl);
@@ -627,10 +629,10 @@ class MoveModuleDomainTest {
 
         // Get initial tick
         long initialTick = app.getCurrentTick();
-        System.out.println("Initial tick: " + initialTick);
+        log.info("Initial tick: " + initialTick);
 
         // Click Play button
-        System.out.println("=== Clicking Play button ===");
+        log.info("=== Clicking Play button ===");
         clickButton("Play");
         waitForUpdate(200);
 
@@ -643,12 +645,12 @@ class MoveModuleDomainTest {
 
         // Get new tick value
         app.getSimulationService().getCurrentTick().thenAccept(newTick -> {
-            System.out.println("Tick after playing: " + newTick);
+            log.info("Tick after playing: " + newTick);
             assertThat(newTick).as("Tick should have advanced during play").isGreaterThan(initialTick);
         }).get();
 
         // Click Stop button
-        System.out.println("=== Clicking Stop button ===");
+        log.info("=== Clicking Stop button ===");
         clickButton("Stop");
         waitForUpdate(200);
 
@@ -657,18 +659,18 @@ class MoveModuleDomainTest {
 
         // Record tick after stop
         long tickAfterStop = app.getSimulationService().getCurrentTick().get();
-        System.out.println("Tick after stop: " + tickAfterStop);
+        log.info("Tick after stop: " + tickAfterStop);
 
         // Wait and verify tick doesn't change
         Thread.sleep(100);
         long tickAfterWait = app.getSimulationService().getCurrentTick().get();
-        System.out.println("Tick after wait: " + tickAfterWait);
+        log.info("Tick after wait: " + tickAfterWait);
 
         assertThat(tickAfterWait)
             .as("Tick should not advance after stop")
             .isEqualTo(tickAfterStop);
 
-        System.out.println("=== PLAY/STOP TEST PASSED ===");
+        log.info("=== PLAY/STOP TEST PASSED ===");
     }
 
     // ========== Helper Methods ==========
@@ -679,7 +681,7 @@ class MoveModuleDomainTest {
             driver.findElement(By.text(text)).click();
             window.runFrames(2);
         } else {
-            System.out.println("WARNING: Button '" + text + "' not found");
+            log.info("WARNING: Button '" + text + "' not found");
         }
     }
 
@@ -711,14 +713,14 @@ class MoveModuleDomainTest {
             window.runFrames(2);
             var modules = app.getServerPanel().getModules();
             if (i % 5 == 0) {
-                System.out.println("  Wait iteration " + i + ": " + modules.size() + " modules loaded");
+                log.info("  Wait iteration " + i + ": " + modules.size() + " modules loaded");
             }
             if (!modules.isEmpty()) {
-                System.out.println("  Modules loaded after " + (i * 100) + "ms");
+                log.info("  Modules loaded after " + (i * 100) + "ms");
                 return;
             }
         }
-        System.out.println("  WARNING: Timeout waiting for modules after 3000ms");
+        log.info("  WARNING: Timeout waiting for modules after 3000ms");
     }
 
     private void waitForCommandsLoaded() throws InterruptedException {
@@ -738,7 +740,7 @@ class MoveModuleDomainTest {
         if (field != null) {
             field.setText(value);
         } else {
-            System.out.println("WARNING: Form field '" + paramName + "' not found");
+            log.info("WARNING: Form field '" + paramName + "' not found");
         }
         window.runFrames(2);
     }

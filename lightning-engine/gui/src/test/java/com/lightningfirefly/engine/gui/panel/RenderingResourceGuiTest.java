@@ -4,6 +4,7 @@ import com.lightningfirefly.engine.gui.TestComponentFactory;
 import com.lightningfirefly.engine.gui.service.SnapshotWebSocketClient.SnapshotData;
 import com.lightningfirefly.engine.rendering.render2d.*;
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLComponentFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
@@ -31,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ./mvnw test -pl lightning-engine/gui -Dtest=RenderingResourceGuiTest -DenableGLTests=true
  * </pre>
  */
+@Slf4j
 @Tag("integration")
 @DisplayName("Rendering Resource GUI Integration Tests")
 @EnabledIfSystemProperty(named = "enableGLTests", matches = "true")
@@ -94,7 +96,7 @@ class RenderingResourceGuiTest {
         assertThat(sprites.get(0).getId()).isEqualTo(1);
         assertThat(sprites.get(0).getTexturePath()).isEqualTo(texturePath.toAbsolutePath().toString());
 
-        System.out.println("Sprite with texture rendered successfully at position (100, 100)");
+        log.info("Sprite with texture rendered successfully at position (100, 100)");
     }
 
     @Test
@@ -143,7 +145,7 @@ class RenderingResourceGuiTest {
         assertThat(sprites).hasSize(2);
         assertThat(sprites).extracting(Sprite::getId).containsExactlyInAnyOrder(1, 2);
 
-        System.out.println("Multiple sprites rendered successfully");
+        log.info("Multiple sprites rendered successfully");
     }
 
     @Test
@@ -182,7 +184,7 @@ class RenderingResourceGuiTest {
         // Entity count should match
         assertThat(snapshot.getEntityCount()).isEqualTo(1);
 
-        System.out.println("Snapshot with RESOURCE_ID=42 verified for entity");
+        log.info("Snapshot with RESOURCE_ID=42 verified for entity");
 
         snapshotPanel.dispose();
     }
@@ -245,7 +247,7 @@ class RenderingResourceGuiTest {
         assertThat(sprites.stream().filter(s -> s.getId() == 2).findFirst().get().getZIndex()).isEqualTo(10);
         assertThat(sprites.stream().filter(s -> s.getId() == 3).findFirst().get().getZIndex()).isEqualTo(5);
 
-        System.out.println("Z-index ordering verified: background(0) < middle(5) < foreground(10)");
+        log.info("Z-index ordering verified: background(0) < middle(5) < foreground(10)");
     }
 
     @Test
@@ -277,7 +279,7 @@ class RenderingResourceGuiTest {
                     if (action == 1) { // Press
                         clicked[0] = true;
                         clickedButton[0] = button;
-                        System.out.println("Sprite clicked! Button: " + button);
+                        log.info("Sprite clicked! Button: " + button);
                     }
                     return true;
                 }
@@ -294,7 +296,7 @@ class RenderingResourceGuiTest {
         assertThat(clickableSprite.contains(300, 300)).isTrue();  // Center of sprite
         assertThat(clickableSprite.contains(100, 100)).isFalse(); // Outside
 
-        System.out.println("Clickable sprite with input handler verified");
+        log.info("Clickable sprite with input handler verified");
     }
 
     @Test
@@ -320,7 +322,7 @@ class RenderingResourceGuiTest {
             .inputHandler(new SpriteInputHandler() {
                 @Override
                 public boolean onKeyPress(Sprite sprite, int key, int action, int mods) {
-                    System.out.println("Key pressed on sprite: " + key);
+                    log.info("Key pressed on sprite: " + key);
                     return true;
                 }
             })
@@ -332,7 +334,7 @@ class RenderingResourceGuiTest {
         assertThat(focusableSprite.isFocusable()).isTrue();
         assertThat(focusableSprite.hasInputHandler()).isTrue();
 
-        System.out.println("Focusable sprite verified");
+        log.info("Focusable sprite verified");
     }
 
     @Test
@@ -384,8 +386,8 @@ class RenderingResourceGuiTest {
         assertThat(preview.getTextureName()).isEqualTo("entity-texture.png");
         assertThat(preview.getTexturePath()).isEqualTo(texturePath.toAbsolutePath().toString());
 
-        System.out.println("Entity with RESOURCE_ID rendered as sprite at (400, 300)");
-        System.out.println("Texture preview panel shows: " + preview.getTextureName());
+        log.info("Entity with RESOURCE_ID rendered as sprite at (400, 300)");
+        log.info("Texture preview panel shows: " + preview.getTextureName());
     }
 
     /**

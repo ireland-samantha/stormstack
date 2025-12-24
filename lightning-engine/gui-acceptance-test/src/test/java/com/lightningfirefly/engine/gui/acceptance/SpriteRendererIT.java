@@ -4,6 +4,7 @@ import com.lightningfirefly.engine.gui.panel.SpriteRendererPanel;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
 import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLComponentFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>-XstartOnFirstThread JVM argument on macOS</li>
  * </ul>
  */
+@Slf4j
 @Tag("acceptance")
 @Tag("opengl")
 @DisplayName("SpriteRenderer OpenGL Integration Tests")
@@ -72,8 +74,8 @@ class SpriteRendererIT {
 
         window.runFrames(5);
 
-        System.out.println("SpriteRendererPanel initialized successfully");
-        System.out.println("Window size: " + window.getWidth() + "x" + window.getHeight());
+        log.info("SpriteRendererPanel initialized successfully");
+        log.info("Window size: " + window.getWidth() + "x" + window.getHeight());
     }
 
     @Test
@@ -94,7 +96,7 @@ class SpriteRendererIT {
 
         window.runFrames(5);
 
-        System.out.println("All UI components created successfully");
+        log.info("All UI components created successfully");
     }
 
     @Test
@@ -116,7 +118,7 @@ class SpriteRendererIT {
 
         window.runFrames(5);
 
-        System.out.println("Default property values verified");
+        log.info("Default property values verified");
     }
 
     @Test
@@ -140,9 +142,9 @@ class SpriteRendererIT {
         panel.setProperty("x", "150");
         assertThat(panel.getSpriteX()).isEqualTo(150f);
 
-        System.out.println("Classpath resource loading attempted for red-checker.png");
-        System.out.println("Loaded resource name: " + panel.getLoadedResourceName());
-        System.out.println("Image loaded: " + panel.isImageLoaded());
+        log.info("Classpath resource loading attempted for red-checker.png");
+        log.info("Loaded resource name: " + panel.getLoadedResourceName());
+        log.info("Image loaded: " + panel.isImageLoaded());
     }
 
     @Test
@@ -160,7 +162,7 @@ class SpriteRendererIT {
 
         window.runFrames(10);
 
-        System.out.println("X property changed from " + initialX + " to " + panel.getSpriteX());
+        log.info("X property changed from " + initialX + " to " + panel.getSpriteX());
     }
 
     @Test
@@ -172,7 +174,7 @@ class SpriteRendererIT {
 
         window.runFrames(10);
 
-        System.out.println("Y property changed to " + panel.getSpriteY());
+        log.info("Y property changed to " + panel.getSpriteY());
     }
 
     @Test
@@ -187,7 +189,7 @@ class SpriteRendererIT {
 
         window.runFrames(10);
 
-        System.out.println("Size changed to " + panel.getSpriteWidth() + "x" + panel.getSpriteHeight());
+        log.info("Size changed to " + panel.getSpriteWidth() + "x" + panel.getSpriteHeight());
     }
 
     @Test
@@ -199,7 +201,7 @@ class SpriteRendererIT {
 
         window.runFrames(10);
 
-        System.out.println("Rotation changed to " + panel.getSpriteRotation());
+        log.info("Rotation changed to " + panel.getSpriteRotation());
     }
 
     @Test
@@ -211,7 +213,7 @@ class SpriteRendererIT {
 
         window.runFrames(10);
 
-        System.out.println("Z-index changed to " + panel.getSpriteZIndex());
+        log.info("Z-index changed to " + panel.getSpriteZIndex());
     }
 
     @Test
@@ -235,11 +237,11 @@ class SpriteRendererIT {
 
         window.runFrames(10);
 
-        System.out.println("All properties updated:");
-        System.out.println("  Position: " + panel.getSpriteX() + ", " + panel.getSpriteY());
-        System.out.println("  Size: " + panel.getSpriteWidth() + "x" + panel.getSpriteHeight());
-        System.out.println("  Rotation: " + panel.getSpriteRotation());
-        System.out.println("  Z-Index: " + panel.getSpriteZIndex());
+        log.info("All properties updated:");
+        log.info("  Position: " + panel.getSpriteX() + ", " + panel.getSpriteY());
+        log.info("  Size: " + panel.getSpriteWidth() + "x" + panel.getSpriteHeight());
+        log.info("  Rotation: " + panel.getSpriteRotation());
+        log.info("  Z-Index: " + panel.getSpriteZIndex());
     }
 
     @Test
@@ -259,7 +261,7 @@ class SpriteRendererIT {
 
         window.runFrames(5);
 
-        System.out.println("Invalid values handled gracefully");
+        log.info("Invalid values handled gracefully");
     }
 
     @Test
@@ -279,7 +281,7 @@ class SpriteRendererIT {
         assertThat(panel.getSpriteY()).isEqualTo(150f);
         assertThat(panel.getSpriteWidth()).isEqualTo(100f);
 
-        System.out.println("Successfully ran 80+ frames with property changes");
+        log.info("Successfully ran 80+ frames with property changes");
     }
 
     @Test
@@ -299,7 +301,7 @@ class SpriteRendererIT {
         assertThat(panel.isVisible()).isTrue();
         window.runFrames(5);
 
-        System.out.println("Panel visibility toggled successfully");
+        log.info("Panel visibility toggled successfully");
     }
 
     @Test
@@ -320,7 +322,7 @@ class SpriteRendererIT {
         assertThat(panel.getSpriteWidth()).isEqualTo(200f);
         assertThat(panel.getSpriteHeight()).isEqualTo(150f);
 
-        System.out.println("Image dimensions (may be 0 if resource not found): " +
+        log.info("Image dimensions (may be 0 if resource not found): " +
             panel.getPreviewImage().getImageWidth() + "x" +
             panel.getPreviewImage().getImageHeight());
     }
@@ -355,8 +357,8 @@ class SpriteRendererIT {
 
         window.runFrames(10);
 
-        System.out.println("Switched from '" + firstName + "' to '" + secondName + "'");
-        System.out.println("Image loaded after switch: " + panel.isImageLoaded());
+        log.info("Switched from '" + firstName + "' to '" + secondName + "'");
+        log.info("Image loaded after switch: " + panel.isImageLoaded());
     }
 
     @Test
@@ -386,6 +388,6 @@ class SpriteRendererIT {
         panel.setProperty("rotation", "90");
         assertThat(panel.getSpriteRotation()).isEqualTo(90f);
 
-        System.out.println("Final loaded resource: " + loadedName);
+        log.info("Final loaded resource: " + loadedName);
     }
 }

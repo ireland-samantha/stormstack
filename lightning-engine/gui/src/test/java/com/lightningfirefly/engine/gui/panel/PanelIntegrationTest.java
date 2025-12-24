@@ -14,6 +14,7 @@ import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.ExpectedConditions;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
 import com.lightningfirefly.engine.rendering.testing.GuiElement;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -43,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *     -Dtest=PanelIntegrationTest -DenableGLTests=true
  * </pre>
  */
+@Slf4j
 @Tag("integration")
 @DisplayName("Panel OpenGL Integration Tests")
 @EnabledIfSystemProperty(named = "enableGLTests", matches = "true")
@@ -503,7 +505,7 @@ class PanelIntegrationTest {
             // Dump component tree
             String tree = driver.dumpComponentTree();
             assertThat(tree).contains("GLButton");
-            System.out.println("Component Tree:\n" + tree);
+            log.info("Component Tree:\n" + tree);
 
             window.runFrames(5);
         }
@@ -522,14 +524,14 @@ class PanelIntegrationTest {
 
             // 1. List available modules
             List<ModuleInfo> modules = moduleService.listModules().get(5, TimeUnit.SECONDS);
-            System.out.println("Available modules: " + modules.size());
+            log.info("Available modules: " + modules.size());
 
             // 2. Create a match with a module (if any available)
             List<String> moduleNames = modules.isEmpty() ? List.of() : List.of(modules.get(0).name());
 
             // ID is generated server-side
             long matchId = matchService.createMatch(moduleNames).get(5, TimeUnit.SECONDS);
-            System.out.println("Created match with ID: " + matchId);
+            log.info("Created match with ID: " + matchId);
 
             if (matchId > 0) {
                 // 3. Verify match appears in list
@@ -547,7 +549,7 @@ class PanelIntegrationTest {
                 // 5. Delete the match
                 boolean deleted = matchService.deleteMatch(matchId).get(5, TimeUnit.SECONDS);
                 assertThat(deleted).isTrue();
-                System.out.println("Deleted match: " + matchId);
+                log.info("Deleted match: " + matchId);
 
                 // 6. Verify match is gone
                 app.getMatchPanel().refreshMatches();
