@@ -3,7 +3,7 @@ package com.lightningfirefly.game.renderering;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowFactory;
 import com.lightningfirefly.game.domain.ControlSystem;
-import com.lightningfirefly.game.orchestrator.SpriteMapper;
+import com.lightningfirefly.game.orchestrator.SpriteSnapshotMapper;
 
 /**
  * Builder for creating GameRenderer instances.
@@ -15,7 +15,7 @@ import com.lightningfirefly.game.orchestrator.SpriteMapper;
  *     .windowSize(800, 600)
  *     .title("My Game")
  *     .controlSystem(myControls)
- *     .spriteMapper(snapshot -> convertToSprites(snapshot))
+ *     .spriteMapper(components -> convertToSprites(components))
  *     .build();
  *
  * renderer.start(() -> {
@@ -29,7 +29,7 @@ public class GameRendererBuilder {
     private int height = 600;
     private String title = "Game";
     private ControlSystem controlSystem;
-    private SpriteMapper spriteMapper;
+    private SpriteSnapshotMapper spriteMapper;
     private Window window; // Optional pre-built window
     private WindowFactory windowFactory;
 
@@ -90,7 +90,7 @@ public class GameRendererBuilder {
     /**
      * Set the sprite mapper for converting snapshots to sprites.
      */
-    public GameRendererBuilder spriteMapper(SpriteMapper spriteMapper) {
+    public GameRendererBuilder spriteMapper(SpriteSnapshotMapper spriteMapper) {
         this.spriteMapper = spriteMapper;
         return this;
     }

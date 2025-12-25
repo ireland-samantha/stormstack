@@ -2,7 +2,7 @@ package com.lightningfirefly.game.renderering;
 
 import com.lightningfirefly.game.domain.ControlSystem;
 import com.lightningfirefly.game.domain.Sprite;
-import com.lightningfirefly.game.orchestrator.SpriteMapper;
+import com.lightningfirefly.game.orchestrator.SpriteSnapshotMapper;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * <p>The GameRenderer abstracts the rendering layer, providing a clean API for:
  * <ul>
  *   <li>Creating and managing a game window</li>
- *   <li>Rendering sprites based on ECS snapshot data</li>
+ *   <li>Rendering sprites based on ECS components data</li>
  *   <li>Handling input via ControlSystem</li>
  * </ul>
  *
@@ -25,13 +25,13 @@ import java.util.function.Consumer;
  *     .build();
  *
  * renderer.setControlSystem(myControls);
- * renderer.setSpriteMapper(snapshot -> convertToSprites(snapshot));
+ * renderer.setSpriteMapper(components -> convertToSprites(components));
  *
  * // Game loop
  * renderer.start(() -> {
  *     // Called every frame
- *     Snapshot snapshot = fetchLatestSnapshot();
- *     renderer.renderSnapshot(snapshot);
+ *     Snapshot components = fetchLatestSnapshot();
+ *     renderer.renderSnapshot(components);
  * });
  * }</pre>
  */
@@ -47,14 +47,14 @@ public interface GameRenderer {
     /**
      * Set the sprite mapper function that converts snapshots to sprites.
      *
-     * @param mapper function that extracts sprites from a snapshot
+     * @param mapper function that extracts sprites from a components
      */
-    void setSpriteMapper(SpriteMapper mapper);
+    void setSpriteMapper(SpriteSnapshotMapper mapper);
 
     /**
-     * Render a snapshot by converting it to sprites and displaying them.
+     * Render snapshot components by converting them to sprites and displaying them.
      *
-     * @param snapshot the ECS snapshot to render
+     * @param snapshot the ECS components to render
      */
     void renderSnapshot(Object snapshot);
 

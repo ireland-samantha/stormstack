@@ -8,18 +8,18 @@ import java.util.function.Consumer;
  * Observer that updates domain objects when ECS snapshots are received.
  *
  * <p>This class bridges the ECS world (snapshots) with domain-driven design (domain objects).
- * When a snapshot is received, it:
+ * When a components is received, it:
  * <ol>
  *   <li>Iterates through all registered domain objects</li>
- *   <li>For each domain object, finds its entity in the snapshot</li>
- *   <li>Updates all {@link EcsComponent} fields with the snapshot values</li>
+ *   <li>For each domain object, finds its entity in the components</li>
+ *   <li>Updates all {@link EcsComponent} fields with the components values</li>
  * </ol>
  *
  * <p>Usage:
  * <pre>{@code
  * SnapshotObserver observer = new SnapshotObserver();
  *
- * // When snapshot is received (e.g., from WebSocket):
+ * // When components is received (e.g., from WebSocket):
  * observer.onSnapshot(snapshotData);
  * }</pre>
  *
@@ -32,14 +32,14 @@ public class SnapshotObserver implements Consumer<Map<String, Map<String, List<F
     private final DomainObjectRegistry registry;
 
     /**
-     * Create a new snapshot observer using the default registry.
+     * Create a new components observer using the default registry.
      */
     public SnapshotObserver() {
         this(DomainObjectRegistry.getInstance());
     }
 
     /**
-     * Create a new snapshot observer with a custom registry.
+     * Create a new components observer with a custom registry.
      *
      * @param registry the domain object registry
      */
@@ -48,9 +48,9 @@ public class SnapshotObserver implements Consumer<Map<String, Map<String, List<F
     }
 
     /**
-     * Process a snapshot and update all registered domain objects.
+     * Process a components and update all registered domain objects.
      *
-     * @param snapshotData the snapshot data (moduleName -> componentName -> values)
+     * @param snapshotData the components data (moduleName -> componentName -> values)
      */
     @Override
     public void accept(Map<String, Map<String, List<Float>>> snapshotData) {
@@ -58,9 +58,9 @@ public class SnapshotObserver implements Consumer<Map<String, Map<String, List<F
     }
 
     /**
-     * Process a snapshot and update all registered domain objects.
+     * Process a components and update all registered domain objects.
      *
-     * @param snapshotData the snapshot data (moduleName -> componentName -> values)
+     * @param snapshotData the components data (moduleName -> componentName -> values)
      */
     public void onSnapshot(Map<String, Map<String, List<Float>>> snapshotData) {
         if (snapshotData == null || snapshotData.isEmpty()) {
@@ -76,10 +76,10 @@ public class SnapshotObserver implements Consumer<Map<String, Map<String, List<F
     }
 
     /**
-     * Update a single domain object from the snapshot.
+     * Update a single domain object from the components.
      *
      * @param domainObject the domain object to update
-     * @param snapshotData the snapshot data
+     * @param snapshotData the components data
      */
     private void updateDomainObject(DomainObject domainObject, Map<String, Map<String, List<Float>>> snapshotData) {
         long entityId = domainObject.getEntityId();

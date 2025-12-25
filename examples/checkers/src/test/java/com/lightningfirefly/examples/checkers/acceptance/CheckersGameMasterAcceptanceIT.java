@@ -112,9 +112,9 @@ class CheckersGameMasterAcceptanceIT {
         log.info("[Step 3] Verifying factory resources...");
         assertThat(checkersFactory.getGameMasterJar())
                 .as("GameMaster JAR should be bundled")
-                .isNotNull()
-                .hasSizeGreaterThan(1000);
-        log.debug("  GameMaster JAR: {} bytes", checkersFactory.getGameMasterJar().length);
+                .isPresent()
+                .hasValueSatisfying(jar -> assertThat(jar).hasSizeGreaterThan(1000));
+        log.debug("  GameMaster JAR: {} bytes", checkersFactory.getGameMasterJar().orElseThrow().length);
 
         var moduleJars = checkersFactory.getModuleJars();
         assertThat(moduleJars)
@@ -143,8 +143,8 @@ class CheckersGameMasterAcceptanceIT {
                 .isTrue();
         log.info("Game running! Match ID: {}", gameApplication.getActiveMatchId());
 
-        // Step 6: Poll for snapshot and render sprites
-        log.info("[Step 6] Polling for snapshot...");
+        // Step 6: Poll for components and render sprites
+        log.info("[Step 6] Polling for components...");
 
         // Give the server time to process game start and generate entities
         Thread.sleep(500);
@@ -215,14 +215,14 @@ class CheckersGameMasterAcceptanceIT {
         // Verify game master name
         assertThat(factory.getGameMasterName())
                 .as("CheckersGameFactory should specify CheckersGameMaster")
-                .isEqualTo("CheckersGameMaster");
+                .hasValue("CheckersGameMaster");
 
         // Verify gamemaster JAR is bundled
-        byte[] gameMasterJar = factory.getGameMasterJar();
-        assertThat(gameMasterJar)
+        assertThat(factory.getGameMasterJar())
                 .as("GameMaster JAR should be bundled")
-                .isNotNull()
-                .hasSizeGreaterThan(1000); // Should be a valid JAR
+                .isPresent()
+                .hasValueSatisfying(jar -> assertThat(jar).hasSizeGreaterThan(1000));
+        byte[] gameMasterJar = factory.getGameMasterJar().orElseThrow();
 
         // Verify module JARs are bundled
         var moduleJars = factory.getModuleJars();

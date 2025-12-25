@@ -6,6 +6,7 @@ import com.lightningfirefly.game.domain.GameScene;
 import com.lightningfirefly.game.domain.Sprite;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A simple test game factory with a single movable square sprite.
@@ -50,8 +51,8 @@ public class MovableSquareGameFactory implements GameFactory {
     }
 
     @Override
-    public String getGameMasterName() {
-        return null; // No game master needed
+    public Optional<String> getGameMasterName() {
+        return Optional.empty(); // No game master needed
     }
 
     /**

@@ -68,15 +68,15 @@ public class CheckersGameFactory implements GameFactory {
     }
 
     @Override
-    public String getGameMasterName() {
-        return CheckersGameMasterFactory.NAME;
+    public Optional<String> getGameMasterName() {
+        return Optional.of(CheckersGameMasterFactory.NAME);
     }
 
     @Override
-    public byte[] getGameMasterJar() {
+    public Optional<byte[]> getGameMasterJar() {
         // Load the pre-packaged GameMaster JAR from resources
         // This JAR is created by the maven-jar-plugin with classifier 'gamemaster'
-        return loadResource("checkers-gamemaster.jar");
+        return Optional.ofNullable(loadResource("checkers-gamemaster.jar"));
     }
 
     @Override

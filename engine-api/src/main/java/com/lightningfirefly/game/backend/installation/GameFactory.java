@@ -3,6 +3,7 @@ package com.lightningfirefly.game.backend.installation;
 import com.lightningfirefly.game.domain.GameScene;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A game factory defines a complete game that can be installed and run on the engine.
@@ -23,7 +24,6 @@ public interface GameFactory {
      *
      * @param scene the scene to attach to
      */
-    // todo please remove this if it's not needed
     void attachScene(GameScene scene);
 
     /**
@@ -47,23 +47,19 @@ public interface GameFactory {
     /**
      * Get the game master name to enable for this game.
      *
-     * @return the game master name, or null if no game master is needed
+     * @return the game master name, or empty if no game master is needed
      */
-    // todo use optional instead of null
-    default String getGameMasterName() {
-        return null;
+    default Optional<String> getGameMasterName() {
+        return Optional.empty();
     }
 
     /**
      * Get the game master JAR bytes if this factory bundles a game master.
-     * Return null if the game master is already installed on the server.
      *
-     * @return the JAR bytes, or null if not bundled
+     * @return the JAR bytes, or empty if not bundled
      */
-    // todo return empty instead of null
-
-    default byte[] getGameMasterJar() {
-        return null;
+    default Optional<byte[]> getGameMasterJar() {
+        return Optional.empty();
     }
 
     /**

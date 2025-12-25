@@ -6,9 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a field to be automatically updated from ECS snapshot data.
+ * Marks a field to be automatically updated from ECS components data.
  *
- * <p>When a snapshot is received, the framework will:
+ * <p>When a components is received, the framework will:
  * <ol>
  *   <li>Find the entity using the {@link EcsEntityId} field</li>
  *   <li>Look up the component value using the {@code ecsPath}</li>

@@ -6,7 +6,7 @@ import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
 import com.lightningfirefly.game.domain.ControlSystem;
 import com.lightningfirefly.game.domain.Sprite;
-import com.lightningfirefly.game.orchestrator.SpriteMapper;
+import com.lightningfirefly.game.orchestrator.SpriteSnapshotMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ public class DefaultGameRenderer implements GameRenderer {
     private final int height;
 
     private ControlSystem controlSystem;
-    private SpriteMapper spriteMapper;
+    private SpriteSnapshotMapper spriteMapper;
     private Consumer<Exception> errorHandler;
 
     private final AtomicBoolean running = new AtomicBoolean(false);
@@ -103,7 +103,7 @@ public class DefaultGameRenderer implements GameRenderer {
     }
 
     @Override
-    public void setSpriteMapper(SpriteMapper mapper) {
+    public void setSpriteMapper(SpriteSnapshotMapper mapper) {
         this.spriteMapper = mapper;
     }
 
@@ -113,7 +113,7 @@ public class DefaultGameRenderer implements GameRenderer {
             return;
         }
 
-        List<Sprite> sprites = spriteMapper.map(snapshot);
+        List<Sprite> sprites = spriteMapper.spritesFromSnapshot(snapshot);
         renderSprites(sprites);
     }
 

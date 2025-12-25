@@ -77,10 +77,10 @@ class SnapshotProviderMultiMatchIntegrationTest {
         // Create entity for Match 3
         createEntity(ENTITY_6_MATCH_3, MATCH_3, 9000, 9500);
 
-        // Get snapshot for Match 1
+        // Get components for Match 1
         Snapshot snapshot = snapshotProvider.createForMatch(MATCH_1);
 
-        // Verify only Match 1 entities are in the snapshot
+        // Verify only Match 1 entities are in the components
         Map<String, Map<String, List<Float>>> data = snapshot.snapshot();
         assertThat(data).containsKey("TestModule");
 
@@ -117,10 +117,10 @@ class SnapshotProviderMultiMatchIntegrationTest {
         // Create entity for Match 3
         createEntity(ENTITY_6_MATCH_3, MATCH_3, 9000, 9500);
 
-        // Get snapshot for Match 2
+        // Get components for Match 2
         Snapshot snapshot = snapshotProvider.createForMatch(MATCH_2);
 
-        // Verify only Match 2 entities are in the snapshot
+        // Verify only Match 2 entities are in the components
         Map<String, Map<String, List<Float>>> data = snapshot.snapshot();
         assertThat(data).containsKey("TestModule");
 
@@ -143,10 +143,10 @@ class SnapshotProviderMultiMatchIntegrationTest {
         // Create entities only for Match 1
         createEntity(ENTITY_1_MATCH_1, MATCH_1, 100, 200);
 
-        // Get snapshot for Match 2 (which has no entities)
+        // Get components for Match 2 (which has no entities)
         Snapshot snapshot = snapshotProvider.createForMatch(MATCH_2);
 
-        // Verify snapshot is empty or has no data for TestModule
+        // Verify components is empty or has no data for TestModule
         Map<String, Map<String, List<Float>>> data = snapshot.snapshot();
 
         if (data.containsKey("TestModule")) {
@@ -171,12 +171,12 @@ class SnapshotProviderMultiMatchIntegrationTest {
         createEntityWithEntityId(ENTITY_3_MATCH_2, MATCH_2, 1000, 2000);
         createEntityWithEntityId(ENTITY_4_MATCH_2, MATCH_2, 1500, 2500);
 
-        // Get snapshot for Match 1
+        // Get components for Match 1
         Snapshot snapshot = snapshotProvider.createForMatch(MATCH_1);
 
         Map<String, Map<String, List<Float>>> data = snapshot.snapshot();
 
-        // If ENTITY_ID is included in snapshot, it should only contain Match 1 entity IDs
+        // If ENTITY_ID is included in components, it should only contain Match 1 entity IDs
         if (data.containsKey("TestModule")) {
             Map<String, List<Float>> moduleData = data.get("TestModule");
             if (moduleData.containsKey("ENTITY_ID")) {
@@ -211,20 +211,20 @@ class SnapshotProviderMultiMatchIntegrationTest {
         Map<String, List<Float>> module2 = snapshot2.snapshot().get("TestModule");
 
         assertThat(module1.get("POSITION_X"))
-                .as("Match 1 snapshot should contain only Match 1 data")
+                .as("Match 1 components should contain only Match 1 data")
                 .containsExactly(100f);
 
         assertThat(module2.get("POSITION_X"))
-                .as("Match 2 snapshot should contain only Match 2 data")
+                .as("Match 2 components should contain only Match 2 data")
                 .containsExactly(1000f);
 
         // Ensure no cross-contamination
         assertThat(module1.get("POSITION_X"))
-                .as("Match 1 snapshot should NOT contain Match 2 data")
+                .as("Match 1 components should NOT contain Match 2 data")
                 .doesNotContain(1000f);
 
         assertThat(module2.get("POSITION_X"))
-                .as("Match 2 snapshot should NOT contain Match 1 data")
+                .as("Match 2 components should NOT contain Match 1 data")
                 .doesNotContain(100f);
     }
 

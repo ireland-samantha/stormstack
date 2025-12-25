@@ -1,8 +1,8 @@
 package com.lightningfirefly.game.renderering;
 
-import com.lightningfirefly.engine.core.snapshot.Snapshot;
 import com.lightningfirefly.game.domain.Sprite;
-import com.lightningfirefly.game.orchestrator.SnapshotSpriteMapper;
+import com.lightningfirefly.game.orchestrator.Snapshot;
+import com.lightningfirefly.game.orchestrator.SpriteSnapshotMapperImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,13 +16,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Unit tests for SnapshotSpriteMapper.
  */
-class SnapshotSpriteMapperTest {
+class SpriteSnapshotMapperImplTest {
 
-    private SnapshotSpriteMapper mapper;
+    private SpriteSnapshotMapperImpl mapper;
 
     @BeforeEach
     void setUp() {
-        mapper = new SnapshotSpriteMapper();
+        mapper = new SpriteSnapshotMapperImpl();
     }
 
     @Nested
@@ -30,7 +30,7 @@ class SnapshotSpriteMapperTest {
     class BasicMapping {
 
         @Test
-        @DisplayName("maps entity ID and position from snapshot")
+        @DisplayName("maps entity ID and position from components")
         void mapsEntityIdAndPosition() {
             Snapshot snapshot = createSnapshot(Map.of(
                     "TestModule", Map.of(
@@ -40,7 +40,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites).hasSize(1);
             assertThat(sprites.get(0).getEntityId()).isEqualTo(1);
@@ -59,7 +59,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites).hasSize(3);
             assertThat(sprites.get(0).getEntityId()).isEqualTo(1);
@@ -68,19 +68,19 @@ class SnapshotSpriteMapperTest {
         }
 
         @Test
-        @DisplayName("handles null snapshot")
+        @DisplayName("handles null components")
         void handlesNullSnapshot() {
-            List<Sprite> sprites = mapper.map(null);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(null);
 
             assertThat(sprites).isEmpty();
         }
 
         @Test
-        @DisplayName("handles empty snapshot")
+        @DisplayName("handles empty components")
         void handlesEmptySnapshot() {
             Snapshot snapshot = createSnapshot(Map.of());
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites).isEmpty();
         }
@@ -101,7 +101,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites.get(0).getWidth()).isEqualTo(64.0f);
             assertThat(sprites.get(0).getHeight()).isEqualTo(32.0f);
@@ -118,7 +118,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites.get(0).getWidth()).isEqualTo(48.0f);
             assertThat(sprites.get(0).getHeight()).isEqualTo(48.0f);
@@ -134,7 +134,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites.get(0).getRotation()).isEqualTo(45.0f);
         }
@@ -154,7 +154,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites.get(0).getZIndex()).isEqualTo(5);
         }
@@ -169,7 +169,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites.get(0).isVisible()).isTrue();
             assertThat(sprites.get(1).isVisible()).isFalse();
@@ -192,7 +192,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites.get(0).getTexturePath()).isEqualTo("/textures/sprite_42.png");
         }
@@ -209,7 +209,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             // Zero resource ID should not set texture
             assertThat(sprites.get(0).getTexturePath()).isNull();
@@ -233,7 +233,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites.get(0).getX()).isEqualTo(100.0f);
             assertThat(sprites.get(0).getY()).isEqualTo(200.0f);
@@ -250,7 +250,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites).hasSize(1);
             assertThat(sprites.get(0).getEntityId()).isEqualTo(1);
@@ -275,7 +275,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites = mapper.map(snapshot);
+            List<Sprite> sprites = mapper.spritesFromSnapshot(snapshot);
 
             assertThat(sprites).hasSize(3);
         }
@@ -295,7 +295,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites1 = mapper.map(snapshot1);
+            List<Sprite> sprites1 = mapper.spritesFromSnapshot(snapshot1);
             Sprite sprite1 = sprites1.get(0);
 
             Snapshot snapshot2 = createSnapshot(Map.of(
@@ -305,7 +305,7 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            List<Sprite> sprites2 = mapper.map(snapshot2);
+            List<Sprite> sprites2 = mapper.spritesFromSnapshot(snapshot2);
             Sprite sprite2 = sprites2.get(0);
 
             // Same instance should be returned
@@ -323,11 +323,11 @@ class SnapshotSpriteMapperTest {
                     )
             ));
 
-            Sprite sprite1 = mapper.map(snapshot).get(0);
+            Sprite sprite1 = mapper.spritesFromSnapshot(snapshot).get(0);
 
             mapper.clearCache();
 
-            Sprite sprite2 = mapper.map(snapshot).get(0);
+            Sprite sprite2 = mapper.spritesFromSnapshot(snapshot).get(0);
 
             // Should be a new instance after cache clear
             assertThat(sprite1).isNotSameAs(sprite2);

@@ -12,9 +12,9 @@ import com.lightningfirefly.engine.core.snapshot.SnapshotFilter;
 public interface SnapshotProvider {
 
     /**
-     * Create a snapshot with the given filter criteria.
+     * Create a components with the given filter criteria.
      *
-     * @return the snapshot containing filtered entity component data
+     * @return the components containing filtered entity component data
      */
     Snapshot createForMatch(long matchId);
 

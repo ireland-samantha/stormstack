@@ -9,12 +9,12 @@ import java.util.List;
  */
 @FunctionalInterface
 public
-interface SpriteMapper {
+interface SpriteSnapshotMapper {
     /**
-     * Convert a snapshot to a list of sprites.
+     * Convert a components to a list of sprites.
      *
-     * @param snapshot the ECS snapshot
+     * @param snapshot the ECS components
      * @return list of sprites to render
      */
-    List<Sprite> map(Object snapshot);
+    List<Sprite> spritesFromSnapshot(Object snapshot);
 }

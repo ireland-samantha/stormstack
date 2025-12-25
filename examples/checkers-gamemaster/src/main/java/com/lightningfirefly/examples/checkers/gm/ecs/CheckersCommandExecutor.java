@@ -44,7 +44,7 @@ public class CheckersCommandExecutor {
     public void createPiece(long entityId, int boardX, int boardY, int player) {
         log.debug("Creating piece {} at ({},{}) for player {}", entityId, boardX, boardY, player);
 
-        // Create the checkers-specific components (include matchId for snapshot filtering)
+        // Create the checkers-specific components (include matchId for components filtering)
         context.executeCommand(command("createPiece", Map.of(
                 "entityId", entityId,
                 "boardX", boardX,

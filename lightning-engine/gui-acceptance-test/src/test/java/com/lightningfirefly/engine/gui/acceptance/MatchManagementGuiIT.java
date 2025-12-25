@@ -162,7 +162,7 @@ class MatchManagementGuiIT {
     }
 
     @Test
-    @DisplayName("View match snapshot navigates to Snapshot panel")
+    @DisplayName("View match components navigates to Snapshot panel")
     void viewMatchSnapshot_shouldNavigateToSnapshotPanel() throws Exception {
         // Initialize GUI
         app = new EngineGuiApplication(backendUrl);
@@ -186,12 +186,12 @@ class MatchManagementGuiIT {
         assertThat(matchPanel.isVisible()).isTrue();
         assertThat(app.getSnapshotPanel().isVisible()).isFalse();
 
-        // View snapshot (simulated via callback)
-        matchPanel.setOnViewSnapshot(matchId -> app.switchToPanel("snapshot"));
-        app.switchToPanel("snapshot");
+        // View components (simulated via callback)
+        matchPanel.setOnViewSnapshot(matchId -> app.switchToPanel("components"));
+        app.switchToPanel("components");
         waitForUpdate(300);
 
-        // Verify navigation to snapshot panel
+        // Verify navigation to components panel
         assertThat(app.getSnapshotPanel().isVisible()).isTrue();
     }
 

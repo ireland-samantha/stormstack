@@ -1,10 +1,10 @@
-//package com.lightningfirefly.simulation.internal.snapshot;
+//package com.lightningfirefly.simulation.internal.components;
 //
 //import com.lightningfirefly.simulation.command.Command;
 //import com.lightningfirefly.simulation.module.Module;
 //import com.lightningfirefly.simulation.module.ModuleResolver;
-//import com.lightningfirefly.simulation.snapshot.Snapshot;
-//import com.lightningfirefly.simulation.snapshot.SnapshotFilter;
+//import com.lightningfirefly.simulation.components.Snapshot;
+//import com.lightningfirefly.simulation.components.SnapshotFilter;
 //import com.lightningfirefly.simulation.store.BaseComponent;
 //import com.lightningfirefly.simulation.store.EntityComponentStore;
 //import com.lightningfirefly.simulation.system.System;
@@ -43,9 +43,9 @@
 //    void createForMatch_withNoModules_shouldReturnEmptySnapshot() {
 //        when(moduleResolver.resolveAllModules()).thenReturn(List.of());
 //
-//        Snapshot snapshot = snapshotProvider.createForMatch(null);
+//        Snapshot components = snapshotProvider.createForMatch(null);
 //
-//        assertThat(snapshot.snapshot()).isEmpty();
+//        assertThat(components.components()).isEmpty();
 //    }
 //
 //    @Test
@@ -53,9 +53,9 @@
 //        Module module = new TestModule(List.of());
 //        when(moduleResolver.resolveAllModules()).thenReturn(List.of(module));
 //
-//        Snapshot snapshot = snapshotProvider.createForMatch(null);
+//        Snapshot components = snapshotProvider.createForMatch(null);
 //
-//        assertThat(snapshot.snapshot()).isEmpty();
+//        assertThat(components.components()).isEmpty();
 //    }
 //
 //    @Test
@@ -65,9 +65,9 @@
 //        when(moduleResolver.resolveAllModules()).thenReturn(List.of(module));
 //        when(entityComponentStore.getEntitiesWithComponents(any(List.class))).thenReturn(Set.of());
 //
-//        Snapshot snapshot = snapshotProvider.createForMatch(null);
+//        Snapshot components = snapshotProvider.createForMatch(null);
 //
-//        assertThat(snapshot.snapshot()).isEmpty();
+//        assertThat(components.components()).isEmpty();
 //    }
 //
 //    @Test
@@ -87,10 +87,10 @@
 //        when(entityComponentStore.getComponent(100L, healthComponent)).thenReturn(100L);
 //        when(entityComponentStore.getComponent(200L, positionComponent)).thenReturn(2000L);
 //
-//        Snapshot snapshot = snapshotProvider.createForMatch(null);
+//        Snapshot components = snapshotProvider.createForMatch(null);
 //
-//        assertThat(snapshot.snapshot()).containsKey("TestModule");
-//        Map<String, List<Long>> moduleData = snapshot.snapshot().get("TestModule");
+//        assertThat(components.components()).containsKey("TestModule");
+//        Map<String, List<Long>> moduleData = components.components().get("TestModule");
 //        assertThat(moduleData.get("position")).containsExactlyInAnyOrder(1000L, 2000L);
 //        assertThat(moduleData.get("health")).containsExactly(100L);
 //    }
@@ -106,9 +106,9 @@
 //        when(entityComponentStore.getComponent(100L, component)).thenReturn(1000L);
 //
 //        SnapshotFilter filter = new SnapshotFilter(List.of(1L), List.of(42L));
-//        Snapshot snapshot = snapshotProvider.createForMatch(filter);
+//        Snapshot components = snapshotProvider.createForMatch(filter);
 //
-//        assertThat(snapshot.snapshot()).containsKey("TestModule");
+//        assertThat(components.components()).containsKey("TestModule");
 //    }
 //
 //    @Test
@@ -155,20 +155,20 @@
 //        when(entityComponentStore.getComponent(100L, comp1)).thenReturn(111L);
 //        when(entityComponentStore.getComponent(100L, comp2)).thenReturn(222L);
 //
-//        Snapshot snapshot = snapshotProvider.createForMatch(null);
+//        Snapshot components = snapshotProvider.createForMatch(null);
 //
-//        assertThat(snapshot.snapshot()).containsKeys("TestModuleOne", "TestModuleTwo");
-//        assertThat(snapshot.snapshot().get("TestModuleOne").get("comp1")).containsExactly(111L);
-//        assertThat(snapshot.snapshot().get("TestModuleTwo").get("comp2")).containsExactly(222L);
+//        assertThat(components.components()).containsKeys("TestModuleOne", "TestModuleTwo");
+//        assertThat(components.components().get("TestModuleOne").get("comp1")).containsExactly(111L);
+//        assertThat(components.components().get("TestModuleTwo").get("comp2")).containsExactly(222L);
 //    }
 //
 //    @Test
 //    void captureAll_shouldCallCreateForMatchWithNull() {
 //        when(moduleResolver.resolveAllModules()).thenReturn(List.of());
 //
-//        Snapshot snapshot = snapshotProvider.captureAll();
+//        Snapshot components = snapshotProvider.captureAll();
 //
-//        assertThat(snapshot.snapshot()).isEmpty();
+//        assertThat(components.components()).isEmpty();
 //    }
 //
 //    // Test implementations

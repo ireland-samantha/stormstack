@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>Spawning an entity</li>
  *   <li>Sending attachResource command to link texture to entity</li>
  *   <li>Ticking the simulation to process the command</li>
- *   <li>Verifying the snapshot contains RESOURCE_ID with correct value</li>
+ *   <li>Verifying the components contains RESOURCE_ID with correct value</li>
  * </ol>
  */
 @Slf4j
@@ -179,7 +179,7 @@ class RenderingResourceGuiIT {
     }
 
     @Test
-    @DisplayName("Complete workflow: upload texture, spawn entity, attach resource, verify snapshot")
+    @DisplayName("Complete workflow: upload texture, spawn entity, attach resource, verify components")
     void completeWorkflow_uploadSpawnAttachVerify() throws Exception {
         // Initialize GUI
         app = new EngineGuiApplication(backendUrl);
@@ -207,7 +207,7 @@ class RenderingResourceGuiIT {
         tickSimulation();  // Extra tick to ensure command is processed
         log.info("Ticked simulation after spawn");
 
-        // Step 5: Get entity ID from snapshot and send attachResource command
+        // Step 5: Get entity ID from components and send attachResource command
         long entityId = getEntityIdFromSnapshot(createdMatchId);
         log.info("Found entity ID: " + entityId);
         sendAttachSpriteCommand(entityId, uploadedResourceId);
@@ -218,7 +218,7 @@ class RenderingResourceGuiIT {
         tickSimulation();  // Extra tick to ensure command is processed
         log.info("Ticked simulation after attachResource");
 
-        // Step 7: Navigate to snapshot view and verify
+        // Step 7: Navigate to components view and verify
         clickButton("Snapshot");
         waitForUpdate(500);
 
@@ -227,13 +227,13 @@ class RenderingResourceGuiIT {
         snapshotPanel.loadAllSnapshots();
         waitForSnapshotLoaded();
 
-        // Verify we can see the snapshot data
+        // Verify we can see the components data
         log.info("Snapshot panel is visible: " + snapshotPanel.isVisible());
         log.info("Snapshot received - workflow completed successfully");
     }
 
     @Test
-    @DisplayName("Upload texture and attach to entity shows in snapshot panel")
+    @DisplayName("Upload texture and attach to entity shows in components panel")
     void uploadAndAttach_showsInSnapshotPanel() throws Exception {
         // Initialize GUI
         app = new EngineGuiApplication(backendUrl);
@@ -266,7 +266,7 @@ class RenderingResourceGuiIT {
         snapshotPanel.loadAllSnapshots();
         waitForSnapshotLoaded();
 
-        // The snapshot panel should show the entity tree
+        // The components panel should show the entity tree
         assertThat(snapshotPanel.isVisible()).as("Snapshot panel should be visible").isTrue();
 
         log.info("Snapshot panel showing match " + createdMatchId);
@@ -410,7 +410,7 @@ class RenderingResourceGuiIT {
         tickSimulation();
         tickSimulation();  // Extra tick to ensure command is processed
 
-        // Get the entity ID from snapshot
+        // Get the entity ID from components
         long entityId = getEntityIdFromSnapshot(createdMatchId);
         log.info("Spawned entity ID: " + entityId);
 
@@ -591,7 +591,7 @@ class RenderingResourceGuiIT {
     private long getEntityIdFromSnapshot(long matchId) throws Exception {
         var httpClient = java.net.http.HttpClient.newHttpClient();
 
-        // Try multiple times with delay to ensure snapshot is ready
+        // Try multiple times with delay to ensure components is ready
         for (int i = 0; i < 30; i++) {
             var request = java.net.http.HttpRequest.newBuilder()
                     .uri(java.net.URI.create(backendUrl + "/api/snapshots/match/" + matchId))

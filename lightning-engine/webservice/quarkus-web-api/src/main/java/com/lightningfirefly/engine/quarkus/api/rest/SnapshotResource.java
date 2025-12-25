@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * REST resource for snapshot operations.
+ * REST resource for components operations.
  */
 @Path("/api/snapshots")
 @Produces(MediaType.APPLICATION_JSON)
@@ -50,7 +50,7 @@ public class SnapshotResource {
     }
 
     /**
-     * Get snapshot for a specific match.
+     * Get components for a specific match.
      */
     @GET
     @Path("/match/{matchId}")

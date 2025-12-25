@@ -11,9 +11,10 @@ import com.lightningfirefly.engine.rendering.render2d.impl.opengl.GLComponentFac
 import com.lightningfirefly.game.domain.SnapshotObserver;
 import com.lightningfirefly.game.backend.installation.GameFactory;
 import com.lightningfirefly.game.orchestrator.GameOrchestratorImpl;
+import com.lightningfirefly.game.orchestrator.SnapshotSubscriber;
 import com.lightningfirefly.game.renderering.GameRenderer;
 import com.lightningfirefly.game.renderering.GameRendererBuilder;
-import com.lightningfirefly.game.orchestrator.SnapshotSpriteMapper;
+import com.lightningfirefly.game.orchestrator.SpriteSnapshotMapperImpl;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -135,7 +136,7 @@ public class GameApplication {
         if (isGameRunning && gameRenderer != null) {
             log.info("Running game renderer on main thread");
             gameRenderer.start(() -> {
-                // Frame update callback - rendering driven by snapshot subscription
+                // Frame update callback - rendering driven by components subscription
             });
 
             // Game window closed - cleanup and potentially restart launcher
@@ -320,7 +321,7 @@ public class GameApplication {
         gameRenderer = GameRendererBuilder.create()
                 .windowSize(800, 600)
                 .title("Game")
-                .spriteMapper(new SnapshotSpriteMapper()
+                .spriteMapper(new SpriteSnapshotMapperImpl()
                         .defaultSize(64, 64)
                         .textureResolver(resourceId -> {
                             // Look up texture from cache directory
@@ -333,8 +334,8 @@ public class GameApplication {
                         }))
                 .build();
 
-        // Create snapshot subscriber that polls the server
-        GameOrchestratorImpl.SnapshotSubscriber snapshotSubscriber = (matchId, callback) -> {
+        // Create components subscriber that polls the server
+        SnapshotSubscriber snapshotSubscriber = (matchId, callback) -> {
             activeMatchId = matchId;
 
             // Create a polling thread
@@ -348,7 +349,7 @@ public class GameApplication {
                 try {
                     pollAndProcessSnapshot(matchId, callback);
                 } catch (Exception e) {
-                    log.warn("Error polling snapshot: {}", e.getMessage());
+                    log.warn("Error polling components: {}", e.getMessage());
                 }
             }, 0, 100, TimeUnit.MILLISECONDS);
 
@@ -377,7 +378,7 @@ public class GameApplication {
     }
 
     /**
-     * Poll the server for a snapshot and process it.
+     * Poll the server for a components and process it.
      */
     private void pollAndProcessSnapshot(long matchId, Consumer<Map<String, Map<String, List<Float>>>> callback) {
         try {
@@ -391,12 +392,12 @@ public class GameApplication {
                 }
             }
         } catch (IOException e) {
-            log.debug("Failed to poll snapshot: {}", e.getMessage());
+            log.debug("Failed to poll components: {}", e.getMessage());
         }
     }
 
     /**
-     * Parse snapshot JSON data into the expected format.
+     * Parse components JSON data into the expected format.
      */
     private Map<String, Map<String, List<Float>>> parseSnapshotData(String snapshotJson) {
         if (snapshotJson == null || snapshotJson.isBlank()) {
@@ -442,7 +443,7 @@ public class GameApplication {
                 pos = braceEnd;
             }
         } catch (Exception e) {
-            log.warn("Failed to parse snapshot JSON: {}", e.getMessage());
+            log.warn("Failed to parse components JSON: {}", e.getMessage());
         }
 
         return result;
@@ -510,7 +511,7 @@ public class GameApplication {
     private static final int BOARD_SIZE = 8; // 8x8 checkers board
 
     /**
-     * Render sprites from snapshot data to the launcher window.
+     * Render sprites from components data to the launcher window.
      * This is useful for testing and debugging.
      */
     private void renderSpritesToWindow(Map<String, Map<String, List<Float>>> snapshotData) {
@@ -785,23 +786,23 @@ public class GameApplication {
     }
 
     /**
-     * Manually poll the server for a snapshot and render sprites.
+     * Manually poll the server for a components and render sprites.
      * This is useful for testing to ensure sprites are rendered synchronously.
      *
      * @return true if sprites were rendered
      */
     public boolean pollAndRenderSnapshot() {
         if (!isGameRunning || activeMatchId <= 0) {
-            log.debug("Cannot poll snapshot: gameRunning={}, matchId={}", isGameRunning, activeMatchId);
+            log.debug("Cannot poll components: gameRunning={}, matchId={}", isGameRunning, activeMatchId);
             return false;
         }
 
         try {
-            log.trace("Polling snapshot for match {}", activeMatchId);
+            log.trace("Polling components for match {}", activeMatchId);
             Optional<SnapshotAdapter.SnapshotResponse> response = snapshotAdapter.getMatchSnapshot(activeMatchId);
             if (response.isPresent()) {
                 String snapshotData = response.get().snapshotData();
-                log.debug("Received snapshot: tick={}, dataLength={}",
+                log.debug("Received components: tick={}, dataLength={}",
                         response.get().tick(),
                         snapshotData != null ? snapshotData.length() : 0);
                 log.trace("Snapshot data preview: {}",
@@ -809,18 +810,18 @@ public class GameApplication {
 
                 Map<String, Map<String, List<Float>>> parsed = parseSnapshotData(snapshotData);
                 if (parsed != null && !parsed.isEmpty()) {
-                    log.debug("Parsed snapshot with {} modules: {}", parsed.size(), parsed.keySet());
+                    log.debug("Parsed components with {} modules: {}", parsed.size(), parsed.keySet());
                     renderSpritesToWindow(parsed);
                     log.debug("Rendered {} sprites to window", windowSpriteMap.size());
                     return !windowSpriteMap.isEmpty();
                 } else {
-                    log.debug("Parsed snapshot is empty or null");
+                    log.debug("Parsed components is empty or null");
                 }
             } else {
-                log.debug("No snapshot response from server for match {}", activeMatchId);
+                log.debug("No components response from server for match {}", activeMatchId);
             }
         } catch (IOException e) {
-            log.warn("Failed to poll snapshot for match {}: {}", activeMatchId, e.getMessage());
+            log.warn("Failed to poll components for match {}: {}", activeMatchId, e.getMessage());
         }
         return false;
     }

@@ -26,7 +26,7 @@ import java.util.function.Function;
  * gameRenderer.setSpriteMapper(mapper);
  * }</pre>
  */
-public class SnapshotSpriteMapper implements SpriteMapper {
+public class SpriteSnapshotMapperImpl implements SpriteSnapshotMapper {
 
     // Component name configuration
     private String entityIdComponent = "ENTITY_ID";
@@ -53,13 +53,13 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Create a new SnapshotSpriteMapper with default configuration.
      */
-    public SnapshotSpriteMapper() {
+    public SpriteSnapshotMapperImpl() {
     }
 
     /**
      * Configure the entity ID component name.
      */
-    public SnapshotSpriteMapper entityIdComponent(String componentName) {
+    public SpriteSnapshotMapperImpl entityIdComponent(String componentName) {
         this.entityIdComponent = componentName;
         return this;
     }
@@ -67,7 +67,7 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Configure position component names.
      */
-    public SnapshotSpriteMapper positionComponents(String xComponent, String yComponent) {
+    public SpriteSnapshotMapperImpl positionComponents(String xComponent, String yComponent) {
         this.positionXComponent = xComponent;
         this.positionYComponent = yComponent;
         return this;
@@ -76,7 +76,7 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Configure size component names.
      */
-    public SnapshotSpriteMapper sizeComponents(String xComponent, String yComponent) {
+    public SpriteSnapshotMapperImpl sizeComponents(String xComponent, String yComponent) {
         this.sizeXComponent = xComponent;
         this.sizeYComponent = yComponent;
         return this;
@@ -85,7 +85,7 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Configure the rotation component name.
      */
-    public SnapshotSpriteMapper rotationComponent(String componentName) {
+    public SpriteSnapshotMapperImpl rotationComponent(String componentName) {
         this.rotationComponent = componentName;
         return this;
     }
@@ -93,7 +93,7 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Configure the z-index component name.
      */
-    public SnapshotSpriteMapper zIndexComponent(String componentName) {
+    public SpriteSnapshotMapperImpl zIndexComponent(String componentName) {
         this.zIndexComponent = componentName;
         return this;
     }
@@ -101,7 +101,7 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Configure the resource ID component name (for texture lookup).
      */
-    public SnapshotSpriteMapper resourceIdComponent(String componentName) {
+    public SpriteSnapshotMapperImpl resourceIdComponent(String componentName) {
         this.resourceIdComponent = componentName;
         return this;
     }
@@ -109,7 +109,7 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Configure the visibility component name.
      */
-    public SnapshotSpriteMapper visibleComponent(String componentName) {
+    public SpriteSnapshotMapperImpl visibleComponent(String componentName) {
         this.visibleComponent = componentName;
         return this;
     }
@@ -117,7 +117,7 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Set default sprite dimensions.
      */
-    public SnapshotSpriteMapper defaultSize(float width, float height) {
+    public SpriteSnapshotMapperImpl defaultSize(float width, float height) {
         this.defaultWidth = width;
         this.defaultHeight = height;
         return this;
@@ -126,7 +126,7 @@ public class SnapshotSpriteMapper implements SpriteMapper {
     /**
      * Set default z-index.
      */
-    public SnapshotSpriteMapper defaultZIndex(int zIndex) {
+    public SpriteSnapshotMapperImpl defaultZIndex(int zIndex) {
         this.defaultZIndex = zIndex;
         return this;
     }
@@ -135,26 +135,25 @@ public class SnapshotSpriteMapper implements SpriteMapper {
      * Set the texture resolver function.
      * This function converts resource IDs to texture file paths.
      */
-    public SnapshotSpriteMapper textureResolver(Function<Long, String> resolver) {
+    public SpriteSnapshotMapperImpl textureResolver(Function<Long, String> resolver) {
         this.textureResolver = resolver;
         return this;
     }
 
     @Override
-    public List<Sprite> map(Object snapshotObj) {
+    public List<Sprite> spritesFromSnapshot(Object snapshotObj) {
         List<Sprite> sprites = new ArrayList<>();
 
-        // todo: add more robust snapshot DTO
         if (!(snapshotObj instanceof Snapshot snapshot)) {
             return sprites;
         }
 
-        if (snapshot.snapshot() == null) {
+        if (snapshot.components() == null) {
             return sprites;
         }
 
-        // Iterate through all modules in the snapshot
-        for (Map.Entry<String, Map<String, List<Float>>> moduleEntry : snapshot.snapshot().entrySet()) {
+        // Iterate through all modules in the components
+        for (Map.Entry<String, Map<String, List<Float>>> moduleEntry : snapshot.components().entrySet()) {
             Map<String, List<Float>> moduleData = moduleEntry.getValue();
 
             // Get entity IDs from this module

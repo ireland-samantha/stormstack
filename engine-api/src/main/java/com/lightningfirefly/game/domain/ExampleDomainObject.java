@@ -4,13 +4,13 @@ package com.lightningfirefly.game.domain;
  * Example domain object demonstrating ECS-to-Domain mapping.
  *
  * <p>This class shows how to create a domain object that automatically
- * synchronizes its fields with ECS snapshot data.
+ * synchronizes its fields with ECS components data.
  *
  * <p>Key features:
  * <ul>
  *   <li>{@link EcsEntityId} marks the field that holds the entity's ID</li>
  *   <li>{@link EcsComponent} marks fields that sync with ECS components</li>
- *   <li>The object auto-registers when created and updates on each snapshot</li>
+ *   <li>The object auto-registers when created and updates on each components</li>
  * </ul>
  *
  * <p>Usage:
@@ -71,7 +71,7 @@ public class ExampleDomainObject extends DomainObject {
 
     @Override
     protected void onSnapshotUpdated() {
-        // Called after all fields are updated from a snapshot
+        // Called after all fields are updated from a components
         // Subclasses can add custom logic here
     }
 }

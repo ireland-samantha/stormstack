@@ -1,6 +1,6 @@
 package com.lightningfirefly.engine.gui.acceptance;
 
-import com.lightningfirefly.engine.core.snapshot.Snapshot;
+import com.lightningfirefly.game.orchestrator.Snapshot;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.render2d.WindowBuilder;
 import com.lightningfirefly.game.domain.ControlSystem;
@@ -8,7 +8,7 @@ import com.lightningfirefly.game.domain.Sprite;
 import com.lightningfirefly.game.renderering.DefaultGameRenderer;
 import com.lightningfirefly.game.renderering.GameRenderer;
 import com.lightningfirefly.game.renderering.GameRendererBuilder;
-import com.lightningfirefly.game.orchestrator.SnapshotSpriteMapper;
+import com.lightningfirefly.game.orchestrator.SpriteSnapshotMapperImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
@@ -184,7 +184,7 @@ class GameRendererIT {
     }
 
     @Test
-    @DisplayName("SnapshotSpriteMapper renders entities from server snapshot")
+    @DisplayName("SnapshotSpriteMapper renders entities from server components")
     void snapshotSpriteMapper_rendersEntitiesFromServerSnapshot() throws Exception {
         // Create a match with SpawnModule
         createdMatchId = createMatch(List.of("SpawnModule"));
@@ -199,10 +199,10 @@ class GameRendererIT {
         tick();
         log.info("Spawned 5 entities");
 
-        // Fetch snapshot
+        // Fetch components
         Snapshot snapshot = fetchSnapshot(createdMatchId);
         assertThat(snapshot).isNotNull();
-        log.debug("Fetched snapshot with data: {}", snapshot.snapshot().keySet());
+        log.debug("Fetched components with data: {}", snapshot.components().keySet());
 
         // Create OpenGL window and renderer
         window = WindowBuilder.create()
@@ -212,7 +212,7 @@ class GameRendererIT {
 
         // Configure mapper to use ENTITY_ID as the source (SpawnModule only has ENTITY_TYPE, not positions)
         // Use ENTITY_TYPE as entity ID source and provide default positions
-        SnapshotSpriteMapper mapper = new SnapshotSpriteMapper()
+        SpriteSnapshotMapperImpl mapper = new SpriteSnapshotMapperImpl()
                 .defaultSize(48, 48)
                 .entityIdComponent("ENTITY_ID")
                 .textureResolver(entityId -> entityId % 2 == 0
@@ -232,7 +232,7 @@ class GameRendererIT {
 
         // Verify rendering completed (sprites may be empty if backend doesn't return position data)
         var renderingSprites = window.getSprites();
-        log.info("Rendered {} sprites from server snapshot", renderingSprites.size());
+        log.info("Rendered {} sprites from server components", renderingSprites.size());
         log.debug("Render frames completed: {}", frameCount.get());
 
         // The test verifies the rendering pipeline works - sprites depend on backend module data
@@ -240,16 +240,35 @@ class GameRendererIT {
     }
 
     @Test
-    @DisplayName("GameRenderer with live snapshot updates")
+    @DisplayName("GameRenderer with live components updates")
     void gameRenderer_withLiveSnapshotUpdates() throws Exception {
         // Create a match
-        createdMatchId = createMatch(List.of("SpawnModule", "MoveModule"));
+        createdMatchId = createMatch(List.of("SpawnModule", "MoveModule", "RenderModule"));
         log.info("Created match with movement: {}", createdMatchId);
 
-        // Spawn an entity
+        // Spawn an entity and get its ID (entity ID is 1 for first spawn)
         spawnEntity(createdMatchId, 100);
         tick();
+
+        long entityId = 1L; // First spawned entity gets ID 1
+
+        // Attach movement components with initial position
+        int initialX = 200;
+        int initialY = 150;
+        attachMovement(entityId, initialX, initialY);
         tick();
+
+        // Attach a resource/sprite to the entity
+        attachResource(entityId, 1L);
+        tick();
+
+        // Verify snapshot has the correct data from all modules
+        SnapshotParser parser = fetchSnapshotParser(createdMatchId);
+        assertThat(parser.hasModule("MoveModule")).isTrue();
+        assertThat(parser.hasModule("RenderModule")).isTrue();
+        assertThat(parser.getComponentValue("MoveModule", "POSITION_X")).hasValue((float) initialX);
+        assertThat(parser.getComponentValue("MoveModule", "POSITION_Y")).hasValue((float) initialY);
+        assertThat(parser.getComponentValue("RenderModule", "RESOURCE_ID")).hasValue(1.0f);
 
         // Create OpenGL window
         window = WindowBuilder.create()
@@ -257,38 +276,65 @@ class GameRendererIT {
                 .title("Live Snapshot Updates")
                 .build();
 
-        SnapshotSpriteMapper mapper = new SnapshotSpriteMapper()
+        SpriteSnapshotMapperImpl mapper = new SpriteSnapshotMapperImpl()
                 .defaultSize(32, 32)
-                .textureResolver(entityId -> entityId % 2 == 0
+                .textureResolver(id -> id % 2 == 0
                         ? "textures/red-checker.png"
                         : "textures/black-checker.png");
 
         renderer = new DefaultGameRenderer(window);
         renderer.setSpriteMapper(mapper);
 
-        AtomicInteger tickCount = new AtomicInteger(0);
-
-        // Render and tick periodically
-        renderer.runFrames(120, () -> {
+        // Render initial state
+        renderer.runFrames(30, () -> {
             try {
-                // Tick server every 20 frames
-                if (tickCount.incrementAndGet() % 20 == 0) {
-                    tick();
-                }
-
-                // Fetch and render latest snapshot
                 Snapshot snapshot = fetchSnapshot(createdMatchId);
-                if (snapshot != null) {
-                    renderer.renderSnapshot(snapshot);
-                }
+                renderer.renderSnapshot(snapshot);
             } catch (Exception e) {
-                // Ignore network errors in test
+                throw new RuntimeException(e);
             }
         });
 
-        log.info("Completed live snapshot rendering over {} frames", tickCount.get());
-        // Verify rendering completed - sprites depend on backend module configuration
-        assertThat(tickCount.get()).isEqualTo(120);
+        // Verify sprite is rendered at initial position
+        var sprites = window.getSprites();
+        assertThat(sprites).isNotEmpty();
+        var sprite = sprites.get(0);
+        assertThat(sprite.getX()).isEqualTo(initialX);
+        assertThat(sprite.getY()).isEqualTo(initialY);
+        log.info("Sprite rendered at initial position: ({}, {})", sprite.getX(), sprite.getY());
+
+        // Now move the entity to a new position via command
+        int newX = 400;
+        int newY = 300;
+        sendCommand(CommandRequestBuilder.command("attachMovement")
+                .param("entityId", entityId)
+                .param("positionX", newX)
+                .param("positionY", newY)
+                .param("positionZ", 0L)
+                .param("velocityX", 0L)
+                .param("velocityY", 0L)
+                .param("velocityZ", 0L)
+                .build());
+        tick();
+        tick();
+
+        // Render after move
+        renderer.runFrames(30, () -> {
+            try {
+                Snapshot snapshot = fetchSnapshot(createdMatchId);
+                renderer.renderSnapshot(snapshot);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        // Verify sprite moved to new position
+        sprites = window.getSprites();
+        assertThat(sprites).isNotEmpty();
+        sprite = sprites.get(0);
+        assertThat(sprite.getX()).isEqualTo(newX);
+        assertThat(sprite.getY()).isEqualTo(newY);
+        log.info("Sprite moved to new position: ({}, {})", sprite.getX(), sprite.getY());
     }
 
     @Test
@@ -436,15 +482,42 @@ class GameRendererIT {
     }
 
     private void spawnEntity(long matchId, long entityType) throws Exception {
-        String json = String.format(
-                "{\"matchId\": %d, \"playerId\": 1, \"entityType\": %d, \"positionX\": %d, \"positionY\": %d}",
-                matchId, entityType, 100 + (int)(Math.random() * 500), 100 + (int)(Math.random() * 300));
+        sendCommand(CommandRequestBuilder.command("spawn")
+                .param("matchId", matchId)
+                .param("playerId", 1L)
+                .param("entityType", entityType)
+                .build());
+    }
+
+    private void attachMovement(long entityId, long posX, long posY) throws Exception {
+        sendCommand(CommandRequestBuilder.command("attachMovement")
+                .param("entityId", entityId)
+                .param("positionX", posX)
+                .param("positionY", posY)
+                .param("positionZ", 0L)
+                .param("velocityX", 0L)
+                .param("velocityY", 0L)
+                .param("velocityZ", 0L)
+                .build());
+    }
+
+    private void attachResource(long entityId, long resourceId) throws Exception {
+        sendCommand(CommandRequestBuilder.command("attachSprite")
+                .param("entityId", entityId)
+                .param("resourceId", resourceId)
+                .build());
+    }
+
+    private void sendCommand(String json) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(backendUrl + "/api/commands/spawn"))
+                .uri(URI.create(backendUrl + "/api/commands"))
                 .POST(HttpRequest.BodyPublishers.ofString(json))
                 .header("Content-Type", "application/json")
                 .build();
-        httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        assertThat(response.statusCode())
+                .withFailMessage("Command failed with status %d: %s", response.statusCode(), response.body())
+                .isEqualTo(202);
     }
 
     private void tick() throws Exception {
@@ -457,6 +530,22 @@ class GameRendererIT {
     }
 
     private Snapshot fetchSnapshot(long matchId) throws Exception {
+        String json = fetchSnapshotJson(matchId);
+        if (json == null) {
+            return new Snapshot(Map.of());
+        }
+        return SnapshotParser.parse(json).toSnapshot();
+    }
+
+    private SnapshotParser fetchSnapshotParser(long matchId) throws Exception {
+        String json = fetchSnapshotJson(matchId);
+        if (json == null) {
+            return SnapshotParser.parse("{}");
+        }
+        return SnapshotParser.parse(json);
+    }
+
+    private String fetchSnapshotJson(long matchId) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(backendUrl + "/api/snapshots/match/" + matchId))
                 .GET()
@@ -467,52 +556,6 @@ class GameRendererIT {
             return null;
         }
 
-        return parseSnapshotFromJson(response.body());
-    }
-
-    private Snapshot parseSnapshotFromJson(String json) {
-        // Parse entity IDs
-        java.util.regex.Pattern entityIdPattern = java.util.regex.Pattern.compile("\"ENTITY_ID\":\\s*\\[(.*?)\\]");
-        java.util.regex.Matcher entityMatcher = entityIdPattern.matcher(json);
-
-        List<Float> entityIds = new ArrayList<>();
-        if (entityMatcher.find()) {
-            for (String id : entityMatcher.group(1).split(",")) {
-                id = id.trim();
-                if (!id.isEmpty()) {
-                    entityIds.add(Float.parseFloat(id));
-                }
-            }
-        }
-
-        // Parse positions
-        List<Float> posX = parseFloatList(json, "POSITION_X");
-        List<Float> posY = parseFloatList(json, "POSITION_Y");
-
-        if (entityIds.isEmpty()) {
-            return new Snapshot(Map.of());
-        }
-
-        Map<String, List<Float>> moduleData = new java.util.HashMap<>();
-        moduleData.put("ENTITY_ID", entityIds);
-        if (!posX.isEmpty()) moduleData.put("POSITION_X", posX);
-        if (!posY.isEmpty()) moduleData.put("POSITION_Y", posY);
-
-        return new Snapshot(Map.of("SpawnModule", moduleData));
-    }
-
-    private List<Float> parseFloatList(String json, String key) {
-        List<Float> result = new ArrayList<>();
-        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\"" + key + "\":\\s*\\[(.*?)\\]");
-        java.util.regex.Matcher matcher = pattern.matcher(json);
-        if (matcher.find()) {
-            for (String val : matcher.group(1).split(",")) {
-                val = val.trim();
-                if (!val.isEmpty()) {
-                    result.add(Float.parseFloat(val));
-                }
-            }
-        }
-        return result;
+        return response.body();
     }
 }

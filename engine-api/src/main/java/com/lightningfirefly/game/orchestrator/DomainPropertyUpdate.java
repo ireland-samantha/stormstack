@@ -12,7 +12,7 @@ import java.util.function.Consumer;
  * @param entityId the entity ID to watch
  * @param callback the callback to invoke with the new value
  */
-public record WatchedDomainPropertyUpdate(
+public record DomainPropertyUpdate(
     String ecsPath,
     long entityId,
     Consumer<Float> callback

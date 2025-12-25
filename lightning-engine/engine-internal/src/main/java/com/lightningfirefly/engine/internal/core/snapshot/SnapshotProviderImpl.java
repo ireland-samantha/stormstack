@@ -15,7 +15,7 @@ import java.util.*;
  * Implementation of {@link SnapshotProvider} that creates snapshots from the ECS store.
  *
  * <p>Snapshots contain component values for all entities that have the requested
- * snapshot components from the loaded modules.
+ * components components from the loaded modules.
  */
 @Slf4j
 public class SnapshotProviderImpl implements SnapshotProvider {
@@ -23,7 +23,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private final EntityComponentStore entityComponentStore;
     private final ModuleResolver moduleResolver;
 
-    // Cache for requested snapshot components per module
+    // Cache for requested components components per module
     private volatile List<ModuleComponentMapping> cachedMappings;
 
     public SnapshotProviderImpl(EntityComponentStore entityComponentStore, ModuleResolver moduleResolver) {
@@ -35,7 +35,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     public Snapshot createForMatch(long matchId) {
         List<ModuleComponentMapping> mappings = getOrBuildMappings();
         if (mappings.isEmpty()) {
-            log.debug("No snapshot components registered, returning empty snapshot");
+            log.debug("No components components registered, returning empty components");
             return new Snapshot(Map.of());
         }
 
@@ -62,7 +62,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             return new Snapshot(Map.of());
         }
 
-        // Build snapshot structure: moduleName -> componentName -> [values...]
+        // Build components structure: moduleName -> componentName -> [values...]
         Map<String, Map<String, List<Float>>> snapshotData = new LinkedHashMap<>();
         float matchIdFloat = (float) matchId;
 
@@ -104,7 +104,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             }
         }
 
-        log.debug("Created snapshot with {} modules, {} entities",
+        log.debug("Created components with {} modules, {} entities",
                 snapshotData.size(), entities.size());
 
         return new Snapshot(snapshotData);
@@ -145,7 +145,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             }
         }
 
-        log.debug("Built snapshot mappings for {} modules", mappings.size());
+        log.debug("Built components mappings for {} modules", mappings.size());
         return mappings;
     }
 

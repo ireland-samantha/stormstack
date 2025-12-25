@@ -59,10 +59,10 @@ public class GameMasterCommandAdapter {
         }
     }
 
-    // todo: only allow execution via context for now.
-
     /**
      * Execute a command via the GameMasterContext.
+     * <p>This is the preferred way to execute commands from game master logic,
+     * as it properly integrates with the context's lifecycle management.
      *
      * @param context the game master context
      * @param command the command to execute

@@ -34,7 +34,7 @@ class SnapshotObserverTest {
     class OnSnapshot {
 
         @Test
-        @DisplayName("should update domain object fields from snapshot")
+        @DisplayName("should update domain object fields from components")
         void shouldUpdateFieldsFromSnapshot() {
             TestPlayer player = new TestPlayer(1);
 
@@ -56,7 +56,7 @@ class SnapshotObserverTest {
         }
 
         @Test
-        @DisplayName("should handle multiple entities in snapshot")
+        @DisplayName("should handle multiple entities in components")
         void shouldHandleMultipleEntities() {
             TestPlayer player1 = new TestPlayer(1);
             TestPlayer player2 = new TestPlayer(2);
@@ -103,7 +103,7 @@ class SnapshotObserverTest {
         }
 
         @Test
-        @DisplayName("should not update if entity not in snapshot")
+        @DisplayName("should not update if entity not in components")
         void shouldNotUpdateIfEntityNotInSnapshot() {
             TestPlayer player = new TestPlayer(999);
             player.positionX = 50f;
@@ -146,7 +146,7 @@ class SnapshotObserverTest {
         }
 
         @Test
-        @DisplayName("should handle null snapshot")
+        @DisplayName("should handle null components")
         void shouldHandleNullSnapshot() {
             TestPlayer player = new TestPlayer(1);
 
@@ -155,7 +155,7 @@ class SnapshotObserverTest {
         }
 
         @Test
-        @DisplayName("should handle empty snapshot")
+        @DisplayName("should handle empty components")
         void shouldHandleEmptySnapshot() {
             TestPlayer player = new TestPlayer(1);
             player.positionX = 50f;
@@ -166,7 +166,7 @@ class SnapshotObserverTest {
         }
 
         @Test
-        @DisplayName("should handle missing module in snapshot")
+        @DisplayName("should handle missing module in components")
         void shouldHandleMissingModule() {
             TestPlayer player = new TestPlayer(1);
             player.positionX = 50f;
@@ -185,7 +185,7 @@ class SnapshotObserverTest {
         }
 
         @Test
-        @DisplayName("should handle missing component in snapshot")
+        @DisplayName("should handle missing component in components")
         void shouldHandleMissingComponent() {
             TestPlayer player = new TestPlayer(1);
             player.positionX = 50f;

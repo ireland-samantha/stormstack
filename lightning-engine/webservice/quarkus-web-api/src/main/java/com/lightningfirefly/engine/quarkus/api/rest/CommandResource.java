@@ -33,6 +33,7 @@ public class CommandResource {
         try {
             gameSimulation.enqueueCommand(request.commandName(), payload);
         } catch (EntityNotFoundException e) {
+            e.printStackTrace();
             return Response.status(404).build(); // todo ai: add an exception mapper
         }
         return Response.accepted()

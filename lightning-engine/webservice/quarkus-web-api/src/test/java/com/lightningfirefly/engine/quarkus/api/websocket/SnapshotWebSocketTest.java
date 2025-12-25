@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Tests verify that the WebSocket endpoint:
  * <ul>
  *   <li>Accepts connections</li>
- *   <li>Broadcasts snapshot data</li>
+ *   <li>Broadcasts components data</li>
  *   <li>Responds to text messages</li>
  * </ul>
  */

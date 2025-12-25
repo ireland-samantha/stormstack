@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
- * Registry for domain objects that are subscribed to ECS snapshot updates.
+ * Registry for domain objects that are subscribed to ECS components updates.
  *
  * <p>Domain objects register themselves when created and unregister when disposed.
  * The registry notifies listeners when domain objects are added or removed.

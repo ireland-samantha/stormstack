@@ -17,7 +17,7 @@ import java.util.List;
  * WebSocket endpoint for streaming match snapshots.
  *
  * <p>Clients connect to /ws/snapshots/{matchId} and receive periodic
- * snapshot updates for the specified match.
+ * components updates for the specified match.
  */
 @WebSocket(path = "/ws/snapshots/{matchId}")
 public class SnapshotWebSocket {
@@ -41,7 +41,7 @@ public class SnapshotWebSocket {
 
     @OnTextMessage
     public SnapshotResponse onMessage(String message, @PathParam String matchId) {
-        // Any message triggers an immediate snapshot response
+        // Any message triggers an immediate components response
         long id = Long.parseLong(matchId);
         return createSnapshotResponse(id);
     }

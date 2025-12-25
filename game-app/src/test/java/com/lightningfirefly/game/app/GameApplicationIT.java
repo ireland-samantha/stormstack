@@ -18,6 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -424,8 +425,8 @@ class GameApplicationIT {
         }
 
         @Override
-        public String getGameMasterName() {
-            return "CheckersGameMaster";
+        public Optional<String> getGameMasterName() {
+            return Optional.of("CheckersGameMaster");
         }
 
         @Override

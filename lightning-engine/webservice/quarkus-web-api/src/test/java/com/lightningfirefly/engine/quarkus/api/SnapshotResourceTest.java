@@ -60,7 +60,7 @@ class SnapshotResourceTest {
 
         int matchId = createResponse.jsonPath().getInt("id");
 
-        // Get snapshot for the match
+        // Get components for the match
         given()
             .when().get("/api/snapshots/match/" + matchId)
             .then()

@@ -34,7 +34,7 @@ import java.util.List;
  * }
  * }</pre>
  *
- * <p>When a snapshot is received, the framework will automatically update
+ * <p>When a components is received, the framework will automatically update
  * the {@code x} and {@code y} fields based on the ECS component values.
  */
 public abstract class DomainObject {
@@ -87,7 +87,7 @@ public abstract class DomainObject {
     }
 
     /**
-     * Dispose this domain object and unregister from snapshot updates.
+     * Dispose this domain object and unregister from components updates.
      *
      * <p>After calling this method, the object will no longer receive updates.
      */
@@ -129,7 +129,7 @@ public abstract class DomainObject {
     }
 
     /**
-     * Called after all watched fields have been updated from a snapshot.
+     * Called after all watched fields have been updated from a components.
      *
      * <p>Subclasses can override this to perform additional logic after updates.
      */

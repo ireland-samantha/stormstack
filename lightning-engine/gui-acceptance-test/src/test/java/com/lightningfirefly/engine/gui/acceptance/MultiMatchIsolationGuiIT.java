@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * GUI acceptance test for multi-match isolation business use case.
  *
  * <p>This test verifies the business requirement: entities created in one match
- * should not appear in another match's snapshot, as viewed through the GUI.
+ * should not appear in another match's components, as viewed through the GUI.
  *
  * <p>Uses Testcontainers for the backend and requires OpenGL display.
  *
@@ -209,8 +209,8 @@ class MultiMatchIsolationGuiIT {
         clickButton("Advance");
         waitForUpdate(500);
 
-        // ===== STEP 6: Verify snapshot isolation via GUI TreeView =====
-        log.info("=== STEP 6: Verify snapshot isolation via TreeView ===");
+        // ===== STEP 6: Verify components isolation via GUI TreeView =====
+        log.info("=== STEP 6: Verify components isolation via TreeView ===");
         clickButton("Snapshot");
         waitForUpdate(500);
         clickButton("Load All");

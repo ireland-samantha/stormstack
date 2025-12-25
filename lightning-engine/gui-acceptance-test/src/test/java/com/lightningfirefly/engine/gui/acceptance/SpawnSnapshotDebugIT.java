@@ -17,7 +17,7 @@ import java.time.Duration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Debug test to isolate the empty snapshot issue.
+ * Debug test to isolate the empty components issue.
  * This test uses only REST API calls without GUI.
  */
 @Slf4j
@@ -51,7 +51,7 @@ class SpawnSnapshotDebugIT {
     }
 
     @Test
-    @DisplayName("Spawn entity should appear in snapshot")
+    @DisplayName("Spawn entity should appear in components")
     void spawnEntity_shouldAppearInSnapshot() throws Exception {
         // Step 1: Create a match with SpawnModule
         log.info("=== Step 1: Create match ===");
@@ -69,10 +69,10 @@ class SpawnSnapshotDebugIT {
         long matchId = Long.parseLong(matchResponseBody.substring(idStart, idEnd).trim());
         log.info("Created match ID: " + matchId);
 
-        // Step 2: Check initial snapshot (should be empty or have no entities)
-        log.info("\n=== Step 2: Check initial snapshot ===");
+        // Step 2: Check initial components (should be empty or have no entities)
+        log.info("\n=== Step 2: Check initial components ===");
         HttpResponse<String> snapshotResponse1 = get("/api/snapshots");
-        log.info("Initial snapshot: " + snapshotResponse1.body());
+        log.info("Initial components: " + snapshotResponse1.body());
 
         // Step 3: Send spawn command
         log.info("\n=== Step 3: Send spawn command ===");
@@ -92,17 +92,17 @@ class SpawnSnapshotDebugIT {
         HttpResponse<String> tickResponse2 = post("/api/simulation/tick", "");
         log.info("Tick 2 response: " + tickResponse2.statusCode() + " " + tickResponse2.body());
 
-        // Step 6: Check snapshot after spawn
-        log.info("\n=== Step 6: Check snapshot after spawn ===");
+        // Step 6: Check components after spawn
+        log.info("\n=== Step 6: Check components after spawn ===");
         HttpResponse<String> snapshotResponse2 = get("/api/snapshots");
         log.info("Snapshot after spawn: " + snapshotResponse2.body());
 
-        // Step 7: Check match-specific snapshot
-        log.info("\n=== Step 7: Check match-specific snapshot ===");
+        // Step 7: Check match-specific components
+        log.info("\n=== Step 7: Check match-specific components ===");
         HttpResponse<String> matchSnapshotResponse = get("/api/snapshots/match/" + matchId);
-        log.info("Match " + matchId + " snapshot: " + matchSnapshotResponse.body());
+        log.info("Match " + matchId + " components: " + matchSnapshotResponse.body());
 
-        // Parse and verify the snapshot has entity data
+        // Parse and verify the components has entity data
         String snapshotData = snapshotResponse2.body();
         assertThat(snapshotData).as("Snapshot should not have empty modules array").doesNotContain("\"data\":{}");
 

@@ -15,7 +15,7 @@ import lombok.Setter;
  *
  * <p>On the server side (GameMaster), the setters are used directly to
  * update state. On the client side, fields are automatically updated
- * from snapshot data via the DomainObjectRegistry.
+ * from components data via the DomainObjectRegistry.
  */
 @Getter
 @Setter
@@ -111,7 +111,7 @@ public class CheckerPiece extends DomainObject {
 
     @Override
     protected void onSnapshotUpdated() {
-        // Called after fields are updated from an ECS snapshot
+        // Called after fields are updated from an ECS components
         // Can be used for client-side reactions to state changes
     }
 

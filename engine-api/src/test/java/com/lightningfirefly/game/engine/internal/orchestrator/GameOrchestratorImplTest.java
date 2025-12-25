@@ -13,11 +13,14 @@ import com.lightningfirefly.game.domain.EcsEntityId;
 import com.lightningfirefly.game.domain.SnapshotObserver;
 import com.lightningfirefly.game.backend.installation.GameFactory;
 import com.lightningfirefly.game.orchestrator.GameOrchestratorImpl;
+import com.lightningfirefly.game.orchestrator.GameSession;
+import com.lightningfirefly.game.orchestrator.ResourceDownloadEvent;
+import com.lightningfirefly.game.orchestrator.SnapshotSubscriber;
 import com.lightningfirefly.game.domain.GameScene;
-import com.lightningfirefly.game.orchestrator.WatchedDomainPropertyUpdate;
+import com.lightningfirefly.game.orchestrator.DomainPropertyUpdate;
 import com.lightningfirefly.game.renderering.GameRenderer;
 
-import com.lightningfirefly.game.orchestrator.SpriteMapper;
+import com.lightningfirefly.game.orchestrator.SpriteSnapshotMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -140,7 +144,7 @@ class GameOrchestratorImplTest {
             orchestrator.startGame(module);
 
             assertThat(orchestrator.isGameRunning(module)).isTrue();
-            GameOrchestratorImpl.GameSession session = orchestrator.getSession(module);
+            GameSession session = orchestrator.getSession(module);
             assertThat(session).isNotNull();
             assertThat(session.matchId()).isEqualTo(1L);
         }
@@ -284,13 +288,13 @@ class GameOrchestratorImplTest {
     class ResourceCaching {
 
         @Test
-        @DisplayName("should download resource when RESOURCE_ID found in snapshot")
+        @DisplayName("should download resource when RESOURCE_ID found in components")
         void shouldDownloadResourceFromSnapshot() throws Exception {
             // Add a downloadable resource to the mock
             resourceAdapter.addDownloadableResource(42L, "texture.png", "TEXTURE", new byte[]{1, 2, 3});
 
             CountDownLatch downloadLatch = new CountDownLatch(1);
-            AtomicReference<GameOrchestratorImpl.ResourceDownloadEvent> eventRef = new AtomicReference<>();
+            AtomicReference<ResourceDownloadEvent> eventRef = new AtomicReference<>();
 
             orchestrator.setResourceDownloadListener(event -> {
                 eventRef.set(event);
@@ -300,7 +304,7 @@ class GameOrchestratorImplTest {
             GameFactory module = new TestGameFactory();
             orchestrator.startGame(module);
 
-            // Simulate snapshot with RESOURCE_ID
+            // Simulate components with RESOURCE_ID
             Map<String, Map<String, List<Float>>> snapshot = createSnapshot(
                     "RenderModule",
                     Map.of(
@@ -315,8 +319,8 @@ class GameOrchestratorImplTest {
             assertThat(completed).isTrue();
 
             // Verify download completed
-            GameOrchestratorImpl.ResourceDownloadEvent event = eventRef.get();
-            assertThat(event.status()).isEqualTo(GameOrchestratorImpl.ResourceDownloadEvent.Status.COMPLETED);
+            ResourceDownloadEvent event = eventRef.get();
+            assertThat(event.status()).isEqualTo(ResourceDownloadEvent.Status.COMPLETED);
             assertThat(event.resourceId()).isEqualTo(42L);
             assertThat(event.localPath()).isNotNull();
             assertThat(Files.exists(event.localPath())).isTrue();
@@ -333,7 +337,7 @@ class GameOrchestratorImplTest {
             GameFactory module = new TestGameFactory();
             orchestrator.startGame(module);
 
-            // First snapshot triggers download
+            // First components triggers download
             Map<String, Map<String, List<Float>>> snapshot = createSnapshot(
                     "RenderModule",
                     Map.of("RESOURCE_ID", List.of(42.0f))
@@ -344,7 +348,7 @@ class GameOrchestratorImplTest {
             // Reset download count
             int downloadCountBefore = resourceAdapter.downloadCount;
 
-            // Second snapshot with same resource
+            // Second components with same resource
             snapshotSubscriber.simulateSnapshot(snapshot);
 
             // Small delay to ensure async would have run
@@ -355,7 +359,7 @@ class GameOrchestratorImplTest {
         }
 
         @Test
-        @DisplayName("should download multiple resources from snapshot")
+        @DisplayName("should download multiple resources from components")
         void shouldDownloadMultipleResources() throws Exception {
             resourceAdapter.addDownloadableResource(10L, "sprite1.png", "TEXTURE", new byte[]{1});
             resourceAdapter.addDownloadableResource(20L, "sprite2.png", "TEXTURE", new byte[]{2});
@@ -435,7 +439,7 @@ class GameOrchestratorImplTest {
             // Don't add resource to mock - will cause download to fail
 
             CountDownLatch downloadLatch = new CountDownLatch(1);
-            AtomicReference<GameOrchestratorImpl.ResourceDownloadEvent> eventRef = new AtomicReference<>();
+            AtomicReference<ResourceDownloadEvent> eventRef = new AtomicReference<>();
 
             orchestrator.setResourceDownloadListener(event -> {
                 eventRef.set(event);
@@ -454,8 +458,8 @@ class GameOrchestratorImplTest {
             boolean completed = downloadLatch.await(5, TimeUnit.SECONDS);
             assertThat(completed).isTrue();
 
-            GameOrchestratorImpl.ResourceDownloadEvent event = eventRef.get();
-            assertThat(event.status()).isEqualTo(GameOrchestratorImpl.ResourceDownloadEvent.Status.FAILED);
+            ResourceDownloadEvent event = eventRef.get();
+            assertThat(event.status()).isEqualTo(ResourceDownloadEvent.Status.FAILED);
             assertThat(event.error()).isNotNull();
         }
 
@@ -575,22 +579,22 @@ class GameOrchestratorImplTest {
     class RegisterWatch {
 
         @Test
-        @DisplayName("should invoke callback when snapshot received")
+        @DisplayName("should invoke callback when components received")
         void shouldInvokeCallbackOnSnapshot() {
             AtomicReference<Float> receivedValue = new AtomicReference<>();
-            WatchedDomainPropertyUpdate watch = new WatchedDomainPropertyUpdate(
+            DomainPropertyUpdate watch = new DomainPropertyUpdate(
                     "MoveModule.POSITION_X",
                     1L,
                     receivedValue::set
             );
 
-            orchestrator.registerWatch(watch);
+            orchestrator.registerDomainPropertyUpdate(watch);
 
-            // Start game to get the snapshot callback
+            // Start game to get the components callback
             GameFactory module = new TestGameFactory();
             orchestrator.startGame(module);
 
-            // Simulate snapshot
+            // Simulate components
             Map<String, Map<String, List<Float>>> snapshot = createSnapshot(
                     "MoveModule",
                     Map.of(
@@ -607,13 +611,13 @@ class GameOrchestratorImplTest {
         @DisplayName("should not invoke callback for wrong entity")
         void shouldNotInvokeForWrongEntity() {
             AtomicBoolean called = new AtomicBoolean(false);
-            WatchedDomainPropertyUpdate watch = new WatchedDomainPropertyUpdate(
+            DomainPropertyUpdate watch = new DomainPropertyUpdate(
                     "MoveModule.POSITION_X",
                     999L, // Different entity
                     value -> called.set(true)
             );
 
-            orchestrator.registerWatch(watch);
+            orchestrator.registerDomainPropertyUpdate(watch);
             GameFactory module = new TestGameFactory();
             orchestrator.startGame(module);
 
@@ -635,9 +639,9 @@ class GameOrchestratorImplTest {
             AtomicReference<Float> posX = new AtomicReference<>();
             AtomicReference<Float> posY = new AtomicReference<>();
 
-            orchestrator.registerWatch(new WatchedDomainPropertyUpdate(
+            orchestrator.registerDomainPropertyUpdate(new DomainPropertyUpdate(
                     "MoveModule.POSITION_X", 1L, posX::set));
-            orchestrator.registerWatch(new WatchedDomainPropertyUpdate(
+            orchestrator.registerDomainPropertyUpdate(new DomainPropertyUpdate(
                     "MoveModule.POSITION_Y", 1L, posY::set));
 
             GameFactory module = new TestGameFactory();
@@ -666,20 +670,20 @@ class GameOrchestratorImplTest {
         @DisplayName("should stop invoking callback after unregister")
         void shouldStopInvoking() {
             AtomicReference<Float> receivedValue = new AtomicReference<>();
-            WatchedDomainPropertyUpdate watch = new WatchedDomainPropertyUpdate(
+            DomainPropertyUpdate watch = new DomainPropertyUpdate(
                     "MoveModule.POSITION_X",
                     1L,
                     receivedValue::set
             );
 
-            orchestrator.registerWatch(watch);
+            orchestrator.registerDomainPropertyUpdate(watch);
             GameFactory module = new TestGameFactory();
             orchestrator.startGame(module);
 
             // Unregister
-            orchestrator.unregisterWatch(watch);
+            orchestrator.unregisterDomainPropertyUpdate(watch);
 
-            // Simulate snapshot
+            // Simulate components
             Map<String, Map<String, List<Float>>> snapshot = createSnapshot(
                     "MoveModule",
                     Map.of(
@@ -698,7 +702,7 @@ class GameOrchestratorImplTest {
     class DomainObjectIntegration {
 
         @Test
-        @DisplayName("should update domain objects on snapshot")
+        @DisplayName("should update domain objects on components")
         void shouldUpdateDomainObjects() {
             TestPlayer player = new TestPlayer(1);
 
@@ -786,13 +790,13 @@ class GameOrchestratorImplTest {
         }
 
         @Override
-        public String getGameMasterName() {
-            return "TestGameMaster";
+        public Optional<String> getGameMasterName() {
+            return Optional.of("TestGameMaster");
         }
 
         @Override
-        public byte[] getGameMasterJar() {
-            return new byte[]{7, 8, 9, 10};
+        public Optional<byte[]> getGameMasterJar() {
+            return Optional.of(new byte[]{7, 8, 9, 10});
         }
     }
 
@@ -996,7 +1000,7 @@ class GameOrchestratorImplTest {
         }
     }
 
-    static class MockSnapshotSubscriber implements GameOrchestratorImpl.SnapshotSubscriber {
+    static class MockSnapshotSubscriber implements SnapshotSubscriber {
         boolean subscribeCalled = false;
         boolean unsubscribeCalled = false;
         long lastMatchId;
@@ -1026,7 +1030,7 @@ class GameOrchestratorImplTest {
         }
 
         @Override
-        public void setSpriteMapper(SpriteMapper mapper) {
+        public void setSpriteMapper(SpriteSnapshotMapper mapper) {
         }
 
         @Override
