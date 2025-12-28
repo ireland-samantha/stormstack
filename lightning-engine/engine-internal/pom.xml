@@ -70,7 +70,7 @@
         </dependency>
         <dependency>
             <groupId>com.lightningfirefly</groupId>
-            <artifactId>engine-adapter</artifactId>
+            <artifactId>game-sdk</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>

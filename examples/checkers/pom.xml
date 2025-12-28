@@ -29,10 +29,10 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
-        <!-- Game API (for GameFactory, GameMaster, etc.) -->
+        <!-- Game SDK (for GameFactory, GameMaster, etc.) -->
         <dependency>
             <groupId>com.lightningfirefly</groupId>
-            <artifactId>engine-adapter</artifactId>
+            <artifactId>game-sdk</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 

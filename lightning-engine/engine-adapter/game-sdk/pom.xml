@@ -5,13 +5,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.lightningfirefly</groupId>
-        <artifactId>backend</artifactId>
+        <artifactId>engine-adapter</artifactId>
         <version>0.0.1-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>engine-ext-game-masters</artifactId>
-    <description>Sample game master implementations for Lightning Engine</description>
+    <artifactId>game-sdk</artifactId>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
@@ -22,24 +20,36 @@
     <dependencies>
         <dependency>
             <groupId>com.lightningfirefly</groupId>
-            <artifactId>game-sdk</artifactId>
+            <artifactId>web-api-adapter</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
-        <dependency>
-            <groupId>com.lightningfirefly</groupId>
-            <artifactId>engine</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
+
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Test dependencies -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.25.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.lightningfirefly</groupId>
+            <artifactId>engine-rendering-test</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

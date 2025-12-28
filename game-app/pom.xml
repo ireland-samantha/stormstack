@@ -22,10 +22,10 @@
     </properties>
 
     <dependencies>
-        <!-- Game API (includes orchestrator, game module, etc.) -->
+        <!-- Game SDK (includes orchestrator, game module, etc.) -->
         <dependency>
             <groupId>com.lightningfirefly</groupId>
-            <artifactId>engine-adapter</artifactId>
+            <artifactId>game-sdk</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
