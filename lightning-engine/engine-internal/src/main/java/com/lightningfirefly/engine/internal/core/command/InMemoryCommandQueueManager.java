@@ -29,7 +29,7 @@ public class InMemoryCommandQueueManager implements CommandQueue, CommandQueueEx
 
     @Override
     public void executeCommands(int amount) {
-        log.info("Execute {} commands.", amount);
+        log.trace("Execute {} commands.", amount);
         if (amount <= 0) {
             return;
         }

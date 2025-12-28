@@ -25,7 +25,7 @@
         <!-- Game API (includes orchestrator, game module, etc.) -->
         <dependency>
             <groupId>com.lightningfirefly</groupId>
-            <artifactId>game-api</artifactId>
+            <artifactId>engine-adapter</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
 

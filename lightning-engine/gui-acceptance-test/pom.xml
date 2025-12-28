@@ -42,7 +42,7 @@
         <!-- Game API Module -->
         <dependency>
             <groupId>com.lightningfirefly</groupId>
-            <artifactId>game-api</artifactId>
+            <artifactId>engine-adapter</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

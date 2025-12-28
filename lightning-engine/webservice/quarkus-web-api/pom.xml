@@ -68,7 +68,7 @@
         </dependency>
         <dependency>
             <groupId>com.lightningfirefly</groupId>
-            <artifactId>game-api</artifactId>
+            <artifactId>engine-adapter</artifactId>
             <version>${project.version}</version>
         </dependency>
 
