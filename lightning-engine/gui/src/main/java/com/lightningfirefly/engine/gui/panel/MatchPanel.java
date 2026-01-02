@@ -192,14 +192,24 @@ public class MatchPanel extends AbstractWindowComponent {
      * Create a new match. Match ID is generated server-side.
      */
     private void createMatch() {
-        // Get selected modules from module list (supports multi-selection)
+        // Get selected modules and game masters from lists (supports multi-selection)
         List<String> moduleNames = moduleList.getSelectedItems();
+        List<String> gameMasterNames = gameMasterList != null ? gameMasterList.getSelectedItems() : List.of();
 
-        setStatus("Creating match with " + moduleNames.size() + " module(s)...", colours.textSecondary());
-        matchService.createMatch(moduleNames)
+        String statusMsg = "Creating match with " + moduleNames.size() + " module(s)";
+        if (!gameMasterNames.isEmpty()) {
+            statusMsg += " and " + gameMasterNames.size() + " game master(s)";
+        }
+        setStatus(statusMsg + "...", colours.textSecondary());
+
+        matchService.createMatch(moduleNames, gameMasterNames)
             .thenAccept(id -> {
                 if (id > 0) {
-                    setStatus("Created match " + id + " with " + moduleNames.size() + " module(s)", colours.green());
+                    String successMsg = "Created match " + id + " with " + moduleNames.size() + " module(s)";
+                    if (!gameMasterNames.isEmpty()) {
+                        successMsg += " and " + gameMasterNames.size() + " game master(s)";
+                    }
+                    setStatus(successMsg, colours.green());
                     refreshMatches();
                 } else {
                     setStatus("Failed to create match", colours.red());
@@ -368,15 +378,15 @@ public class MatchPanel extends AbstractWindowComponent {
     }
 
     /**
-     * Create a match with the selected modules (for UI testing).
+     * Create a match with the selected modules and game masters (for UI testing).
      * Match ID is generated server-side.
      *
      * @return CompletableFuture with the generated match ID
      */
     public java.util.concurrent.CompletableFuture<Long> createMatchWithSelectedModules() {
-        // Use selectedModules list which is populated by selectModule()
-        // moduleList.getSelectedItems() may not reflect programmatic selection
-        return matchService.createMatch(new ArrayList<>(selectedModules));
+        // Use selectedModules and selectedGameMasters lists which are populated by selectModule()/selectGameMaster()
+        // ListView.getSelectedItems() may not reflect programmatic selection
+        return matchService.createMatch(new ArrayList<>(selectedModules), new ArrayList<>(selectedGameMasters));
     }
 
     /**
@@ -391,6 +401,40 @@ public class MatchPanel extends AbstractWindowComponent {
      */
     public List<String> getSelectedModuleNames() {
         return new ArrayList<>(selectedModules);
+    }
+
+    /**
+     * Get the list of available game masters for creating matches.
+     */
+    public List<GameMasterInfo> getAvailableGameMasters() {
+        return new ArrayList<>(availableGameMasters);
+    }
+
+    /**
+     * Select a game master by index (for UI testing).
+     */
+    public void selectGameMaster(int index) {
+        if (index >= 0 && index < availableGameMasters.size()) {
+            gameMasterList.setSelectedIndex(index);
+            String gameMasterName = availableGameMasters.get(index).name();
+            if (!selectedGameMasters.contains(gameMasterName)) {
+                selectedGameMasters.add(gameMasterName);
+            }
+        }
+    }
+
+    /**
+     * Clear selected game masters (for testing).
+     */
+    public void clearSelectedGameMasters() {
+        selectedGameMasters.clear();
+    }
+
+    /**
+     * Get the list of selected game master names (for testing).
+     */
+    public List<String> getSelectedGameMasterNames() {
+        return new ArrayList<>(selectedGameMasters);
     }
 
     // Delegate rendering and input to the visual panel

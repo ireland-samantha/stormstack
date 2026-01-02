@@ -186,7 +186,82 @@ class MatchManagementGuiIT {
         assertThat(app.getSnapshotPanel().isVisible()).isTrue();
     }
 
+    @Test
+    @DisplayName("Given GUI with game masters available, when creating match with game master, then match includes game masters")
+    void givenGuiWithGameMasters_whenCreatingMatchWithGameMaster_thenMatchIncludesGameMasters() throws Exception {
+        // Given: GUI initialized with modules and game masters loaded
+        app = new EngineGuiApplication(backendUrl);
+        app.initialize();
+        window = app.getWindow();
+        driver = GuiDriver.connect(window);
+        window.runFrames(5);
+
+        clickButton("Matches");
+        waitForUpdate(500);
+        clickButton("Refresh");
+        waitForModulesLoaded();
+        waitForGameMastersLoaded();
+
+        var matchPanel = app.getMatchPanel();
+        var initialMatchCount = matchPanel.getMatches().size();
+
+        // And: MoveModule and TickCounter game master are selected
+        var modules = matchPanel.getAvailableModules();
+        int moveModuleIndex = findModuleIndex(modules, "MoveModule");
+        assertThat(moveModuleIndex)
+                .as("MoveModule should be available")
+                .isGreaterThanOrEqualTo(0);
+        matchPanel.selectModule(moveModuleIndex);
+
+        var gameMasters = matchPanel.getAvailableGameMasters();
+        int tickCounterIndex = findGameMasterIndex(gameMasters, "TickCounter");
+        assertThat(tickCounterIndex)
+                .as("TickCounter game master should be available")
+                .isGreaterThanOrEqualTo(0);
+        matchPanel.selectGameMaster(tickCounterIndex);
+        window.runFrames(2);
+
+        // When: Creating the match
+        createdMatchId = matchPanel.createMatchWithSelectedModules().get();
+
+        // Then: Match should be created with game masters
+        assertThat(createdMatchId)
+                .as("Match ID should be positive")
+                .isGreaterThan(0);
+
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        var matches = matchPanel.getMatches();
+        assertThat(matches.size())
+                .as("Match count should increase")
+                .isGreaterThan(initialMatchCount);
+
+        var createdMatch = matches.stream()
+                .filter(m -> m.id() == createdMatchId)
+                .findFirst()
+                .orElseThrow();
+        assertThat(createdMatch.enabledGameMasters())
+                .as("Created match should have TickCounter game master")
+                .contains("TickCounter");
+    }
+
     // ========== Helper Methods ==========
+
+    private int findGameMasterIndex(List<?> gameMasters, String gameMasterName) {
+        for (int i = 0; i < gameMasters.size(); i++) {
+            Object gameMaster = gameMasters.get(i);
+            try {
+                var nameMethod = gameMaster.getClass().getMethod("name");
+                if (gameMasterName.equals(nameMethod.invoke(gameMaster))) {
+                    return i;
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+        }
+        return -1;
+    }
 
     private int findModuleIndex(List<?> modules, String moduleName) {
         for (int i = 0; i < modules.size(); i++) {
@@ -225,6 +300,17 @@ class MatchManagementGuiIT {
             app.getMatchPanel().update();
             window.runFrames(2);
             if (!app.getServerPanel().getModules().isEmpty()) {
+                return;
+            }
+        }
+    }
+
+    private void waitForGameMastersLoaded() throws InterruptedException {
+        for (int i = 0; i < 30; i++) {
+            Thread.sleep(100);
+            app.getMatchPanel().update();
+            window.runFrames(2);
+            if (!app.getMatchPanel().getAvailableGameMasters().isEmpty()) {
                 return;
             }
         }

@@ -98,11 +98,27 @@ public class MatchService {
      * @return the server-generated match ID
      */
     public CompletableFuture<Long> createMatch(List<String> enabledModules) {
+        return createMatch(enabledModules, List.of());
+    }
+
+    /**
+     * Create a new match with modules and game masters. Match ID is generated server-side.
+     *
+     * @param enabledModules list of module names to enable
+     * @param enabledGameMasters list of game master names to enable
+     * @return the server-generated match ID
+     */
+    public CompletableFuture<Long> createMatch(List<String> enabledModules, List<String> enabledGameMasters) {
         String modulesJson = enabledModules.stream()
                 .map(m -> "\"" + m + "\"")
                 .reduce((a, b) -> a + "," + b)
                 .orElse("");
-        String body = String.format("{\"enabledModuleNames\":[%s]}", modulesJson);
+        String gameMastersJson = enabledGameMasters.stream()
+                .map(g -> "\"" + g + "\"")
+                .reduce((a, b) -> a + "," + b)
+                .orElse("");
+        String body = String.format("{\"enabledModuleNames\":[%s],\"enabledGameMasterNames\":[%s]}",
+                modulesJson, gameMastersJson);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl))
