@@ -28,8 +28,8 @@ public class GuiConfig {
     private static final String CONFIG_FILE_NAME = "gui.properties";
 
     // Default values
-    private static final int DEFAULT_WINDOW_WIDTH = 1200;
-    private static final int DEFAULT_WINDOW_HEIGHT = 800;
+    private static final int DEFAULT_WINDOW_WIDTH = 1400;
+    private static final int DEFAULT_WINDOW_HEIGHT = 1000;
     private static final String DEFAULT_WINDOW_TITLE = "Lightning Engine GUI";
     private static final String DEFAULT_SERVER_URL = "http://localhost:8080";
     private static final long DEFAULT_MATCH_ID = 1;
