@@ -87,7 +87,7 @@ class SpriteRendererPanelIT {
     }
 
     @Test
-    @DisplayName("Navigate to Sprites panel should show sprite renderer")
+    @DisplayName("Navigate to Sprite Preview panel should show sprite renderer")
     void navigateToSpritesPanel_shouldShowSpriteRenderer() throws Exception {
         // Initialize GUI
         app = new EngineGuiApplication(backendUrl);
@@ -96,8 +96,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         // Verify panel is visible
@@ -108,7 +108,7 @@ class SpriteRendererPanelIT {
     }
 
     @Test
-    @DisplayName("Sprites panel should have all UI components")
+    @DisplayName("Sprite Preview panel should have all UI components")
     void spritesPanel_shouldHaveAllUIComponents() throws Exception {
         // Initialize GUI
         app = new EngineGuiApplication(backendUrl);
@@ -117,8 +117,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         // Verify key UI elements exist
@@ -149,8 +149,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
@@ -182,8 +182,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
@@ -229,8 +229,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
@@ -280,8 +280,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
@@ -311,8 +311,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
@@ -352,8 +352,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
@@ -385,8 +385,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
@@ -433,8 +433,8 @@ class SpriteRendererPanelIT {
         driver = GuiDriver.connect(window);
         window.runFrames(5);
 
-        // Navigate to Sprites panel
-        clickButton("Sprites");
+        // Navigate to Sprite Preview panel
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         SpriteRendererPanel spritePanel = app.getSpriteRendererPanel();
@@ -447,8 +447,8 @@ class SpriteRendererPanelIT {
         clickButton("Resources");
         waitForUpdate(500);
 
-        // Switch back to Sprites
-        clickButton("Sprites");
+        // Switch back to Sprite Preview
+        clickButton("Sprite Preview");
         waitForUpdate(500);
 
         // Verify state is preserved

@@ -82,7 +82,7 @@ public class SpriteRendererPanel extends AbstractWindowComponent {
 
         // Create main visual panel container
         this.visualPanel = factory.createPanel(x, y, width, height);
-        this.visualPanel.setTitle("Sprite Renderer");
+        this.visualPanel.setTitle("Sprite Preview");
 
         // Status label
         statusLabel = factory.createLabel(x + 15, y + 35, "Select a resource or upload a PNG", 12.0f);

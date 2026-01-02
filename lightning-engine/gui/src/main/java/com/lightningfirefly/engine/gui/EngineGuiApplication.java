@@ -189,7 +189,7 @@ public class EngineGuiApplication {
         renderingNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 6, buttonY, buttonWidth, 28, "Rendering");
         renderingNavButton.setOnClick(() -> switchPanel("rendering"));
 
-        spriteNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 7, buttonY, buttonWidth, 28, "Sprites");
+        spriteNavButton = componentFactory.createButton(20 + (buttonWidth + buttonSpacing) * 7, buttonY, buttonWidth + 20, 28, "Sprite Preview");
         spriteNavButton.setOnClick(() -> switchPanel("sprites"));
 
         navPanel.addChild((WindowComponent) matchNavButton);
