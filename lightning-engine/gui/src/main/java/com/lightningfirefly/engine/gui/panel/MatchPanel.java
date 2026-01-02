@@ -1,5 +1,7 @@
 package com.lightningfirefly.engine.gui.panel;
 
+import com.lightningfirefly.engine.gui.service.GameMasterService;
+import com.lightningfirefly.engine.gui.service.GameMasterService.GameMasterInfo;
 import com.lightningfirefly.engine.gui.service.MatchService;
 import com.lightningfirefly.engine.gui.service.MatchService.MatchEvent;
 import com.lightningfirefly.engine.gui.service.MatchService.MatchInfo;
@@ -16,8 +18,8 @@ import java.util.function.Consumer;
 /**
  * Panel for managing matches.
  *
- * <p>Allows viewing existing matches, creating new matches with selected modules,
- * and deleting matches. Supports selecting a match to view its snapshot.
+ * <p>Allows viewing existing matches, creating new matches with selected modules
+ * and game masters, and deleting matches. Supports selecting a match to view its snapshot.
  */
 @Slf4j
 public class MatchPanel extends AbstractWindowComponent {
@@ -27,9 +29,11 @@ public class MatchPanel extends AbstractWindowComponent {
     private final ComponentFactory.Colours colours;
     private final MatchService matchService;
     private final ModuleService moduleService;
+    private final GameMasterService gameMasterService;
 
     private final ListView matchList;
     private final ListView moduleList;
+    private final ListView gameMasterList;
     private final Label statusLabel;
     private final Button refreshButton;
     private final Button createButton;
@@ -38,22 +42,32 @@ public class MatchPanel extends AbstractWindowComponent {
 
     private final List<MatchInfo> matches = new CopyOnWriteArrayList<>();
     private final List<ModuleInfo> availableModules = new CopyOnWriteArrayList<>();
+    private final List<GameMasterInfo> availableGameMasters = new CopyOnWriteArrayList<>();
     private final List<String> selectedModules = new ArrayList<>();
+    private final List<String> selectedGameMasters = new ArrayList<>();
     private volatile boolean needsRefresh = false;
     private volatile boolean needsModuleRefresh = false;
+    private volatile boolean needsGameMasterRefresh = false;
 
     private Consumer<Long> onViewSnapshot;
 
     public MatchPanel(ComponentFactory factory, int x, int y, int width, int height, String serverUrl) {
         this(factory, x, y, width, height,
                 new MatchService(serverUrl),
-                new ModuleService(serverUrl));
+                new ModuleService(serverUrl),
+                new GameMasterService(serverUrl));
         refreshMatches();
         refreshModules();
+        refreshGameMasters();
     }
 
     public MatchPanel(ComponentFactory factory, int x, int y, int width, int height,
                       MatchService matchService, ModuleService moduleService) {
+        this(factory, x, y, width, height, matchService, moduleService, null);
+    }
+
+    public MatchPanel(ComponentFactory factory, int x, int y, int width, int height,
+                      MatchService matchService, ModuleService moduleService, GameMasterService gameMasterService) {
         super(x, y, width, height);
         this.factory = factory;
         this.colours = factory.getColours();
@@ -64,6 +78,7 @@ public class MatchPanel extends AbstractWindowComponent {
 
         this.matchService = matchService;
         this.moduleService = moduleService;
+        this.gameMasterService = gameMasterService;
 
         // Create status label
         statusLabel = factory.createLabel(x + 10, y + 35, "Ready", 12.0f);
@@ -78,6 +93,7 @@ public class MatchPanel extends AbstractWindowComponent {
         refreshButton.setOnClick(() -> {
             refreshMatches();
             refreshModules();
+            refreshGameMasters();
         });
 
         createButton = factory.createButton(x + 10 + buttonWidth + buttonSpacing, buttonY, buttonWidth, 28, "Create");
@@ -89,21 +105,27 @@ public class MatchPanel extends AbstractWindowComponent {
         viewSnapshotButton = factory.createButton(x + 10 + (buttonWidth + buttonSpacing) * 3, buttonY, 100, 28, "View Snapshot");
         viewSnapshotButton.setOnClick(this::viewSelectedSnapshot);
 
-        // Create side-by-side lists
+        // Create three side-by-side lists
         int listY = buttonY + 38;
         int listHeight = height - listY - 20 + y;
-        int halfWidth = (width - 30) / 2;
+        int thirdWidth = (width - 40) / 3;
 
-        // Match list (left side)
+        // Match list (left)
         Label matchListLabel = factory.createLabel(x + 10, listY - 20, "Matches:", 12.0f);
         matchListLabel.setTextColor(colours.textPrimary());
-        matchList = factory.createListView(x + 10, listY, halfWidth, listHeight);
+        matchList = factory.createListView(x + 10, listY, thirdWidth, listHeight);
 
-        // Module list (right side) - for selecting modules when creating matches
-        Label moduleListLabel = factory.createLabel(x + 20 + halfWidth, listY - 20, "Available Modules (click to select):", 12.0f);
+        // Module list (center) - for selecting modules when creating matches
+        Label moduleListLabel = factory.createLabel(x + 20 + thirdWidth, listY - 20, "Modules (select):", 12.0f);
         moduleListLabel.setTextColor(colours.textPrimary());
-        moduleList = factory.createListView(x + 20 + halfWidth, listY, halfWidth, listHeight);
+        moduleList = factory.createListView(x + 20 + thirdWidth, listY, thirdWidth, listHeight);
         moduleList.setMultiSelectEnabled(true);
+
+        // Game master list (right) - for selecting game masters when creating matches
+        Label gameMasterListLabel = factory.createLabel(x + 30 + thirdWidth * 2, listY - 20, "Game Masters (select):", 12.0f);
+        gameMasterListLabel.setTextColor(colours.textPrimary());
+        gameMasterList = factory.createListView(x + 30 + thirdWidth * 2, listY, thirdWidth, listHeight);
+        gameMasterList.setMultiSelectEnabled(true);
 
         // Add components to visual panel
         visualPanel.addChild((WindowComponent) statusLabel);
@@ -115,6 +137,8 @@ public class MatchPanel extends AbstractWindowComponent {
         visualPanel.addChild((WindowComponent) matchList);
         visualPanel.addChild((WindowComponent) moduleListLabel);
         visualPanel.addChild((WindowComponent) moduleList);
+        visualPanel.addChild((WindowComponent) gameMasterListLabel);
+        visualPanel.addChild((WindowComponent) gameMasterList);
 
         // Setup service listeners
         matchService.addListener(this::onMatchEvent);
@@ -149,6 +173,19 @@ public class MatchPanel extends AbstractWindowComponent {
             availableModules.addAll(moduleInfos);
             needsModuleRefresh = true;
         });
+    }
+
+    /**
+     * Refresh the available game masters list.
+     */
+    public void refreshGameMasters() {
+        if (gameMasterService != null) {
+            gameMasterService.listGameMasters().thenAccept(gameMasterInfos -> {
+                availableGameMasters.clear();
+                availableGameMasters.addAll(gameMasterInfos);
+                needsGameMasterRefresh = true;
+            });
+        }
     }
 
     /**
@@ -237,15 +274,16 @@ public class MatchPanel extends AbstractWindowComponent {
             needsModuleRefresh = false;
             updateModuleList();
         }
+        if (needsGameMasterRefresh) {
+            needsGameMasterRefresh = false;
+            updateGameMasterList();
+        }
     }
 
     private void updateMatchList() {
         List<String> items = new ArrayList<>();
         for (MatchInfo match : matches) {
-            String modules = match.enabledModules().isEmpty()
-                    ? "no modules"
-                    : String.join(", ", match.enabledModules());
-            items.add("Match " + match.id() + " [" + modules + "]");
+            items.add("Match " + match.id());
         }
         matchList.setItems(items);
     }
@@ -258,12 +296,23 @@ public class MatchPanel extends AbstractWindowComponent {
         moduleList.setItems(items);
     }
 
+    private void updateGameMasterList() {
+        List<String> items = new ArrayList<>();
+        for (GameMasterInfo gameMaster : availableGameMasters) {
+            items.add(gameMaster.name());
+        }
+        gameMasterList.setItems(items);
+    }
+
     /**
      * Cleanup resources.
      */
     public void dispose() {
         matchService.shutdown();
         moduleService.shutdown();
+        if (gameMasterService != null) {
+            gameMasterService.shutdown();
+        }
     }
 
     /**

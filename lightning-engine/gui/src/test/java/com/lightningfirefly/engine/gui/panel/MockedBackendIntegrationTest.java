@@ -107,7 +107,7 @@ class MockedBackendIntegrationTest {
         )));
 
         when(mockMatchService.listMatches()).thenReturn(CompletableFuture.completedFuture(List.of(
-            new MatchService.MatchInfo(1L, List.of("MoveModule"))
+            new MatchService.MatchInfo(1L, List.of("MoveModule"), List.of())
         )));
 
         // Create window

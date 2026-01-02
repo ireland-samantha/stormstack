@@ -234,6 +234,21 @@ public class GuiDownloadResource {
                 Lightning Engine GUI Client
                 ===========================
 
+                System Requirements
+                -------------------
+                - Java 25 or later (https://adoptium.net/)
+                - OpenGL 3.2+ capable graphics
+
+                Platform Notes:
+                - macOS: Requires -XstartOnFirstThread JVM flag
+                - Linux: Requires X11 or Wayland with OpenGL support
+                - Windows: No special requirements
+
+                This JAR includes native libraries for all platforms:
+                Windows (x64), Linux (x64/ARM64), macOS (x64/ARM64)
+
+                Quick Start
+                -----------
                 This GUI client is pre-configured to connect to:
                 %s
 
@@ -242,9 +257,12 @@ public class GuiDownloadResource {
                   Linux:   java -jar %s
                   Windows: java -jar %s
 
-                The -XstartOnFirstThread flag is required on macOS for OpenGL.
+                Command Line Options
+                --------------------
+                  -s, --server <url>   Connect to a different server
+                  -h, --help           Show all options
 
-                To connect to a different server:
+                Examples:
                   java -XstartOnFirstThread -jar %s -s http://other-server:8080
 
                 Or edit server.properties to change the default server URL.

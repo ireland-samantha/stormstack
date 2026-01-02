@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 
@@ -19,6 +20,7 @@ import java.util.Map;
 @Path("/api/commands")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Slf4j
 public class CommandResource {
 
     @Inject
@@ -33,21 +35,13 @@ public class CommandResource {
         try {
             gameSimulation.enqueueCommand(request.commandName(), payload);
         } catch (EntityNotFoundException e) {
-            e.printStackTrace();
-            return Response.status(404).build(); // todo ai: add an exception mapper
+            log.warn("Entity not found while processing command '{}': {}", request.commandName(), e.getMessage());
+            return Response.status(404).entity(Map.of("error", e.getMessage())).build();
         }
         return Response.accepted()
                 .entity(new CommandResponse("accepted", request.commandName()))
                 .build();
     }
-
-//     .map(pair -> Pair.of(pair.first(),
-//            String.join(",", pair.second().keySet().stream()
-//                                    .map(key -> String.format("%s (%s)", key, pair.second().get(key)))
-//            .toList())))
-//
-//            .map(pair -> String.format("%s(%s)", pair.first(), pair.second()))
-
 
     @GET
     public Response getAllCommands() {

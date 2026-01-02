@@ -177,24 +177,26 @@ public class MatchService {
 
     private List<MatchInfo> parseMatchList(String json) {
         List<MatchInfo> matches = new ArrayList<>();
-        // Simple JSON parsing for arrays
-        Pattern pattern = Pattern.compile("\\{\"id\":(\\d+),\"enabledModuleNames\":\\[(.*?)\\]\\}");
+        // Simple JSON parsing for arrays - handles both old format (modules only) and new format (modules + game masters)
+        Pattern pattern = Pattern.compile("\\{\"id\":(\\d+),\"enabledModuleNames\":\\[(.*?)\\](?:,\"enabledGameMasterNames\":\\[(.*?)\\])?\\}");
         Matcher matcher = pattern.matcher(json);
         while (matcher.find()) {
             long id = Long.parseLong(matcher.group(1));
             List<String> modules = parseModuleList(matcher.group(2));
-            matches.add(new MatchInfo(id, modules));
+            List<String> gameMasters = matcher.group(3) != null ? parseModuleList(matcher.group(3)) : new ArrayList<>();
+            matches.add(new MatchInfo(id, modules, gameMasters));
         }
         return matches;
     }
 
     private MatchInfo parseMatch(String json) {
-        Pattern pattern = Pattern.compile("\\{\"id\":(\\d+),\"enabledModuleNames\":\\[(.*?)\\]\\}");
+        Pattern pattern = Pattern.compile("\\{\"id\":(\\d+),\"enabledModuleNames\":\\[(.*?)\\](?:,\"enabledGameMasterNames\":\\[(.*?)\\])?\\}");
         Matcher matcher = pattern.matcher(json);
         if (matcher.find()) {
             long id = Long.parseLong(matcher.group(1));
             List<String> modules = parseModuleList(matcher.group(2));
-            return new MatchInfo(id, modules);
+            List<String> gameMasters = matcher.group(3) != null ? parseModuleList(matcher.group(3)) : new ArrayList<>();
+            return new MatchInfo(id, modules, gameMasters);
         }
         return null;
     }
@@ -219,7 +221,7 @@ public class MatchService {
     /**
      * Match information record.
      */
-    public record MatchInfo(long id, List<String> enabledModules) {}
+    public record MatchInfo(long id, List<String> enabledModules, List<String> enabledGameMasters) {}
 
     /**
      * Match event types.
