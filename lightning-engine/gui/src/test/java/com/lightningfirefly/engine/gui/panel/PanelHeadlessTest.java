@@ -93,8 +93,8 @@ class PanelHeadlessTest {
         void shouldDisplayMatchList() {
             // Given - matches returned from service
             List<MatchInfo> matches = List.of(
-                new MatchInfo(1, List.of("GameFactory")),
-                new MatchInfo(2, List.of("AIModule", "PhysicsModule"))
+                new MatchInfo(1, List.of("GameFactory"), List.of()),
+                new MatchInfo(2, List.of("AIModule", "PhysicsModule"), List.of())
             );
             when(mockMatchService.listMatches()).thenReturn(CompletableFuture.completedFuture(matches));
 
@@ -131,7 +131,7 @@ class PanelHeadlessTest {
         @DisplayName("Should delete selected match")
         void shouldDeleteMatch() {
             // Given
-            List<MatchInfo> matches = List.of(new MatchInfo(1, List.of()));
+            List<MatchInfo> matches = List.of(new MatchInfo(1, List.of(), List.of()));
             when(mockMatchService.listMatches()).thenReturn(CompletableFuture.completedFuture(matches));
             when(mockMatchService.deleteMatch(1L)).thenReturn(CompletableFuture.completedFuture(true));
 
@@ -162,7 +162,7 @@ class PanelHeadlessTest {
             AtomicLong viewedMatchId = new AtomicLong(-1);
             matchPanel.setOnViewSnapshot(viewedMatchId::set);
 
-            List<MatchInfo> matches = List.of(new MatchInfo(42, List.of()));
+            List<MatchInfo> matches = List.of(new MatchInfo(42, List.of(), List.of()));
             when(mockMatchService.listMatches()).thenReturn(CompletableFuture.completedFuture(matches));
 
             matchPanel.refreshMatches();
