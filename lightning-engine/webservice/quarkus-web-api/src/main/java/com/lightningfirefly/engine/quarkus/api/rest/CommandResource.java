@@ -61,6 +61,24 @@ public class CommandResource {
                 .build();
     }
 
+    @GET
+    @Path("/grouped")
+    public Response getGroupedCommands() {
+        var grouped = commandResolver.getGroupedByModule();
+        // Convert to Map<String, List<String>> where values are command signatures
+        java.util.Map<String, java.util.List<String>> result = new java.util.LinkedHashMap<>();
+        grouped.forEach((moduleName, commands) -> {
+            result.put(moduleName, commands.stream()
+                    .map(command -> String.format("%s(%s)",
+                            command.getName(),
+                            String.join(", ", command.schema().keySet().stream()
+                                    .map(key -> String.format("%s %s", getSimpleTypeName(command.schema().get(key)), key))
+                                    .toList())))
+                    .toList());
+        });
+        return Response.ok(result).build();
+    }
+
     /**
      * Get a simple type name for display (e.g., "long" instead of "class java.lang.Long").
      */

@@ -85,6 +85,24 @@ public class ModuleCommandResolver implements CommandResolver {
         return commandCache.containsKey(name);
     }
 
+    /**
+     * Get commands grouped by module name.
+     *
+     * @return map of module name to list of commands from that module
+     */
+    @Override
+    public Map<String, List<EngineCommand>> getGroupedByModule() {
+        Map<String, List<EngineCommand>> grouped = new java.util.LinkedHashMap<>();
+        List<EngineModule> modules = moduleResolver.resolveAllModules();
+        for (EngineModule module : modules) {
+            List<EngineCommand> commands = module.createCommands();
+            if (commands != null && !commands.isEmpty()) {
+                grouped.put(module.getName(), commands);
+            }
+        }
+        return grouped;
+    }
+
     private void ensureCachePopulated() {
         if (cachePopulated.compareAndSet(false, true)) {
             populateCache();

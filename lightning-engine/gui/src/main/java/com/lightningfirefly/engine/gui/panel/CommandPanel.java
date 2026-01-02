@@ -3,12 +3,12 @@ package com.lightningfirefly.engine.gui.panel;
 import com.lightningfirefly.engine.gui.service.CommandService;
 import com.lightningfirefly.engine.gui.service.CommandService.CommandEvent;
 import com.lightningfirefly.engine.gui.service.CommandService.CommandInfo;
+import com.lightningfirefly.engine.gui.service.CommandService.ModuleCommands;
 import com.lightningfirefly.engine.gui.service.CommandService.ParameterInfo;
 import com.lightningfirefly.engine.rendering.render2d.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -30,14 +30,14 @@ public class CommandPanel extends AbstractWindowComponent {
     private final ComponentFactory.Colours colours;
     private final CommandService commandService;
 
-    private final ListView commandList;
+    private final TreeView commandTree;
     private final Label statusLabel;
     private final Button refreshButton;
 
     // Dynamic parameter form panel on the right
     private final CommandFormPanel formPanel;
 
-    private final List<CommandInfo> commands = new CopyOnWriteArrayList<>();
+    private final List<ModuleCommands> moduleCommands = new CopyOnWriteArrayList<>();
     private volatile boolean needsRefresh = false;
     private CommandInfo selectedCommand = null;
 
@@ -72,16 +72,16 @@ public class CommandPanel extends AbstractWindowComponent {
         refreshButton = factory.createButton(x + 10, buttonY, buttonWidth, 28, "Refresh");
         refreshButton.setOnClick(this::refreshCommands);
 
-        // Create command list (takes up remaining height)
-        int listY = buttonY + 38;
-        int listHeight = height - listY - 20 + y;
-        commandList = factory.createListView(x + 10, listY, leftPanelWidth - 20, listHeight);
-        commandList.setOnSelectionChanged(this::onCommandSelected);
+        // Create command tree (takes up remaining height)
+        int treeY = buttonY + 38;
+        int treeHeight = height - treeY - 20 + y;
+        commandTree = factory.createTreeView(x + 10, treeY, leftPanelWidth - 20, treeHeight);
+        commandTree.setOnSelect(this::onTreeNodeSelected);
 
         // Add components to visual panel
         visualPanel.addChild((WindowComponent) statusLabel);
         visualPanel.addChild((WindowComponent) refreshButton);
-        visualPanel.addChild((WindowComponent) commandList);
+        visualPanel.addChild((WindowComponent) commandTree);
 
         // Create form panel on the right side (Send button is inside the form panel)
         int formX = x + leftPanelWidth + 10;
@@ -97,11 +97,12 @@ public class CommandPanel extends AbstractWindowComponent {
      */
     public void refreshCommands() {
         setStatus("Loading commands...", colours.textSecondary());
-        commandService.listCommands().thenAccept(commandInfos -> {
-            commands.clear();
-            commands.addAll(commandInfos);
+        commandService.listGroupedCommands().thenAccept(grouped -> {
+            moduleCommands.clear();
+            moduleCommands.addAll(grouped);
+            int totalCommands = grouped.stream().mapToInt(mc -> mc.commands().size()).sum();
             needsRefresh = true;
-            setStatus("Loaded " + commandInfos.size() + " commands", colours.green());
+            setStatus("Loaded " + totalCommands + " commands from " + grouped.size() + " modules", colours.green());
         });
     }
 
@@ -163,14 +164,22 @@ public class CommandPanel extends AbstractWindowComponent {
                 });
     }
 
-    private void onCommandSelected(int index) {
-        if (index >= 0 && index < commands.size()) {
-            selectedCommand = commands.get(index);
-            // Update the form panel with the selected command
+    private void onTreeNodeSelected(TreeNode node) {
+        if (node == null) {
+            selectedCommand = null;
+            formPanel.setCommand(null);
+            return;
+        }
+
+        // Check if this node has a CommandInfo in its user data
+        Object userData = node.getUserData();
+        if (userData instanceof CommandInfo cmd) {
+            selectedCommand = cmd;
             formPanel.setCommand(selectedCommand);
             log.debug("Selected command: {} with {} parameters",
                     selectedCommand.name(), selectedCommand.parameters().size());
         } else {
+            // Module node selected, not a command
             selectedCommand = null;
             formPanel.setCommand(null);
         }
@@ -199,11 +208,22 @@ public class CommandPanel extends AbstractWindowComponent {
     }
 
     private void updateCommandList() {
-        List<String> items = new ArrayList<>();
-        for (CommandInfo command : commands) {
-            items.add(command.getSignature());
+        commandTree.clearNodes();
+
+        for (ModuleCommands mc : moduleCommands) {
+            // Create module node (no userData for module nodes)
+            TreeNode moduleNode = factory.createTreeNode(mc.moduleName());
+
+            // Add command nodes as children (with CommandInfo as userData)
+            for (CommandInfo cmd : mc.commands()) {
+                TreeNode cmdNode = factory.createTreeNode(cmd.getSignature(), cmd);
+                moduleNode.addChild(cmdNode);
+            }
+
+            commandTree.addRootNode(moduleNode);
         }
-        commandList.setItems(items);
+
+        commandTree.expandAll();
     }
 
     /**
@@ -214,10 +234,21 @@ public class CommandPanel extends AbstractWindowComponent {
     }
 
     /**
-     * Get the list of loaded commands.
+     * Get the list of loaded commands (flat list).
      */
     public List<CommandInfo> getCommands() {
-        return new ArrayList<>(commands);
+        List<CommandInfo> allCommands = new ArrayList<>();
+        for (ModuleCommands mc : moduleCommands) {
+            allCommands.addAll(mc.commands());
+        }
+        return allCommands;
+    }
+
+    /**
+     * Get the list of loaded module commands (grouped).
+     */
+    public List<ModuleCommands> getModuleCommands() {
+        return new ArrayList<>(moduleCommands);
     }
 
     /**
@@ -236,10 +267,23 @@ public class CommandPanel extends AbstractWindowComponent {
 
     /**
      * Select a command by index (for UI testing).
+     * The index refers to the flat list of all commands.
      */
     public void selectCommand(int index) {
-        commandList.setSelectedIndex(index);
-        onCommandSelected(index);
+        List<CommandInfo> allCommands = getCommands();
+        if (index >= 0 && index < allCommands.size()) {
+            CommandInfo cmd = allCommands.get(index);
+            // Find the tree node with this command in its userData
+            for (TreeNode moduleNode : commandTree.getRootNodes()) {
+                for (TreeNode cmdNode : moduleNode.getChildren()) {
+                    if (cmdNode.getUserData() instanceof CommandInfo nodeCmd && nodeCmd.equals(cmd)) {
+                        // Programmatically trigger selection
+                        onTreeNodeSelected(cmdNode);
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     /**

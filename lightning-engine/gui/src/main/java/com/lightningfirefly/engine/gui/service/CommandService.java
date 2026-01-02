@@ -265,4 +265,64 @@ public class CommandService {
      * Command event record.
      */
     public record CommandEvent(CommandEventType type, String commandName, String message) {}
+
+    /**
+     * Module commands record for grouped display.
+     */
+    public record ModuleCommands(String moduleName, List<CommandInfo> commands) {}
+
+    /**
+     * List all commands grouped by module.
+     */
+    public CompletableFuture<List<ModuleCommands>> listGroupedCommands() {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/grouped"))
+                .GET()
+                .header("Accept", "application/json")
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() == 200) {
+                        return parseGroupedCommandList(response.body());
+                    } else {
+                        log.error("Failed to list grouped commands: {} {}", response.statusCode(), response.body());
+                        notifyListeners(new CommandEvent(CommandEventType.ERROR, null,
+                                "Failed to list grouped commands: " + response.statusCode()));
+                        return new ArrayList<ModuleCommands>();
+                    }
+                })
+                .exceptionally(e -> {
+                    log.error("Failed to list grouped commands", e);
+                    notifyListeners(new CommandEvent(CommandEventType.ERROR, null, e.getMessage()));
+                    return new ArrayList<ModuleCommands>();
+                });
+    }
+
+    private List<ModuleCommands> parseGroupedCommandList(String json) {
+        List<ModuleCommands> result = new ArrayList<>();
+        // Parse JSON object: {"ModuleName": ["cmd1(params)", "cmd2(params)"], ...}
+        // Simple parsing for the expected format
+        Pattern modulePattern = Pattern.compile("\"([^\"]+)\":\\s*\\[([^\\]]+)\\]");
+        Matcher moduleMatcher = modulePattern.matcher(json);
+        while (moduleMatcher.find()) {
+            String moduleName = moduleMatcher.group(1);
+            String commandsStr = moduleMatcher.group(2);
+
+            List<CommandInfo> commands = new ArrayList<>();
+            Pattern cmdPattern = Pattern.compile("\"([^\"]+)\"");
+            Matcher cmdMatcher = cmdPattern.matcher(commandsStr);
+            while (cmdMatcher.find()) {
+                String signature = cmdMatcher.group(1);
+                CommandInfo info = parseCommandSignature(signature);
+                if (info != null) {
+                    commands.add(info);
+                }
+            }
+            if (!commands.isEmpty()) {
+                result.add(new ModuleCommands(moduleName, commands));
+            }
+        }
+        return result;
+    }
 }
