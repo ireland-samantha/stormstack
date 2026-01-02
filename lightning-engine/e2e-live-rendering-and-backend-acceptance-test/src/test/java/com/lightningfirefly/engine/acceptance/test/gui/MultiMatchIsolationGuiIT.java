@@ -1,5 +1,6 @@
 package com.lightningfirefly.engine.acceptance.test.gui;
 import com.lightningfirefly.engine.gui.EngineGuiApplication;
+import com.lightningfirefly.engine.gui.panel.CreateMatchPanel;
 import com.lightningfirefly.engine.gui.service.CommandService;
 import com.lightningfirefly.engine.rendering.render2d.TreeNode;
 import com.lightningfirefly.engine.rendering.render2d.TreeView;
@@ -116,25 +117,52 @@ class MultiMatchIsolationGuiIT {
         waitForModulesLoaded();
 
         var matchPanel = app.getMatchPanel();
-        var availableModules = matchPanel.getAvailableModules();
+
+        // Create first match via CreateMatchPanel
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+
+        var availableModules = createPanel.getAvailableModules();
         int spawnModuleIndex = findModuleIndex(availableModules, SPAWN_MODULE_NAME);
         int moveModuleIndex = findModuleIndex(availableModules, MOVE_MODULE_NAME);
         assertThat(spawnModuleIndex).as("EntityModule should exist").isGreaterThanOrEqualTo(0);
         assertThat(moveModuleIndex).as("MoveModule should exist").isGreaterThanOrEqualTo(0);
 
-        matchPanel.selectModule(spawnModuleIndex);
-        matchPanel.selectModule(moveModuleIndex);
+        createPanel.selectModule(spawnModuleIndex);
+        createPanel.selectModule(moveModuleIndex);
         window.runFrames(2);
 
-        long match1Id = matchPanel.createMatchWithSelectedModules().get();
+        int matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        var matches = matchPanel.getMatches();
+        long match1Id = matches.size() > matchCountBefore ? matches.get(matches.size() - 1).id() : -1;
         createdMatchId = match1Id;
         log.info("Created match 1: {}", match1Id);
 
-        matchPanel.clearSelectedModules();
-        matchPanel.selectModule(spawnModuleIndex);
-        matchPanel.selectModule(moveModuleIndex);
+        // Create second match via CreateMatchPanel
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+        createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+        createPanel.selectModule(spawnModuleIndex);
+        createPanel.selectModule(moveModuleIndex);
+        window.runFrames(2);
 
-        long match2Id = matchPanel.createMatchWithSelectedModules().get();
+        matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        matches = matchPanel.getMatches();
+        long match2Id = matches.size() > matchCountBefore ? matches.get(matches.size() - 1).id() : -1;
         createdMatch2Id = match2Id;
         log.info("Created match 2: {}", match2Id);
 
@@ -333,6 +361,17 @@ class MultiMatchIsolationGuiIT {
             app.getMatchPanel().update();
             window.runFrames(2);
             if (!app.getServerPanel().getModules().isEmpty()) {
+                return;
+            }
+        }
+    }
+
+    private void waitForCreatePanelLoaded(CreateMatchPanel createPanel) throws InterruptedException {
+        for (int i = 0; i < 30; i++) {
+            Thread.sleep(100);
+            createPanel.update();
+            window.runFrames(2);
+            if (!createPanel.getAvailableModules().isEmpty()) {
                 return;
             }
         }

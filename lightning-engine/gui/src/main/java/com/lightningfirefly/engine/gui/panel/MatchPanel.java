@@ -1,5 +1,6 @@
 package com.lightningfirefly.engine.gui.panel;
 
+import com.lightningfirefly.engine.gui.panel.CreateMatchPanel.PanelBounds;
 import com.lightningfirefly.engine.gui.service.GameMasterService;
 import com.lightningfirefly.engine.gui.service.GameMasterService.GameMasterInfo;
 import com.lightningfirefly.engine.gui.service.MatchService;
@@ -11,7 +12,9 @@ import com.lightningfirefly.engine.rendering.render2d.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
@@ -43,13 +46,13 @@ public class MatchPanel extends AbstractWindowComponent {
     private final List<MatchInfo> matches = new CopyOnWriteArrayList<>();
     private final List<ModuleInfo> availableModules = new CopyOnWriteArrayList<>();
     private final List<GameMasterInfo> availableGameMasters = new CopyOnWriteArrayList<>();
-    private final List<String> selectedModules = new ArrayList<>();
-    private final List<String> selectedGameMasters = new ArrayList<>();
     private volatile boolean needsRefresh = false;
     private volatile boolean needsModuleRefresh = false;
     private volatile boolean needsGameMasterRefresh = false;
+    private volatile boolean needsSelectionUpdate = false;
 
     private Consumer<Long> onViewSnapshot;
+    private CreateMatchPanel createMatchPanel;
 
     public MatchPanel(ComponentFactory factory, int x, int y, int width, int height, String serverUrl) {
         this(factory, x, y, width, height,
@@ -97,7 +100,7 @@ public class MatchPanel extends AbstractWindowComponent {
         });
 
         createButton = factory.createButton(x + 10 + buttonWidth + buttonSpacing, buttonY, buttonWidth, 28, "Create");
-        createButton.setOnClick(this::createMatch);
+        createButton.setOnClick(this::showCreateMatchPanel);
 
         deleteButton = factory.createButton(x + 10 + (buttonWidth + buttonSpacing) * 2, buttonY, buttonWidth, 28, "Delete");
         deleteButton.setOnClick(this::deleteMatch);
@@ -114,18 +117,17 @@ public class MatchPanel extends AbstractWindowComponent {
         Label matchListLabel = factory.createLabel(x + 10, listY - 20, "Matches:", 12.0f);
         matchListLabel.setTextColor(colours.textPrimary());
         matchList = factory.createListView(x + 10, listY, thirdWidth, listHeight);
+        matchList.setOnSelectionChanged(this::onMatchSelected);
 
-        // Module list (center) - for selecting modules when creating matches
-        Label moduleListLabel = factory.createLabel(x + 20 + thirdWidth, listY - 20, "Modules (select):", 12.0f);
+        // Module list (center) - shows enabled modules for selected match
+        Label moduleListLabel = factory.createLabel(x + 20 + thirdWidth, listY - 20, "Modules:", 12.0f);
         moduleListLabel.setTextColor(colours.textPrimary());
         moduleList = factory.createListView(x + 20 + thirdWidth, listY, thirdWidth, listHeight);
-        moduleList.setMultiSelectEnabled(true);
 
-        // Game master list (right) - for selecting game masters when creating matches
-        Label gameMasterListLabel = factory.createLabel(x + 30 + thirdWidth * 2, listY - 20, "Game Masters (select):", 12.0f);
+        // Game master list (right) - shows enabled game masters for selected match
+        Label gameMasterListLabel = factory.createLabel(x + 30 + thirdWidth * 2, listY - 20, "Game Masters:", 12.0f);
         gameMasterListLabel.setTextColor(colours.textPrimary());
         gameMasterList = factory.createListView(x + 30 + thirdWidth * 2, listY, thirdWidth, listHeight);
-        gameMasterList.setMultiSelectEnabled(true);
 
         // Add components to visual panel
         visualPanel.addChild((WindowComponent) statusLabel);
@@ -189,22 +191,49 @@ public class MatchPanel extends AbstractWindowComponent {
     }
 
     /**
-     * Create a new match. Match ID is generated server-side.
+     * Show the CreateMatchPanel popup.
      */
-    private void createMatch() {
-        // Get selected modules from module list (supports multi-selection)
-        List<String> moduleNames = moduleList.getSelectedItems();
+    private void showCreateMatchPanel() {
+        if (createMatchPanel == null) {
+            // Create the panel centered within this panel
+            int panelWidth = 500;
+            int panelHeight = 350;
+            int panelX = x + (width - panelWidth) / 2;
+            int panelY = y + (height - panelHeight) / 2;
 
-        setStatus("Creating match with " + moduleNames.size() + " module(s)...", colours.textSecondary());
-        matchService.createMatch(moduleNames)
-            .thenAccept(id -> {
-                if (id > 0) {
-                    setStatus("Created match " + id + " with " + moduleNames.size() + " module(s)", colours.green());
-                    refreshMatches();
-                } else {
-                    setStatus("Failed to create match", colours.red());
-                }
+            createMatchPanel = new CreateMatchPanel(
+                factory,
+                new PanelBounds(panelX, panelY, panelWidth, panelHeight),
+                matchService,
+                moduleService,
+                gameMasterService
+            );
+            createMatchPanel.setOnMatchCreated(id -> {
+                hideCreateMatchPanel();
+                refreshMatches();
+                setStatus("Created match " + id, colours.green());
             });
+            createMatchPanel.setOnCancel(this::hideCreateMatchPanel);
+            visualPanel.addChild((WindowComponent) createMatchPanel);
+        }
+        createMatchPanel.refresh();
+        createMatchPanel.setVisible(true);
+    }
+
+    /**
+     * Hide the CreateMatchPanel popup.
+     */
+    private void hideCreateMatchPanel() {
+        if (createMatchPanel != null) {
+            createMatchPanel.setVisible(false);
+        }
+    }
+
+    /**
+     * Handle match selection change.
+     */
+    private void onMatchSelected(int index) {
+        needsSelectionUpdate = true;
     }
 
     /**
@@ -272,11 +301,19 @@ public class MatchPanel extends AbstractWindowComponent {
         }
         if (needsModuleRefresh) {
             needsModuleRefresh = false;
-            updateModuleList();
+            updateModuleListForSelectedMatch();
         }
         if (needsGameMasterRefresh) {
             needsGameMasterRefresh = false;
-            updateGameMasterList();
+            updateGameMasterListForSelectedMatch();
+        }
+        if (needsSelectionUpdate) {
+            needsSelectionUpdate = false;
+            updateModuleListForSelectedMatch();
+            updateGameMasterListForSelectedMatch();
+        }
+        if (createMatchPanel != null) {
+            createMatchPanel.update();
         }
     }
 
@@ -288,18 +325,42 @@ public class MatchPanel extends AbstractWindowComponent {
         matchList.setItems(items);
     }
 
-    private void updateModuleList() {
+    /**
+     * Update module list to show [ENABLED] prefix for modules enabled in selected match.
+     */
+    private void updateModuleListForSelectedMatch() {
+        MatchInfo selectedMatch = getSelectedMatch();
+        Set<String> enabledModules = selectedMatch != null
+            ? new HashSet<>(selectedMatch.enabledModules())
+            : Set.of();
+
         List<String> items = new ArrayList<>();
         for (ModuleInfo module : availableModules) {
-            items.add(module.name());
+            if (enabledModules.contains(module.name())) {
+                items.add("[ENABLED] " + module.name());
+            } else {
+                items.add(module.name());
+            }
         }
         moduleList.setItems(items);
     }
 
-    private void updateGameMasterList() {
+    /**
+     * Update game master list to show [ENABLED] prefix for game masters enabled in selected match.
+     */
+    private void updateGameMasterListForSelectedMatch() {
+        MatchInfo selectedMatch = getSelectedMatch();
+        Set<String> enabledGameMasters = selectedMatch != null
+            ? new HashSet<>(selectedMatch.enabledGameMasters())
+            : Set.of();
+
         List<String> items = new ArrayList<>();
         for (GameMasterInfo gameMaster : availableGameMasters) {
-            items.add(gameMaster.name());
+            if (enabledGameMasters.contains(gameMaster.name())) {
+                items.add("[ENABLED] " + gameMaster.name());
+            } else {
+                items.add(gameMaster.name());
+            }
         }
         gameMasterList.setItems(items);
     }
@@ -355,42 +416,24 @@ public class MatchPanel extends AbstractWindowComponent {
     }
 
     /**
-     * Select a module by index (for UI testing).
+     * Get the CreateMatchPanel (for testing).
      */
-    public void selectModule(int index) {
-        if (index >= 0 && index < availableModules.size()) {
-            moduleList.setSelectedIndex(index);
-            String moduleName = availableModules.get(index).name();
-            if (!selectedModules.contains(moduleName)) {
-                selectedModules.add(moduleName);
-            }
-        }
+    public CreateMatchPanel getCreateMatchPanel() {
+        return createMatchPanel;
     }
 
     /**
-     * Create a match with the selected modules (for UI testing).
-     * Match ID is generated server-side.
-     *
-     * @return CompletableFuture with the generated match ID
+     * Check if CreateMatchPanel is visible.
      */
-    public java.util.concurrent.CompletableFuture<Long> createMatchWithSelectedModules() {
-        // Use selectedModules list which is populated by selectModule()
-        // moduleList.getSelectedItems() may not reflect programmatic selection
-        return matchService.createMatch(new ArrayList<>(selectedModules));
+    public boolean isCreateMatchPanelVisible() {
+        return createMatchPanel != null && createMatchPanel.isVisible();
     }
 
     /**
-     * Clear selected modules (for testing).
+     * Programmatically show the CreateMatchPanel (for testing).
      */
-    public void clearSelectedModules() {
-        selectedModules.clear();
-    }
-
-    /**
-     * Get the list of selected module names (for testing).
-     */
-    public List<String> getSelectedModuleNames() {
-        return new ArrayList<>(selectedModules);
+    public void openCreateMatchPanel() {
+        showCreateMatchPanel();
     }
 
     // Delegate rendering and input to the visual panel

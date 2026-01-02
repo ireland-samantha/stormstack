@@ -142,9 +142,16 @@ class MoveModuleDomainTest {
         int initialMatchCount = app.getMatchPanel().getMatches().size();
         log.info("Initial match count: " + initialMatchCount);
 
-        // Find MoveModule in the available modules list and select it
+        // Create match via CreateMatchPanel
         var matchPanel = app.getMatchPanel();
-        var availableModules = matchPanel.getAvailableModules();
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+
+        // Find MoveModule in the available modules list and select it
+        var availableModules = createPanel.getAvailableModules();
         int moveModuleIndex = -1;
         for (int i = 0; i < availableModules.size(); i++) {
             if (availableModules.get(i).name().equals(MOVE_MODULE_NAME)) {
@@ -155,11 +162,18 @@ class MoveModuleDomainTest {
         assertThat(moveModuleIndex).as("MoveModule should be in available modules").isGreaterThanOrEqualTo(0);
 
         // Select the module
-        matchPanel.selectModule(moveModuleIndex);
+        createPanel.selectModule(moveModuleIndex);
         window.runFrames(2);
 
         // Create match via API (match ID is generated server-side)
-        createdMatchId = matchPanel.createMatchWithSelectedModules().get();
+        int matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        var matches = matchPanel.getMatches();
+        createdMatchId = matches.size() > matchCountBefore ? matches.get(matches.size() - 1).id() : -1;
         log.info("Created match ID: " + createdMatchId);
         assertThat(createdMatchId).as("Match ID should be valid").isGreaterThan(0);
 
@@ -449,7 +463,15 @@ class MoveModuleDomainTest {
         waitForModulesLoaded();
 
         var matchPanel = app.getMatchPanel();
-        var availableModules = matchPanel.getAvailableModules();
+
+        // Open CreateMatchPanel to select MoveModule
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+
+        var availableModules = createPanel.getAvailableModules();
         int moveModuleIndex = -1;
         for (int i = 0; i < availableModules.size(); i++) {
             if (availableModules.get(i).name().equals(MOVE_MODULE_NAME)) {
@@ -460,14 +482,34 @@ class MoveModuleDomainTest {
         assertThat(moveModuleIndex).as("MoveModule should exist").isGreaterThanOrEqualTo(0);
 
         // Create first match
-        matchPanel.selectModule(moveModuleIndex);
+        createPanel.selectModule(moveModuleIndex);
         window.runFrames(2);
-        long match1Id = matchPanel.createMatchWithSelectedModules().get();
+        int matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        var matches = matchPanel.getMatches();
+        long match1Id = matches.size() > matchCountBefore ? matches.get(matches.size() - 1).id() : -1;
         log.info("Created match 1: " + match1Id);
         createdMatchId = match1Id; // Store for cleanup
 
-        // Create second match
-        long match2Id = matchPanel.createMatchWithSelectedModules().get();
+        // Create second match via CreateMatchPanel again
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+        createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+        createPanel.selectModule(moveModuleIndex);
+        window.runFrames(2);
+        matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        matches = matchPanel.getMatches();
+        long match2Id = matches.size() > matchCountBefore ? matches.get(matches.size() - 1).id() : -1;
         createdMatch2Id = match2Id; // Store for cleanup
         log.info("Created match 2: " + match2Id);
 
@@ -729,6 +771,17 @@ class MoveModuleDomainTest {
             app.getCommandPanel().update();
             window.runFrames(2);
             if (!app.getCommandPanel().getCommands().isEmpty()) {
+                return;
+            }
+        }
+    }
+
+    private void waitForCreatePanelLoaded(CreateMatchPanel createPanel) throws InterruptedException {
+        for (int i = 0; i < 30; i++) {
+            Thread.sleep(100);
+            createPanel.update();
+            window.runFrames(2);
+            if (!createPanel.getAvailableModules().isEmpty()) {
                 return;
             }
         }

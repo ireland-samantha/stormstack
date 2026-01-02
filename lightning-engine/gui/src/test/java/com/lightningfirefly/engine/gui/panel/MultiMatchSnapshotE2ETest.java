@@ -182,9 +182,16 @@ class MultiMatchSnapshotE2ETest {
         clickButton("Refresh");
         waitForModulesLoaded();
 
-        // Select MoveModule
+        // Create match via CreateMatchPanel
         var matchPanel = app.getMatchPanel();
-        var modules = matchPanel.getAvailableModules();
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+
+        // Select MoveModule in CreateMatchPanel
+        var modules = createPanel.getAvailableModules();
         int moveModuleIndex = -1;
         for (int i = 0; i < modules.size(); i++) {
             if (modules.get(i).name().equals(MOVE_MODULE_NAME)) {
@@ -194,14 +201,20 @@ class MultiMatchSnapshotE2ETest {
         }
 
         if (moveModuleIndex >= 0) {
-            matchPanel.selectModule(moveModuleIndex);
+            createPanel.selectModule(moveModuleIndex);
             window.runFrames(2);
         }
 
         // Create match (ID generated server-side)
-        matchId1 = matchPanel.createMatchWithSelectedModules().get();
-        log.info("Created match: " + matchId1);
+        int matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
         waitForUpdate(500);
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        var matches = matchPanel.getMatches();
+        matchId1 = matches.size() > matchCountBefore ? matches.get(matches.size() - 1).id() : -1;
+        log.info("Created match: " + matchId1);
 
         // ===== STEP 2: Send CreateMoveableCommand =====
         log.info("=== STEP 2: Send CreateMoveableCommand ===");
@@ -378,36 +391,46 @@ class MultiMatchSnapshotE2ETest {
         clickButton("Refresh");
         waitForModulesLoaded();
 
-        // ===== STEP 2: Select multiple modules =====
-        log.info("=== STEP 2: Select multiple modules ===");
+        // ===== STEP 2: Open CreateMatchPanel and select multiple modules =====
+        log.info("=== STEP 2: Select multiple modules via CreateMatchPanel ===");
         var matchPanel = app.getMatchPanel();
-        var modules = matchPanel.getAvailableModules();
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+
+        var modules = createPanel.getAvailableModules();
         log.info("Available modules: " + modules.size());
 
         if (modules.size() >= 2) {
             // Select first two modules using multi-select
-            matchPanel.selectModule(0);
+            createPanel.selectModule(0);
             window.runFrames(2);
-            matchPanel.selectModule(1);
+            createPanel.selectModule(1);
             window.runFrames(2);
         } else if (modules.size() >= 1) {
-            matchPanel.selectModule(0);
+            createPanel.selectModule(0);
             window.runFrames(2);
         }
 
         // ===== STEP 3: Create match with selected modules =====
         log.info("=== STEP 3: Create match with selected modules ===");
-        matchId1 = matchPanel.createMatchWithSelectedModules().get();
-        log.info("Created match: " + matchId1);
-        assertThat(matchId1).as("Match should be created with server-generated ID").isGreaterThan(0);
+        int matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
+        waitForUpdate(500);
 
         // Refresh match list
         clickButton("Refresh");
         waitForUpdate(500);
         matchPanel.update();
 
-        // Verify match was created with multiple modules
         var matches = matchPanel.getMatches();
+        matchId1 = matches.size() > matchCountBefore ? matches.get(matches.size() - 1).id() : -1;
+        log.info("Created match: " + matchId1);
+        assertThat(matchId1).as("Match should be created with server-generated ID").isGreaterThan(0);
+
+        // Verify match was created with multiple modules
         var createdMatch = matches.stream()
             .filter(m -> m.id() == matchId1)
             .findFirst();
@@ -425,20 +448,43 @@ class MultiMatchSnapshotE2ETest {
      */
     private long createMatch() throws Exception {
         var matchPanel = app.getMatchPanel();
-        var modules = matchPanel.getAvailableModules();
+
+        // Open CreateMatchPanel
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
 
         // Select first module if available
-        if (!modules.isEmpty()) {
-            matchPanel.selectModule(0);
+        if (!createPanel.getAvailableModules().isEmpty()) {
+            createPanel.selectModule(0);
             window.runFrames(2);
         }
 
-        // Match ID is generated server-side
-        long matchId = matchPanel.createMatchWithSelectedModules().get();
+        // Create match and get ID from list
+        int matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
         waitForUpdate(500);
         clickButton("Refresh");
         waitForUpdate(500);
-        return matchId;
+
+        var matches = matchPanel.getMatches();
+        if (matches.size() > matchCountBefore) {
+            return matches.get(matches.size() - 1).id();
+        }
+        return -1;
+    }
+
+    private void waitForCreatePanelLoaded(CreateMatchPanel createPanel) throws InterruptedException {
+        for (int i = 0; i < 30; i++) {
+            Thread.sleep(100);
+            createPanel.update();
+            window.runFrames(2);
+            if (!createPanel.getAvailableModules().isEmpty()) {
+                return;
+            }
+        }
     }
 
     private void setFormField(CommandFormPanel formPanel, String paramName, String value) {

@@ -98,26 +98,42 @@ public class MatchService {
      * @return the server-generated match ID
      */
     public CompletableFuture<Long> createMatch(List<String> enabledModules) {
-        String modulesJson = enabledModules.stream()
+        return createMatch(new CreateMatchRequest(enabledModules, List.of()));
+    }
+
+    /**
+     * Create a new match with modules and game masters. Match ID is generated server-side.
+     *
+     * @param request the match creation request containing modules and game masters
+     * @return the server-generated match ID
+     */
+    public CompletableFuture<Long> createMatch(CreateMatchRequest request) {
+        String modulesJson = request.enabledModules().stream()
                 .map(m -> "\"" + m + "\"")
                 .reduce((a, b) -> a + "," + b)
                 .orElse("");
-        String body = String.format("{\"enabledModuleNames\":[%s]}", modulesJson);
+        String gameMastersJson = request.enabledGameMasters().stream()
+                .map(m -> "\"" + m + "\"")
+                .reduce((a, b) -> a + "," + b)
+                .orElse("");
+        String body = String.format("{\"enabledModuleNames\":[%s],\"enabledGameMasterNames\":[%s]}",
+                modulesJson, gameMastersJson);
 
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl))
                 .POST(HttpRequest.BodyPublishers.ofString(body))
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .build();
 
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return httpClient.sendAsync(httpRequest, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (response.statusCode() == 201) {
                         // Parse the generated ID from the response
                         MatchInfo createdMatch = parseMatch(response.body());
                         long matchId = createdMatch != null ? createdMatch.id() : -1;
-                        log.info("Created match {}", matchId);
+                        log.info("Created match {} with {} modules and {} game masters",
+                                matchId, request.enabledModules().size(), request.enabledGameMasters().size());
                         notifyListeners(new MatchEvent(MatchEventType.CREATED, matchId,
                                 "Match " + matchId + " created"));
                         return matchId;
@@ -222,6 +238,16 @@ public class MatchService {
      * Match information record.
      */
     public record MatchInfo(long id, List<String> enabledModules, List<String> enabledGameMasters) {}
+
+    /**
+     * DTO for match creation request.
+     */
+    public record CreateMatchRequest(List<String> enabledModules, List<String> enabledGameMasters) {
+        public CreateMatchRequest {
+            enabledModules = enabledModules != null ? List.copyOf(enabledModules) : List.of();
+            enabledGameMasters = enabledGameMasters != null ? List.copyOf(enabledGameMasters) : List.of();
+        }
+    }
 
     /**
      * Match event types.

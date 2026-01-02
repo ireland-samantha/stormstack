@@ -1,6 +1,7 @@
 package com.lightningfirefly.engine.acceptance.test.gui;
 
 import com.lightningfirefly.engine.gui.EngineGuiApplication;
+import com.lightningfirefly.engine.gui.panel.CreateMatchPanel;
 import com.lightningfirefly.engine.gui.service.CommandService;
 import com.lightningfirefly.engine.gui.service.ModuleService;
 import com.lightningfirefly.engine.gui.service.ResourceService;
@@ -525,27 +526,42 @@ class RenderingResourceGuiIT {
         waitForModulesLoaded();
 
         var matchPanel = app.getMatchPanel();
-        var modules = matchPanel.getAvailableModules();
 
-        // Select the required modules
+        // Open CreateMatchPanel
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+
+        var modules = createPanel.getAvailableModules();
+        log.info("Available modules count: " + modules.size());
+
+        // Select the required modules in CreateMatchPanel
         for (String moduleName : moduleNames) {
             int index = findModuleIndex(modules, moduleName);
             log.info("Selecting module '" + moduleName + "' at index " + index);
             if (index >= 0) {
-                matchPanel.selectModule(index);
+                createPanel.selectModule(index);
                 window.runFrames(2);
-                log.info("  After selectModule, selectedModuleNames: " + matchPanel.getSelectedModuleNames());
+                log.info("  After selectModule, selectedModuleNames: " + createPanel.getSelectedModules());
             } else {
                 log.info("  Module '" + moduleName + "' not found in available modules!");
             }
         }
 
         // Verify selection before creating match
-        log.info("About to create match with selectedModuleNames: " + matchPanel.getSelectedModuleNames());
-        log.info("Available modules count: " + modules.size());
+        log.info("About to create match with selectedModuleNames: " + createPanel.getSelectedModules());
 
         // Create the match
-        long matchId = matchPanel.createMatchWithSelectedModules().get(10, TimeUnit.SECONDS);
+        int matchCountBefore = matchPanel.getMatches().size();
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        var matches = matchPanel.getMatches();
+        long matchId = matches.size() > matchCountBefore ? matches.get(matches.size() - 1).id() : -1;
 
         // Verify match was created with correct modules
         var httpClient = java.net.http.HttpClient.newHttpClient();
@@ -558,6 +574,17 @@ class RenderingResourceGuiIT {
         log.info("Match " + matchId + " details: " + response.body());
 
         return matchId;
+    }
+
+    private void waitForCreatePanelLoaded(CreateMatchPanel createPanel) throws InterruptedException {
+        for (int i = 0; i < 30; i++) {
+            Thread.sleep(100);
+            createPanel.update();
+            window.runFrames(2);
+            if (!createPanel.getAvailableModules().isEmpty()) {
+                return;
+            }
+        }
     }
 
     private Long uploadTexture() throws Exception {

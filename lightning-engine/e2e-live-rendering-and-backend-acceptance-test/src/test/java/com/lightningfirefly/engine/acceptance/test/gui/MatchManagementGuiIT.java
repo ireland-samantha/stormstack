@@ -1,6 +1,7 @@
 package com.lightningfirefly.engine.acceptance.test.gui;
 
 import com.lightningfirefly.engine.gui.EngineGuiApplication;
+import com.lightningfirefly.engine.gui.panel.CreateMatchPanel;
 import com.lightningfirefly.engine.rendering.render2d.Window;
 import com.lightningfirefly.engine.rendering.testing.By;
 import com.lightningfirefly.engine.rendering.testing.GuiDriver;
@@ -87,27 +88,36 @@ class MatchManagementGuiIT {
         var matchPanel = app.getMatchPanel();
         var initialMatchCount = matchPanel.getMatches().size();
 
-        // And: MoveModule is selected
-        var modules = matchPanel.getAvailableModules();
+        // And: MoveModule is selected via CreateMatchPanel
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+
+        var modules = createPanel.getAvailableModules();
         int moveModuleIndex = findModuleIndex(modules, "MoveModule");
         assertThat(moveModuleIndex)
                 .as("MoveModule should be available")
                 .isGreaterThanOrEqualTo(0);
-        matchPanel.selectModule(moveModuleIndex);
+        createPanel.selectModule(moveModuleIndex);
         window.runFrames(2);
 
         // When: Creating the match
-        createdMatchId = matchPanel.createMatchWithSelectedModules().get();
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+
+        clickButton("Refresh");
+        waitForUpdate(500);
+
+        var matches = matchPanel.getMatches();
+        createdMatchId = matches.size() > initialMatchCount ? matches.get(matches.size() - 1).id() : -1;
 
         // Then: Match should be created and appear in list
         assertThat(createdMatchId)
                 .as("Match ID should be positive")
                 .isGreaterThan(0);
 
-        clickButton("Refresh");
-        waitForUpdate(500);
-
-        var matches = matchPanel.getMatches();
         assertThat(matches.size())
                 .as("Match count should increase")
                 .isGreaterThan(initialMatchCount);
@@ -132,11 +142,23 @@ class MatchManagementGuiIT {
         waitForModulesLoaded();
 
         var matchPanel = app.getMatchPanel();
-        createdMatchId = matchPanel.createMatchWithSelectedModules().get();
+        int initialCount = matchPanel.getMatches().size();
+
+        // Create match via CreateMatchPanel
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+
         clickButton("Refresh");
         waitForUpdate(500);
 
-        var matchToDelete = matchPanel.getMatches().stream()
+        var matches = matchPanel.getMatches();
+        createdMatchId = matches.size() > initialCount ? matches.get(matches.size() - 1).id() : -1;
+
+        var matchToDelete = matches.stream()
                 .filter(m -> m.id() == createdMatchId)
                 .findFirst()
                 .orElseThrow();
@@ -171,9 +193,21 @@ class MatchManagementGuiIT {
         waitForModulesLoaded();
 
         var matchPanel = app.getMatchPanel();
-        createdMatchId = matchPanel.createMatchWithSelectedModules().get();
+        int initialCount = matchPanel.getMatches().size();
+
+        // Create match via CreateMatchPanel
+        matchPanel.openCreateMatchPanel();
+        waitForUpdate(300);
+        var createPanel = matchPanel.getCreateMatchPanel();
+        waitForCreatePanelLoaded(createPanel);
+        createPanel.triggerCreate();
+        waitForUpdate(500);
+
         clickButton("Refresh");
         waitForUpdate(500);
+
+        var matches = matchPanel.getMatches();
+        createdMatchId = matches.size() > initialCount ? matches.get(matches.size() - 1).id() : -1;
 
         assertThat(matchPanel.isVisible()).isTrue();
         assertThat(app.getSnapshotPanel().isVisible()).isFalse();
@@ -225,6 +259,17 @@ class MatchManagementGuiIT {
             app.getMatchPanel().update();
             window.runFrames(2);
             if (!app.getServerPanel().getModules().isEmpty()) {
+                return;
+            }
+        }
+    }
+
+    private void waitForCreatePanelLoaded(CreateMatchPanel createPanel) throws InterruptedException {
+        for (int i = 0; i < 30; i++) {
+            Thread.sleep(100);
+            createPanel.update();
+            window.runFrames(2);
+            if (!createPanel.getAvailableModules().isEmpty()) {
                 return;
             }
         }

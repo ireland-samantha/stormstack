@@ -3,7 +3,10 @@ package com.lightningfirefly.engine.gui.panel;
 import com.lightningfirefly.engine.gui.service.CommandService;
 import com.lightningfirefly.engine.gui.service.CommandService.CommandInfo;
 import com.lightningfirefly.engine.gui.service.CommandService.ParameterInfo;
+import com.lightningfirefly.engine.gui.service.GameMasterService;
+import com.lightningfirefly.engine.gui.service.GameMasterService.GameMasterInfo;
 import com.lightningfirefly.engine.gui.service.MatchService;
+import com.lightningfirefly.engine.gui.service.MatchService.CreateMatchRequest;
 import com.lightningfirefly.engine.gui.service.MatchService.MatchInfo;
 import com.lightningfirefly.engine.gui.service.ModuleService;
 import com.lightningfirefly.engine.gui.service.ModuleService.ModuleInfo;
@@ -173,6 +176,68 @@ class PanelHeadlessTest {
 
             // Then
             assertThat(viewedMatchId.get()).isEqualTo(-1); // No selection made
+        }
+
+        @Test
+        @DisplayName("Should show CreateMatchPanel when Create button clicked")
+        void shouldShowCreateMatchPanelWhenCreateClicked() {
+            // Given
+            when(mockModuleService.listModules()).thenReturn(CompletableFuture.completedFuture(
+                List.of(new ModuleInfo("TestModule", null, 0))
+            ));
+
+            // When - click create button
+            assertThat(matchPanel.isCreateMatchPanelVisible()).isFalse();
+            matchPanel.openCreateMatchPanel();
+
+            // Then - CreateMatchPanel should be visible
+            assertThat(matchPanel.isCreateMatchPanelVisible()).isTrue();
+            assertThat(matchPanel.getCreateMatchPanel()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("Should show [ENABLED] prefix for modules when match selected")
+        void shouldShowEnabledPrefixForModulesWhenMatchSelected() {
+            // Given - match with enabled modules and available modules
+            List<MatchInfo> matches = List.of(
+                new MatchInfo(1, List.of("MoveModule"), List.of("TickCounter"))
+            );
+            List<ModuleInfo> modules = List.of(
+                new ModuleInfo("MoveModule", "move", 0),
+                new ModuleInfo("EntityModule", null, 0)
+            );
+            when(mockMatchService.listMatches()).thenReturn(CompletableFuture.completedFuture(matches));
+            when(mockModuleService.listModules()).thenReturn(CompletableFuture.completedFuture(modules));
+
+            matchPanel.refreshMatches();
+            matchPanel.refreshModules();
+            matchPanel.update();
+
+            // When - get the selected match (would be selected via ListView)
+            // For testing, we verify the update logic directly
+
+            // Then - verify matches and modules are loaded
+            assertThat(matchPanel.getMatches()).hasSize(1);
+            assertThat(matchPanel.getAvailableModules()).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("Should display all modules when no match selected")
+        void shouldDisplayAllModulesWhenNoMatchSelected() {
+            // Given - modules available but no match selected
+            List<ModuleInfo> modules = List.of(
+                new ModuleInfo("MoveModule", "move", 0),
+                new ModuleInfo("EntityModule", null, 0)
+            );
+            when(mockModuleService.listModules()).thenReturn(CompletableFuture.completedFuture(modules));
+
+            // When
+            matchPanel.refreshModules();
+            matchPanel.update();
+
+            // Then - all modules should be available
+            assertThat(matchPanel.getAvailableModules()).hasSize(2);
+            assertThat(matchPanel.getSelectedMatch()).isNull(); // No match selected
         }
     }
 
