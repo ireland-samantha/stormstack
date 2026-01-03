@@ -110,11 +110,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <!-- Required for LWJGL/GLFW on macOS:
-                         - argLine sets -XstartOnFirstThread for macOS OpenGL
-                         - enable-native-access for LWJGL JNI on Java 22+
-                         Tests run OpenGL on the main thread (test thread) -->
-                    <argLine>-XstartOnFirstThread --enable-native-access=ALL-UNNAMED</argLine>
+                    <!-- enable-native-access for LWJGL JNI on Java 22+ -->
+                    <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <java.awt.headless>true</java.awt.headless>
                     </systemPropertyVariables>
@@ -167,7 +164,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <argLine>-XstartOnFirstThread --enable-native-access=ALL-UNNAMED</argLine>
+                    <argLine>--enable-native-access=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <enableGLTests>true</enableGLTests>
                     </systemPropertyVariables>
@@ -206,6 +203,64 @@
                                 <enableGLTests>true</enableGLTests>
                                 <java.awt.headless>true</java.awt.headless>
                             </systemPropertyVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- macOS x86_64: Add -XstartOnFirstThread for GLFW -->
+        <profile>
+            <id>macos-x64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>x86_64</arch>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>-XstartOnFirstThread --enable-native-access=ALL-UNNAMED</argLine>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <argLine>-XstartOnFirstThread --enable-native-access=ALL-UNNAMED</argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- macOS ARM64: Add -XstartOnFirstThread for GLFW -->
+        <profile>
+            <id>macos-arm64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <argLine>-XstartOnFirstThread --enable-native-access=ALL-UNNAMED</argLine>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <argLine>-XstartOnFirstThread --enable-native-access=ALL-UNNAMED</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
