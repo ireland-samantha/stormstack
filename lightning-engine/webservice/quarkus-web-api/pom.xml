@@ -215,6 +215,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <!-- Required for Java 24+ module access with Quarkus/Vert.x -->
+                    <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     </systemPropertyVariables>
@@ -240,6 +242,8 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <!-- Required for Java 24+ module access with Quarkus/Vert.x -->
+                    <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     </systemPropertyVariables>
@@ -274,7 +278,7 @@
                 <executions>
                     <execution>
                         <id>copy-modules</id>
-                        <phase>package</phase>
+                        <phase>process-test-classes</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>
