@@ -3,10 +3,25 @@
 # ======================
 FROM maven:3.9-eclipse-temurin-25 AS build
 
+# Install Node.js for frontend build
+RUN apt-get update && apt-get install -y curl && \
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY . .
 
-RUN mvn -B clean install
+# Clean first, then build frontend, then package
+RUN mvn -B clean
+
+# Build frontend (outputs to src/main/resources/META-INF/resources/admin/dashboard/)
+WORKDIR /app/lightning-engine/webservice/quarkus-web-api/src/main/frontend
+RUN npm ci && npm run build
+
+# Build backend (includes frontend assets in JAR) - no clean!
+WORKDIR /app
+RUN mvn -B install -DskipTests
 
 # ======================
 # Stage 2: Runtime
@@ -27,13 +42,14 @@ COPY --from=build /app/lightning-engine/webservice/quarkus-web-api/target/quarku
 COPY --from=build /app/lightning-engine/webservice/quarkus-web-api/target/quarkus-app/app/ ./app/
 COPY --from=build /app/lightning-engine/webservice/quarkus-web-api/target/quarkus-app/quarkus/ ./quarkus/
 
-RUN chown -R quarkus:quarkus /app
+# Create directories for modules, resources, and AI
+RUN mkdir -p modules resources ai && chown -R quarkus:quarkus /app
 USER quarkus
 
 EXPOSE 8080
 ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0"
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/simulation/tick || exit 1
+  CMD wget --quiet --output-document=/dev/null http://localhost:8080/admin/dashboard/ || exit 1
 
 ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]
