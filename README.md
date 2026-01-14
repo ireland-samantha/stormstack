@@ -85,7 +85,7 @@ Open the React admin dashboard at:
 ```
 http://localhost:8080/admin/dashboard
 ```
-
+![demo.png](docs/demo.png)
 **Default credentials:**
 - Username: `admin`
 - Password: `admin`
