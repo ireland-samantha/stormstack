@@ -148,28 +148,24 @@ public class GameLoop {
      * @param tick the current tick number
      */
     public void advanceTick(long tick) {
-        log.info("Advancing tick: {}", tick);
+        log.trace("Advancing tick: {}", tick);
 
         // Execute commands scheduled for this tick
         executeCommands();
-        log.info("Commands executed");
 
         // Run all systems
         List<EngineSystem> systems = getOrBuildSystems();
         int systemsRun = runSystems(systems);
 
-        log.info("Systems executed");
 
         // Run AI
         executeAIs(tick);
 
-        log.info("AI executed");
 
         // Notify tick listeners
         notifyTickListeners(tick);
-        log.info("Listeners notified");
 
-        log.info("Tick {} complete, {} systems executed", tick, systemsRun);
+        log.trace("Tick {} complete, {} systems executed", tick, systemsRun);
     }
 
     /**
