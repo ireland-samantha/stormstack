@@ -17,7 +17,7 @@ A multitenant game server built in Java, featuring real-time state synchronizati
 
 ## Overview
 
-Lightning Engine is a **learning/hobby project** exploring ECS architecture and AI-assisted development,
+Lightning Engine is a **learning/hobby project** exploring modular game architecture and AI-assisted development,
 built via pair programming with [Claude Code](https://claude.ai).
 
 ### Core Capabilities
