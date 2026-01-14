@@ -1,41 +1,149 @@
 # Game SDK
 
-The Game SDK (`lightning-engine/engine-adapter/game-sdk`) provides a client library for building games on top of Lightning Engine.
+The Game SDK (`lightning-engine/engine-adapter`) provides client libraries for building games on top of Lightning Engine.
 
-## BackendClient
+## EngineClient
 
-Fluent API for all backend operations:
+The unified API for all backend operations. Located in `web-api-adapter`:
 
 ```java
-var client = BackendClient.connect("http://localhost:8080");
+var client = EngineClient.connect("http://localhost:8080");
 
 // Create a match with modules
-var match = client.matches().create()
+var match = client.createMatch()
     .withModule("EntityModule")
     .withModule("RigidBodyModule")
     .withModule("RenderingModule")
     .execute();
 
 // Queue commands
-client.commands()
-    .forMatch(match.id())
+client.forMatch(match.id())
     .spawn().forPlayer(1).ofType(100).execute();
 
 // Control simulation
-client.simulation().tick();
-client.simulation().play(16);  // 16ms interval (60 FPS)
+client.tick();
+client.play(16);  // 16ms interval (60 FPS)
 
 // Fetch snapshots
-var snapshot = client.snapshots().forMatch(match.id()).fetch();
+var snapshot = client.fetchSnapshot(match.id());
 
 // Manage modules and resources
-var modules = client.modules().list();
-client.resources().upload("texture.png", bytes);
+var modules = client.listModules();
+client.uploadResource().name("texture.png").data(bytes).execute();
+```
+
+### Fluent Command Builders
+
+```java
+var commands = client.forMatch(matchId);
+
+// Spawn entities
+commands.spawn()
+    .forPlayer(1)
+    .ofType(100)
+    .execute();
+
+// Attach sprites
+commands.attachSprite()
+    .toEntity(entityId)
+    .usingResource(resourceId)
+    .at(100, 200)
+    .sized(48, 48)
+    .rotatedBy(45)
+    .onLayer(5)
+    .visible(true)
+    .execute();
+
+// Move entities
+commands.move()
+    .entity(entityId)
+    .to(300, 400)
+    .withVelocity(10, 0)
+    .execute();
+
+// Custom commands
+commands.custom("myCommand")
+    .param("key1", value1)
+    .param("key2", value2)
+    .execute();
+```
+
+### Simulation Control
+
+```java
+// Get current tick
+long tick = client.currentTick();
+
+// Advance by one tick
+client.tick();
+
+// Advance by multiple ticks
+client.tick(10);
+
+// Start auto-advancing (returns status)
+var status = client.play(16);  // 16ms interval
+boolean isPlaying = status.playing();
+
+// Stop auto-advancing
+client.stop();
+
+// Check if playing
+if (client.isPlaying()) { ... }
+```
+
+### Resource Management
+
+```java
+// List resources
+List<EngineClient.Resource> resources = client.listResources();
+
+// Upload resource
+var resource = client.uploadResource()
+    .name("player-sprite.png")
+    .type("TEXTURE")
+    .data(imageBytes)
+    .execute();
+
+// Download resource
+byte[] data = client.downloadResource(resourceId);
+
+// Delete resource
+client.deleteResource(resourceId);
+```
+
+### Module and AI Management
+
+```java
+// List modules
+List<EngineClient.Module> modules = client.listModules();
+Optional<EngineClient.Module> module = client.getModule("EntityModule");
+client.reloadModules();
+
+// List AIs
+List<EngineClient.AI> ais = client.listAIs();
+Optional<EngineClient.AI> gm = client.getAI("AIAI");
+client.reloadAIs();
+```
+
+### Low-Level Adapter Access
+
+For advanced use cases, access the underlying adapters directly:
+
+```java
+// Adapters throw checked IOException
+CommandAdapter commands = client.commands();
+MatchAdapter matches = client.matches();
+ResourceAdapter resources = client.resources();
+SimulationAdapter simulation = client.simulation();
+SnapshotAdapter snapshots = client.snapshots();
+ModuleAdapter modules = client.modules();
+AIAdapter ais = client.ais();
+PlayerAdapter players = client.players();
 ```
 
 ## GameRenderer
 
-Abstraction for rendering game state:
+Abstraction for rendering game state (in `game-sdk`):
 
 ```java
 GameRenderer renderer = GameRendererBuilder.create()
@@ -55,11 +163,11 @@ renderer.start(() -> {
 
 ## Orchestrator
 
-Combines backend and renderer with automatic WebSocket streaming:
+Combines EngineClient and GameRenderer with automatic WebSocket streaming (in `game-sdk/orchestrator`):
 
 ```java
 var orchestrator = Orchestrator.create()
-    .backend(client)
+    .client(client)
     .renderer(renderer)
     .forMatch(matchId)
     .build();
@@ -80,16 +188,30 @@ Converts ECS snapshots to renderable sprites. Default configuration reads:
 - `SPRITE_Z_INDEX` - render order
 - `RESOURCE_ID` - texture reference
 
+## Domain Records
+
+EngineClient provides these domain records:
+
+| Record | Fields |
+|--------|--------|
+| `Match` | `id`, `enabledModules` |
+| `SimulationStatus` | `playing`, `tick` |
+| `Resource` | `id`, `name`, `type` |
+| `Module` | `name`, `flagComponentName` |
+| `AI` | `name` |
+| `Snapshot` | `matchId`, `tick`, `data` |
+| `ModuleData` | `components` |
+
 ## Complete Example
 
 ```java
 public class MyGame {
     public static void main(String[] args) {
         // Connect to backend
-        var client = BackendClient.connect("http://localhost:8080");
+        var client = EngineClient.connect("http://localhost:8080");
 
         // Create match
-        var match = client.matches().create()
+        var match = client.createMatch()
             .withModule("EntityModule")
             .withModule("RigidBodyModule")
             .withModule("RenderingModule")
@@ -103,21 +225,47 @@ public class MyGame {
 
         // Setup orchestrator
         var orchestrator = Orchestrator.create()
-            .backend(client)
+            .client(client)
             .renderer(renderer)
             .forMatch(match.id())
             .build();
 
         // Spawn initial entity
-        client.commands()
-            .forMatch(match.id())
+        client.forMatch(match.id())
             .spawn().forPlayer(1).ofType(1).execute();
 
         // Start simulation
-        client.simulation().play(16);
+        client.play(16);
 
         // Run game (blocks until window closes)
         orchestrator.start();
     }
+}
+```
+
+## Exception Handling
+
+The fluent API on EngineClient throws `UncheckedIOException` for cleaner code:
+
+```java
+// No try-catch needed for common operations
+var match = client.createMatch().withModule("EntityModule").execute();
+client.tick();
+
+// Handle errors if needed
+try {
+    client.forMatch(matchId).spawn().execute();
+} catch (UncheckedIOException e) {
+    log.error("Failed to spawn: {}", e.getCause().getMessage());
+}
+```
+
+For checked exceptions, use the low-level adapters:
+
+```java
+try {
+    client.matches().createMatch(modules, ais);
+} catch (IOException e) {
+    // Handle network error
 }
 ```

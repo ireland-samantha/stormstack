@@ -37,5 +37,4 @@ mvnw.cmd
 
 # Documentation and misc
 **/LICENSE
-**/*.md
-!**/src/**/*.md
+*.secret

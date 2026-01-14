@@ -9,14 +9,71 @@
 ## Option A: Run with Docker (Recommended)
 
 ```bash
-# Build and start the server
+# Build and start the server (includes MongoDB for persistence)
 docker compose up -d
 
 # Server runs at http://localhost:8080
-curl http://localhost:8080/api/simulation/tick
 ```
 
-The Docker image includes pre-built modules and the GUI JAR for download.
+The Docker image includes pre-built modules, the GUI JAR for download, and MongoDB for snapshot persistence.
+
+## Authentication
+
+All API endpoints require JWT authentication. First, obtain a token:
+
+```bash
+# Login with default admin credentials
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin"}'
+
+# Response: {"token": "eyJ...", "userId": 1, "username": "admin", "expiresAt": "..."}
+```
+
+Use the token in subsequent requests:
+
+```bash
+# Store token for convenience
+TOKEN="eyJ..."
+
+# Include in Authorization header
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/simulation/tick
+```
+
+### Default Roles
+
+| Role | Permissions |
+|------|-------------|
+| `admin` | Full access (includes command_manager and view_only) |
+| `command_manager` | Post commands, manage matches |
+| `view_only` | Read-only access to snapshots |
+
+**Security Note:** Change the default admin password in production!
+
+### Offline Tokens for Automation
+
+For automated services, CI/CD pipelines, or long-lived integrations, generate offline tokens using the `issue-api-token` CLI:
+
+```bash
+# Build the token issuer
+./mvnw package -pl issue-api-token -DskipTests
+
+# Generate admin token (24h default expiry)
+java -jar issue-api-token/target/issue-api-token.jar \
+  --roles=admin \
+  --secret=your-jwt-secret
+
+# Generate token with multiple roles and custom expiry
+java -jar issue-api-token/target/issue-api-token.jar \
+  --roles=command_manager,view_only \
+  --user=ci-pipeline \
+  --expiry=168  # 7 days
+
+# View help
+java -jar issue-api-token/target/issue-api-token.jar --help
+```
+
+The secret must match the `mp.jwt.verify.secret` configured in the backend.
 
 ## Option B: Run from Source
 
@@ -30,59 +87,89 @@ The Docker image includes pre-built modules and the GUI JAR for download.
 
 Server runs at `http://localhost:8080`. API docs at `/q/swagger-ui` (if Quarkus OpenAPI extension enabled).
 
-## Create a Match and Spawn an Entity
+## Create a Container, Match, and Spawn an Entity
+
+Lightning Engine uses **Execution Containers** for isolated runtime environments. Each container has its own ClassLoader, ECS store, and game loop.
 
 ```bash
-# Create match with modules enabled
-curl -X POST http://localhost:8080/api/matches \
-  -H "Content-Type: application/json" \
-  -d '{"id": 0, "enabledModuleNames": ["EntityModule", "RigidBodyModule", "RenderingModule"]}'
+# Set your auth token (from login response)
+TOKEN="eyJ..."
 
-# Queue a spawn command
-curl -X POST http://localhost:8080/api/commands \
+# 1. Create a container
+curl -X POST http://localhost:8080/api/containers \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "my-game-server"}'
+# Response: {"id": 1, "name": "my-game-server", "status": "CREATED"}
+
+# 2. Start the container
+curl -X POST http://localhost:8080/api/containers/1/start \
+  -H "Authorization: Bearer $TOKEN"
+
+# 3. Create a match inside the container
+curl -X POST http://localhost:8080/api/containers/1/matches \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"enabledModuleNames": ["EntityModule", "RigidBodyModule", "RenderingModule"]}'
+# Response: {"id": 1, "containerId": 1, "enabledModuleNames": [...]}
+
+# 4. Queue a spawn command (container-scoped)
+curl -X POST http://localhost:8080/api/containers/1/commands \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"commandName": "spawn", "payload": {"matchId": 1, "entityType": 1, "playerId": 1}}'
 
-# Advance tick to process command
-curl -X POST http://localhost:8080/api/simulation/tick
+# 5. Advance tick (processes commands in container)
+curl -X POST http://localhost:8080/api/containers/1/tick \
+  -H "Authorization: Bearer $TOKEN"
 
-# View ECS state
-curl http://localhost:8080/api/snapshots/match/1
+# 6. View ECS state
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/containers/1/matches/1/snapshot
+
+# 7. Start auto-advance at 60 FPS
+curl -X POST "http://localhost:8080/api/containers/1/play?intervalMs=16" \
+  -H "Authorization: Bearer $TOKEN"
+
+# 8. Stop auto-advance
+curl -X POST http://localhost:8080/api/containers/1/stop-auto \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Spawn an Entity with a Sprite
 
-Complete workflow for creating a visible entity with texture:
+Complete workflow for creating a visible entity with texture (assuming container 1 is running):
 
 ```bash
 # 1. Upload a texture resource
 curl -X POST http://localhost:8080/api/resources \
+  -H "Authorization: Bearer $TOKEN" \
   -F "file=@my-sprite.png" \
   -F "name=player-sprite"
-
 # Response: {"id": 1, "name": "player-sprite", "size": 1234, ...}
 
-# 2. Spawn an entity with (x,y) coordinates (position is a shared component)
-curl -X POST http://localhost:8080/api/commands \
+# 2. Spawn an entity
+curl -X POST http://localhost:8080/api/containers/1/commands \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "commandName": "spawn",
     "payload": {
       "matchId": 1,
-      "entityId": 1,
-      "positionX": 0,
-      "positionY": 0
+      "entityId": 1
     }
   }'
 
-# 3. Attach rigid body (rigid body uses position from the above command)
-curl -X POST http://localhost:8080/api/commands \
+# 3. Attach rigid body
+curl -X POST http://localhost:8080/api/containers/1/commands \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "commandName": "attachRigidBody",
     "payload": {
       "matchId": 1,
       "entityId": 1,
+      "positionX": 0,
+      "positionY": 0,
       "velocityX": 0,
       "velocityY": 0,
       "mass": 1.0
@@ -90,7 +177,8 @@ curl -X POST http://localhost:8080/api/commands \
   }'
 
 # 4. Attach sprite with resource ID
-curl -X POST http://localhost:8080/api/commands \
+curl -X POST http://localhost:8080/api/containers/1/commands \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "commandName": "attachSprite",
@@ -107,10 +195,12 @@ curl -X POST http://localhost:8080/api/commands \
   }'
 
 # 5. Process commands
-curl -X POST http://localhost:8080/api/simulation/tick
+curl -X POST http://localhost:8080/api/containers/1/tick \
+  -H "Authorization: Bearer $TOKEN"
 
 # 6. Verify snapshot includes sprite data
-curl http://localhost:8080/api/snapshots/match/1
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/containers/1/matches/1/snapshot
 ```
 
 **Key Points:**

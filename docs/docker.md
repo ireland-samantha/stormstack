@@ -33,9 +33,11 @@ docker compose down
 |-------|------|----------|
 | `lightning-backend` | ~350MB | Quarkus app, modules JAR, GUI JAR |
 | `eclipse-temurin:25-jre-alpine` | Base runtime |
+| `mongo:7` | MongoDB for snapshot persistence |
 
 **Exposed Ports:**
 - `8080` - REST API and WebSocket
+- `27017` - MongoDB (optional, for external access)
 
 **Health Check:** `GET /api/simulation/tick` (30s interval)
 
@@ -46,6 +48,42 @@ docker compose down
 | `JAVA_OPTS` | `-Dquarkus.http.host=0.0.0.0` | JVM arguments |
 | `QUARKUS_LOG_LEVEL` | `INFO` | Log verbosity |
 | `GUI_JAR_PATH` | `/app/gui/lightning-gui.jar` | Path to GUI JAR for download endpoint |
+| `QUARKUS_MONGODB_CONNECTION_STRING` | `mongodb://mongodb:27017` | MongoDB connection |
+| `SNAPSHOT_PERSISTENCE_ENABLED` | `true` | Enable snapshot history |
+| `SNAPSHOT_PERSISTENCE_DATABASE` | `lightningfirefly` | MongoDB database name |
+| `SNAPSHOT_PERSISTENCE_COLLECTION` | `snapshots` | MongoDB collection name |
+| `SNAPSHOT_PERSISTENCE_TICK_INTERVAL` | `1` | Persist every N ticks |
+
+## MongoDB Persistence
+
+The docker-compose setup includes MongoDB for snapshot history:
+
+```yaml
+services:
+  mongodb:
+    image: mongo:7
+    container_name: lightning-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+
+  backend:
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
+      - SNAPSHOT_PERSISTENCE_ENABLED=true
+```
+
+To disable MongoDB persistence:
+
+```bash
+SNAPSHOT_PERSISTENCE_ENABLED=false docker compose up -d
+```
 
 ## GUI Download Endpoint
 

@@ -1,0 +1,30 @@
+# Quarkus JVM Dockerfile
+# This file is used by the quarkus-container-image-docker extension
+
+FROM eclipse-temurin:25-jre-alpine
+
+ARG RUN_JAVA_VERSION=1.3.8
+ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en'
+
+# Create a non-root user for security
+RUN addgroup -S quarkus && adduser -S quarkus -G quarkus
+
+WORKDIR /deployments
+
+# Create required directories with proper permissions
+RUN mkdir -p /deployments/modules /deployments/resources /deployments/ai && \
+    chown -R quarkus:quarkus /deployments
+
+# Copy the Quarkus application
+COPY --chown=quarkus:quarkus target/quarkus-app/lib/ /deployments/lib/
+COPY --chown=quarkus:quarkus target/quarkus-app/*.jar /deployments/
+COPY --chown=quarkus:quarkus target/quarkus-app/app/ /deployments/app/
+COPY --chown=quarkus:quarkus target/quarkus-app/quarkus/ /deployments/quarkus/
+
+EXPOSE 8080
+USER quarkus
+
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
+
+ENTRYPOINT ["java", "-jar", "/deployments/quarkus-run.jar"]

@@ -4,12 +4,23 @@
 
 | Module | Tests | Type |
 |--------|-------|------|
+| `quarkus-web-api` | 188 | REST API, WebSocket, security tests |
+| `auth` | 97 | Authentication, authorization, roles |
 | `gui` | 179 | Headless component/panel tests |
 | `api-acceptance-test` | ~15 | REST API with Testcontainers |
 | `gui-acceptance-test` | ~20 | E2E GUI + Docker backend |
 | `engine-internal` | ~50 | ECS store, query cache |
 
 31 additional tests require display and are skipped in CI.
+
+## Security Test Coverage
+
+The `EndpointSecurityTest` class provides comprehensive RBAC coverage:
+
+- **Authentication endpoints** - Login, refresh, current user
+- **User/Role management** - CRUD operations with admin-only restrictions
+- **All REST endpoints** - Verifies role-based access (admin, command_manager, view_only)
+- **Unauthenticated access** - Confirms 401 responses
 
 ## Running Tests
 
@@ -93,34 +104,32 @@ class PhysicsIT {
 
     @Test
     void entityMovesWithVelocity() {
-        var client = BackendClient.connect(backend.getHost() + ":" + backend.getMappedPort(8080));
+        var client = EngineClient.connect(backend.getHost() + ":" + backend.getMappedPort(8080));
 
-        var match = client.matches().create()
+        var match = client.createMatch()
             .withModule("EntityModule")
             .withModule("RigidBodyModule")
             .execute();
 
         // Spawn and configure entity
-        client.commands().forMatch(match.id())
+        client.forMatch(match.id())
             .spawn().forPlayer(1).ofType(1).execute();
 
-        client.commands().forMatch(match.id())
-            .submit("attachRigidBody", Map.of(
-                "entityId", 1,
-                "positionX", 0,
-                "positionY", 0,
-                "velocityX", 10,
-                "velocityY", 0
-            ));
+        client.forMatch(match.id())
+            .custom("attachRigidBody")
+            .param("entityId", 1)
+            .param("positionX", 0)
+            .param("positionY", 0)
+            .param("velocityX", 10)
+            .param("velocityY", 0)
+            .execute();
 
         // Advance 10 ticks
-        for (int i = 0; i < 10; i++) {
-            client.simulation().tick();
-        }
+        client.tick(10);
 
         // Verify position
-        var snapshot = client.snapshots().forMatch(match.id()).fetch();
-        assertThat(snapshot.getComponent(1, "POSITION_X")).isEqualTo(100f);
+        var snapshot = client.fetchSnapshot(match.id());
+        assertThat(snapshot.module("RigidBodyModule").first("POSITION_X", 0)).isEqualTo(100f);
     }
 }
 ```

@@ -1,30 +1,42 @@
-# Lightweight Dockerfile for pre-built application
-# Usage: First run `mvn package -DskipTests -pl quarkus-api -am` from the project root
-#        Then build with: docker build -f quarkus-api/Dockerfile.prebuilt -t lightningfirefly-api .
+# Lightweight Dockerfile for pre-built Quarkus application with frontend
+# Usage: First run `mvn package -DskipTests` from the project root
+#        Then build with: docker build -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt -t lightning-backend:0.1.0 .
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 
 # Create a non-root user for security
 RUN addgroup -S quarkus && adduser -S quarkus -G quarkus
 
-# Copy the built artifacts from local build
-COPY quarkus-api/target/quarkus-app/lib/ ./lib/
-COPY quarkus-api/target/quarkus-app/*.jar ./
-COPY quarkus-api/target/quarkus-app/app/ ./app/
-COPY quarkus-api/target/quarkus-app/quarkus/ ./quarkus/
+# Copy the built Quarkus artifacts from local build
+COPY lightning-engine/webservice/quarkus-web-api/target/quarkus-app/lib/ ./lib/
+COPY lightning-engine/webservice/quarkus-web-api/target/quarkus-app/*.jar ./
+COPY lightning-engine/webservice/quarkus-web-api/target/quarkus-app/app/ ./app/
+COPY lightning-engine/webservice/quarkus-web-api/target/quarkus-app/quarkus/ ./quarkus/
 
-# Create modules directory for runtime module loading
-RUN mkdir -p /app/modules && chown -R quarkus:quarkus /app
+# Copy frontend static files directly into generated-resources
+# Vite outputs to src/main/resources/META-INF/resources/admin/dashboard/
+RUN mkdir -p ./quarkus/generated-resources/META-INF/resources/admin/dashboard/
+COPY lightning-engine/webservice/quarkus-web-api/src/main/resources/META-INF/resources/admin/ ./quarkus/generated-resources/META-INF/resources/admin/
+
+# Copy module JARs for runtime loading
+RUN mkdir -p /app/modules
+COPY lightning-engine-extensions/modules/entity-module/target/*.jar ./modules/
+COPY lightning-engine-extensions/modules/grid-map-module/target/*.jar ./modules/
+COPY lightning-engine-extensions/modules/rigid-body-module/target/*.jar ./modules/
+COPY lightning-engine-extensions/modules/rendering-module/target/*.jar ./modules/
+
+# Set proper permissions
+RUN chown -R quarkus:quarkus /app
 
 USER quarkus
 
 # Expose the default Quarkus port
 EXPOSE 8080
 
-# Set environment variables
-ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0"
+# Set environment variables for Java 25 and Quarkus
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 --enable-preview"
 
 # Run the application
 ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]
