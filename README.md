@@ -25,7 +25,7 @@ built via pair programming with [Claude Code](https://claude.ai).
 | Feature | Description |
 |---------|-------------|
 | **Execution Containers** | Isolated runtime environments with ClassLoader isolation, independent game loops, and container-scoped matches |
-| **Columnar ECS** | `ArrayEntityComponentStore` with O(1) component access, float-based values, per-tick query caching |
+| **ECS** | `ArrayEntityComponentStore` with O(1) component access, float-based values, per-tick query caching |
 | **Hot-Reload Modules** | Upload JAR files at runtime, reload without restart |
 | **Real-Time Streaming** | WebSocket pushes ECS snapshots (full or delta) to clients every tick |
 | **Web Dashboard** | React-based admin UI for container management, entity inspection, command execution |
