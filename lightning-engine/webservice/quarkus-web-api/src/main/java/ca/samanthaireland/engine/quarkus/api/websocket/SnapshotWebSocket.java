@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2026 Samantha Ireland
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+
+package ca.samanthaireland.engine.quarkus.api.websocket;
+
+import ca.samanthaireland.engine.quarkus.api.dto.SnapshotResponse;
+import ca.samanthaireland.engine.core.container.ContainerManager;
+import ca.samanthaireland.engine.core.container.ExecutionContainer;
+import ca.samanthaireland.engine.core.snapshot.Snapshot;
+import io.quarkus.websockets.next.*;
+import io.smallrye.mutiny.Multi;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.util.Map;
+
+/**
+ * WebSocket endpoint for streaming container-scoped match snapshots.
+ *
+ * <p>Clients connect to /ws/containers/{containerId}/matches/{matchId}/snapshot
+ * and receive periodic snapshot updates for the specified match within the container.
+ */
+@WebSocket(path = "/ws/containers/{containerId}/matches/{matchId}/snapshot")
+public class SnapshotWebSocket {
+    private static final Logger log = LoggerFactory.getLogger(SnapshotWebSocket.class);
+
+    @Inject
+    ContainerManager containerManager;
+
+    @ConfigProperty(name = "simulation.snapshot.broadcast-interval-ms", defaultValue = "100")
+    long broadcastIntervalMs;
+
+    @OnOpen
+    public Multi<SnapshotResponse> onOpen(
+            @PathParam String containerId,
+            @PathParam String matchId) {
+        long cId = Long.parseLong(containerId);
+        long mId = Long.parseLong(matchId);
+        log.debug("Snapshot WebSocket opened for container {} match {}", cId, mId);
+
+        return Multi.createFrom().ticks().every(Duration.ofMillis(broadcastIntervalMs))
+                .map(tick -> createSnapshotResponse(cId, mId));
+    }
+
+    @OnTextMessage
+    public SnapshotResponse onMessage(
+            String message,
+            @PathParam String containerId,
+            @PathParam String matchId) {
+        long cId = Long.parseLong(containerId);
+        long mId = Long.parseLong(matchId);
+        return createSnapshotResponse(cId, mId);
+    }
+
+    @OnClose
+    public void onClose(
+            @PathParam String containerId,
+            @PathParam String matchId) {
+        log.debug("Snapshot WebSocket closed for container {} match {}", containerId, matchId);
+    }
+
+    private SnapshotResponse createSnapshotResponse(long containerId, long matchId) {
+        return containerManager.getContainer(containerId)
+                .filter(container -> container.snapshots() != null)
+                .map(container -> {
+                    Snapshot snapshot = container.snapshots().forMatch(matchId);
+                    return new SnapshotResponse(
+                            matchId,
+                            container.ticks().current(),
+                            snapshot.snapshot()
+                    );
+                })
+                .orElse(new SnapshotResponse(matchId, 0, Map.of()));
+    }
+}

@@ -35,3 +35,11 @@ build/
 ### Runtime modules (auto-generated during build) ###
 **/modules/*.jar
 quarkus-api/modules/
+*.log
+*.pem
+
+### Frontend (React dashboard) ###
+**/node_modules/
+**/frontend/dist/
+**/resources/META-INF/resources/admin/dashboard/
+*.log

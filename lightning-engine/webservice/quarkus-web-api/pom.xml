@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.lightningfirefly</groupId>
+        <groupId>ca.samanthaireland</groupId>
         <artifactId>backend</artifactId>
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
@@ -41,12 +41,12 @@
     <dependencies>
         <!-- Project dependencies -->
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>engine</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>engine-internal</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -58,52 +58,57 @@
         </dependency>
         <!-- Module submodules -->
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>entity-module</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
-            <artifactId>health-module</artifactId>
+            <groupId>ca.samanthaireland</groupId>
+            <artifactId>grid-gridMap-module</artifactId>
             <version>${project.version}</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland</groupId>-->
+<!--            <artifactId>health-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>rendering-module</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>rigid-body-module</artifactId>
             <version>${project.version}</version>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland</groupId>-->
+<!--            <artifactId>box-collider-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland</groupId>-->
+<!--            <artifactId>projectile-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland</groupId>-->
+<!--            <artifactId>items-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland</groupId>-->
+<!--            <artifactId>move-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
-            <artifactId>box-collider-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.lightningfirefly</groupId>
-            <artifactId>projectile-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.lightningfirefly</groupId>
-            <artifactId>items-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.lightningfirefly</groupId>
-            <artifactId>move-module</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>engine-ext-game-masters</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>game-sdk</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -112,6 +117,12 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-arc</artifactId>
+        </dependency>
+
+        <!-- Container image for Docker builds -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-container-image-docker</artifactId>
         </dependency>
 
         <!-- REST -->
@@ -137,6 +148,23 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Security - JWT authentication -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-jwt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-jwt-build</artifactId>
+        </dependency>
+
+        <!-- Auth module for roles -->
+        <dependency>
+            <groupId>ca.samanthaireland</groupId>
+            <artifactId>auth</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Protocol Buffers -->
         <dependency>
             <groupId>com.google.protobuf</groupId>
@@ -144,10 +172,21 @@
             <version>3.25.1</version>
         </dependency>
 
+        <!-- MongoDB for snapshot persistence -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-mongodb-client</artifactId>
+        </dependency>
+
         <!-- Testing -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-security</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -209,6 +248,13 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <release>25</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.42</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
@@ -266,14 +312,14 @@
                 <executions>
                     <execution>
                         <id>copy-modules</id>
-                        <phase>process-test-classes</phase>
+                        <phase>pre-integration-test</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
-                                    <groupId>com.lightningfirefly</groupId>
+                                    <groupId>ca.samanthaireland</groupId>
                                     <artifactId>entity-module</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
@@ -281,15 +327,23 @@
                                     <outputDirectory>${project.basedir}/modules</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>com.lightningfirefly</groupId>
-                                    <artifactId>health-module</artifactId>
+                                    <groupId>ca.samanthaireland</groupId>
+                                    <artifactId>grid-gridMap-module</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.basedir}/modules</outputDirectory>
                                 </artifactItem>
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland</groupId>-->
+<!--                                    <artifactId>health-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
                                 <artifactItem>
-                                    <groupId>com.lightningfirefly</groupId>
+                                    <groupId>ca.samanthaireland</groupId>
                                     <artifactId>rendering-module</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
@@ -297,45 +351,45 @@
                                     <outputDirectory>${project.basedir}/modules</outputDirectory>
                                 </artifactItem>
                                 <artifactItem>
-                                    <groupId>com.lightningfirefly</groupId>
+                                    <groupId>ca.samanthaireland</groupId>
                                     <artifactId>rigid-body-module</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.basedir}/modules</outputDirectory>
                                 </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.lightningfirefly</groupId>
-                                    <artifactId>box-collider-module</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/modules</outputDirectory>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.lightningfirefly</groupId>
-                                    <artifactId>projectile-module</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/modules</outputDirectory>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.lightningfirefly</groupId>
-                                    <artifactId>items-module</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/modules</outputDirectory>
-                                </artifactItem>
-                                <artifactItem>
-                                    <groupId>com.lightningfirefly</groupId>
-                                    <artifactId>move-module</artifactId>
-                                    <version>${project.version}</version>
-                                    <type>jar</type>
-                                    <overWrite>true</overWrite>
-                                    <outputDirectory>${project.basedir}/modules</outputDirectory>
-                                </artifactItem>
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland</groupId>-->
+<!--                                    <artifactId>box-collider-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland</groupId>-->
+<!--                                    <artifactId>projectile-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland</groupId>-->
+<!--                                    <artifactId>items-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland</groupId>-->
+<!--                                    <artifactId>move-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
                             </artifactItems>
                         </configuration>
                     </execution>

@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.lightningfirefly</groupId>
+        <groupId>ca.samanthaireland</groupId>
         <artifactId>engine-adapter</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
@@ -19,9 +19,15 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>engine-rendering</artifactId>
             <version>${project.version}</version>
+        </dependency>
+
+        <!-- JSON processing -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
 
         <!-- Test dependencies -->

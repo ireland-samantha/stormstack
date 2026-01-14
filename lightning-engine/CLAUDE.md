@@ -16,87 +16,75 @@ Lightning Engine is a modular Entity-Component-System (ECS) game engine with:
 lightning-engine/
 ├── engine-core/          # Core abstractions (interfaces, domain models)
 ├── engine-internal/      # Implementation details (stores, services)
+├── engine-adapter/
+│   ├── game-sdk/         # Orchestrator, GameRenderer, SpriteMapper
+│   └── web-api-adapter/  # EngineClient, REST adapters, Jackson JSON
 ├── rendering-core/       # GUI framework (OpenGL/NanoVG rendering)
 ├── gui/                  # Desktop GUI application
 └── webservice/
-    ├── quarkus-web-api/  # Quarkus REST/WebSocket endpoints
-    └── web-api-adapter/  # API adapters
+    └── quarkus-web-api/  # Quarkus REST/WebSocket endpoints
 ```
 
-### Module Dependencies
-```
-gui → rendering-core → (LWJGL, NanoVG)
-gui → engine-core (for SnapshotData types)
-webservice → engine-core → engine-internal
-```
+### 4. Execution Containers
 
-## Key Architectural Patterns
-
-### 1. GUI Abstraction Layer
-
-The GUI module is decoupled from OpenGL implementation. Client code uses only abstractions:
-
-```java
-// CORRECT: Use abstractions in gui module
-import com.lightningfirefly.engine.rendering.gui.Window;
-import com.lightningfirefly.engine.rendering.gui.WindowBuilder;
-
-Window window = WindowBuilder.create()
-    .size(1200, 800)
-    .title("My App")
-    .build();
-window.run();
-
-// WRONG: Don't import OpenGL-specific classes in gui module
-// import com.lightningfirefly.engine.rendering.gui.GUIWindow;  // NO!
-```
-
-**Key GUI Abstractions (in rendering-core):**
-| Interface/Class | Purpose |
-|-----------------|---------|
-| `Window` | Abstract window interface |
-| `WindowBuilder` | Factory for creating windows |
-| `GUIComponent` | Base interface for all UI components |
-| `AbstractGUIComponent` | Base class with common functionality |
-| `Panel` | Container component with title bar |
-| `Button`, `Label`, `TextField` | Basic widgets |
-| `TreeView`, `ListView` | Data display widgets |
-
-**Implementation (in rendering-core, internal use):**
-| Class | Purpose |
-|-------|---------|
-| `GUIWindow` | OpenGL/GLFW Window implementation |
-| `GUIContext` | Thread-local NanoVG context holder |
-
-### 2. Component Hierarchy
+Execution Containers provide complete runtime isolation for game instances. Each container has:
+- **Isolated ClassLoader** - Module JARs loaded separately per container
+- **Separate ECS Store** - Entities and components are container-scoped
+- **Independent GameLoop** - Each container ticks at its own rate
+- **Container-scoped Command Queue** - Commands execute within their container
 
 ```
-GUIComponent (interface)
-    └── AbstractGUIComponent (base class)
-            ├── Label
-            ├── Button
-            ├── TextField
-            ├── TreeView
-            ├── ListView
-            └── Panel (container with children)
-                    ├── SnapshotPanel (gui module)
-                    └── ResourcePanel (gui module)
+ContainerManager
+    │
+    ├── Container 0 (default)
+    │       ├── ContainerClassLoader
+    │       ├── EntityComponentStore
+    │       ├── GameLoop (own thread)
+    │       ├── CommandQueue
+    │       └── Matches [1, 2, 3]
+    │
+    └── Container 1
+            ├── ContainerClassLoader
+            ├── EntityComponentStore
+            ├── GameLoop (own thread)
+            ├── CommandQueue
+            └── Matches [4, 5]
 ```
 
-### 3. Event Propagation
+**Key Classes:**
+| Class | Location | Purpose |
+|-------|----------|---------|
+| `ExecutionContainer` | `engine-core/.../container/` | Interface defining container operations |
+| `ContainerConfig` | `engine-core/.../container/` | Configuration record with builder |
+| `ContainerStatus` | `engine-core/.../container/` | Enum: CREATED, STARTING, RUNNING, PAUSED, STOPPING, STOPPED |
+| `ContainerManager` | `engine-core/.../container/` | Interface for managing containers |
+| `InMemoryExecutionContainer` | `engine-internal/.../container/` | Full container implementation |
+| `InMemoryContainerManager` | `engine-internal/.../container/` | Registry and factory for containers |
+| `ContainerClassLoader` | `engine-internal/.../container/` | URLClassLoader with isolation |
 
-Events propagate from window to components in reverse z-order (top-most first):
+**REST API:**
+```bash
+# Create container
+curl -X POST http://localhost:8080/api/containers \
+  -H "Content-Type: application/json" \
+  -d '{"name": "game-server-1"}'
 
-```java
-// In GUIWindow.setupInputCallbacks()
-for (int i = components.size() - 1; i >= 0; i--) {
-    if (components.get(i).onMouseClick(mx, my, button, action)) {
-        break;  // Event consumed
-    }
-}
+# Start container
+curl -X POST http://localhost:8080/api/containers/1/start
+
+# Create match in container
+curl -X POST http://localhost:8080/api/containers/1/matches \
+  -H "Content-Type: application/json" \
+  -d '{"enabledModuleNames": ["EntityModule"]}'
+
+# Start auto-advance (60 FPS)
+curl -X POST "http://localhost:8080/api/containers/1/play?intervalMs=16"
+
+# Stop auto-advance
+curl -X POST http://localhost:8080/api/containers/1/stop-auto
 ```
 
-### 4. ECS Snapshot Format
+### 5. ECS Snapshot Format
 
 Snapshots are organized by module, with columnar component storage:
 
@@ -190,17 +178,33 @@ client.requestSnapshot();
 client.disconnect();
 ```
 
-### Working with REST Resources
+### Working with EngineClient
+
+The unified client for all backend operations:
 
 ```java
-ResourceService service = new ResourceService(serverUrl);
+var client = EngineClient.connect("http://localhost:8080");
 
-// List resources
-CompletableFuture<List<ResourceInfo>> future = service.listResources();
+// Create a match
+var match = client.createMatch()
+    .withModules("EntityModule", "RigidBodyModule")
+    .execute();
 
-// Download to file
-service.downloadResourceToFile(resourceId, targetPath)
-    .thenAccept(bytes -> log.info("Downloaded {} bytes", bytes));
+// Spawn entities
+client.forMatch(match.id())
+    .spawn().forPlayer(1).ofType(100).execute();
+
+// Control simulation
+client.tick();
+client.play(16);  // 60 FPS
+
+// Fetch snapshots
+var snapshot = client.fetchSnapshot(match.id());
+
+// Manage resources
+var resources = client.listResources();
+byte[] data = client.downloadResource(resourceId);
+client.uploadResource().name("sprite.png").data(bytes).execute();
 ```
 
 ## Testing Patterns
@@ -257,7 +261,7 @@ void snapshotPanel_displaysEntities() {
 
 # Run GUI application (requires display)
 ./mvnw exec:java -pl lightning-engine/gui \
-    -Dexec.mainClass=com.lightningfirefly.engine.gui.EngineGuiApplication \
+    -Dexec.mainClass=ca.samanthaireland.engine.gui.EngineGuiApplication \
     -Dexec.args="-s http://localhost:8080 -m 1"
 ```
 
@@ -284,6 +288,10 @@ public class MyClass {
 
 | What | Where |
 |------|-------|
+| EngineClient | `engine-adapter/web-api-adapter/.../adapter/EngineClient.java` |
+| REST adapters | `engine-adapter/web-api-adapter/.../adapter/*Adapter.java` |
+| Orchestrator | `engine-adapter/game-sdk/.../orchestrator/Orchestrator.java` |
+| GameRenderer | `engine-adapter/game-sdk/.../renderering/GameRenderer.java` |
 | Window abstraction | `rendering-core/.../gui/Window.java` |
 | Window builder | `rendering-core/.../gui/WindowBuilder.java` |
 | OpenGL window impl | `rendering-core/.../gui/GUIWindow.java` |
@@ -295,6 +303,8 @@ public class MyClass {
 | WebSocket endpoints | `webservice/quarkus-web-api/.../websocket/*.java` |
 | ECS core | `engine-core/.../core/*.java` |
 | ECS implementation | `engine-internal/.../internal/*.java` |
+| Container interfaces | `engine-core/.../container/*.java` |
+| Container implementation | `engine-internal/.../container/*.java` |
 
 ## Common Gotchas
 
@@ -325,3 +335,15 @@ public class MyClass {
 4. **NanoVG Context**: Only valid during render. Use `GUIContext.get()` in render methods.
 
 5. **Component Bounds**: Click detection uses `contains(x, y)`. Ensure width/height are set correctly.
+
+## Code Quality Guidelines
+
+1. **No Deprecation**: Deprecation is not acceptable in this codebase. When refactoring, always provide complete solutions that fully remove old APIs. Do not use `@Deprecated` annotations as a transitional measure - migrate all usages immediately.
+
+2. **Fluent API Preference**: Prefer fluent builder patterns (e.g., `container.lifecycle().start()`) over direct method calls. The `ExecutionContainer` interface uses fluent operation accessors (`lifecycle()`, `ticks()`, `commands()`, etc.) - do not add non-fluent convenience methods to this interface.
+
+3. **No Production Changes for Testing**: Never modify production classes to make them testable (e.g., making private methods package-private). Instead, update tests to use the public API. Tests should exercise code through its intended public interface.
+
+4. **No Unnecessary Getters or Setters**: Do not add getter and setter methods unless they are absolutely required. Prefer immutable data structures and records. If access is needed, use the fluent API operations (e.g., `container.ticks().current()` instead of `container.getCurrentTick()`).
+
+5. **Build Verification**: At the end of each prompt answer, run `mvn clean install`. If you added tests, ensure they run and pass. Do not leave the codebase in a broken state.

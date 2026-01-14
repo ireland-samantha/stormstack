@@ -12,7 +12,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.lightningfirefly</groupId>
+    <groupId>ca.samanthaireland</groupId>
     <artifactId>backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
@@ -22,19 +22,20 @@
 
     <modules>
         <module>utils</module>
+        <module>auth</module>
         <module>lightning-engine/engine-core</module>
+        <module>lightning-engine/engine-auth</module>
         <module>lightning-engine/engine-internal</module>
         <module>lightning-engine/rendering-core</module>
         <module>lightning-engine/rendering-test</module>
+        <module>lightning-engine/engine-adapter</module>
         <module>lightning-engine-extensions/modules</module>
         <module>lightning-engine-extensions/game-masters</module>
         <module>lightning-engine/webservice/quarkus-web-api</module>
 <!--        <module>lightning-engine-extensions/games</module>-->
-        <module>lightning-engine/gui</module>
         <module>lightning-engine/api-acceptance-test</module>
-        <module>lightning-engine/e2e-live-rendering-and-backend-acceptance-test</module>
+        <module>lightning-engine/webservice/playwright-test</module>
 <!--        <module>game-renderer</module>-->
-        <module>lightning-engine/engine-adapter</module>
     </modules>
 
     <properties>
@@ -87,6 +88,20 @@
                 <groupId>it.unimi.dsi</groupId>
                 <artifactId>fastutil</artifactId>
                 <version>8.5.16</version>
+            </dependency>
+
+            <!-- JWT Authentication -->
+            <dependency>
+                <groupId>com.auth0</groupId>
+                <artifactId>java-jwt</artifactId>
+                <version>4.4.0</version>
+            </dependency>
+
+            <!-- BCrypt for password hashing -->
+            <dependency>
+                <groupId>at.favre.lib</groupId>
+                <artifactId>bcrypt</artifactId>
+                <version>0.10.2</version>
             </dependency>
 
         </dependencies>

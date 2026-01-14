@@ -11,11 +11,12 @@ All modules are in separate Maven submodules under `lightning-engine-extensions/
 
 | Module | Components | Systems | Commands | Description |
 |--------|------------|---------|----------|-------------|
-| `EntityModule` | 3 | 0 | 1 | Core entity management, shared position (POSITION_X/Y) |
+| `EntityModule` | 3 | 0 | 1 | Core entity management |
+| `GridMapModule` | 6 | 0 | 3 | Position management with map boundaries, exports `GridMapExports` |
 | `HealthModule` | 3 | 1 | 3 | HP tracking, damage/heal, death system |
 | `RenderingModule` | 6 | 0 | 1 | Sprite attachment (width, height, rotation, z-index) |
 | `RigidBodyModule` | 10 | 1 | 4 | Physics: velocity, force, mass, drag, inertia |
-| `BoxColliderModule` | 12 | 2 | 2 | AABB collision detection, handler registration |
+| `BoxColliderModule` | 12 | 2 | 5 | AABB collision detection, handler registration |
 | `ProjectileModule` | 5 | 1 | 1 | Projectile spawning and lifetime management |
 | `ItemsModule` | 8 | 0 | 4 | Item/inventory: pickup, drop, use, stack |
 | `MoveModule` | 7 | 2 | 2 | Legacy movement (deprecated, use RigidBodyModule) |
@@ -118,6 +119,164 @@ curl -X POST http://localhost:8080/api/modules/reload
 - **Hot-Reloadable** - Upload JARs via `POST /api/modules/upload`, call `/api/modules/reload`
 - **Per-Match Selection** - Different matches can enable different modules
 - **Isolated** - Modules communicate through ECS, not direct imports
+- **Permission-Scoped** - Modules can only access components they've registered
+- **Exports** - Modules can expose typed APIs to other modules via `ModuleExports`
+
+## Module Exports
+
+Module exports allow inter-module communication through typed interfaces. While permission-scoped components control ECS-level access, exports provide a way for modules to expose service-level APIs to each other.
+
+### Creating an Export Interface
+
+Create a class implementing `ModuleExports`:
+
+```java
+public class GridMapExports implements ModuleExports {
+    private final PositionService positionService;
+    private final MapService mapService;
+
+    public GridMapExports(PositionService positionService, MapService mapService) {
+        this.positionService = positionService;
+        this.mapService = mapService;
+    }
+
+    /**
+     * Set an entity's position with bounds validation.
+     */
+    public void setPositionOnMap(long matchId, long entityId, Position position) {
+        mapService.findMapByMatchId(matchId)
+            .ifPresent(map -> positionService.setPosition(entityId, map.id(), position));
+    }
+
+    /**
+     * Get an entity's current position.
+     */
+    public Optional<Position> getPosition(long entityId) {
+        return positionRepository.findByEntityId(entityId);
+    }
+}
+```
+
+### Registering Exports
+
+Return exports from the `getExports()` method in your module:
+
+```java
+public class GridMapModule implements EngineModule {
+    private final GridMapExports exports;
+
+    public GridMapModule(ModuleContext context) {
+        this.exports = new GridMapExports(
+            new PositionService(context.getEntityComponentStore()),
+            new MapService(context.getEntityComponentStore())
+        );
+    }
+
+    @Override
+    public List<ModuleExports> getExports() {
+        return List.of(exports);
+    }
+
+    // ... other methods
+}
+```
+
+### Consuming Exports
+
+Other modules can retrieve exports via the `ModuleContext`:
+
+```java
+public class RigidBodyModule implements EngineModule {
+    private final ModuleContext context;
+
+    @Override
+    public List<EngineSystem> createSystems() {
+        return List.of(() -> {
+            // Get GridMapModule's exports
+            GridMapExports gridMap = context.getModuleExports(GridMapExports.class);
+            if (gridMap != null) {
+                // Use the exported API
+                gridMap.setPosition(entityId, x, y, z);
+            }
+        });
+    }
+}
+```
+
+### Export Security Note
+
+Module exports bypass the ECS permission system. Any module can call any exported method. Design exports carefully:
+
+- Only expose methods that should be publicly accessible
+- Don't expose internal state that should be protected by permissions
+- Use exports for service-level operations, not raw data access
+
+## Module Permission Scoping
+
+Modules are isolated from each other at the ECS level. Components can specify permission levels that control access from other modules.
+
+### Permission Levels
+
+| Level | Description |
+|-------|-------------|
+| `PRIVATE` | Only the owning module can read/write (default) |
+| `READ` | Other modules can read, but only owner can write |
+| `WRITE` | Any module can read and write |
+
+### Declaring Permission Components
+
+Use `PermissionComponent` instead of `BaseComponent` to specify access levels:
+
+```java
+public class HealthModuleFactory implements ModuleFactory {
+
+    // Private - only this module can access
+    public static final PermissionComponent INTERNAL_STATE =
+        PermissionComponent.create("INTERNAL_STATE", PermissionLevel.PRIVATE);
+
+    // Readable - other modules can read HP but not modify
+    public static final PermissionComponent CURRENT_HP =
+        PermissionComponent.create("CURRENT_HP", PermissionLevel.READ);
+
+    // Writable - any module can modify (e.g., damage systems)
+    public static final PermissionComponent DAMAGE_RECEIVED =
+        PermissionComponent.create("DAMAGE_RECEIVED", PermissionLevel.WRITE);
+
+    @Override
+    public EngineModule create(ModuleContext context) {
+        return new HealthModule(context);
+    }
+}
+```
+
+Components are automatically registered with their permission levels when the module is loaded.
+
+### Permission Enforcement
+
+When a module attempts unauthorized access, an exception is thrown:
+
+```java
+// In HealthModule - this works (own component)
+store.attachComponent(entity, CURRENT_HP, 100f);
+
+// In another module - reading CURRENT_HP works (READ level)
+float hp = store.getComponent(entity, CURRENT_HP);
+
+// In another module - writing CURRENT_HP throws EcsAccessForbiddenException!
+store.attachComponent(entity, CURRENT_HP, 50f);
+```
+
+### Store Decorator Pattern
+
+The ECS store uses a decorator pattern for layered functionality:
+
+```
+ModuleScopedStore             ← Module-specific view with JWT auth
+    └── PermissionedEntityComponentStore  ← Permission enforcement
+            └── LockingEntityComponentStore   ← Thread safety
+                    └── CachedEntityComponentStore    ← Query caching
+                            └── ArrayEntityComponentStore     ← Storage
+```
 
 ## Reference Implementations
 

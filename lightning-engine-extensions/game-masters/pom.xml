@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.lightningfirefly</groupId>
+        <groupId>ca.samanthaireland</groupId>
         <artifactId>backend</artifactId>
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
@@ -21,13 +21,13 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>game-sdk</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>com.lightningfirefly</groupId>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>engine</artifactId>
             <version>0.0.1-SNAPSHOT</version>
             <scope>compile</scope>

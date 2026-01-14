@@ -1,4 +1,24 @@
 services:
+  # MongoDB for snapshot persistence
+  mongodb:
+    image: mongo:7
+    container_name: lightning-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=lightningfirefly
+    volumes:
+      - mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - lightning-network
+
   # Main Quarkus API backend
   backend:
     build:
@@ -11,6 +31,13 @@ services:
     environment:
       - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms256m -Xmx512m
       - QUARKUS_LOG_LEVEL=INFO
+      - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
+      - SNAPSHOT_PERSISTENCE_ENABLED=true
+      - SNAPSHOT_PERSISTENCE_DATABASE=lightningfirefly
+      - SNAPSHOT_PERSISTENCE_COLLECTION=snapshots
+    depends_on:
+      mongodb:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/simulation/tick"]
       interval: 30s
@@ -68,6 +95,9 @@ services:
         condition: service_healthy
     networks:
       - lightning-network
+
+volumes:
+  mongodb-data:
 
 networks:
   lightning-network:
