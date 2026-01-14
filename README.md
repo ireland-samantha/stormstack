@@ -1,6 +1,6 @@
 # Lightning Engine
 
-A custom Entity Component System (ECS) game engine built in Java, featuring real-time state synchronization, a web dashboard, and modular game logic.
+A multitenant game server built in Java, featuring real-time state synchronization, match/module-level isolation, a web dashboard, and modular game logic.
 
 ## Documentation
 
