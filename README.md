@@ -1,6 +1,7 @@
 # Lightning Engine
 
-A multitenant game server built in Java, featuring real-time state synchronization, match/module-level isolation, a web dashboard, and modular game logic.
+Run isolated instances of different games on shared infrastructure.
+A multitenant game server built in Java, featuring ECS, match/module-level isolation, hot-reload game module uploads, and a web dashboard.
 
 ## Documentation
 
@@ -17,7 +18,7 @@ A multitenant game server built in Java, featuring real-time state synchronizati
 | [API Reference](docs/api-reference.md) | REST endpoints |
 | [Testing](docs/testing.md) | Headless testing, performance |
 
-## Overview
+## Disclaimer
 
 Lightning Engine is a **learning/hobby project** exploring modular game architecture and AI-assisted development,
 built via pair programming with [Claude Code](https://claude.ai).
