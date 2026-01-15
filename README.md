@@ -1,7 +1,6 @@
 # Lightning Engine
 
-Run isolated instances of different games on shared infrastructure.
-A multitenant game server built in Java, featuring ECS, match/module-level isolation, hot-reload game module uploads, and a web dashboard.
+A multiplayer backend server built in Java featuring multi-game isolation, permissioned ECS with match/module-level isolation, hot-reload game module uploads, and a web dashboard. Run isolated instances of different games on shared infrastructure.
 
 ## Documentation
 
