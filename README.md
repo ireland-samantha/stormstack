@@ -26,7 +26,7 @@ built via pair programming with [Claude Code](https://claude.ai).
 
 | Feature | Description |
 |---------|-------------|
-| **Execution Containers** | Isolated runtime environments with ClassLoader isolation, independent game loops, and container-scoped matches |
+| **Execution Containers** | Isolated runtime environments with ClassLoader isolation, independent game loops, resources and container-scoped matches |
 | **ECS** | `ArrayEntityComponentStore` with O(1) component access, float-based values, per-tick query caching |
 | **Hot-Reload Modules** | Upload JAR files at runtime, reload without restart |
 | **Real-Time Streaming** | WebSocket pushes ECS snapshots (full or delta) to clients every tick |
@@ -162,7 +162,7 @@ The secret must match the `mp.jwt.verify.secret` configured in the backend.
 
 ## Create a Container, Match, and Spawn an Entity
 
-Lightning Engine uses **Execution Containers** for isolated runtime environments. Each container has its own ClassLoader, ECS store, and game loop.
+Lightning Engine uses **Execution Containers** for isolated runtime environments. Each container has its own ClassLoader, ECS store, resource server, and game loop.
 
 ```bash
 # Set your auth token (from login response)
