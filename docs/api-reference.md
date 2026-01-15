@@ -88,17 +88,12 @@ curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8080/api/...
 | POST | `/api/modules/upload` | Upload module JAR | admin |
 | POST | `/api/modules/reload` | Reload all modules | admin |
 | DELETE | `/api/modules/{name}` | Uninstall module | admin |
-| **Resources (Global)** ||||
-| GET | `/api/resources` | List resources | Any |
-| POST | `/api/resources` | Upload texture | admin, command_manager |
-| GET | `/api/resources/{id}` | Get resource metadata | Any |
-| GET | `/api/resources/{id}/data` | Download resource | Any |
-| DELETE | `/api/resources/{id}` | Delete resource | admin |
-| **GUI** ||||
-| GET | `/api/gui/info` | Get GUI availability and download info | Any |
-| GET | `/api/gui/download` | Download GUI as ZIP with auto-config | Any |
-| GET | `/api/gui/download/jar` | Download GUI JAR only | Any |
-| **AI** ||||
+| **Container Resources** ||||
+| GET | `/api/containers/{id}/resources` | List resources in container | Any |
+| POST | `/api/containers/{id}/resources` | Upload resource to container | admin |
+| GET | `/api/containers/{id}/resources/{resourceId}` | Get resource metadata | Any |
+| DELETE | `/api/containers/{id}/resources/{resourceId}` | Delete resource | admin |
+| **AI (Global)** ||||
 | GET | `/api/ai` | List installed AIs | Any |
 | POST | `/api/ai/upload` | Upload AI JAR | admin |
 | POST | `/api/ai/reload` | Reload all AIs | admin |
@@ -197,7 +192,7 @@ java -jar issue-api-token/target/issue-api-token.jar \
 TOKEN=$(java -jar issue-api-token.jar --roles=admin --secret=$JWT_SECRET)
 
 # Use in curl
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/matches
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/containers
 ```
 
 ## Containers
@@ -405,116 +400,6 @@ curl -X DELETE http://localhost:8080/api/containers/1/matches/1/history \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-## Snapshots
-
-### Get Snapshot
-
-```bash
-curl http://localhost:8080/api/snapshots/match/1
-# Response:
-# {
-#   "matchId": 1,
-#   "tick": 42,
-#   "data": {
-#     "EntityModule": {
-#       "POSITION_X": [100.0, 200.0],
-#       "POSITION_Y": [50.0, 75.0]
-#     }
-#   }
-# }
-```
-
-### WebSocket Streaming
-
-```javascript
-const ws = new WebSocket('ws://localhost:8080/ws/snapshots/1');
-ws.onmessage = (event) => {
-  const snapshot = JSON.parse(event.data);
-  console.log(`Tick ${snapshot.tick}:`, snapshot.data);
-};
-```
-
-## Delta Snapshots
-
-Delta snapshots provide bandwidth-efficient real-time updates by sending only changes between ticks.
-
-### Get Delta Between Ticks
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:8080/api/snapshots/delta/1?fromTick=100&toTick=105"
-
-# Response:
-# {
-#   "matchId": 1,
-#   "fromTick": 100,
-#   "toTick": 105,
-#   "changedComponents": {
-#     "RigidBodyModule": {
-#       "POSITION_X": {"42": 150.0, "43": 200.0}
-#     }
-#   },
-#   "addedEntities": [44, 45],
-#   "removedEntities": [41],
-#   "changeCount": 5,
-#   "compressionRatio": 0.15
-# }
-```
-
-### Delta WebSocket Streaming
-
-```javascript
-const ws = new WebSocket('ws://localhost:8080/ws/snapshots/delta/1');
-ws.onmessage = (event) => {
-  const delta = JSON.parse(event.data);
-  console.log(`Changes from tick ${delta.fromTick} to ${delta.toTick}:`);
-  console.log(`- Changed: ${delta.changeCount}, Added: ${delta.addedEntities.length}`);
-};
-
-// Reset to receive full snapshot on next tick
-ws.send('reset');
-```
-
-## History (MongoDB)
-
-When MongoDB persistence is enabled, snapshots are stored for historical replay.
-
-### Get History Summary
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/history
-
-# Response:
-# {
-#   "totalSnapshots": 1500,
-#   "matchCount": 3,
-#   "matchIds": [1, 2, 3],
-#   "database": "lightningfirefly",
-#   "collection": "snapshots"
-# }
-```
-
-### Get Snapshots in Range
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:8080/api/history/1/snapshots?fromTick=0&toTick=100&limit=50"
-```
-
-### Get Latest Snapshots
-
-```bash
-curl -H "Authorization: Bearer $TOKEN" \
-  "http://localhost:8080/api/history/1/snapshots/latest?limit=10"
-```
-
-### Delete Match History (Admin Only)
-
-```bash
-curl -X DELETE -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/history/1
-```
-
 ## Modules
 
 ### Upload Module
@@ -540,45 +425,37 @@ curl http://localhost:8080/api/modules
 # ]
 ```
 
-## Resources
+## Container Resources
+
+Resources are container-scoped. Each container has its own isolated resource storage.
 
 ### Upload Resource
 
 ```bash
-curl -X POST http://localhost:8080/api/resources \
+curl -X POST http://localhost:8080/api/containers/1/resources \
+  -H "Authorization: Bearer $TOKEN" \
   -F "file=@my-sprite.png" \
-  -F "name=player-sprite"
-# Response: {"id": 1, "name": "player-sprite", "size": 1234, "contentType": "image/png"}
-```
-
-### Download Resource
-
-```bash
-curl http://localhost:8080/api/resources/1/data > sprite.png
+  -F "resourceName=player-sprite" \
+  -F "resourceType=TEXTURE"
+# Response: {"resourceId": 1, "resourceName": "player-sprite", "resourceType": "TEXTURE"}
 ```
 
 ### List Resources
 
 ```bash
-curl http://localhost:8080/api/resources
-# Response: [{"id": 1, "name": "player-sprite", ...}]
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/containers/1/resources
+# Response: [{"resourceId": 1, "resourceName": "player-sprite", "resourceType": "TEXTURE"}, ...]
 ```
 
-## GUI Download
-
-### Get GUI Info
+### Get Resource
 
 ```bash
-curl http://localhost:8080/api/gui/info
-# Response: {"available": true, "version": "1.0.0", "size": 12345678}
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/containers/1/resources/1
 ```
 
-### Download GUI Package
+### Delete Resource
 
 ```bash
-# ZIP with auto-config
-curl -O http://localhost:8080/api/gui/download
-
-# JAR only
-curl -O http://localhost:8080/api/gui/download/jar
+curl -X DELETE -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/api/containers/1/resources/1
 ```

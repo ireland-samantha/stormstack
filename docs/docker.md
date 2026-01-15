@@ -59,7 +59,7 @@ docker compose down
 
 | Image | Size | Contents |
 |-------|------|----------|
-| `lightning-backend` | ~350MB | Quarkus app, modules JAR, GUI JAR |
+| `lightning-backend` | ~300MB | Quarkus app, modules JAR |
 | `eclipse-temurin:25-jre-alpine` | Base runtime |
 | `mongo:7` | MongoDB for snapshot persistence |
 
@@ -67,7 +67,7 @@ docker compose down
 - `8080` - REST API and WebSocket
 - `27017` - MongoDB (optional, for external access)
 
-**Health Check:** `GET /api/simulation/tick` (30s interval)
+**Health Check:** `GET /api/containers` (30s interval)
 
 **Environment Variables:**
 
@@ -75,7 +75,6 @@ docker compose down
 |----------|---------|-------------|
 | `JAVA_OPTS` | `-Dquarkus.http.host=0.0.0.0` | JVM arguments |
 | `QUARKUS_LOG_LEVEL` | `INFO` | Log verbosity |
-| `GUI_JAR_PATH` | `/app/gui/lightning-gui.jar` | Path to GUI JAR for download endpoint |
 | `QUARKUS_MONGODB_CONNECTION_STRING` | `mongodb://mongodb:27017` | MongoDB connection |
 | `SNAPSHOT_PERSISTENCE_ENABLED` | `true` | Enable snapshot history |
 | `SNAPSHOT_PERSISTENCE_DATABASE` | `lightningfirefly` | MongoDB database name |
@@ -112,23 +111,3 @@ To disable MongoDB persistence:
 ```bash
 SNAPSHOT_PERSISTENCE_ENABLED=false docker compose up -d
 ```
-
-## GUI Download Endpoint
-
-When running in Docker, the GUI JAR is bundled and available for download:
-
-```bash
-# Get info about GUI availability
-curl http://localhost:8080/api/gui/info
-
-# Download ZIP with auto-configuration
-curl -O http://localhost:8080/api/gui/download
-
-# Download JAR only (no config)
-curl -O http://localhost:8080/api/gui/download/jar
-```
-
-The `/api/gui/download` endpoint returns a ZIP containing:
-- `lightning-gui.jar` - The GUI application
-- `server.properties` - Pre-configured with the server URL
-- `README.txt` - Usage instructions

@@ -7,6 +7,7 @@ A multitenant game server built in Java, featuring real-time state synchronizati
 | Documentation | Description |
 |---------------|-------------|
 | [Docker](docs/docker.md) | Container deployment and configuration |
+| [Frontend](docs/frontend.md) | Web dashboard (React/TypeScript) |
 | [Game SDK](docs/game-sdk.md) | EngineClient, Orchestrator, GameRenderer |
 | [AI System](docs/ai.md) | Server-side game logic (formerly Game Masters) |
 | [Module System](docs/module-system.md) | Creating and deploying modules |
