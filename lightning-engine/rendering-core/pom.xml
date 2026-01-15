@@ -18,7 +18,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lwjgl.version>3.3.3</lwjgl.version>
         <joml.version>1.10.5</joml.version>
-
+        <!-- Empty by default, set to -XstartOnFirstThread on macOS -->
+        <surefire.argLine></surefire.argLine>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -143,6 +144,8 @@
                 <configuration>
                     <reuseForks>false</reuseForks>
                     <forkCount>1</forkCount>
+                    <!-- Uses surefire.argLine property, set by macOS profiles -->
+                    <argLine>${surefire.argLine}</argLine>
                 </configuration>
             </plugin>
         </plugins>
@@ -185,19 +188,9 @@
             </activation>
             <properties>
                 <lwjgl.natives>natives-macos</lwjgl.natives>
+                <!-- Required for GLFW/LWJGL on macOS only -->
+                <surefire.argLine>-XstartOnFirstThread</surefire.argLine>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <!-- Required for GLFW/LWJGL on macOS only -->
-                            <argLine>-XstartOnFirstThread</argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
 
         <!-- macOS ARM64 -->
@@ -211,19 +204,9 @@
             </activation>
             <properties>
                 <lwjgl.natives>natives-macos-arm64</lwjgl.natives>
+                <!-- Required for GLFW/LWJGL on macOS only -->
+                <surefire.argLine>-XstartOnFirstThread</surefire.argLine>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <!-- Required for GLFW/LWJGL on macOS only -->
-                            <argLine>-XstartOnFirstThread</argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
 
     </profiles>
