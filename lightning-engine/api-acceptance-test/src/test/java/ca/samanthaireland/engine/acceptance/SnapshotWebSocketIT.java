@@ -1,0 +1,387 @@
+/*
+ * Copyright (c) 2026 Samantha Ireland
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package ca.samanthaireland.engine.acceptance;
+
+import ca.samanthaireland.engine.api.resource.adapter.ContainerAdapter;
+import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
+import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerClient;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.*;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.WebSocket;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * Acceptance test for WebSocket snapshot streaming.
+ *
+ * <p>This test verifies that snapshots received via WebSocket contain
+ * the expected component data after entities are created and modified.
+ */
+@Slf4j
+@Tag("acceptance")
+@Tag("testcontainers")
+@DisplayName("Snapshot WebSocket Acceptance Test")
+@Testcontainers
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Timeout(value = 2, unit = TimeUnit.MINUTES)
+class SnapshotWebSocketIT {
+
+    private static final int BACKEND_PORT = 8080;
+    private static final List<String> REQUIRED_MODULES = List.of(
+            "EntityModule", "GridMapModule", "RigidBodyModule", "RenderModule"
+    );
+
+    @Container
+    static GenericContainer<?> backendContainer = new GenericContainer<>(
+            DockerImageName.parse("lightning-backend:latest"))
+            .withExposedPorts(BACKEND_PORT)
+            .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
+                    .withStartupTimeout(Duration.ofMinutes(2)));
+
+    private EngineClient client;
+    private ContainerClient container;
+    private long containerId = -1;
+    private long matchId = -1;
+    private String baseUrl;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        String host = backendContainer.getHost();
+        Integer port = backendContainer.getMappedPort(BACKEND_PORT);
+        baseUrl = String.format("http://%s:%d", host, port);
+        log.info("Backend URL: {}", baseUrl);
+
+        // Authenticate to get JWT token
+        String token = authenticate(baseUrl, "admin", "admin");
+        log.info("Authenticated successfully");
+
+        client = EngineClient.builder()
+                .baseUrl(baseUrl)
+                .withBearerToken(token)
+                .build();
+    }
+
+    private String authenticate(String baseUrl, String username, String password) throws Exception {
+        HttpClient httpClient = HttpClient.newHttpClient();
+        String json = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + "/api/auth/login"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() != 200) {
+            throw new IOException("Authentication failed: " + response.statusCode() + " - " + response.body());
+        }
+
+        String body = response.body();
+        int tokenStart = body.indexOf("\"token\":\"") + 9;
+        int tokenEnd = body.indexOf("\"", tokenStart);
+        return body.substring(tokenStart, tokenEnd);
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (containerId > 0) {
+            try {
+                client.containers().stopContainer(containerId);
+                client.containers().deleteContainer(containerId);
+            } catch (Exception e) {
+                log.warn("Failed to clean up container {}: {}", containerId, e.getMessage());
+            }
+        }
+        containerId = -1;
+        matchId = -1;
+        container = null;
+    }
+
+    @Test
+    @Order(1)
+    @DisplayName("REST snapshot endpoint returns components after setVelocity")
+    void testRestSnapshotReturnsComponents() throws Exception {
+        setupMatchAndContainer();
+
+        // Spawn entity
+        long entityId = spawnEntity();
+        log.info("Spawned entity: {}", entityId);
+
+        // Attach rigid body with initial position
+        container.forMatch(matchId).send("attachRigidBody", Map.of(
+                "entityId", entityId,
+                "positionX", 100.0f,
+                "positionY", 200.0f,
+                "mass", 1.0f
+        ));
+        container.tick();
+
+        // Set velocity
+        container.forMatch(matchId).custom("setVelocity")
+                .param("entityId", entityId)
+                .param("velocityX", 50.0f)
+                .param("velocityY", -30.0f)
+                .param("velocityZ", 0.0f)
+                .execute();
+        container.tick();
+
+        // Get snapshot via REST
+        var snapshot = getSnapshot();
+        log.info("REST snapshot modules: {}", snapshot.moduleNames());
+
+        var rigidBody = snapshot.module("RigidBodyModule");
+        log.info("RigidBodyModule components: {}", rigidBody.componentNames());
+
+        // Verify components exist and have values
+        assertThat(rigidBody.has("VELOCITY_X"))
+                .as("RigidBodyModule should have VELOCITY_X component")
+                .isTrue();
+
+        List<Float> velocityX = rigidBody.component("VELOCITY_X");
+        assertThat(velocityX)
+                .as("VELOCITY_X should have at least one value")
+                .isNotEmpty();
+
+        float vx = rigidBody.first("VELOCITY_X", 0);
+        log.info("REST snapshot VELOCITY_X: {}", vx);
+
+        assertThat(Math.abs(vx)).isGreaterThan(40);
+        log.info("REST snapshot test PASSED");
+    }
+
+    @Test
+    @Order(2)
+    @DisplayName("WebSocket snapshot returns components after setVelocity")
+    void testWebSocketSnapshotReturnsComponents() throws Exception {
+        setupMatchAndContainer();
+
+        // Spawn entity
+        long entityId = spawnEntity();
+        log.info("Spawned entity: {}", entityId);
+
+        // Attach rigid body
+        container.forMatch(matchId).send("attachRigidBody", Map.of(
+                "entityId", entityId,
+                "positionX", 100.0f,
+                "positionY", 200.0f,
+                "mass", 1.0f
+        ));
+        container.tick();
+
+        // Set velocity
+        container.forMatch(matchId).custom("setVelocity")
+                .param("entityId", entityId)
+                .param("velocityX", 50.0f)
+                .param("velocityY", -30.0f)
+                .param("velocityZ", 0.0f)
+                .execute();
+        container.tick();
+
+        // Connect to WebSocket and receive snapshot
+        String wsUrl = baseUrl.replace("http://", "ws://") +
+                "/ws/containers/" + containerId + "/matches/" + matchId + "/snapshot";
+        log.info("Connecting to WebSocket: {}", wsUrl);
+
+        CompletableFuture<String> snapshotFuture = new CompletableFuture<>();
+        HttpClient httpClient = HttpClient.newHttpClient();
+
+        WebSocket webSocket = httpClient.newWebSocketBuilder()
+                .buildAsync(URI.create(wsUrl), new WebSocket.Listener() {
+                    private final StringBuilder messageBuffer = new StringBuilder();
+
+                    @Override
+                    public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        messageBuffer.append(data);
+                        if (last) {
+                            String message = messageBuffer.toString();
+                            log.info("Received WebSocket message: {}", message);
+                            snapshotFuture.complete(message);
+                        }
+                        return WebSocket.Listener.super.onText(webSocket, data, last);
+                    }
+
+                    @Override
+                    public void onError(WebSocket webSocket, Throwable error) {
+                        log.error("WebSocket error", error);
+                        snapshotFuture.completeExceptionally(error);
+                    }
+                })
+                .join();
+
+        try {
+            // Wait for snapshot message
+            String snapshotJson = snapshotFuture.get(10, TimeUnit.SECONDS);
+            log.info("WebSocket snapshot JSON: {}", snapshotJson);
+
+            // Parse and validate the snapshot
+            assertThat(snapshotJson).contains("\"data\":");
+            assertThat(snapshotJson).contains("RigidBodyModule");
+            assertThat(snapshotJson).contains("VELOCITY_X");
+
+            // Verify the data is not empty
+            assertThat(snapshotJson)
+                    .as("WebSocket snapshot should contain actual component values, not empty arrays")
+                    .doesNotContain("\"VELOCITY_X\":[]");
+
+            log.info("WebSocket snapshot test PASSED");
+        } finally {
+            webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
+        }
+    }
+
+    @Test
+    @Order(3)
+    @DisplayName("Delta WebSocket returns changed components")
+    void testDeltaWebSocketReturnsComponents() throws Exception {
+        setupMatchAndContainer();
+
+        // Spawn entity
+        long entityId = spawnEntity();
+        log.info("Spawned entity: {}", entityId);
+
+        // Attach rigid body
+        container.forMatch(matchId).send("attachRigidBody", Map.of(
+                "entityId", entityId,
+                "positionX", 100.0f,
+                "positionY", 200.0f,
+                "mass", 1.0f
+        ));
+        container.tick();
+
+        // Set velocity
+        container.forMatch(matchId).custom("setVelocity")
+                .param("entityId", entityId)
+                .param("velocityX", 50.0f)
+                .param("velocityY", -30.0f)
+                .param("velocityZ", 0.0f)
+                .execute();
+        container.tick();
+
+        // Connect to Delta WebSocket and receive delta snapshot
+        String wsUrl = baseUrl.replace("http://", "ws://") +
+                "/ws/containers/" + containerId + "/matches/" + matchId + "/delta";
+        log.info("Connecting to Delta WebSocket: {}", wsUrl);
+
+        CompletableFuture<String> deltaFuture = new CompletableFuture<>();
+        HttpClient httpClient = HttpClient.newHttpClient();
+
+        WebSocket webSocket = httpClient.newWebSocketBuilder()
+                .buildAsync(URI.create(wsUrl), new WebSocket.Listener() {
+                    private final StringBuilder messageBuffer = new StringBuilder();
+
+                    @Override
+                    public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
+                        messageBuffer.append(data);
+                        if (last) {
+                            String message = messageBuffer.toString();
+                            log.info("Received Delta WebSocket message: {}", message);
+                            deltaFuture.complete(message);
+                        }
+                        return WebSocket.Listener.super.onText(webSocket, data, last);
+                    }
+
+                    @Override
+                    public void onError(WebSocket webSocket, Throwable error) {
+                        log.error("Delta WebSocket error", error);
+                        deltaFuture.completeExceptionally(error);
+                    }
+                })
+                .join();
+
+        try {
+            // Wait for delta message
+            String deltaJson = deltaFuture.get(10, TimeUnit.SECONDS);
+            log.info("Delta WebSocket JSON: {}", deltaJson);
+
+            // Parse and validate the delta response
+            assertThat(deltaJson).contains("\"matchId\":");
+            assertThat(deltaJson).contains("\"changedComponents\":");
+
+            // First delta should include all added entities (full snapshot as delta from empty)
+            // Verify it contains RigidBodyModule with velocity components
+            assertThat(deltaJson).contains("RigidBodyModule");
+            assertThat(deltaJson).contains("VELOCITY_X");
+
+            log.info("Delta WebSocket test PASSED");
+        } finally {
+            webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "done").join();
+        }
+    }
+
+    // ========== Helper Methods ==========
+
+    private void setupMatchAndContainer() throws Exception {
+        ContainerAdapter.ContainerResponse containerResponse = client.containers()
+                .create()
+                .name("snapshot-test-" + System.currentTimeMillis())
+                .withModules(REQUIRED_MODULES.toArray(new String[0]))
+                .execute();
+        containerId = containerResponse.id();
+        container = client.container(containerId);
+        container.play(60);
+
+        var match = container.createMatch(REQUIRED_MODULES);
+        matchId = match.id();
+        log.info("Created container {} and match {}", containerId, matchId);
+    }
+
+    private long spawnEntity() throws IOException {
+        container.forMatch(matchId).spawn()
+                .forPlayer(1)
+                .ofType(100)
+                .execute();
+        container.tick();
+
+        var snapshotOpt = container.getSnapshot(matchId);
+        if (snapshotOpt.isPresent()) {
+            var snapshot = client.parseSnapshot(snapshotOpt.get().data());
+            List<Float> entityIds = snapshot.entityIds();
+            if (!entityIds.isEmpty()) {
+                return entityIds.get(entityIds.size() - 1).longValue();
+            }
+        }
+        throw new IllegalStateException("Failed to spawn entity");
+    }
+
+    private EngineClient.Snapshot getSnapshot() throws IOException {
+        var snapshotOpt = container.getSnapshot(matchId);
+        if (snapshotOpt.isEmpty()) {
+            throw new IllegalStateException("No snapshot available for match " + matchId);
+        }
+        return client.parseSnapshot(snapshotOpt.get().data());
+    }
+}

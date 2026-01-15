@@ -170,7 +170,7 @@ export const SnapshotPanel: React.FC<SnapshotPanelProps> = ({ containerId, match
                         <TableRow>
                           <TableCell>Component</TableCell>
                           <TableCell align="right">Count</TableCell>
-                          <TableCell>Sample Values</TableCell>
+                          <TableCell>Values</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>

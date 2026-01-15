@@ -142,7 +142,7 @@ export interface EnqueueCommandRequest {
   matchId: number;
   playerId?: number;
   commandName: string;
-  payload?: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
 }
 
 export interface SimulationStatus {
@@ -675,14 +675,14 @@ class ApiClient {
     });
   }
 
-  async sendCommandToMatch(matchId: number, commandName: string, payload?: Record<string, unknown>): Promise<void> {
-    await this.enqueueCommand({ matchId, commandName, payload });
+  async sendCommandToMatch(matchId: number, commandName: string, parameters?: Record<string, unknown>): Promise<void> {
+    await this.enqueueCommand({ matchId, commandName, parameters });
   }
 
-  async sendCommandToSession(sessionId: number, commandName: string, payload?: Record<string, unknown>): Promise<void> {
+  async sendCommandToSession(sessionId: number, commandName: string, parameters?: Record<string, unknown>): Promise<void> {
     await this.fetch<void>(`/api/commands/session/${sessionId}`, {
       method: 'POST',
-      body: JSON.stringify({ commandName, payload })
+      body: JSON.stringify({ commandName, parameters })
     });
   }
 
@@ -1050,11 +1050,11 @@ class ApiClient {
   async sendCommandToContainer(
     containerId: number,
     commandName: string,
-    payload?: Record<string, unknown>
+    parameters?: Record<string, unknown>
   ): Promise<void> {
     await this.fetch<void>(`/api/containers/${containerId}/commands`, {
       method: 'POST',
-      body: JSON.stringify({ commandName, payload: payload || {} })
+      body: JSON.stringify({ commandName, parameters: parameters || {} })
     });
   }
 
@@ -1291,9 +1291,9 @@ class ApiClient {
   async sendCommandToPartition(
     partitionId: number,
     commandName: string,
-    payload?: Record<string, unknown>
+    parameters?: Record<string, unknown>
   ): Promise<void> {
-    return this.sendCommandToContainer(partitionId, commandName, payload);
+    return this.sendCommandToContainer(partitionId, commandName, parameters);
   }
 
   async connectSessionInPartition(
@@ -1314,26 +1314,34 @@ export default apiClient;
 
 /**
  * Build WebSocket URL for match snapshot streaming.
+ * @param containerId - The container ID
+ * @param matchId - The match ID
  */
-export function buildSnapshotWebSocketUrl(matchId: number): string {
+export function buildSnapshotWebSocketUrl(containerId: number, matchId: number): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.host}/ws/snapshots/${matchId}`;
+  return `${protocol}//${window.location.host}/ws/containers/${containerId}/matches/${matchId}/snapshot`;
 }
 
 /**
  * Build WebSocket URL for player-scoped snapshot streaming.
+ * @param containerId - The container ID
+ * @param matchId - The match ID
+ * @param playerId - The player ID
  */
-export function buildPlayerSnapshotWebSocketUrl(matchId: number, playerId: number): string {
+export function buildPlayerSnapshotWebSocketUrl(containerId: number, matchId: number, playerId: number): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.host}/ws/matches/${matchId}/players/${playerId}/snapshot`;
+  return `${protocol}//${window.location.host}/ws/containers/${containerId}/matches/${matchId}/players/${playerId}/snapshot`;
 }
 
 /**
  * Build WebSocket URL for player-scoped delta snapshot streaming.
+ * @param containerId - The container ID
+ * @param matchId - The match ID
+ * @param playerId - The player ID
  */
-export function buildPlayerDeltaSnapshotWebSocketUrl(matchId: number, playerId: number): string {
+export function buildPlayerDeltaSnapshotWebSocketUrl(containerId: number, matchId: number, playerId: number): string {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return `${protocol}//${window.location.host}/ws/matches/${matchId}/players/${playerId}/snapshot/delta`;
+  return `${protocol}//${window.location.host}/ws/containers/${containerId}/matches/${matchId}/players/${playerId}/delta`;
 }
 
 /**

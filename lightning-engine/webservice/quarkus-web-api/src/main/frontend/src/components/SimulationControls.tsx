@@ -25,35 +25,82 @@ import {
   Box,
   Tooltip,
   ButtonGroup,
-  Button
+  Button,
+  Typography
 } from '@mui/material';
 import {
   PlayArrow as PlayIcon,
   Stop as StopIcon,
   SkipNext as TickIcon
 } from '@mui/icons-material';
-import { useSimulation } from '../hooks/useApi';
+import { useContainerContext } from '../contexts/ContainerContext';
+import {
+  useAdvanceContainerTickMutation,
+  usePlayContainerMutation,
+  useStopContainerAutoAdvanceMutation,
+  useGetContainerQuery
+} from '../store/api/apiSlice';
 
 export const SimulationControls: React.FC = () => {
-  const { playing, tick, play, stop } = useSimulation();
+  const { selectedContainerId } = useContainerContext();
+
+  const { data: container } = useGetContainerQuery(selectedContainerId!, {
+    skip: !selectedContainerId,
+    pollingInterval: 1000
+  });
+
+  const [advanceTick, { isLoading: isTickLoading }] = useAdvanceContainerTickMutation();
+  const [playContainer, { isLoading: isPlayLoading }] = usePlayContainerMutation();
+  const [stopAutoAdvance, { isLoading: isStopLoading }] = useStopContainerAutoAdvanceMutation();
+
+  const isPlaying = container?.autoAdvancing ?? false;
+  const isLoading = isTickLoading || isPlayLoading || isStopLoading;
+
+  const handleTick = async () => {
+    if (selectedContainerId) {
+      await advanceTick(selectedContainerId);
+    }
+  };
+
+  const handlePlay = async () => {
+    if (selectedContainerId) {
+      await playContainer({ id: selectedContainerId, intervalMs: 16 });
+    }
+  };
+
+  const handleStop = async () => {
+    if (selectedContainerId) {
+      await stopAutoAdvance(selectedContainerId);
+    }
+  };
+
+  if (!selectedContainerId) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography variant="body2" color="text.secondary">
+          Select a container
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       <ButtonGroup variant="outlined" size="small">
         <Tooltip title="Advance one tick">
-          <Button onClick={tick} disabled={playing}>
+          <Button onClick={handleTick} disabled={isPlaying || isLoading}>
             <TickIcon />
           </Button>
         </Tooltip>
-        {playing ? (
+        {isPlaying ? (
           <Tooltip title="Stop simulation">
-            <Button onClick={stop} color="error">
+            <Button onClick={handleStop} color="error" disabled={isLoading}>
               <StopIcon />
             </Button>
           </Tooltip>
         ) : (
           <Tooltip title="Start simulation">
-            <Button onClick={() => play(16)} color="success">
+            <Button onClick={handlePlay} color="success" disabled={isLoading}>
               <PlayIcon />
             </Button>
           </Tooltip>

@@ -266,4 +266,38 @@ public class PWDashboardPage {
     public boolean isDialogOpen() {
         return page.locator(".MuiDialog-root").isVisible();
     }
+
+    /**
+     * Get the container ID by name using the REST API.
+     * Requires being logged in (token in localStorage).
+     * @param containerName the container name
+     * @return the container ID
+     */
+    public long getContainerId(String containerName) {
+        // Use REST API to find container by name
+        // Need to include auth token from localStorage
+        Object result = page.evaluate("async (name) => { " +
+            "try { " +
+            "  const token = localStorage.getItem('authToken'); " +
+            "  const headers = token ? { 'Authorization': 'Bearer ' + token } : {}; " +
+            "  const response = await fetch(window.location.origin + '/api/containers', { headers }); " +
+            "  if (!response.ok) { " +
+            "    console.error('API response not ok:', response.status, response.statusText); " +
+            "    return -1; " +
+            "  } " +
+            "  const text = await response.text(); " +
+            "  if (!text) return -1; " +
+            "  const containers = JSON.parse(text); " +
+            "  const container = containers.find(c => c.name === name); " +
+            "  return container ? container.id : -1; " +
+            "} catch (e) { " +
+            "  console.error('Error getting container ID:', e); " +
+            "  return -1; " +
+            "} " +
+            "}", containerName);
+        if (result instanceof Number) {
+            return ((Number) result).longValue();
+        }
+        return -1;
+    }
 }

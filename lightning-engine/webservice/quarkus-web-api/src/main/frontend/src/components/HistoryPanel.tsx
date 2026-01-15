@@ -21,7 +21,7 @@
  */
 
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -47,60 +47,68 @@ import {
   Timeline as TimelineIcon,
   Compress as CompressIcon
 } from '@mui/icons-material';
-import { useHistory } from '../hooks/useApi';
+import {
+  useGetHistorySummaryQuery,
+  useGetMatchHistorySummaryQuery,
+  useGetHistorySnapshotsQuery,
+  useGetDeltaQuery
+} from '../store/api/apiSlice';
 
 export const HistoryPanel: React.FC = () => {
-  const {
-    summary,
-    matchSummaries,
-    snapshots,
-    delta,
-    loading,
-    error,
-    fetchSummary,
-    fetchMatchSummary,
-    fetchSnapshots,
-    fetchDelta
-  } = useHistory();
-
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
   const [selectedTick, setSelectedTick] = useState<number | null>(null);
   const [previousTick, setPreviousTick] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchSummary();
-  }, [fetchSummary]);
+  // Fetch history summary
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    error: summaryError,
+    refetch: refetchSummary
+  } = useGetHistorySummaryQuery();
 
-  useEffect(() => {
-    if (summary) {
-      for (const matchId of summary.matchIds) {
-        fetchMatchSummary(matchId);
-      }
-    }
-  }, [summary, fetchMatchSummary]);
+  // Fetch match summaries for all matches
+  // We'll use a map approach - fetch each match summary individually
+  const matchIds = summary?.matchIds ?? [];
 
-  const handleMatchSelect = async (matchId: number) => {
+  // Fetch snapshots for selected match
+  const {
+    data: snapshots = [],
+    isLoading: snapshotsLoading,
+    refetch: refetchSnapshots
+  } = useGetHistorySnapshotsQuery(
+    { matchId: selectedMatchId!, limit: 100 },
+    { skip: !selectedMatchId }
+  );
+
+  // Fetch delta between ticks
+  const {
+    data: delta
+  } = useGetDeltaQuery(
+    { matchId: selectedMatchId!, fromTick: previousTick!, toTick: selectedTick! },
+    { skip: !selectedMatchId || previousTick === null || selectedTick === null }
+  );
+
+  const loading = summaryLoading || snapshotsLoading;
+  const error = summaryError ? 'Failed to load history summary' : null;
+
+  const handleMatchSelect = (matchId: number) => {
     setSelectedMatchId(matchId);
     setSelectedTick(null);
     setPreviousTick(null);
-    await fetchSnapshots(matchId);
   };
 
-  const handleSnapshotSelect = async (tick: number) => {
+  const handleSnapshotSelect = (tick: number) => {
     if (selectedTick !== null) {
       setPreviousTick(selectedTick);
     }
     setSelectedTick(tick);
-
-    if (previousTick !== null && selectedMatchId !== null) {
-      await fetchDelta(selectedMatchId, previousTick, tick);
-    }
   };
 
   const handleRefresh = () => {
-    fetchSummary();
+    refetchSummary();
     if (selectedMatchId) {
-      fetchSnapshots(selectedMatchId);
+      refetchSnapshots();
     }
   };
 
@@ -155,20 +163,15 @@ export const HistoryPanel: React.FC = () => {
                   </Typography>
                   <Divider />
                   <List dense sx={{ overflow: 'auto', maxHeight: 250 }}>
-                    {matchSummaries.map((match) => (
-                      <ListItem key={match.matchId} disablePadding>
-                        <ListItemButton
-                          selected={selectedMatchId === match.matchId}
-                          onClick={() => handleMatchSelect(match.matchId)}
-                        >
-                          <ListItemText
-                            primary={`Match ${match.matchId}`}
-                            secondary={`${match.snapshotCount} snapshots (tick ${match.firstTick}-${match.lastTick})`}
-                          />
-                        </ListItemButton>
-                      </ListItem>
+                    {matchIds.map((matchId) => (
+                      <MatchListItem
+                        key={matchId}
+                        matchId={matchId}
+                        selected={selectedMatchId === matchId}
+                        onClick={() => handleMatchSelect(matchId)}
+                      />
                     ))}
-                    {matchSummaries.length === 0 && (
+                    {matchIds.length === 0 && (
                       <ListItem>
                         <ListItemText
                           secondary="No matches found"
@@ -264,6 +267,32 @@ export const HistoryPanel: React.FC = () => {
         )}
       </CardContent>
     </Card>
+  );
+};
+
+// Separate component for match list items to use individual RTK Query hooks
+interface MatchListItemProps {
+  matchId: number;
+  selected: boolean;
+  onClick: () => void;
+}
+
+const MatchListItem: React.FC<MatchListItemProps> = ({ matchId, selected, onClick }) => {
+  const { data: matchSummary } = useGetMatchHistorySummaryQuery(matchId);
+
+  return (
+    <ListItem disablePadding>
+      <ListItemButton selected={selected} onClick={onClick}>
+        <ListItemText
+          primary={`Match ${matchId}`}
+          secondary={
+            matchSummary
+              ? `${matchSummary.snapshotCount} snapshots (tick ${matchSummary.firstTick}-${matchSummary.lastTick})`
+              : 'Loading...'
+          }
+        />
+      </ListItemButton>
+    </ListItem>
   );
 };
 

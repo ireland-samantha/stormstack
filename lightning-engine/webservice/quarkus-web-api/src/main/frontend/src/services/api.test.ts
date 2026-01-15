@@ -177,17 +177,17 @@ describe('ApiClient', () => {
 
 describe('WebSocket URL builders', () => {
   it('builds snapshot WebSocket URL', () => {
-    const url = buildSnapshotWebSocketUrl(1);
-    expect(url).toContain('/ws/snapshots/1');
+    const url = buildSnapshotWebSocketUrl(1, 2);
+    expect(url).toContain('/ws/containers/1/matches/2/snapshot');
   });
 
   it('builds player snapshot WebSocket URL', () => {
-    const url = buildPlayerSnapshotWebSocketUrl(1, 2);
-    expect(url).toContain('/ws/matches/1/players/2/snapshot');
+    const url = buildPlayerSnapshotWebSocketUrl(1, 2, 3);
+    expect(url).toContain('/ws/containers/1/matches/2/players/3/snapshot');
   });
 
   it('builds player delta snapshot WebSocket URL', () => {
-    const url = buildPlayerDeltaSnapshotWebSocketUrl(1, 2);
-    expect(url).toContain('/ws/matches/1/players/2/snapshot/delta');
+    const url = buildPlayerDeltaSnapshotWebSocketUrl(1, 2, 3);
+    expect(url).toContain('/ws/containers/1/matches/2/players/3/delta');
   });
 });

@@ -24,6 +24,7 @@ import type {
   HistorySummary,
   MatchHistorySummary,
   LoginResponse,
+  DeltaSnapshotData,
 } from '../../services/api';
 
 // Re-export types for convenience
@@ -55,7 +56,7 @@ interface CreateMatchRequest {
 interface EnqueueCommandRequest {
   commandName: string;
   matchId?: number;
-  payload?: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
 }
 
 // Use full URL for MSW compatibility in tests
@@ -602,6 +603,15 @@ export const apiSlice = createApi({
       providesTags: (_, __, { matchId }) => [{ type: 'History', id: matchId }],
     }),
 
+    // =========================================================================
+    // DELTA ENDPOINTS
+    // =========================================================================
+    getDelta: builder.query<DeltaSnapshotData, { matchId: number; fromTick: number; toTick: number }>({
+      query: ({ matchId, fromTick, toTick }) =>
+        `/snapshots/delta/${matchId}?fromTick=${fromTick}&toTick=${toTick}`,
+      providesTags: (_, __, { matchId }) => [{ type: 'Snapshot', id: `DELTA_${matchId}` }],
+    }),
+
     restoreMatch: builder.mutation<void, { matchId: number; tick?: number }>({
       query: ({ matchId, tick }) => ({
         url: `/restore/match/${matchId}${tick !== undefined ? `?tick=${tick}` : ''}`,
@@ -683,5 +693,8 @@ export const {
   useGetMatchHistorySummaryQuery,
   useGetHistorySnapshotsQuery,
   useGetLatestSnapshotsQuery,
+  // Delta
+  useGetDeltaQuery,
+  // Restore
   useRestoreMatchMutation,
 } = apiSlice;

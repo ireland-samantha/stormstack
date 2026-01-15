@@ -74,23 +74,69 @@ public class PWCommandsPage {
         Locator dialog = page.locator(".MuiDialog-root");
         Locator input = dialog.getByLabel(parameterName);
 
-        // Wait for data to be loaded (wait for any loading spinners to disappear)
-        page.waitForTimeout(1000);
+        // Wait for data to be loaded
+        page.waitForTimeout(2000);
 
-        // Click input to focus, then press ArrowDown to force dropdown open
-        input.click();
-        page.waitForTimeout(200);
-        page.keyboard().press("ArrowDown");
-        page.waitForTimeout(300);
+        // Try multiple attempts to open and select from dropdown
+        for (int attempt = 0; attempt < 3; attempt++) {
+            // Click on the dropdown button to open
+            Locator autocomplete = dialog.locator(".MuiAutocomplete-root")
+                .filter(new Locator.FilterOptions().setHas(input));
+            Locator expandButton = autocomplete.locator(".MuiAutocomplete-popupIndicator");
 
-        // Wait for listbox to appear
-        Locator listbox = page.locator("[role='listbox']");
-        listbox.waitFor(new Locator.WaitForOptions().setTimeout(10000));
+            if (expandButton.count() > 0) {
+                expandButton.click();
+            } else {
+                // Fallback: click input and press ArrowDown
+                input.click();
+                page.waitForTimeout(200);
+                page.keyboard().press("ArrowDown");
+            }
+            page.waitForTimeout(500);
 
-        // Get options and select first one
-        Locator options = listbox.locator("[role='option']");
-        options.first().waitFor(new Locator.WaitForOptions().setTimeout(5000));
-        options.first().click();
+            // Check for listbox
+            Locator listbox = page.locator("[role='listbox']");
+            if (listbox.count() > 0 && listbox.isVisible()) {
+                // Check for "No options" message
+                Locator noOptions = listbox.locator("text=No options");
+                if (noOptions.count() > 0) {
+                    System.out.println("Autocomplete " + parameterName + " attempt " + (attempt+1) + ": No options yet, retrying...");
+                    page.keyboard().press("Escape");
+                    page.waitForTimeout(1000);
+                    continue;
+                }
+
+                // Select first option
+                Locator options = listbox.locator("[role='option']");
+                if (options.count() > 0) {
+                    options.first().click();
+                    page.waitForTimeout(200);
+                    return;
+                }
+            }
+
+            // Close dropdown if open and retry
+            page.keyboard().press("Escape");
+            page.waitForTimeout(1000);
+        }
+
+        // Final debug output
+        page.screenshot(new com.microsoft.playwright.Page.ScreenshotOptions()
+            .setPath(java.nio.file.Paths.get("target/autocomplete-failed-" + parameterName + ".png")));
+        System.out.println("Autocomplete " + parameterName + ": Failed after 3 attempts, no options available");
+        throw new RuntimeException("Could not select option for autocomplete field: " + parameterName);
+    }
+
+    /**
+     * Type a value directly into an Autocomplete field (bypassing dropdown selection).
+     * Use this when the dropdown has no options or as a fallback.
+     * @param parameterName the label of the autocomplete field
+     * @param value the value to type
+     */
+    public void typeInAutocomplete(String parameterName, String value) {
+        Locator dialog = page.locator(".MuiDialog-root");
+        Locator input = dialog.getByLabel(parameterName);
+        input.fill(value);
         page.waitForTimeout(200);
     }
 

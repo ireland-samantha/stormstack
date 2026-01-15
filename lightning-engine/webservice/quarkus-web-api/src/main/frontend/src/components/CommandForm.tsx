@@ -20,13 +20,14 @@
  * SOFTWARE.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box, TextField,
   FormControlLabel, Switch, Typography, Chip, Autocomplete
 } from '@mui/material';
-import { CommandParameter, PlayerData, apiClient } from '../services/api';
+import { CommandParameter } from '../services/api';
 import { useContainerContext } from '../contexts/ContainerContext';
+import { useGetPlayersInContainerQuery } from '../store/api/apiSlice';
 
 export interface CommandFormProps {
   parameters: CommandParameter[];
@@ -114,43 +115,24 @@ export function buildInitialValues(parameters: CommandParameter[]): Record<strin
  * Renders appropriate input types based on parameter names and types.
  */
 const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange, disabled }) => {
-  const { matches } = useContainerContext();
-  const [players, setPlayers] = useState<PlayerData[]>([]);
-  const [entities, setEntities] = useState<number[]>([]);
-  const [loadingPlayers, setLoadingPlayers] = useState(false);
+  const { matches, selectedContainerId } = useContainerContext();
+  const [entities] = useState<number[]>([]);
 
   // Fetch players if we have a playerId field
   const hasPlayerIdField = parameters.some(p => detectFieldType(p) === 'playerId');
   const hasEntityIdField = parameters.some(p => detectFieldType(p) === 'entityId');
 
-  const fetchPlayers = useCallback(async () => {
-    if (!hasPlayerIdField) return;
-    setLoadingPlayers(true);
-    try {
-      const data = await apiClient.getPlayers();
-      setPlayers(Array.isArray(data) ? data : []);
-    } catch {
-      setPlayers([]);
-    } finally {
-      setLoadingPlayers(false);
-    }
-  }, [hasPlayerIdField]);
-
-  useEffect(() => {
-    fetchPlayers();
-  }, [fetchPlayers]);
+  // Use RTK Query to fetch players when needed
+  const { data: players = [], isLoading: loadingPlayers } = useGetPlayersInContainerQuery(
+    selectedContainerId!,
+    { skip: !hasPlayerIdField || !selectedContainerId }
+  );
 
   // For entity IDs, we'd need a snapshot or entity list endpoint
   // For now, provide a text field that accepts numbers
   useEffect(() => {
     if (hasEntityIdField) {
-      // Could fetch from snapshot if available
-      // For now, just provide some sample entity IDs if matches exist
-      const sampleEntities: number[] = [];
-      for (let i = 1; i <= 10; i++) {
-        sampleEntities.push(i);
-      }
-      setEntities(sampleEntities);
+        // todo: fetch from snapshot
     }
   }, [hasEntityIdField]);
 
