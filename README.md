@@ -11,6 +11,7 @@ A multitenant game server built in Java, featuring real-time state synchronizati
 | [Game SDK](docs/game-sdk.md) | EngineClient, Orchestrator, GameRenderer |
 | [AI System](docs/ai.md) | Server-side game logic (formerly Game Masters) |
 | [Module System](docs/module-system.md) | Creating and deploying modules |
+| [ClassLoader Isolation](docs/classloaders.md) | Container runtime isolation |
 | [Rendering Library](docs/rendering-library.md) | NanoVG/OpenGL GUI framework |
 | [Architecture](docs/architecture.md) | System design, project structure |
 | [API Reference](docs/api-reference.md) | REST endpoints |
