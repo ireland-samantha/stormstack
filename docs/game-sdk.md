@@ -4,38 +4,107 @@ The Game SDK (`lightning-engine/engine-adapter`) provides client libraries for b
 
 ## EngineClient
 
-The unified API for all backend operations. Located in `web-api-adapter`:
+The unified API for all backend operations. All operations are **container-scoped** - you create a container first, then perform operations within that container's context.
+
+Located in `web-api-adapter`:
 
 ```java
+// Connect to backend
 var client = EngineClient.connect("http://localhost:8080");
 
-// Create a match with modules
-var match = client.createMatch()
-    .withModule("EntityModule")
-    .withModule("RigidBodyModule")
-    .withModule("RenderingModule")
+// Create and start a container with modules
+var container = client.createContainer()
+    .name("my-game")
+    .withModules("EntityModule", "RigidBodyModule", "RenderingModule")
     .execute();
+client.startContainer(container.id());
+
+// Get a scoped client for the container
+var scope = client.container(container.id());
+
+// Create a match with modules
+var match = scope.createMatch(List.of("EntityModule", "RigidBodyModule"));
 
 // Queue commands
-client.forMatch(match.id())
+scope.forMatch(match.id())
     .spawn().forPlayer(1).ofType(100).execute();
 
 // Control simulation
-client.tick();
-client.play(16);  // 16ms interval (60 FPS)
+scope.tick();
+scope.play(16);  // 16ms interval (60 FPS)
 
 // Fetch snapshots
-var snapshot = client.fetchSnapshot(match.id());
+var snapshot = scope.getSnapshot(match.id());
+```
 
-// Manage modules and resources
-var modules = client.listModules();
-client.uploadResource().name("texture.png").data(bytes).execute();
+## Container Operations
+
+Containers provide isolated execution environments. Each container has its own:
+- Game loop (own thread, configurable tick rate)
+- Entity-Component store
+- Module instances
+- Command queue
+
+```java
+// Create container
+var container = client.createContainer()
+    .name("game-server-1")
+    .withModules("EntityModule", "RigidBodyModule")
+    .execute();
+
+// Start container
+client.startContainer(container.id());
+
+// List all containers
+List<EngineClient.Container> containers = client.listContainers();
+
+// Get container status
+Optional<EngineClient.Container> container = client.getContainer(containerId);
+
+// Stop and delete
+client.stopContainer(containerId);
+client.deleteContainer(containerId);
+```
+
+## Container Client (Scoped Operations)
+
+Get a scoped client for container-specific operations:
+
+```java
+var scope = client.container(containerId);
+
+// Match operations
+var match = scope.createMatch(List.of("EntityModule", "RigidBodyModule"));
+var matches = scope.listMatches();
+scope.deleteMatch(matchId);
+
+// Simulation control
+scope.tick();           // Single tick
+scope.play(16);         // Auto-advance at 60 FPS (16ms)
+scope.stopAuto();       // Stop auto-advance
+long tick = scope.currentTick();
+
+// Snapshots
+Optional<ContainerSnapshot> snapshot = scope.getSnapshot(matchId);
+
+// Resources
+var resources = scope.listResources();
+long resourceId = scope.uploadResource()
+    .name("texture.png")
+    .type("TEXTURE")
+    .data(imageBytes)
+    .execute();
+scope.deleteResource(resourceId);
+
+// Players
+long playerId = scope.createPlayer();
+scope.deletePlayer(playerId);
 ```
 
 ### Fluent Command Builders
 
 ```java
-var commands = client.forMatch(matchId);
+var commands = scope.forMatch(matchId);
 
 // Spawn entities
 commands.spawn()
@@ -54,13 +123,6 @@ commands.attachSprite()
     .visible(true)
     .execute();
 
-// Move entities
-commands.move()
-    .entity(entityId)
-    .to(300, 400)
-    .withVelocity(10, 0)
-    .execute();
-
 // Custom commands
 commands.custom("myCommand")
     .param("key1", value1)
@@ -68,77 +130,78 @@ commands.custom("myCommand")
     .execute();
 ```
 
-### Simulation Control
-
-```java
-// Get current tick
-long tick = client.currentTick();
-
-// Advance by one tick
-client.tick();
-
-// Advance by multiple ticks
-client.tick(10);
-
-// Start auto-advancing (returns status)
-var status = client.play(16);  // 16ms interval
-boolean isPlaying = status.playing();
-
-// Stop auto-advancing
-client.stop();
-
-// Check if playing
-if (client.isPlaying()) { ... }
-```
-
 ### Resource Management
 
 ```java
+var scope = client.container(containerId);
+
 // List resources
-List<EngineClient.Resource> resources = client.listResources();
+List<ContainerResource> resources = scope.listResources();
 
 // Upload resource
-var resource = client.uploadResource()
+long resourceId = scope.uploadResource()
     .name("player-sprite.png")
     .type("TEXTURE")
     .data(imageBytes)
     .execute();
 
-// Download resource
-byte[] data = client.downloadResource(resourceId);
+// Get resource info
+Optional<ContainerResource> resource = scope.getResource(resourceId);
 
 // Delete resource
-client.deleteResource(resourceId);
+scope.deleteResource(resourceId);
 ```
 
-### Module and AI Management
+### Player Management
+
+```java
+var scope = client.container(containerId);
+
+// Create player (auto-generated ID)
+long playerId = scope.createPlayer();
+
+// Create player with specific ID
+long playerId = scope.createPlayer(42);
+
+// List players
+List<Long> players = scope.listPlayers();
+
+// Delete player
+scope.deletePlayer(playerId);
+
+// Join match
+scope.joinMatch(matchId, playerId);
+
+// Connect/disconnect session
+scope.connectSession(matchId, playerId);
+scope.disconnectSession(matchId, playerId);
+```
+
+## Global Module Operations
+
+Module operations are global (not container-scoped):
 
 ```java
 // List modules
 List<EngineClient.Module> modules = client.listModules();
 Optional<EngineClient.Module> module = client.getModule("EntityModule");
-client.reloadModules();
 
-// List AIs
-List<EngineClient.AI> ais = client.listAIs();
-Optional<EngineClient.AI> gm = client.getAI("AIAI");
-client.reloadAIs();
+// Reload modules
+client.reloadModules();
 ```
 
-### Low-Level Adapter Access
-
-For advanced use cases, access the underlying adapters directly:
+## Authentication
 
 ```java
-// Adapters throw checked IOException
-CommandAdapter commands = client.commands();
-MatchAdapter matches = client.matches();
-ResourceAdapter resources = client.resources();
-SimulationAdapter simulation = client.simulation();
-SnapshotAdapter snapshots = client.snapshots();
-ModuleAdapter modules = client.modules();
-AIAdapter ais = client.ais();
-PlayerAdapter players = client.players();
+// Connect with authentication
+var client = EngineClient.builder()
+    .baseUrl("http://localhost:8080")
+    .withBearerToken(jwtToken)
+    .build();
+
+// Or authenticate after connecting
+AuthAdapter auth = client.auth();
+String token = auth.login("admin", "password");
 ```
 
 ## GameRenderer
@@ -194,13 +257,12 @@ EngineClient provides these domain records:
 
 | Record | Fields |
 |--------|--------|
-| `Match` | `id`, `enabledModules` |
-| `SimulationStatus` | `playing`, `tick` |
-| `Resource` | `id`, `name`, `type` |
+| `Container` | `id`, `name`, `status` |
+| `ContainerMatch` | `id`, `enabledModules`, `enabledAIs` |
+| `ContainerSnapshot` | `matchId`, `tick`, `data` |
+| `ContainerResource` | `resourceId`, `resourceName`, `resourceType` |
 | `Module` | `name`, `flagComponentName` |
-| `AI` | `name` |
 | `Snapshot` | `matchId`, `tick`, `data` |
-| `ModuleData` | `components` |
 
 ## Complete Example
 
@@ -210,12 +272,20 @@ public class MyGame {
         // Connect to backend
         var client = EngineClient.connect("http://localhost:8080");
 
-        // Create match
-        var match = client.createMatch()
-            .withModule("EntityModule")
-            .withModule("RigidBodyModule")
-            .withModule("RenderingModule")
+        // Create and start container with modules
+        var container = client.createContainer()
+            .name("my-game")
+            .withModules("EntityModule", "RigidBodyModule", "RenderingModule")
             .execute();
+        client.startContainer(container.id());
+
+        // Get scoped client
+        var scope = client.container(container.id());
+
+        // Create match
+        var match = scope.createMatch(
+            List.of("EntityModule", "RigidBodyModule", "RenderingModule")
+        );
 
         // Create renderer
         var renderer = GameRendererBuilder.create()
@@ -231,14 +301,18 @@ public class MyGame {
             .build();
 
         // Spawn initial entity
-        client.forMatch(match.id())
+        scope.forMatch(match.id())
             .spawn().forPlayer(1).ofType(1).execute();
 
         // Start simulation
-        client.play(16);
+        scope.play(16);
 
         // Run game (blocks until window closes)
         orchestrator.start();
+
+        // Cleanup
+        client.stopContainer(container.id());
+        client.deleteContainer(container.id());
     }
 }
 ```
@@ -249,23 +323,31 @@ The fluent API on EngineClient throws `UncheckedIOException` for cleaner code:
 
 ```java
 // No try-catch needed for common operations
-var match = client.createMatch().withModule("EntityModule").execute();
-client.tick();
+var container = client.createContainer().name("test").execute();
+client.startContainer(container.id());
+
+var scope = client.container(container.id());
+var match = scope.createMatch(List.of("EntityModule"));
+scope.tick();
 
 // Handle errors if needed
 try {
-    client.forMatch(matchId).spawn().execute();
+    scope.forMatch(matchId).spawn().execute();
 } catch (UncheckedIOException e) {
     log.error("Failed to spawn: {}", e.getCause().getMessage());
 }
 ```
 
-For checked exceptions, use the low-level adapters:
+## Low-Level Adapter Access
+
+For advanced use cases, access the underlying adapters directly:
 
 ```java
-try {
-    client.matches().createMatch(modules, ais);
-} catch (IOException e) {
-    // Handle network error
-}
+// Adapters throw checked IOException
+ContainerAdapter containers = client.containers();
+ModuleAdapter modules = client.modules();
+AuthAdapter auth = client.auth();
+
+// Container-scoped adapters
+ContainerAdapter.ContainerScope scope = containers.forContainer(containerId);
 ```
