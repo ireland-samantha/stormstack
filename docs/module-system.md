@@ -278,6 +278,51 @@ ModuleScopedStore             ← Module-specific view with JWT auth
                             └── ArrayEntityComponentStore     ← Storage
 ```
 
+### JWT-Based Module Authentication
+
+Modules receive a JWT token that encodes their permissions. This enables stateless permission verification.
+
+**Token Claims:**
+
+| Claim | Description |
+|-------|-------------|
+| `module_name` | Name of the module |
+| `component_permissions` | Map of component keys to permission levels |
+| `superuser` | Whether this module bypasses permission checks |
+
+**Permission Key Format:**
+
+```
+{ownerModuleName}.{componentName}
+```
+
+For example:
+- `EntityModule.ENTITY_TYPE.owner` - Module owns this component
+- `RigidBodyModule.VELOCITY_X.read` - Module can read VELOCITY_X
+- `GridMapModule.POSITION_X.write` - Module can write POSITION_X
+
+**Component Permission Values:**
+
+| Value | Description |
+|-------|-------------|
+| `OWNER` | Full access - module owns the component |
+| `READ` | Read-only access to another module's component |
+| `WRITE` | Read and write access to another module's component |
+
+**Superuser Modules:**
+
+Some core modules (like `EntityModule`) have superuser privileges that bypass permission checks entirely. This is necessary for modules that need to manage entities across all other modules.
+
+```java
+// Example: EntityModule has superuser privileges
+public class EntityModuleFactory implements ModuleFactory {
+    @Override
+    public boolean isSuperuser() {
+        return true; // Bypasses all permission checks
+    }
+}
+```
+
 ## Reference Implementations
 
 - **Simple:** `MoveModuleFactory` (223 lines) - Position/velocity, movement system

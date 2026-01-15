@@ -437,7 +437,15 @@ gameLoop.addTickListener(myListener);
 
 ## Module Permission Scoping
 
-Modules use `PermissionComponent` to control access levels for their data:
+Modules use `PermissionComponent` to control access levels for their data. Permissions are enforced via JWT tokens issued to each module.
+
+**Permission Levels:**
+
+| Level | Description |
+|-------|-------------|
+| `PRIVATE` | Only the owning module can read/write |
+| `READ` | Other modules can read, only owner can write |
+| `WRITE` | Any module can read and write |
 
 ```java
 // Components with permission levels
@@ -450,6 +458,8 @@ public static final PermissionComponent INTERNAL_STATE =
 float x = store.getComponent(entity, POSITION_X);  // OK
 store.attachComponent(entity, POSITION_X, 100f);   // Throws!
 ```
+
+For detailed documentation on module permissions, JWT authentication, and superuser modules, see [Module System - Permission Scoping](module-system.md#module-permission-scoping).
 
 ## Store Decorator Pattern
 
