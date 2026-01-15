@@ -620,11 +620,11 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
         return matchOperations;
     }
 
-    // Operations below require container to be started (managers initialized)
+    // Operations below may return null if container not yet started
 
     @Override
     public ContainerModuleOperations modules() {
-        if (moduleOperations == null && moduleManager != null) {
+        if (moduleOperations == null) {
             moduleOperations = new DefaultContainerModuleOperations(this, moduleManager);
         }
         return moduleOperations;
@@ -632,7 +632,7 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
 
     @Override
     public ContainerAIOperations ai() {
-        if (aiOperations == null && aiManager != null) {
+        if (aiOperations == null) {
             aiOperations = new DefaultContainerAIOperations(this, aiManager);
         }
         return aiOperations;
@@ -640,7 +640,7 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
 
     @Override
     public ContainerResourceOperations resources() {
-        if (resourceOperations == null && resourceManager != null) {
+        if (resourceOperations == null) {
             resourceOperations = new DefaultContainerResourceOperations(this, resourceManager);
         }
         return resourceOperations;

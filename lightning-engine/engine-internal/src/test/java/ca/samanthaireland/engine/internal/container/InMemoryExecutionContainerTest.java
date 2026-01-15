@@ -336,10 +336,11 @@ class InMemoryExecutionContainerTest {
     class AIManagement {
 
         @Test
-        @DisplayName("should return null ai() before container started")
-        void shouldReturnNullAiBeforeStarted() {
-            // AI manager is only available after container starts
-            assertThat(container.ai()).isNull();
+        @DisplayName("should return non-null ai() before container started with empty list")
+        void shouldReturnNonNullAiBeforeStartedWithEmptyList() {
+            // AI operations are always created, but return empty list before start
+            assertThat(container.ai()).isNotNull();
+            assertThat(container.ai().available()).isEmpty();
         }
 
         @Test
@@ -362,10 +363,11 @@ class InMemoryExecutionContainerTest {
     class ResourceManagement {
 
         @Test
-        @DisplayName("should return null resources() before container started")
-        void shouldReturnNullResourcesBeforeStarted() {
-            // Resource manager is only available after container starts
-            assertThat(container.resources()).isNull();
+        @DisplayName("should return non-null resources() before container started with empty list")
+        void shouldReturnNonNullResourcesBeforeStartedWithEmptyList() {
+            // Resource operations are always created, but return empty list before start
+            assertThat(container.resources()).isNotNull();
+            assertThat(container.resources().all()).isEmpty();
         }
 
         @Test

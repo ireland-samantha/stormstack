@@ -28,37 +28,37 @@ public final class DefaultContainerResourceOperations implements ContainerResour
 
     @Override
     public long save(Resource resource) {
-        return resourceManager.saveResource(resource);
+        return resourceManager != null ? resourceManager.saveResource(resource) : -1;
     }
 
     @Override
     public Optional<Resource> get(long resourceId) {
-        return resourceManager.getResource(resourceId);
+        return resourceManager != null ? resourceManager.getResource(resourceId) : Optional.empty();
     }
 
     @Override
     public List<Resource> all() {
-        return resourceManager.requestResource().toList();
+        return resourceManager != null ? resourceManager.requestResource().toList() : List.of();
     }
 
     @Override
     public boolean delete(long resourceId) {
-        return resourceManager.deleteResource(resourceId);
+        return resourceManager != null && resourceManager.deleteResource(resourceId);
     }
 
     @Override
     public boolean has(long resourceId) {
-        return resourceManager.hasResource(resourceId);
+        return resourceManager != null && resourceManager.hasResource(resourceId);
     }
 
     @Override
     public Optional<Resource> findByName(String name) {
-        return resourceManager.findByName(name);
+        return resourceManager != null ? resourceManager.findByName(name) : Optional.empty();
     }
 
     @Override
     public int count() {
-        return resourceManager.getResourceCount();
+        return resourceManager != null ? resourceManager.getResourceCount() : 0;
     }
 
     @Override

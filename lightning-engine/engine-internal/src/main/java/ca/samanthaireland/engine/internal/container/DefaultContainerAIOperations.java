@@ -27,12 +27,17 @@ public final class DefaultContainerAIOperations implements ContainerAIOperations
 
     @Override
     public ContainerAIOperations install(Path jarPath) throws IOException {
-        aiManager.installAI(jarPath);
+        if (aiManager != null) {
+            aiManager.installAI(jarPath);
+        }
         return this;
     }
 
     @Override
     public ContainerAIOperations install(String factoryClassName) {
+        if (aiManager == null) {
+            return this;
+        }
         try {
             @SuppressWarnings("unchecked")
             Class<? extends ca.samanthaireland.game.backend.installation.AIFactory> factoryClass =
@@ -55,29 +60,35 @@ public final class DefaultContainerAIOperations implements ContainerAIOperations
      * @return this for fluent chaining
      */
     public ContainerAIOperations installFromClass(Class<? extends ca.samanthaireland.game.backend.installation.AIFactory> factoryClass) {
-        aiManager.installAI(factoryClass);
+        if (aiManager != null) {
+            aiManager.installAI(factoryClass);
+        }
         return this;
     }
 
     @Override
     public ContainerAIOperations reload() throws IOException {
-        aiManager.reloadInstalled();
+        if (aiManager != null) {
+            aiManager.reloadInstalled();
+        }
         return this;
     }
 
     @Override
     public List<String> available() {
-        return aiManager.getAvailableAIs();
+        return aiManager != null ? aiManager.getAvailableAIs() : List.of();
     }
 
     @Override
     public boolean has(String aiName) {
-        return aiManager.hasAI(aiName);
+        return aiManager != null && aiManager.hasAI(aiName);
     }
 
     @Override
     public ContainerAIOperations uninstall(String aiName) {
-        aiManager.uninstallAI(aiName);
+        if (aiManager != null) {
+            aiManager.uninstallAI(aiName);
+        }
         return this;
     }
 }
