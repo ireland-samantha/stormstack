@@ -40,10 +40,8 @@ import ca.samanthaireland.engine.core.container.ContainerCommandOperations;
 import ca.samanthaireland.engine.core.container.ContainerMatchOperations;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
 import ca.samanthaireland.engine.core.store.PermissionRegistry;
-import ca.samanthaireland.engine.ext.module.ModuleFactory;
 import ca.samanthaireland.engine.ext.module.ModuleResolver;
 import ca.samanthaireland.engine.internal.GameLoop;
-import ca.samanthaireland.engine.internal.core.command.CommandQueueExecutor;
 import ca.samanthaireland.engine.internal.core.command.CommandResolver;
 import ca.samanthaireland.engine.internal.core.command.InMemoryCommandQueueManager;
 import ca.samanthaireland.engine.internal.core.command.ModuleCommandResolver;
@@ -200,77 +198,85 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     }
 
     private void initializeComponents() {
-        // Create isolated classloader
+        initializeClassLoaderAndStore();
+        initializeInjector();
+        initializeModuleManager();
+        initializeCommandInfrastructure();
+        initializeResourceAndAIManagers();
+        initializeGameLoop();
+        loadModules();
+
+        log.debug("Container {} initialized: {} modules loaded", id, moduleManager.getAvailableModules().size());
+    }
+
+    private void initializeClassLoaderAndStore() {
         containerClassLoader = new ContainerClassLoader(id, getClass().getClassLoader());
 
-        // Create ECS store with container config
         EcsProperties ecsProperties = new EcsProperties(config.maxEntities(), config.maxComponents());
         ArrayEntityComponentStore rawStore = new ArrayEntityComponentStore(ecsProperties);
         entityStore = LockingEntityComponentStore.wrap(rawStore);
 
-        // Create permission registry
         permissionRegistry = new SimplePermissionRegistry();
+    }
 
-        // Create injector for dependency injection
+    private void initializeInjector() {
         injector = new DefaultInjector();
         injector.addClass(EntityComponentStore.class, entityStore);
         injector.addClass(PermissionRegistry.class, permissionRegistry);
 
-        // Create match service
         InMemoryMatchRepository matchRepository = new InMemoryMatchRepository();
-        matchService = new InMemoryMatchService(matchRepository, null); // ModuleManager set later
+        matchService = new InMemoryMatchService(matchRepository, null);
         injector.addClass(ca.samanthaireland.engine.core.match.MatchService.class, matchService);
+    }
 
-        // Create module manager with container classloader
-        Path modulePath = config.moduleScanDirectory();
-        if (modulePath == null) {
-            modulePath = Path.of("modules"); // Default
-        }
+    private void initializeModuleManager() {
+        Path modulePath = config.moduleScanDirectory() != null
+                ? config.moduleScanDirectory()
+                : Path.of("modules");
+
         moduleManager = new OnDiskModuleManager(
                 injector,
                 permissionRegistry,
                 modulePath.toString(),
                 containerClassLoader
         );
+
         matchService.setModuleResolver(moduleManager);
         injector.addClass(ModuleManager.class, moduleManager);
         injector.addClass(ModuleResolver.class, moduleManager);
+    }
 
-        // Create command queue and resolver
+    private void initializeCommandInfrastructure() {
         commandQueueManager = new InMemoryCommandQueueManager();
         commandResolver = new ModuleCommandResolver(moduleManager);
+    }
 
-        // InMemoryCommandQueueManager implements both CommandQueue and CommandQueueExecutor
-        // Commands are already resolved when enqueued, so executeCommands just runs them
-
-        // Create resource manager for this container
+    private void initializeResourceAndAIManagers() {
         Path resourcePath = Path.of("resources/container_" + id);
         resourceManager = new OnDiskResourceManager(resourcePath);
         injector.addClass(ResourceManager.class, resourceManager);
 
-        // Create command executor for AI
         CommandExecutor commandExecutor = new CommandExecutorFromResolver(commandResolver);
         injector.addClass(CommandExecutor.class, commandExecutor);
 
-        // Create AI manager for this container
-        Path aiPath = Path.of("ai");
         aiManager = new OnDiskAIManager(
-                aiPath,
+                Path.of("ai"),
                 new AIFactoryFileLoader(),
-                injector,  // injector implements ModuleContext
+                injector,
                 commandExecutor,
                 resourceManager
         );
         injector.addClass(AIManager.class, aiManager);
 
-        // Create snapshot provider for this container
-        SnapshotProvider containerSnapshotProvider = new SnapshotProviderImpl(entityStore, moduleManager);
-        injector.addClass(SnapshotProvider.class, containerSnapshotProvider);
+        SnapshotProvider snapshotProvider = new SnapshotProviderImpl(entityStore, moduleManager);
+        injector.addClass(SnapshotProvider.class, snapshotProvider);
+    }
 
-        // Create game loop - commandQueueManager implements CommandQueueExecutor
+    private void initializeGameLoop() {
         gameLoop = new GameLoop(moduleManager, commandQueueManager, config.maxCommandsPerTick());
+    }
 
-        // Load pre-configured module JARs
+    private void loadModules() {
         for (String jarPath : config.moduleJarPaths()) {
             try {
                 moduleManager.installModule(Path.of(jarPath));
@@ -279,14 +285,11 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
             }
         }
 
-        // Scan module directory
         try {
             moduleManager.reloadInstalled();
         } catch (IOException e) {
             log.error("Failed to reload modules: {}", e.getMessage());
         }
-
-        log.debug("Container {} components initialized: {} modules loaded", id, moduleManager.getAvailableModules().size());
     }
 
     /**
@@ -519,7 +522,8 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     }
 
     /**
-     * Internal implementation of enqueueCommand. Use {@link #commands()}.named(commandName).execute() instead.
+     * Enqueues a command for execution on the next tick.
+     * The matchId should be included in the payload if needed.
      */
     void enqueueCommandInternal(String commandName, CommandPayload payload) {
         checkRunning();
@@ -533,20 +537,11 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     }
 
     /**
-     * Internal implementation of enqueueCommand with match context.
-     * Use {@link #commands()}.named(commandName).forMatch(matchId).execute() instead.
+     * Enqueues a command with explicit match context (matchId should be in payload).
+     * Provided for API clarity; delegates to {@link #enqueueCommandInternal(String, CommandPayload)}.
      */
     void enqueueCommandInternal(long matchId, String commandName, CommandPayload payload) {
-        checkRunning();
-
-        EngineCommand command = commandResolver.resolveByName(commandName);
-        if (command == null) {
-            throw new EntityNotFoundException("Command not found: " + commandName);
-        }
-
-        // Note: matchId context is typically handled by the payload itself
-        // when the command is invoked
-        commandQueueManager.enqueue(command, payload);
+        enqueueCommandInternal(commandName, payload);
     }
 
     @Override
@@ -589,41 +584,9 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
         }
     }
 
-    private void checkNotStopped() {
-        ContainerStatus current = status.get();
-        if (current == ContainerStatus.STOPPED || current == ContainerStatus.STOPPING) {
-            throw new IllegalStateException("Container is stopped");
-        }
-    }
-
     // =========================================================================
-    // FLUENT API
+    // FLUENT API - Lazy initialization with consistent patterns
     // =========================================================================
-
-    @Override
-    public ContainerModuleOperations modules() {
-        if (moduleOperations == null || moduleManager == null) {
-            // Create with current moduleManager (may be null before start)
-            moduleOperations = new DefaultContainerModuleOperations(this, moduleManager);
-        }
-        return moduleOperations;
-    }
-
-    @Override
-    public ContainerAIOperations ai() {
-        if (aiOperations == null && aiManager != null) {
-            aiOperations = new DefaultContainerAIOperations(this, aiManager);
-        }
-        return aiOperations;
-    }
-
-    @Override
-    public ContainerResourceOperations resources() {
-        if (resourceOperations == null && resourceManager != null) {
-            resourceOperations = new DefaultContainerResourceOperations(this, resourceManager);
-        }
-        return resourceOperations;
-    }
 
     @Override
     public ContainerLifecycleOperations lifecycle() {
@@ -655,6 +618,32 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
             matchOperations = new DefaultContainerMatchOperations(this);
         }
         return matchOperations;
+    }
+
+    // Operations below require container to be started (managers initialized)
+
+    @Override
+    public ContainerModuleOperations modules() {
+        if (moduleOperations == null && moduleManager != null) {
+            moduleOperations = new DefaultContainerModuleOperations(this, moduleManager);
+        }
+        return moduleOperations;
+    }
+
+    @Override
+    public ContainerAIOperations ai() {
+        if (aiOperations == null && aiManager != null) {
+            aiOperations = new DefaultContainerAIOperations(this, aiManager);
+        }
+        return aiOperations;
+    }
+
+    @Override
+    public ContainerResourceOperations resources() {
+        if (resourceOperations == null && resourceManager != null) {
+            resourceOperations = new DefaultContainerResourceOperations(this, resourceManager);
+        }
+        return resourceOperations;
     }
 
     @Override
