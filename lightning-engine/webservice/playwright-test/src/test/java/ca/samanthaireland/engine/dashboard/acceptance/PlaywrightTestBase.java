@@ -45,7 +45,7 @@ public abstract class PlaywrightTestBase {
     // Backend server container (using pre-built image)
     @Container
     protected static GenericContainer<?> backend = new GenericContainer<>(
-            DockerImageName.parse("lightning-backend:0.1.0"))
+            DockerImageName.parse("lightning-backend:latest"))
             .withExposedPorts(8080)
             .waitingFor(Wait.forLogMessage(".*started in.*Listening on.*", 1))
             .withStartupTimeout(Duration.ofMinutes(2));

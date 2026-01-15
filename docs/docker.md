@@ -2,13 +2,41 @@
 
 ## Build the Image
 
+### Option 1: Maven Profile (Recommended)
+
+Build the Docker image as part of the Maven build:
+
+```bash
+# Full build with Docker image
+./mvnw clean install -Pdocker
+
+# Or just build the Docker image (after a regular build)
+./mvnw install -Pdocker -pl lightning-engine/webservice/quarkus-web-api
+```
+
+This creates `lightning-backend:latest` using `Dockerfile.prebuilt`.
+
+### Option 2: Manual Docker Build
+
 ```bash
 # Full build (compiles from source inside container)
 docker build -t lightning-backend .
 
 # Or use pre-built JARs (faster, requires local mvn package first)
 ./mvnw package -DskipTests
-docker build -f Dockerfile.prebuilt -t lightning-backend:prebuilt .
+docker build -f Dockerfile.prebuilt -t lightning-backend .
+```
+
+### Running Playwright Tests
+
+The Playwright E2E tests require the Docker image. Build it before running tests:
+
+```bash
+# Build with Docker
+./mvnw clean install -Pdocker
+
+# Run Playwright tests
+./mvnw verify -pl lightning-engine/webservice/playwright-test -Pacceptance-tests
 ```
 
 ## Run with Docker Compose

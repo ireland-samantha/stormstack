@@ -22,16 +22,13 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { render } from '../test/testUtils';
+import { http, HttpResponse } from 'msw';
+import { renderWithProviders } from '../test/testUtils';
+import { server } from '../test/mocks/server';
 import CommandForm, { detectFieldType, getDefaultValue, buildInitialValues } from './CommandForm';
-import { apiClient, CommandParameter } from '../services/api';
+import type { CommandParameter } from '../services/api';
 
-vi.mock('../services/api', () => ({
-  apiClient: {
-    getPlayers: vi.fn()
-  }
-}));
-
+// Mock ContainerContext hooks since it now uses Redux internally
 vi.mock('../contexts/ContainerContext', () => ({
   useContainerContext: () => ({
     containers: [{ id: 1, name: 'test-container', status: 'RUNNING' }],
@@ -179,13 +176,12 @@ describe('buildInitialValues', () => {
 
 describe('CommandForm', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    (apiClient.getPlayers as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    server.resetHandlers();
   });
 
   it('shows no parameters message when empty', () => {
     const onChange = vi.fn();
-    render(<CommandForm parameters={[]} values={{}} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={[]} values={{}} onChange={onChange} />);
 
     expect(screen.getByText(/no parameters/i)).toBeInTheDocument();
   });
@@ -196,7 +192,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ name: '' }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ name: '' }} onChange={onChange} />);
 
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
   });
@@ -207,7 +203,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ x: 0 }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ x: 0 }} onChange={onChange} />);
 
     const input = screen.getByLabelText(/x/i);
     expect(input).toBeInTheDocument();
@@ -220,7 +216,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ active: false }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ active: false }} onChange={onChange} />);
 
     // MUI Switch uses an internal checkbox, find by text label
     expect(screen.getByText(/active/i)).toBeInTheDocument();
@@ -232,7 +228,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ matchId: 0 }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ matchId: 0 }} onChange={onChange} />);
 
     // Should render autocomplete with match options
     expect(screen.getByRole('combobox')).toBeInTheDocument();
@@ -245,7 +241,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ name: '' }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ name: '' }} onChange={onChange} />);
 
     const input = screen.getByLabelText(/name/i);
     fireEvent.change(input, { target: { value: 'test' } });
@@ -259,7 +255,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ x: 0 }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ x: 0 }} onChange={onChange} />);
 
     const input = screen.getByLabelText(/x/i);
     fireEvent.change(input, { target: { value: '42' } });
@@ -273,7 +269,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ active: false }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ active: false }} onChange={onChange} />);
 
     // MUI Switch - find the label and click it to toggle
     const switchLabel = screen.getByText(/active/i);
@@ -291,7 +287,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ x: 0, y: 0, name: '', active: false }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ x: 0, y: 0, name: '', active: false }} onChange={onChange} />);
 
     // Find all number inputs
     const numberInputs = screen.getAllByRole('spinbutton');
@@ -311,7 +307,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ name: '' }} onChange={onChange} disabled />);
+    renderWithProviders(<CommandForm parameters={params} values={{ name: '' }} onChange={onChange} disabled />);
 
     expect(screen.getByLabelText(/name/i)).toBeDisabled();
   });
@@ -322,7 +318,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ x: 0 }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ x: 0 }} onChange={onChange} />);
 
     expect(screen.getByText(/type: int/i)).toBeInTheDocument();
   });
@@ -333,7 +329,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ items: [] }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ items: [] }} onChange={onChange} />);
 
     expect(screen.getByLabelText(/items/i)).toBeInTheDocument();
     expect(screen.getByText(/enter as json array/i)).toBeInTheDocument();
@@ -345,26 +341,37 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ config: {} }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ config: {} }} onChange={onChange} />);
 
     expect(screen.getByLabelText(/config/i)).toBeInTheDocument();
     expect(screen.getByText(/enter as json object/i)).toBeInTheDocument();
   });
 
   it('fetches players when playerId field is present', async () => {
+    let playersFetched = false;
+
+    server.use(
+      http.get('*/api/containers/1/players', () => {
+        playersFetched = true;
+        return HttpResponse.json([
+          { id: 1, name: 'Player 1' },
+          { id: 2, name: 'Player 2' }
+        ]);
+      })
+    );
+
     const params: CommandParameter[] = [
       { name: 'playerId', type: 'long', required: true }
     ];
     const onChange = vi.fn();
-    (apiClient.getPlayers as ReturnType<typeof vi.fn>).mockResolvedValue([
-      { id: 1, name: 'Player 1' },
-      { id: 2, name: 'Player 2' }
-    ]);
 
-    render(<CommandForm parameters={params} values={{ playerId: 0 }} onChange={onChange} />);
+    renderWithProviders(
+      <CommandForm parameters={params} values={{ playerId: 0 }} onChange={onChange} />,
+      { preloadedState: { ui: { selectedContainerId: 1 } } }
+    );
 
     await waitFor(() => {
-      expect(apiClient.getPlayers).toHaveBeenCalled();
+      expect(playersFetched).toBe(true);
     });
   });
 
@@ -374,7 +381,7 @@ describe('CommandForm', () => {
     ];
     const onChange = vi.fn();
 
-    render(<CommandForm parameters={params} values={{ x: 0 }} onChange={onChange} />);
+    renderWithProviders(<CommandForm parameters={params} values={{ x: 0 }} onChange={onChange} />);
 
     expect(screen.getByLabelText(/x coordinate/i)).toBeInTheDocument();
   });

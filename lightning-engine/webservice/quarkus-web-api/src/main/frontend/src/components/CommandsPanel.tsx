@@ -128,7 +128,7 @@ const CommandsPanel: React.FC = () => {
     try {
       await sendCommand({
         containerId: selectedContainerId,
-        body: { commandName: selectedCommand.name, payload: formValues }
+        body: { commandName: selectedCommand.name, parameters: formValues }
       }).unwrap();
       setSuccess(`Command "${selectedCommand.name}" sent to container ${selectedContainer?.name}`);
       setSendDialogOpen(false);

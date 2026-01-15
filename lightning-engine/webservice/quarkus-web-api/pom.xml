@@ -411,29 +411,30 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>io.fabric8</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <version>0.48.0</version>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
                         <executions>
                             <execution>
                                 <id>build-docker-image</id>
                                 <phase>install</phase>
                                 <goals>
-                                    <goal>build</goal>
+                                    <goal>exec</goal>
                                 </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}/../../..</workingDirectory>
+                                    <arguments>
+                                        <argument>build</argument>
+                                        <argument>-f</argument>
+                                        <argument>lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt</argument>
+                                        <argument>-t</argument>
+                                        <argument>lightning-backend:latest</argument>
+                                        <argument>.</argument>
+                                    </arguments>
+                                </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <images>
-                                <image>
-                                    <name>lightning-backend:0.1.0</name>
-                                    <build>
-                                        <dockerFile>${project.basedir}/Dockerfile.prebuilt</dockerFile>
-                                        <contextDir>${project.basedir}/..</contextDir>
-                                    </build>
-                                </image>
-                            </images>
-                        </configuration>
                     </plugin>
                 </plugins>
             </build>
