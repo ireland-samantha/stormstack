@@ -1,4 +1,4 @@
-0# Lightning Engine  
+# Lightning Engine  
 **A modular, hot-reloadable multiplayer game backend written in Java**.
 
 Lightning Engine (aka **Lightning Multiplayer Server**) is an open-source **Battle.net–style multiplayer backend** built in **Java**, focused on **runtime isolation**, **modular game logic**, and **real-time ECS streaming**.
@@ -106,9 +106,15 @@ All modules are hot-reloadable at runtime.
 ```bash
 docker compose up -d
 ```
+Open the React admin dashboard at:
 
-Then, open localhost:8080/admin/dashboard in your browser and authenticate with credentials admin/admin.
-
+```
+http://localhost:8080/admin/dashboard
+```
+![demo.png](docs/demo.png)
+**Default credentials:**
+- Username: `admin`
+- Password: `admin`
 ## Documentation
 
 | Documentation | Description |
