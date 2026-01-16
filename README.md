@@ -1,5 +1,5 @@
 # Lightning Engine  
-**A modular, hot-reloadable multiplayer game backend in Java**
+**A modular, hot-reloadable multiplayer game backend written in Java**.
 
 Lightning Engine (aka **Lightning Multiplayer Server**) is an open-source **Battle.net–style multiplayer backend** built in **Java**, focused on **runtime isolation**, **modular game logic**, and **real-time ECS streaming**.
 
