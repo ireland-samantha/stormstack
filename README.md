@@ -64,23 +64,6 @@ Lightning Engine is an open source, multi-game multiplayer backend built in Java
 
 ---
 
-## Module System
-
-Modules live in separate Maven submodules and can be enabled per match:
-
-- `entity-module` – Core entity management  
-- `grid-map-module` - Track an entity's position on a map
-- `rigid-body-module` – Physics simulation  
-- `rendering-module` – Sprite attachment and rendering data  
-- `box-collider-module` – AABB collision detection  
-- `health-module` – HP, damage, healing  
-- `projectile-module` – Projectile spawning  
-- `items-module` – Inventory & items  
-
-All modules are hot-reloadable at runtime.
-
----
-
 ## Tech Stack
 
 | Layer | Technology |
