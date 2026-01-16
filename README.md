@@ -1,6 +1,112 @@
-# Lightning Multiplayer Server
+# Lightning Engine  
+**A modular, hot-reloadable multiplayer game backend in Java**
 
-A multiplayer game backend server built in Java featuring multi-game isolation, permissioned ECS, hot-reload game module uploads, and a web dashboard. Run isolated instances of different games on shared infrastructure.
+Lightning Engine (aka **Lightning Multiplayer Server**) is an open-source **Battle.net–style multiplayer backend** built in **Java**, focused on **runtime isolation**, **modular game logic**, and **real-time ECS streaming**.
+
+It allows **multiple games and matches** to run simultaneously on shared infrastructure, each inside an isolated *Execution Container* with its own game loop, ECS store, resources, and hot-reloadable modules.
+
+> ⚠️ This is a **learning and hobby project**, not production software. Code was written via pair programming with Claude Code.
+
+---
+
+## Key Capabilities
+
+### Execution Containers
+- Isolated runtime environments using **ClassLoader isolation**
+- Independent game loops, ECS stores, and resources
+- Multiple games running safely on the same server
+
+### ECS (Entity Component System)
+- Array-based storage with **O(1) component access**
+- Float-based values for cache efficiency
+- Per-tick query caching
+- Match-scoped entity filtering
+
+### Hot-Reloadable Modules
+- Upload JARs at runtime
+- Enable/disable modules per match
+- Reload game logic **without restarting the server**
+
+### Real-Time Streaming
+- WebSocket streaming of ECS snapshots
+- Full or delta-compressed updates every tick
+- Designed for web or native clients
+
+### Web Dashboard
+- React-based admin UI
+- Container & match management
+- Live ECS inspection
+- Command console
+- Resource browser
+
+### Testing & Automation
+- Headless mode for GPU-free testing
+- JUnit integration tests
+- Playwright E2E tests
+- Testcontainers for infrastructure tests
+
+### Security
+- JWT-based authentication
+- Hierarchical, role-based access control
+- Offline token generation for CI/CD
+- Modules authenticate during installation and are issued a JWT identifying what components they can modify.
+
+
+---
+
+## Core Concepts
+
+| Concept | Description |
+|------|------------|
+| **Execution Container** | Isolated runtime with its own ECS, modules, resources, and game loop |
+| **Match** | A game session running inside a container |
+| **Module** | Hot-reloadable game logic packaged as a JAR |
+| **Command** | Server-side action queued and executed during ticks |
+| **Snapshot** | Serialized ECS state streamed to clients |
+
+---
+
+## Module System
+
+Modules live in separate Maven submodules and can be enabled per match:
+
+- `entity-module` – Core entity management  
+- `grid-map-module` - Track an entity's position on a map
+- `rigid-body-module` – Physics simulation  
+- `rendering-module` – Sprite attachment and rendering data  
+- `box-collider-module` – AABB collision detection  
+- `health-module` – HP, damage, healing  
+- `projectile-module` – Projectile spawning  
+- `items-module` – Inventory & items  
+
+All modules are hot-reloadable at runtime.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-----|-----------|
+| Language | Java 25 |
+| Backend | Quarkus 3.x (REST + WebSocket) |
+| Build | Maven (multi-module) |
+| Frontend | React + TypeScript + Material-UI |
+| Testing | JUnit 5, Playwright, Testcontainers |
+| Persistence | MongoDB |
+| API Docs | OpenAPI 3.0 |
+
+---
+
+## 🏁 Quick Start (Docker)
+
+### Prerequisites
+- Docker
+
+### Run
+```bash
+docker compose up -d```
+
+Then, open localhost:8080/admin/dashboard in your browser and authenticate with credentials admin/admin.
 
 ## Documentation
 
@@ -16,343 +122,6 @@ A multiplayer game backend server built in Java featuring multi-game isolation, 
 | [Architecture](docs/architecture.md) | System design, project structure |
 | [API Reference](docs/api-reference.md) | REST endpoints |
 | [Testing](docs/testing.md) | Headless testing, performance |
-
-## Disclaimer
-
-Lightning Engine is a **learning/hobby project** exploring modular game architecture and AI-assisted development,
-built via pair programming with [Claude Code](https://claude.ai).
-
-### Core Capabilities
-
-| Feature | Description |
-|---------|-------------|
-| **Execution Containers** | Isolated runtime environments with ClassLoader isolation, independent game loops, resources and container-scoped matches |
-| **ECS** | `ArrayEntityComponentStore` with O(1) component access, float-based values, per-tick query caching |
-| **Hot-Reload Modules** | Upload JAR files at runtime, reload without restart |
-| **Real-Time Streaming** | WebSocket pushes ECS snapshots (full or delta) to clients every tick |
-| **Web Dashboard** | React-based admin UI for container management, entity inspection, command execution |
-| **Headless Testing** | Playwright E2E tests, JUnit integration tests with Testcontainers |
-| **JWT Authentication** | Role-based access control with hierarchical permissions |
-
-### Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Language | Java 25 |
-| Build | Maven (multi-module) |
-| Server | Quarkus 3.x (REST + WebSocket) |
-| Frontend | React + Material-UI + Redux Toolkit |
-| Testing | JUnit 5, Playwright, Testcontainers |
-| API Docs | OpenAPI 3.0 ([openapi.yaml](openapi.yaml)) |
-
----
-
-## Quick Start
-
-### Prerequisites
-
-- Java 25+
-- Maven 3.9+
-- Docker (for containerized deployment or integration tests)
-
-### Option A: Run with Docker (Recommended)
-
-```bash
-# Build and start the server (includes MongoDB for persistence)
-docker compose up -d
-
-# Server runs at http://localhost:8080
-```
-
-The Docker image includes pre-built modules, the React frontend, and MongoDB for snapshot persistence.
-
-### Option B: Run from Source
-
-```bash
-# 1. Build all modules
-./mvnw clean install
-
-# 2. Start server in dev mode
-./mvnw quarkus:dev -pl lightning-engine/webservice/quarkus-web-api
-```
-
-Server runs at `http://localhost:8080`.
-
----
-
-## Web Dashboard
-
-Open the React admin dashboard at:
-
-```
-http://localhost:8080/admin/dashboard
-```
-![demo.png](docs/demo.png)
-**Default credentials:**
-- Username: `admin`
-- Password: `admin`
-
-The dashboard provides:
-- **Container Management** - Create, start, stop, delete execution containers
-- **Match Control** - Create matches with selected modules, view match state
-- **Live Snapshots** - Real-time ECS state visualization via WebSocket
-- **Command Console** - Execute commands with parameter templates
-- **Resource Browser** - Upload and manage textures and assets
-- **Module/AI Management** - View installed modules and AI per container
-
----
-
-## Authentication
-
-All API endpoints require JWT authentication. First, obtain a token:
-
-```bash
-# Login with default admin credentials
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin"}'
-
-# Response: {"token": "eyJ...", "userId": 1, "username": "admin", "expiresAt": "..."}
-```
-
-Use the token in subsequent requests:
-
-```bash
-# Store token for convenience
-TOKEN="eyJ..."
-
-# Include in Authorization header
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/containers
-```
-
-### Default Roles
-
-| Role | Permissions |
-|------|-------------|
-| `admin` | Full access (includes command_manager and view_only) |
-| `command_manager` | Post commands, manage matches |
-| `view_only` | Read-only access to snapshots |
-
-### Offline Tokens for Automation
-
-For automated services, CI/CD pipelines, or long-lived integrations, generate offline tokens using the `issue-api-token` CLI:
-
-```bash
-# Build the token issuer
-./mvnw package -pl issue-api-token -DskipTests
-
-# Generate admin token (24h default expiry)
-java -jar issue-api-token/target/issue-api-token.jar \
-  --roles=admin \
-  --secret=your-jwt-secret
-
-# Generate token with multiple roles and custom expiry
-java -jar issue-api-token/target/issue-api-token.jar \
-  --roles=command_manager,view_only \
-  --user=ci-pipeline \
-  --expiry=168  # 7 days
-
-# View help
-java -jar issue-api-token/target/issue-api-token.jar --help
-```
-
-The secret must match the `mp.jwt.verify.secret` configured in the backend.
-
----
-
-## Create a Container, Match, and Spawn an Entity
-
-Lightning Engine uses **Execution Containers** for isolated runtime environments. Each container has its own ClassLoader, ECS store, resource server, and game loop.
-
-```bash
-# Set your auth token (from login response)
-TOKEN="eyJ..."
-
-# 1. Create a container
-curl -X POST http://localhost:8080/api/containers \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "my-game-server"}'
-# Response: {"id": 1, "name": "my-game-server", "status": "CREATED"}
-
-# 2. Start the container
-curl -X POST http://localhost:8080/api/containers/1/start \
-  -H "Authorization: Bearer $TOKEN"
-
-# 3. Create a match inside the container
-curl -X POST http://localhost:8080/api/containers/1/matches \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"enabledModuleNames": ["EntityModule", "RigidBodyModule", "RenderingModule"]}'
-# Response: {"id": 1, "containerId": 1, "enabledModuleNames": [...]}
-
-# 4. Queue a spawn command (container-scoped)
-curl -X POST http://localhost:8080/api/containers/1/commands \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"commandName": "spawn", "parameters": {"matchId": 1, "entityType": 1, "playerId": 1}}'
-
-# 5. Advance tick (processes commands in container)
-curl -X POST http://localhost:8080/api/containers/1/tick \
-  -H "Authorization: Bearer $TOKEN"
-
-# 6. View ECS state
-curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/containers/1/matches/1/snapshot
-
-# 7. Start auto-advance at 60 FPS
-curl -X POST "http://localhost:8080/api/containers/1/play?intervalMs=16" \
-  -H "Authorization: Bearer $TOKEN"
-
-# 8. Stop auto-advance
-curl -X POST http://localhost:8080/api/containers/1/stop-auto \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## Spawn an Entity with a Sprite
-
-Complete workflow for creating a visible entity with texture (assuming container 1 is running):
-
-```bash
-# 1. Upload a texture resource to the container
-curl -X POST http://localhost:8080/api/containers/1/resources \
-  -H "Authorization: Bearer $TOKEN" \
-  -F "file=@my-sprite.png" \
-  -F "resourceName=player-sprite" \
-  -F "resourceType=TEXTURE"
-# Response: {"resourceId": 1, "resourceName": "player-sprite", "resourceType": "TEXTURE"}
-
-# 2. Spawn an entity
-curl -X POST http://localhost:8080/api/containers/1/commands \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "commandName": "spawn",
-    "parameters": {
-      "matchId": 1,
-      "entityId": 1
-    }
-  }'
-
-# 3. Attach rigid body
-curl -X POST http://localhost:8080/api/containers/1/commands \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "commandName": "attachRigidBody",
-    "parameters": {
-      "matchId": 1,
-      "entityId": 1,
-      "positionX": 0,
-      "positionY": 0,
-      "velocityX": 0,
-      "velocityY": 0,
-      "mass": 1.0
-    }
-  }'
-
-# 4. Attach sprite with resource ID
-curl -X POST http://localhost:8080/api/containers/1/commands \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "commandName": "attachSprite",
-    "parameters": {
-      "matchId": 1,
-      "entityId": 1,
-      "resourceId": 1,
-      "width": 32,
-      "height": 32,
-      "rotation": 0,
-      "zIndex": 0,
-      "visible": 1
-    }
-  }'
-
-# 5. Process commands
-curl -X POST http://localhost:8080/api/containers/1/tick \
-  -H "Authorization: Bearer $TOKEN"
-
-# 6. Verify snapshot includes sprite data
-curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8080/api/containers/1/matches/1/snapshot
-```
-
----
-
-## Import Postman Collection
-
-Import [postman-collection.json](postman-collection.json) for pre-configured API requests.
-
----
-
-## Project Status
-
-### Completed Features
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Core ECS** | Done | ArrayEntityComponentStore with O(1) access, query caching |
-| **Module System** | Done | 8 modules in separate Maven submodules, hot-reload via JAR upload |
-| **REST API** | Done | Full CRUD for matches, commands, snapshots, modules, resources |
-| **WebSocket Streaming** | Done | Real-time snapshot updates per match |
-| **Web Dashboard** | Done | React admin UI with container management |
-| **Headless Testing** | Done | Playwright E2E tests, JUnit integration tests |
-| **Game SDK** | Done | EngineClient, Orchestrator, GameRenderer for game development |
-| **AI System** | Done | Server-side command execution without WebSocket roundtrip |
-| **Collision Detection** | Done | AABB collision with handler registration |
-| **Physics Simulation** | Done | Rigid body with velocity, force, drag |
-| **Execution Containers** | Done | Isolated runtime environments with ClassLoader isolation |
-| **Authentication** | Done | JWT-based with dynamic RBAC |
-| **Persistence** | Done | MongoDB snapshot persistence |
-| **Delta Compression** | Done | Bandwidth-efficient WebSocket streaming |
-| **Module Isolation** | Done | JWT-based ECS access control |
-
-### In Progress / Planned
-
-| Feature | Status | Notes |
-|---------|--------|-------|
-| **Spatial Partitioning** | Not Started | Full-scan queries for collision |
-| **Audio System** | Not Started | No audio support |
-
-### Module Status
-
-All modules are in separate Maven submodules under `lightning-engine-extensions/modules/`:
-
-| Module | Description |
-|--------|-------------|
-| `entity-module` | Core entity management |
-| `grid-map-module` | Position management with map boundaries |
-| `health-module` | HP tracking, damage/heal commands |
-| `rendering-module` | Sprite attachment and display |
-| `rigid-body-module` | Physics: velocity, force, mass, drag |
-| `box-collider-module` | AABB collision detection and handlers |
-| `projectile-module` | Projectile spawning and management |
-| `items-module` | Item/inventory system |
-| `move-module` | Legacy movement (use RigidBodyModule instead) |
-
----
-
-## Strengths
-
-- **Modular Architecture** - Hot-reloadable modules with per-match selection
-- **Interface-Driven Design** - GPU-free testing via headless mode
-- **Multi-Match Isolation** - Entities filtered per match for WebSocket clients
-- **Web Dashboard** - Real-time entity inspection, command console, resource browser
-
-## Limitations
-
-**This is not production software.** Known gaps:
-
-| Category | Status |
-|----------|--------|
-| **Spatial Partitioning** | Full-scan queries for collision detection |
-| **Audio** | No audio system |
-
-See [Architecture](docs/architecture.md) for more details.
-
----
 
 ## AI-Assisted Development: Learnings
 
