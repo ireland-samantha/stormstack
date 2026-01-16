@@ -1,11 +1,9 @@
 # Lightning Engine  
-**A modular, hot-reloadable multiplayer game backend written in Java**.
 
-Lightning Engine (aka **Lightning Multiplayer Server**) is an open-source **Battle.net–style multiplayer backend** built in **Java**, focused on **runtime isolation**, **modular game logic**, and **real-time ECS streaming**.
+Lightning Engine is an open source, multi-game multiplayer backend built in Java. The core idea: multiple games and matches running concurrently on the same node, each inside an isolated execution container with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules. Deploying a backend for a game is as easy as building a JAR with your game logic, uploading it to a Lightning instance, triggering hot reload, and creating containers and matches with your module enabled. 
 
-It allows **multiple games and matches** to run simultaneously on shared infrastructure, each inside an isolated *Execution Container* with its own game loop, ECS store, resources, and hot-reloadable modules.
 
-> ⚠️ This is a **learning and hobby project**, not production software. Code was written via pair programming with Claude Code.
+> ⚠️ This is a personal hobby project, not production software, for fun and to learn. Pre-alpha and unstable. Built via pair programming with Claude Code. 
 
 ---
 
@@ -130,30 +128,10 @@ http://localhost:8080/admin/dashboard
 | [API Reference](docs/api-reference.md) | REST endpoints |
 | [Testing](docs/testing.md) | Headless testing, performance |
 
-## AI-Assisted Development: Learnings
-
-### What Worked
-
-- **Enforcing a workflow:** TDD kept the model on task
-- **Continuous refactoring:** Regular SOLID/clean code evaluations
-- **Knowledge persistence:** Session summaries in `llm-learnings/`
-- **Defensive programming:** Immutable records, validation in constructors
-
-### What Didn't Work
-
-- **Trusting generated code blindly:** Uncorrected mistakes compounded
-- **Ambiguous prompts:** Vague requests produced vague implementations
-- **Skipping test reviews:** Generated tests sometimes asserted wrong behavior
-
-### Key Insight
-
-AI accelerates development but requires human rigor. The model produces code you must understand—if you can't explain why it works, you can't fix it when it breaks.
-
----
-
 ## Next Steps
 
 - [Game SDK](docs/game-sdk.md) - Build games with the client library
+- [Architecture](docs/architecture.md) - Read the architecture docs
 - [Module System](docs/module-system.md) - Create custom modules
 - [API Reference](docs/api-reference.md) - Full REST API documentation
 
