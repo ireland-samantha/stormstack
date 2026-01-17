@@ -91,39 +91,13 @@ ContainerManager
 - **Container-Scoped Commands** - Commands execute within their container
 - **Independent Lifecycle** - Start, stop, pause containers independently
 
-## Project Structure
-
-```
-lightning-engine/
-├── engine-core/          # Interfaces: EntityComponentStore, ExecutionContainer, Snapshot
-│   └── container/        # Container interfaces: ExecutionContainer, ContainerManager
-├── engine-internal/      # Implementations: ArrayEntityComponentStore, QueryCache
-│   └── container/        # InMemoryExecutionContainer, InMemoryContainerManager
-├── engine-adapter/
-│   ├── game-sdk/         # Orchestrator, GameRenderer, SpriteMapper
-│   └── web-api-adapter/  # EngineClient, REST adapters, Jackson JSON
-├── rendering-core/       # GUI framework: 68 files, NanoVG/OpenGL
-├── rendering-test/       # Test framework: GuiDriver, HeadlessWindow, By locators
-├── gui/                  # Debug GUI application
-├── webservice/
-│   └── quarkus-web-api/  # REST + WebSocket endpoints, React web dashboard
-│       └── frontend/     # React TypeScript web dashboard
-├── api-acceptance-test/  # REST integration tests
-└── e2e-live-rendering-and-backend-acceptance-test/  # Full-stack E2E tests
-
-auth/                     # JWT authentication module
-issue-api-token/          # CLI for generating offline API tokens
-
-lightning-engine-extensions/
-├── modules/              # 9 module submodules (entity, grid-map, health, etc.)
-└── games/checkers/       # CheckersModule (668 lines, 13 components)
-```
 
 ## Tick-Based Simulation
 
 The engine uses discrete ticks. Each tick:
 1. Processes all queued commands
 2. Runs all systems from enabled modules (e.g., movement applies velocity to position)
+3) Notifies any tick listenders or AI
 3. Increments tick counter
 4. Broadcasts snapshot to WebSocket clients
 
@@ -223,38 +197,7 @@ java -jar issue-api-token.jar --help
 
 For bandwidth-efficient real-time updates, use delta snapshots instead of full snapshots.
 
-### Delta WebSocket
-
-Connect to `/ws/snapshots/delta/{matchId}` to receive only changes between ticks:
-
-```javascript
-const ws = new WebSocket('ws://localhost:8080/ws/snapshots/delta/1');
-ws.onmessage = (event) => {
-  const delta = JSON.parse(event.data);
-  console.log(`Changes from tick ${delta.fromTick} to ${delta.toTick}:`);
-  console.log(`- Changed components: ${delta.changeCount}`);
-  console.log(`- Added entities: ${delta.addedEntities.length}`);
-  console.log(`- Compression ratio: ${delta.compressionRatio}`);
-};
-
-// Reset to receive full snapshot on next tick
-ws.send('reset');
-```
-
-### Delta REST API
-
-```bash
-# Get delta between two ticks
-GET /api/snapshots/delta/{matchId}?fromTick=100&toTick=150
-
-# Record current snapshot for future delta computation
-POST /api/snapshots/delta/{matchId}/record
-
-# Get snapshot history info
-GET /api/snapshots/delta/{matchId}/history
-```
-
-### Delta Response Format
+### Delta Format
 
 ```json
 {
@@ -271,8 +214,7 @@ GET /api/snapshots/delta/{matchId}/history
   },
   "addedEntities": [44, 45],
   "removedEntities": [41],
-  "changeCount": 5,
-  "compressionRatio": 0.15
+  "changeCount": 5
 }
 ```
 
@@ -291,50 +233,6 @@ snapshot.persistence.tick-interval=1  # Persist every N ticks
 
 # MongoDB connection
 quarkus.mongodb.connection-string=mongodb://localhost:27017
-```
-
-### Docker Compose
-
-```yaml
-services:
-  mongodb:
-    image: mongo:7
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb-data:/data/db
-
-  backend:
-    environment:
-      - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
-      - SNAPSHOT_PERSISTENCE_ENABLED=true
-    depends_on:
-      - mongodb
-```
-
-### History REST API
-
-```bash
-# Get overall history summary
-GET /api/history
-
-# Get match-specific history
-GET /api/history/{matchId}
-
-# Get snapshots in tick range
-GET /api/history/{matchId}/snapshots?fromTick=0&toTick=100&limit=50
-
-# Get latest N snapshots
-GET /api/history/{matchId}/snapshots/latest?limit=10
-
-# Get specific snapshot by tick
-GET /api/history/{matchId}/snapshot/{tick}
-
-# Delete match history (admin only)
-DELETE /api/history/{matchId}
-
-# Delete snapshots older than tick (admin only)
-DELETE /api/history/{matchId}/older-than/{tick}
 ```
 
 ## Async Tick Listeners
