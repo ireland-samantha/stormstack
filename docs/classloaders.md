@@ -16,8 +16,6 @@ Container 1                          Container 2
 └── CommandQueue                     └── CommandQueue
 ```
 
-The classloader is **not attached to HTTP requests**. Instead, it's attached to the container itself. All operations on a container use that container's isolated components.
-
 ## ContainerClassLoader
 
 Located at: `engine-internal/.../container/ContainerClassLoader.java`
