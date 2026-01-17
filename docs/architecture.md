@@ -91,6 +91,7 @@ ContainerManager
 - **Container-Scoped Commands** - Commands execute within their container
 - **Independent Lifecycle** - Start, stop, pause containers independently
 
+For more information regarding classloader isolation, please see [classloader isolation](classloaders.md).
 
 ## Tick-Based Simulation
 
