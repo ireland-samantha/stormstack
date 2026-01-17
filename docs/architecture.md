@@ -119,67 +119,6 @@ lightning-engine-extensions/
 └── games/checkers/       # CheckersModule (668 lines, 13 components)
 ```
 
-## Interface-Driven Design
-
-| Interface | Implementations | Purpose |
-|-----------|-----------------|---------|
-| `Window` | `GLWindow`, `HeadlessWindow` | GPU-free testing |
-| `ComponentFactory` | `GLComponentFactory`, `HeadlessComponentFactory` | Mock UI components |
-| `EntityComponentStore` | `ArrayEntityComponentStore` | Columnar storage (392 LOC) |
-| `Renderer` | `NanoVGRenderer` | Rendering abstraction (migration in progress) |
-| `QueryCache` | Default impl | Per-tick query caching with hit/miss stats |
-
-## Multi-Match Isolation
-
-- `EntityFactory.createEntity(matchId)` auto-attaches `MATCH_ID` component
-- `SnapshotProvider` filters entities per match for WebSocket clients
-- Match deletion cascades to all associated entities
-
-## E2E Test Package
-
-The `e2e-live-rendering-and-backend-acceptance-test` module provides full-stack integration tests that:
-
-1. Start a real backend server via Testcontainers
-2. Create matches and spawn entities
-3. Render game state using GameRenderer
-4. Verify pixel-level visual output
-
-**Package Structure:**
-```
-e2e-live-rendering-and-backend-acceptance-test/
-├── domain/              # Fluent test DSL
-│   ├── Entity.java      # entity.attachSprite().sized(32,32).andApply()
-│   ├── Match.java       # match.spawn().forPlayer(1).ofType(100)
-│   ├── TestBackend.java # Backend container management
-│   ├── SnapshotAssertions.java  # assertThat(snapshot).hasEntity(id)
-│   └── ScreenAssertions.java    # assertThat(screen).hasPixel(x,y,color)
-├── gui/                 # GUI integration tests
-├── modules/             # Module-specific tests (PhysicsIT, CollisionIT, etc.)
-└── ui/                  # GameRenderer tests
-```
-
-**Example Test:**
-```java
-@Test
-void entityMovesAcrossScreen() {
-    var entity = match.spawn().forPlayer(1).ofType(100);
-
-    entity.attachRigidBody()
-        .at(100, 100)
-        .withVelocity(10, 0)
-        .andApply();
-
-    entity.attachSprite()
-        .sized(32, 32)
-        .andApply();
-
-    backend.tick(10);  // Advance 10 ticks
-
-    assertThat(match.snapshot())
-        .entityHasComponent(entity.id(), "POSITION_X", 200f);
-}
-```
-
 ## Tick-Based Simulation
 
 The engine uses discrete ticks. Each tick:
@@ -201,7 +140,7 @@ curl -X POST http://localhost:8080/api/simulation/stop
 
 ## WebSocket Streaming
 
-Connect to `ws://localhost:8080/snapshots/{matchId}` to receive real-time snapshots:
+Connect to `ws://localhost:8080/container/id/snapshots/{matchId}` to receive real-time snapshots:
 
 ```javascript
 const ws = new WebSocket('ws://localhost:8080/snapshots/1');
@@ -413,27 +352,6 @@ private void notifyTickListeners(long tick) {
 }
 ```
 
-### Implementing a Tick Listener
-
-```java
-public class MyTickListener implements TickListener {
-    @Override
-    public void onTickComplete(long tick) {
-        // Called asynchronously after each tick
-        // Safe to perform I/O operations here
-    }
-}
-
-// Register in SimulationConfig
-@Produces
-@ApplicationScoped
-public TickListener myListener() {
-    return new MyTickListener();
-}
-
-// Add to GameLoop
-gameLoop.addTickListener(myListener);
-```
 
 ## Module Permission Scoping
 
