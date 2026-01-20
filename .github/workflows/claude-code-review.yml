@@ -1,458 +1,458 @@
-# Claude Code PR Review and Analysis
-# This workflow uses Claude Code to analyze pull requests for:
-# 1. Test coverage - identifies untested code changes
-# 2. Code formatting - applies autoformatters and optimizes imports
-# 3. Code quality - analyzes SOLID and Clean Code principle adherence
-
-name: Claude Code PR Review
-
-on:
-  pull_request:
-    branches: [ "main" ]
-    types: [opened, synchronize, reopened]
-
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  id-token: write
-
-jobs:
-  # Job 1: Analyze test coverage for changed files
-  test-coverage-analysis:
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v44
-        with:
-          files: |
-            **/*.java
-            **/*.ts
-            **/*.tsx
-
-      - name: Analyze test coverage with Claude Code
-        if: steps.changed-files.outputs.any_changed == 'true'
-        uses: anthropics/claude-code-action@beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: true
-          custom_instructions: |
-            Analyze the following changed files in this pull request and identify any code that lacks test coverage.
-
-            Changed files:
-            ${{ steps.changed-files.outputs.all_changed_files }}
-
-            For each changed file:
-            1. Identify the corresponding test file (if it exists)
-            2. Check if new/modified methods, functions, or components have tests
-            3. List any untested code paths or edge cases
-
-            Output a structured report with:
-            - Files with adequate test coverage (green checkmark)
-            - Files missing tests or with gaps (red X)
-            - Specific recommendations for what tests should be added
-
-            Be specific about line numbers and method names that need tests.
-            Focus on business logic, not trivial getters/setters or DTOs.
-
-            Then create a GitHub PR comment summarizing:
-            1. Overall test coverage assessment (Good/Needs Work/Poor)
-            2. List of files with missing or inadequate tests
-            3. Specific test cases that should be added
-            4. Any patterns of untested code (e.g., error handling, edge cases)
-
-            Format as a clear, actionable comment using GitHub markdown with:
-            - A summary emoji indicator (✅ ⚠️ ❌)
-            - Collapsible sections for details
-            - Code snippets showing what needs testing
-
-  # Job 2: Apply code formatting and optimize imports
-  code-formatting:
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
-        with:
-          java-version: '25'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        run: npm ci
-
-      # Java formatting with google-java-format
-      - name: Download google-java-format
-        run: |
-          wget -q https://github.com/google/google-java-format/releases/download/v1.19.2/google-java-format-1.19.2-all-deps.jar -O /tmp/google-java-format.jar
-
-      - name: Format Java files
-        run: |
-          find . -name "*.java" -path "*/src/*" ! -path "*/target/*" | head -500 | xargs -r java -jar /tmp/google-java-format.jar --replace || true
-
-      - name: Optimize Java imports with Claude Code
-        uses: anthropics/claude-code-action@beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "Edit,Read,Glob,Grep,Bash"
-          direct_prompt: true
-          custom_instructions: |
-            Analyze all Java files that were changed in this PR and optimize their imports:
-
-            1. Remove unused imports
-            2. Sort imports alphabetically (java.*, javax.*, then third-party, then project imports)
-            3. Remove wildcard imports and replace with specific imports
-            4. Group imports with blank lines between groups
-
-            Use the Edit tool to make the changes directly to the files.
-            Only modify import statements, do not change any other code.
-
-      # TypeScript/React formatting with Prettier and ESLint
-      - name: Format TypeScript/React files
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        run: |
-          npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,scss}" || true
-          npx eslint --fix "src/**/*.{ts,tsx}" || true
-
-      - name: Optimize TypeScript imports
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        run: |
-          npx organize-imports-cli tsconfig.json || true
-
-      - name: Check for changes
-        id: check-changes
-        run: |
-          if git diff --quiet; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Commit formatting changes
-        if: steps.check-changes.outputs.has_changes == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git commit -m "style: Apply code formatting and optimize imports
-
-          - Format Java files with google-java-format
-          - Optimize Java imports (remove unused, sort, de-wildcard)
-          - Format TypeScript/React files with Prettier
-          - Fix ESLint issues
-          - Organize TypeScript imports
-
-          Co-Authored-By: Claude Code <noreply@anthropic.com>"
-          git push
-
-  # Job 3: SOLID and Clean Code analysis
-  code-quality-analysis:
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-    needs: [test-coverage-analysis]
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v44
-        with:
-          files: |
-            **/*.java
-            **/*.ts
-            **/*.tsx
-
-      - name: Analyze SOLID principles with Claude Code
-        if: steps.changed-files.outputs.any_changed == 'true'
-        uses: anthropics/claude-code-action@beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: true
-          custom_instructions: |
-            Perform a comprehensive code quality analysis on the changed files in this PR.
-            Focus on SOLID principles and Clean Code practices.
-
-            Changed files:
-            ${{ steps.changed-files.outputs.all_changed_files }}
-
-            ## SOLID Principles Analysis
-
-            For each changed file, evaluate:
-
-            ### S - Single Responsibility Principle
-            - Does each class/module have one reason to change?
-            - Are there classes doing too many things?
-            - Should any classes be split?
-
-            ### O - Open/Closed Principle
-            - Is the code open for extension but closed for modification?
-            - Are there switch statements or if-else chains that should use polymorphism?
-            - Could strategy or template patterns improve extensibility?
-
-            ### L - Liskov Substitution Principle
-            - Can subclasses be substituted for their base classes?
-            - Are there inheritance hierarchies that violate behavioral contracts?
-
-            ### I - Interface Segregation Principle
-            - Are interfaces focused and minimal?
-            - Are there "fat" interfaces that should be split?
-            - Do classes implement methods they don't need?
-
-            ### D - Dependency Inversion Principle
-            - Do high-level modules depend on abstractions?
-            - Are dependencies injected rather than created internally?
-            - Are there hard-coded dependencies that should be abstracted?
-
-            ## Clean Code Analysis (Martin Fowler / Robert Martin)
-
-            Evaluate:
-
-            ### Naming
-            - Are names intention-revealing?
-            - Are there misleading or unclear names?
-            - Do names follow conventions?
-
-            ### Functions/Methods
-            - Are functions small and focused?
-            - Do functions do one thing?
-            - Are there functions with too many parameters?
-            - Is there code duplication (DRY violations)?
-
-            ### Comments
-            - Are there unnecessary comments that should be code?
-            - Are there missing comments for complex logic?
-            - Are there TODO comments that should be addressed?
-
-            ### Code Smells
-            - Long methods
-            - Large classes
-            - Feature envy
-            - Data clumps
-            - Primitive obsession
-            - Inappropriate intimacy
-            - Refused bequest
-            - Speculative generality
-
-            ## Output Format
-
-            Create a GitHub PR comment with your analysis formatted as:
-
-            ## 📊 Code Quality Report
-
-            ### Overall Grade: [A-F] [emoji]
-
-            <details>
-            <summary>🔴 Critical Issues (X found)</summary>
-
-            [List each critical issue with file:line, problem, and fix]
-
-            </details>
-
-            <details>
-            <summary>🟡 Recommendations (X found)</summary>
-
-            [List recommendations]
-
-            </details>
-
-            <details>
-            <summary>🟢 Good Practices Observed</summary>
-
-            [List positive patterns]
-
-            </details>
-
-            ### SOLID Scorecard
-            | Principle | Score | Notes |
-            |-----------|-------|-------|
-            | Single Responsibility | ✅/⚠️/❌ | brief note |
-            | Open/Closed | ✅/⚠️/❌ | brief note |
-            | Liskov Substitution | ✅/⚠️/❌ | brief note |
-            | Interface Segregation | ✅/⚠️/❌ | brief note |
-            | Dependency Inversion | ✅/⚠️/❌ | brief note |
-
-            ---
-            *Analysis by Claude Code* 🤖
-
-  # Job 4: Auto-fix CI failures
-  auto-fix-ci-failures:
-    runs-on: ubuntu-22.04
-    if: github.event_name == 'pull_request'
-    needs: [code-formatting]  # Run after formatting to have clean code
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
-        with:
-          java-version: '25'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-
-      - name: Generate JWT keys
-        run: python gen_secrets.py
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/package-lock.json
-
-      - name: Install frontend dependencies
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        run: npm ci
-
-      - name: Run frontend tests
-        id: frontend-tests
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        continue-on-error: true
-        run: npm run test:run 2>&1 | tee /tmp/frontend-test-output.txt
-
-      - name: Run Maven build and tests
-        id: maven-build
-        continue-on-error: true
-        run: mvn -B package --file pom.xml 2>&1 | tee /tmp/maven-output.txt
-
-      - name: Analyze and fix failures with Claude Code
-        if: steps.frontend-tests.outcome == 'failure' || steps.maven-build.outcome == 'failure'
-        uses: anthropics/claude-code-action@beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          allowed_tools: "Edit,Read,Glob,Grep,Bash"
-          direct_prompt: true
-          custom_instructions: |
-            The CI pipeline has failures that need to be fixed automatically.
-
-            ## Failure Information
-
-            Frontend test outcome: ${{ steps.frontend-tests.outcome }}
-            Maven build outcome: ${{ steps.maven-build.outcome }}
-
-            ## Instructions
-
-            1. Read the build/test output files to understand the failures:
-               - Frontend tests: /tmp/frontend-test-output.txt
-               - Maven build: /tmp/maven-output.txt
-
-            2. For each failure, analyze the root cause:
-               - Compilation errors: Fix syntax errors, missing imports, type mismatches
-               - Test failures: Fix the code to make tests pass (NOT the test expectations)
-               - TypeScript errors: Fix type errors, missing properties, incorrect types
-               - Missing dependencies: Add required imports
-
-            3. Make the minimal changes necessary to fix each issue
-
-            4. DO NOT:
-               - Delete or skip tests
-               - Change test expectations to match broken behavior
-               - Make unrelated "improvements"
-               - Add new features
-
-            5. For each fix, explain what was wrong and how you fixed it
-
-            Focus on these common issues:
-            - Missing imports or exports
-            - Type mismatches in TypeScript
-            - Null/undefined handling
-            - Missing method implementations
-            - Incorrect method signatures
-            - Race conditions in tests (add proper waits)
-
-      - name: Re-run tests after fixes
-        id: rerun-tests
-        if: steps.frontend-tests.outcome == 'failure' || steps.maven-build.outcome == 'failure'
-        continue-on-error: true
-        run: |
-          cd lightning-engine/webservice/quarkus-web-api/src/main/frontend
-          npm run test:run
-          cd ../../../../../..
-          mvn -B package --file pom.xml -DskipTests=false
-
-      - name: Check for changes
-        id: check-changes
-        run: |
-          if git diff --quiet; then
-            echo "has_changes=false" >> $GITHUB_OUTPUT
-          else
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Commit fixes
-        if: steps.check-changes.outputs.has_changes == 'true'
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add -A
-          git commit -m "fix: Auto-fix CI failures
-
-          Automatically fixed compilation errors, test failures, and type errors
-          detected during CI pipeline execution.
-
-          Co-Authored-By: Claude Code <noreply@anthropic.com>"
-          git push
-
-      - name: Post fix summary comment
-        if: steps.check-changes.outputs.has_changes == 'true'
-        uses: anthropics/claude-code-action@beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          direct_prompt: true
-          custom_instructions: |
-            Create a GitHub PR comment summarizing the automatic CI fixes that were applied.
-
-            Format the comment as:
-
-            ## 🔧 Automatic CI Fix Applied
-
-            The following issues were detected and automatically fixed:
-
-            <details>
-            <summary>📝 Changes Made</summary>
-
-            [List each file changed and what was fixed]
-
-            </details>
-
-            ### Verification Status
-            - [ ] Frontend tests: [passing/failing]
-            - [ ] Maven build: [passing/failing]
-
-            ---
-            *Automatic fix by Claude Code* 🤖
+# # Claude Code PR Review and Analysis
+# # This workflow uses Claude Code to analyze pull requests for:
+# # 1. Test coverage - identifies untested code changes
+# # 2. Code formatting - applies autoformatters and optimizes imports
+# # 3. Code quality - analyzes SOLID and Clean Code principle adherence
+
+# name: Claude Code PR Review
+
+# on:
+#   pull_request:
+#     branches: [ "main" ]
+#     types: [opened, synchronize, reopened]
+
+# permissions:
+#   contents: write
+#   pull-requests: write
+#   issues: write
+#   id-token: write
+
+# jobs:
+#   # Job 1: Analyze test coverage for changed files
+#   test-coverage-analysis:
+#     runs-on: ubuntu-22.04
+#     if: github.event_name == 'pull_request'
+
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ github.event.pull_request.head.ref }}
+
+#       - name: Get changed files
+#         id: changed-files
+#         uses: tj-actions/changed-files@v44
+#         with:
+#           files: |
+#             **/*.java
+#             **/*.ts
+#             **/*.tsx
+
+#       - name: Analyze test coverage with Claude Code
+#         if: steps.changed-files.outputs.any_changed == 'true'
+#         uses: anthropics/claude-code-action@beta
+#         with:
+#           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+#           direct_prompt: true
+#           custom_instructions: |
+#             Analyze the following changed files in this pull request and identify any code that lacks test coverage.
+
+#             Changed files:
+#             ${{ steps.changed-files.outputs.all_changed_files }}
+
+#             For each changed file:
+#             1. Identify the corresponding test file (if it exists)
+#             2. Check if new/modified methods, functions, or components have tests
+#             3. List any untested code paths or edge cases
+
+#             Output a structured report with:
+#             - Files with adequate test coverage (green checkmark)
+#             - Files missing tests or with gaps (red X)
+#             - Specific recommendations for what tests should be added
+
+#             Be specific about line numbers and method names that need tests.
+#             Focus on business logic, not trivial getters/setters or DTOs.
+
+#             Then create a GitHub PR comment summarizing:
+#             1. Overall test coverage assessment (Good/Needs Work/Poor)
+#             2. List of files with missing or inadequate tests
+#             3. Specific test cases that should be added
+#             4. Any patterns of untested code (e.g., error handling, edge cases)
+
+#             Format as a clear, actionable comment using GitHub markdown with:
+#             - A summary emoji indicator (✅ ⚠️ ❌)
+#             - Collapsible sections for details
+#             - Code snippets showing what needs testing
+
+#   # Job 2: Apply code formatting and optimize imports
+#   code-formatting:
+#     runs-on: ubuntu-22.04
+#     if: github.event_name == 'pull_request'
+
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ github.event.pull_request.head.ref }}
+#           token: ${{ secrets.GITHUB_TOKEN }}
+
+#       - name: Set up JDK 25
+#         uses: actions/setup-java@v4
+#         with:
+#           java-version: '25'
+#           distribution: 'temurin'
+#           cache: maven
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+#           cache: 'npm'
+#           cache-dependency-path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/package-lock.json
+
+#       - name: Install frontend dependencies
+#         working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+#         run: npm ci
+
+#       # Java formatting with google-java-format
+#       - name: Download google-java-format
+#         run: |
+#           wget -q https://github.com/google/google-java-format/releases/download/v1.19.2/google-java-format-1.19.2-all-deps.jar -O /tmp/google-java-format.jar
+
+#       - name: Format Java files
+#         run: |
+#           find . -name "*.java" -path "*/src/*" ! -path "*/target/*" | head -500 | xargs -r java -jar /tmp/google-java-format.jar --replace || true
+
+#       - name: Optimize Java imports with Claude Code
+#         uses: anthropics/claude-code-action@beta
+#         with:
+#           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+#           allowed_tools: "Edit,Read,Glob,Grep,Bash"
+#           direct_prompt: true
+#           custom_instructions: |
+#             Analyze all Java files that were changed in this PR and optimize their imports:
+
+#             1. Remove unused imports
+#             2. Sort imports alphabetically (java.*, javax.*, then third-party, then project imports)
+#             3. Remove wildcard imports and replace with specific imports
+#             4. Group imports with blank lines between groups
+
+#             Use the Edit tool to make the changes directly to the files.
+#             Only modify import statements, do not change any other code.
+
+#       # TypeScript/React formatting with Prettier and ESLint
+#       - name: Format TypeScript/React files
+#         working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+#         run: |
+#           npx prettier --write "src/**/*.{ts,tsx,js,jsx,json,css,scss}" || true
+#           npx eslint --fix "src/**/*.{ts,tsx}" || true
+
+#       - name: Optimize TypeScript imports
+#         working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+#         run: |
+#           npx organize-imports-cli tsconfig.json || true
+
+#       - name: Check for changes
+#         id: check-changes
+#         run: |
+#           if git diff --quiet; then
+#             echo "has_changes=false" >> $GITHUB_OUTPUT
+#           else
+#             echo "has_changes=true" >> $GITHUB_OUTPUT
+#           fi
+
+#       - name: Commit formatting changes
+#         if: steps.check-changes.outputs.has_changes == 'true'
+#         run: |
+#           git config --local user.email "github-actions[bot]@users.noreply.github.com"
+#           git config --local user.name "github-actions[bot]"
+#           git add -A
+#           git commit -m "style: Apply code formatting and optimize imports
+
+#           - Format Java files with google-java-format
+#           - Optimize Java imports (remove unused, sort, de-wildcard)
+#           - Format TypeScript/React files with Prettier
+#           - Fix ESLint issues
+#           - Organize TypeScript imports
+
+#           Co-Authored-By: Claude Code <noreply@anthropic.com>"
+#           git push
+
+#   # Job 3: SOLID and Clean Code analysis
+#   code-quality-analysis:
+#     runs-on: ubuntu-22.04
+#     if: github.event_name == 'pull_request'
+#     needs: [test-coverage-analysis]
+
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+
+#       - name: Get changed files
+#         id: changed-files
+#         uses: tj-actions/changed-files@v44
+#         with:
+#           files: |
+#             **/*.java
+#             **/*.ts
+#             **/*.tsx
+
+#       - name: Analyze SOLID principles with Claude Code
+#         if: steps.changed-files.outputs.any_changed == 'true'
+#         uses: anthropics/claude-code-action@beta
+#         with:
+#           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+#           direct_prompt: true
+#           custom_instructions: |
+#             Perform a comprehensive code quality analysis on the changed files in this PR.
+#             Focus on SOLID principles and Clean Code practices.
+
+#             Changed files:
+#             ${{ steps.changed-files.outputs.all_changed_files }}
+
+#             ## SOLID Principles Analysis
+
+#             For each changed file, evaluate:
+
+#             ### S - Single Responsibility Principle
+#             - Does each class/module have one reason to change?
+#             - Are there classes doing too many things?
+#             - Should any classes be split?
+
+#             ### O - Open/Closed Principle
+#             - Is the code open for extension but closed for modification?
+#             - Are there switch statements or if-else chains that should use polymorphism?
+#             - Could strategy or template patterns improve extensibility?
+
+#             ### L - Liskov Substitution Principle
+#             - Can subclasses be substituted for their base classes?
+#             - Are there inheritance hierarchies that violate behavioral contracts?
+
+#             ### I - Interface Segregation Principle
+#             - Are interfaces focused and minimal?
+#             - Are there "fat" interfaces that should be split?
+#             - Do classes implement methods they don't need?
+
+#             ### D - Dependency Inversion Principle
+#             - Do high-level modules depend on abstractions?
+#             - Are dependencies injected rather than created internally?
+#             - Are there hard-coded dependencies that should be abstracted?
+
+#             ## Clean Code Analysis (Martin Fowler / Robert Martin)
+
+#             Evaluate:
+
+#             ### Naming
+#             - Are names intention-revealing?
+#             - Are there misleading or unclear names?
+#             - Do names follow conventions?
+
+#             ### Functions/Methods
+#             - Are functions small and focused?
+#             - Do functions do one thing?
+#             - Are there functions with too many parameters?
+#             - Is there code duplication (DRY violations)?
+
+#             ### Comments
+#             - Are there unnecessary comments that should be code?
+#             - Are there missing comments for complex logic?
+#             - Are there TODO comments that should be addressed?
+
+#             ### Code Smells
+#             - Long methods
+#             - Large classes
+#             - Feature envy
+#             - Data clumps
+#             - Primitive obsession
+#             - Inappropriate intimacy
+#             - Refused bequest
+#             - Speculative generality
+
+#             ## Output Format
+
+#             Create a GitHub PR comment with your analysis formatted as:
+
+#             ## 📊 Code Quality Report
+
+#             ### Overall Grade: [A-F] [emoji]
+
+#             <details>
+#             <summary>🔴 Critical Issues (X found)</summary>
+
+#             [List each critical issue with file:line, problem, and fix]
+
+#             </details>
+
+#             <details>
+#             <summary>🟡 Recommendations (X found)</summary>
+
+#             [List recommendations]
+
+#             </details>
+
+#             <details>
+#             <summary>🟢 Good Practices Observed</summary>
+
+#             [List positive patterns]
+
+#             </details>
+
+#             ### SOLID Scorecard
+#             | Principle | Score | Notes |
+#             |-----------|-------|-------|
+#             | Single Responsibility | ✅/⚠️/❌ | brief note |
+#             | Open/Closed | ✅/⚠️/❌ | brief note |
+#             | Liskov Substitution | ✅/⚠️/❌ | brief note |
+#             | Interface Segregation | ✅/⚠️/❌ | brief note |
+#             | Dependency Inversion | ✅/⚠️/❌ | brief note |
+
+#             ---
+#             *Analysis by Claude Code* 🤖
+
+#   # Job 4: Auto-fix CI failures
+#   auto-fix-ci-failures:
+#     runs-on: ubuntu-22.04
+#     if: github.event_name == 'pull_request'
+#     needs: [code-formatting]  # Run after formatting to have clean code
+
+#     steps:
+#       - uses: actions/checkout@v4
+#         with:
+#           fetch-depth: 0
+#           ref: ${{ github.event.pull_request.head.ref }}
+#           token: ${{ secrets.GITHUB_TOKEN }}
+
+#       - name: Set up JDK 25
+#         uses: actions/setup-java@v4
+#         with:
+#           java-version: '25'
+#           distribution: 'temurin'
+#           cache: maven
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v5
+#         with:
+#           python-version: '3.x'
+
+#       - name: Generate JWT keys
+#         run: python gen_secrets.py
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v4
+#         with:
+#           node-version: '20'
+#           cache: 'npm'
+#           cache-dependency-path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/package-lock.json
+
+#       - name: Install frontend dependencies
+#         working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+#         run: npm ci
+
+#       - name: Run frontend tests
+#         id: frontend-tests
+#         working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+#         continue-on-error: true
+#         run: npm run test:run 2>&1 | tee /tmp/frontend-test-output.txt
+
+#       - name: Run Maven build and tests
+#         id: maven-build
+#         continue-on-error: true
+#         run: mvn -B package --file pom.xml 2>&1 | tee /tmp/maven-output.txt
+
+#       - name: Analyze and fix failures with Claude Code
+#         if: steps.frontend-tests.outcome == 'failure' || steps.maven-build.outcome == 'failure'
+#         uses: anthropics/claude-code-action@beta
+#         with:
+#           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+#           allowed_tools: "Edit,Read,Glob,Grep,Bash"
+#           direct_prompt: true
+#           custom_instructions: |
+#             The CI pipeline has failures that need to be fixed automatically.
+
+#             ## Failure Information
+
+#             Frontend test outcome: ${{ steps.frontend-tests.outcome }}
+#             Maven build outcome: ${{ steps.maven-build.outcome }}
+
+#             ## Instructions
+
+#             1. Read the build/test output files to understand the failures:
+#                - Frontend tests: /tmp/frontend-test-output.txt
+#                - Maven build: /tmp/maven-output.txt
+
+#             2. For each failure, analyze the root cause:
+#                - Compilation errors: Fix syntax errors, missing imports, type mismatches
+#                - Test failures: Fix the code to make tests pass (NOT the test expectations)
+#                - TypeScript errors: Fix type errors, missing properties, incorrect types
+#                - Missing dependencies: Add required imports
+
+#             3. Make the minimal changes necessary to fix each issue
+
+#             4. DO NOT:
+#                - Delete or skip tests
+#                - Change test expectations to match broken behavior
+#                - Make unrelated "improvements"
+#                - Add new features
+
+#             5. For each fix, explain what was wrong and how you fixed it
+
+#             Focus on these common issues:
+#             - Missing imports or exports
+#             - Type mismatches in TypeScript
+#             - Null/undefined handling
+#             - Missing method implementations
+#             - Incorrect method signatures
+#             - Race conditions in tests (add proper waits)
+
+#       - name: Re-run tests after fixes
+#         id: rerun-tests
+#         if: steps.frontend-tests.outcome == 'failure' || steps.maven-build.outcome == 'failure'
+#         continue-on-error: true
+#         run: |
+#           cd lightning-engine/webservice/quarkus-web-api/src/main/frontend
+#           npm run test:run
+#           cd ../../../../../..
+#           mvn -B package --file pom.xml -DskipTests=false
+
+#       - name: Check for changes
+#         id: check-changes
+#         run: |
+#           if git diff --quiet; then
+#             echo "has_changes=false" >> $GITHUB_OUTPUT
+#           else
+#             echo "has_changes=true" >> $GITHUB_OUTPUT
+#           fi
+
+#       - name: Commit fixes
+#         if: steps.check-changes.outputs.has_changes == 'true'
+#         run: |
+#           git config --local user.email "github-actions[bot]@users.noreply.github.com"
+#           git config --local user.name "github-actions[bot]"
+#           git add -A
+#           git commit -m "fix: Auto-fix CI failures
+
+#           Automatically fixed compilation errors, test failures, and type errors
+#           detected during CI pipeline execution.
+
+#           Co-Authored-By: Claude Code <noreply@anthropic.com>"
+#           git push
+
+#       - name: Post fix summary comment
+#         if: steps.check-changes.outputs.has_changes == 'true'
+#         uses: anthropics/claude-code-action@beta
+#         with:
+#           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+#           direct_prompt: true
+#           custom_instructions: |
+#             Create a GitHub PR comment summarizing the automatic CI fixes that were applied.
+
+#             Format the comment as:
+
+#             ## 🔧 Automatic CI Fix Applied
+
+#             The following issues were detected and automatically fixed:
+
+#             <details>
+#             <summary>📝 Changes Made</summary>
+
+#             [List each file changed and what was fixed]
+
+#             </details>
+
+#             ### Verification Status
+#             - [ ] Frontend tests: [passing/failing]
+#             - [ ] Maven build: [passing/failing]
+
+#             ---
+#             *Automatic fix by Claude Code* 🤖
