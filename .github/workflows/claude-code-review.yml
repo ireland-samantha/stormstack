@@ -43,7 +43,8 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
+          direct_prompt: true
+          custom_instructions: |
             Analyze the following changed files in this pull request and identify any code that lacks test coverage.
 
             Changed files:
@@ -62,14 +63,7 @@ jobs:
             Be specific about line numbers and method names that need tests.
             Focus on business logic, not trivial getters/setters or DTOs.
 
-      - name: Post coverage comment
-        if: steps.changed-files.outputs.any_changed == 'true'
-        uses: anthropics/claude-code-action@beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            Based on your test coverage analysis, create a GitHub PR comment summarizing:
-
+            Then create a GitHub PR comment summarizing:
             1. Overall test coverage assessment (Good/Needs Work/Poor)
             2. List of files with missing or inadequate tests
             3. Specific test cases that should be added
@@ -79,8 +73,6 @@ jobs:
             - A summary emoji indicator (✅ ⚠️ ❌)
             - Collapsible sections for details
             - Code snippets showing what needs testing
-          use_oauth: false
-          direct_prompt: false
 
   # Job 2: Apply code formatting and optimize imports
   code-formatting:
@@ -126,7 +118,8 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_tools: "Edit,Read,Glob,Grep,Bash"
-          prompt: |
+          direct_prompt: true
+          custom_instructions: |
             Analyze all Java files that were changed in this PR and optimize their imports:
 
             1. Remove unused imports
@@ -200,7 +193,8 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
+          direct_prompt: true
+          custom_instructions: |
             Perform a comprehensive code quality analysis on the changed files in this PR.
             Focus on SOLID principles and Clean Code practices.
 
@@ -267,35 +261,7 @@ jobs:
 
             ## Output Format
 
-            Provide a structured report with:
-
-            1. **Overall Score**: A-F grade for code quality
-
-            2. **Critical Issues** (must fix):
-               - Specific violations with file:line references
-               - Clear explanation of the problem
-               - Concrete refactoring recommendation
-
-            3. **Recommendations** (should consider):
-               - Improvement opportunities
-               - Design pattern suggestions
-               - Refactoring ideas
-
-            4. **Positive Patterns** (keep doing):
-               - Good practices observed
-               - Clean code examples in the PR
-
-            Be specific, actionable, and include code examples where helpful.
-
-      - name: Post quality analysis comment
-        if: steps.changed-files.outputs.any_changed == 'true'
-        uses: anthropics/claude-code-action@beta
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
-            Create a GitHub PR comment with your code quality analysis.
-
-            Format the comment with:
+            Create a GitHub PR comment with your analysis formatted as:
 
             ## 📊 Code Quality Report
 
@@ -333,8 +299,6 @@ jobs:
 
             ---
             *Analysis by Claude Code* 🤖
-          use_oauth: false
-          direct_prompt: false
 
   # Job 4: Auto-fix CI failures
   auto-fix-ci-failures:
@@ -392,7 +356,8 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           allowed_tools: "Edit,Read,Glob,Grep,Bash"
-          prompt: |
+          direct_prompt: true
+          custom_instructions: |
             The CI pipeline has failures that need to be fixed automatically.
 
             ## Failure Information
@@ -468,7 +433,8 @@ jobs:
         uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: |
+          direct_prompt: true
+          custom_instructions: |
             Create a GitHub PR comment summarizing the automatic CI fixes that were applied.
 
             Format the comment as:
@@ -490,5 +456,3 @@ jobs:
 
             ---
             *Automatic fix by Claude Code* 🤖
-          use_oauth: false
-          direct_prompt: false
