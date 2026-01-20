@@ -996,20 +996,34 @@ class ContainerResourceTest {
                     .then()
                     .statusCode(202);  // 202 Accepted - command queued
 
-            // Advance tick to execute the command
-            jsonRequest()
-                    .when().post("/api/containers/" + e2eContainerId + "/tick")
-                    .then()
-                    .statusCode(200);
+            // Poll until entity appears in snapshot (command processing is async)
+            String snapshotBody = null;
+            for (int attempt = 0; attempt < 20; attempt++) {
+                // Advance tick to execute the command
+                jsonRequest()
+                        .when().post("/api/containers/" + e2eContainerId + "/tick")
+                        .then()
+                        .statusCode(200);
 
-            // Get container-scoped snapshot and verify EntityModule data exists
-            Response snapshotResponse = given()
-                    .when().get("/api/containers/" + e2eContainerId + "/matches/" + matchId + "/snapshot")
-                    .then()
-                    .statusCode(200)
-                    .extract().response();
+                // Get container-scoped snapshot
+                Response snapshotResponse = given()
+                        .when().get("/api/containers/" + e2eContainerId + "/matches/" + matchId + "/snapshot")
+                        .then()
+                        .statusCode(200)
+                        .extract().response();
 
-            String snapshotBody = snapshotResponse.getBody().asString();
+                snapshotBody = snapshotResponse.getBody().asString();
+                if (snapshotBody.contains("EntityModule")) {
+                    break;
+                }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+
             assertThat(snapshotBody)
                     .as("Snapshot should contain EntityModule data after spawning entity")
                     .contains("EntityModule");

@@ -26,7 +26,7 @@ package ca.samanthaireland.engine.internal.ext.module;
 import ca.samanthaireland.engine.core.match.MatchService;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
-import ca.samanthaireland.engine.ext.module.Injector;
+import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleExports;
 import ca.samanthaireland.engine.ext.module.ModuleResolver;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Default implementation of {@link Injector} and {@link ca.samanthaireland.engine.ext.module.ModuleContext}.
+ * Default implementation of {@link ModuleContext}.
  *
  * <p>Provides modules with access to engine services through both explicit typed
  * methods and a general-purpose lookup. The explicit methods are preferred as they
@@ -51,32 +51,24 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>Thread-safe: All operations use ConcurrentHashMap for thread safety.
  *
- * @see Injector
- * @see ca.samanthaireland.engine.ext.module.ModuleContext
+ * @see ModuleContext
  */
 @Slf4j
-public class DefaultInjector implements Injector {
+public class DefaultInjector implements ModuleContext {
 
     private final ConcurrentHashMap<Class<?>, Object> beans = new ConcurrentHashMap<>();
     private final Set<BaseComponent> declaredComponents = ConcurrentHashMap.newKeySet();
 
     // Cached references for explicit getters
-    private volatile EntityComponentStore entityComponentStore;
-    private volatile MatchService matchService;
-    private volatile ModuleResolver moduleResolver;
-    private volatile Object moduleManager;
-
-    @Override
-    @Deprecated
-    public EntityComponentStore getStoreRequired() {
-        EntityComponentStore store = getEntityComponentStore();
-        return Objects.requireNonNull(store, "EntityComponentStore not registered in ModuleContext");
-    }
+    private EntityComponentStore entityComponentStore;
+    private MatchService matchService;
+    private ModuleResolver moduleResolver;
+    private Object moduleManager;
 
     @Override
     public EntityComponentStore getEntityComponentStore() {
         if (entityComponentStore == null) {
-            entityComponentStore = getClass(EntityComponentStore.class);
+            entityComponentStore = findBean(EntityComponentStore.class);
         }
         return entityComponentStore;
     }
@@ -84,22 +76,20 @@ public class DefaultInjector implements Injector {
     @Override
     public MatchService getMatchService() {
         if (matchService == null) {
-            matchService = getClass(MatchService.class);
+            matchService = findBean(MatchService.class);
         }
         return matchService;
     }
 
     @Override
-    @Deprecated
     public ModuleResolver getModuleResolver() {
         if (moduleResolver == null) {
-            moduleResolver = getClass(ModuleResolver.class);
+            moduleResolver = findBean(ModuleResolver.class);
         }
         return moduleResolver;
     }
 
     @Override
-    @Deprecated
     public Object getModuleManager() {
         if (moduleManager == null) {
             // Use string lookup to avoid circular dependency with ModuleManager
@@ -110,7 +100,19 @@ public class DefaultInjector implements Injector {
 
     @Override
     public <T extends ModuleExports> T getModuleExports(Class<T> exportType) {
-        return getClass(exportType);
+        return findBean(exportType);
+    }
+
+    /**
+     * Look up a bean by type, returning null if not found.
+     *
+     * @param <T>  the expected type
+     * @param type the class to look up
+     * @return the bean instance, or null if not registered
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T findBean(Class<T> type) {
+        return (T) beans.get(type);
     }
 
     @Override
@@ -151,11 +153,14 @@ public class DefaultInjector implements Injector {
     }
 
     @Override
-    @Deprecated
-    @SuppressWarnings("unchecked")
     public <T> T getClass(Class<? extends T> bean) {
         log.debug("Get bean {}", bean);
-        return (T) beans.get(bean);
+        Object found = beans.get(bean);
+        if (found == null) {
+            throw new RuntimeException(String.format("Class not found %s in injector", bean.getName()));
+        }
+
+        return (T) found;
     }
 
     @Override

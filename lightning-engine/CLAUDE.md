@@ -347,3 +347,53 @@ public class MyClass {
 4. **No Unnecessary Getters or Setters**: Do not add getter and setter methods unless they are absolutely required. Prefer immutable data structures and records. If access is needed, use the fluent API operations (e.g., `container.ticks().current()` instead of `container.getCurrentTick()`).
 
 5. **Build Verification**: At the end of each prompt answer, run `mvn clean install`. If you added tests, ensure they run and pass. Do not leave the codebase in a broken state.
+
+6. **Use web-api-adapter for API Calls**: In integration tests, always use the `web-api-adapter` classes (`EngineClient`, `ContainerAdapter`, etc.) instead of making direct HTTP calls. If a needed API method doesn't exist in the adapter, add it to the appropriate adapter class first.
+
+7. **DTOs for Multiple Parameters**: When a method requires more than 3 parameters, create a DTO (Data Transfer Object) record to encapsulate the parameters. Place DTOs in the `dto` package of the relevant module. Example:
+   ```java
+   // Bad: too many parameters
+   List<Snapshot> getSnapshots(long containerId, long matchId, long fromTick, long toTick, int limit);
+
+   // Good: use a DTO
+   record HistoryQueryParams(long fromTick, long toTick, int limit) {}
+   List<Snapshot> getSnapshots(long containerId, long matchId, HistoryQueryParams params);
+   ```
+
+8. **Test Fixtures for Business Objects**: Create reusable test fixtures for business objects in acceptance tests. Place fixtures in the `fixture` package (e.g., `TestEngineContainer`, `TestMatch`). Fixtures should encapsulate setup logic and provide fluent APIs for common test operations.
+
+9. **Always Run Tests**: After making code changes, always run the relevant tests to verify they pass. For acceptance tests that use Docker/Testcontainers, rebuild the Docker image before running tests if you modified backend code.
+
+10. **Never Manually Parse JSON**: Always use Jackson (or another established JSON library) for JSON parsing. Never write manual string parsing for JSON data. Use `ObjectMapper` with appropriate `TypeReference` for complex types.
+    ```java
+    // Bad: manual JSON parsing
+    int pos = json.indexOf("\"");
+    String key = json.substring(pos + 1, json.indexOf("\"", pos + 1));
+
+    // Good: use Jackson
+    Map<String, Object> data = objectMapper.readValue(json, new TypeReference<>() {});
+    ```
+
+11. **Follow SOLID Principles**: When adding functionality, follow SOLID principles:
+    - **Single Responsibility**: Each class should have one reason to change. Extract parsing, validation, and domain logic into separate classes.
+    - **Open/Closed**: Classes should be open for extension but closed for modification. Use interfaces and dependency injection.
+    - **Dependency Inversion**: Depend on abstractions, not concretions. Inject dependencies via constructors rather than using `new` directly.
+
+    For library code that needs to work without a DI container, provide a factory class:
+    ```java
+    // Production (with DI container)
+    @Inject
+    public MyService(Parser parser, Validator validator) { ... }
+
+    // Library usage (no DI)
+    var service = MyServiceFactory.create();
+    ```
+
+12. **No Magic Numbers**: Never use unexplained numeric literals in code. Always use named constants or derive values from context.
+    ```java
+    // Bad: magic numbers
+    return new Snapshot(0, 0, data);
+
+    // Good: use meaningful values or remove unnecessary parameters
+    return new Snapshot(data);
+    ```

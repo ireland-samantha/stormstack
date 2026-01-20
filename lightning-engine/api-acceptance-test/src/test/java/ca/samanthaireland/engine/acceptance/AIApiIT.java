@@ -23,6 +23,7 @@
 
 package ca.samanthaireland.engine.acceptance;
 
+import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
 import ca.samanthaireland.engine.api.resource.adapter.ContainerAdapter;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerClient;
@@ -104,31 +105,15 @@ class AIApiIT {
                 .build();
         objectMapper = new ObjectMapper();
 
-        // Authenticate to get JWT token
-        bearerToken = authenticate();
+        // Authenticate to get JWT token using AuthAdapter
+        AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
+        bearerToken = auth.login("admin", "admin").token();
 
         // Create client with authentication
         client = EngineClient.builder()
                 .baseUrl(baseUrl)
                 .withBearerToken(bearerToken)
                 .build();
-    }
-
-    private String authenticate() throws Exception {
-        String loginJson = "{\"username\":\"admin\",\"password\":\"admin\"}";
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/auth/login"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(loginJson))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("Authentication failed: " + response.statusCode() + " - " + response.body());
-        }
-
-        JsonNode tokenResponse = objectMapper.readTree(response.body());
-        return tokenResponse.path("token").asText();
     }
 
     @AfterEach

@@ -24,14 +24,10 @@ class MatchesPlaywrightIT extends PlaywrightTestBase {
         PWDashboardPage dashboard = new PWDashboardPage(page);
         dashboard.waitForPageLoad();
 
-        // Use existing container if available, or create a new one with unique name
-        var containerNames = dashboard.getContainerNames();
-        if (containerNames.isEmpty()) {
-            containerToUse = TEST_CONTAINER_PREFIX + System.currentTimeMillis();
-            dashboard.createContainer(containerToUse);
-        } else {
-            containerToUse = containerNames.get(0);
-        }
+        // Create a new test container with required modules for each test
+        // This ensures we have all the modules needed for match creation
+        containerToUse = TEST_CONTAINER_PREFIX + System.currentTimeMillis();
+        dashboard.createContainerWithModules(containerToUse, "EntityModule", "GridMapModule", "RigidBodyModule");
 
         // Start container if not running
         String status = dashboard.getContainerStatus(containerToUse);
@@ -42,6 +38,34 @@ class MatchesPlaywrightIT extends PlaywrightTestBase {
         // Select container using sidebar dropdown (not just clicking the card)
         PWSidebarNavigator sidebar = new PWSidebarNavigator(page);
         sidebar.selectContainer(containerToUse);
+    }
+
+    @AfterEach
+    void cleanupContainer() {
+        if (containerToUse == null) {
+            return;
+        }
+        try {
+            PWDashboardPage dashboard = new PWDashboardPage(page);
+            PWSidebarNavigator sidebar = new PWSidebarNavigator(page);
+            sidebar.goToOverview();
+            dashboard.waitForPageLoad();
+
+            if (dashboard.getContainerCard(containerToUse).count() == 0) {
+                return;
+            }
+
+            String status = dashboard.getContainerStatus(containerToUse);
+            if (status.contains("RUNNING")) {
+                dashboard.stopContainer(containerToUse);
+                page.waitForTimeout(1000);
+            }
+
+            dashboard.deleteContainer(containerToUse);
+            page.waitForTimeout(500);
+        } catch (Exception e) {
+            System.err.println("Warning: Failed to cleanup container " + containerToUse + ": " + e.getMessage());
+        }
     }
 
     @Test

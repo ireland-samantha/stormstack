@@ -23,6 +23,8 @@
 
 package ca.samanthaireland.engine.quarkus.api.rest;
 
+import ca.samanthaireland.engine.core.container.ContainerPlayerOperations;
+import ca.samanthaireland.engine.core.container.ContainerSessionOperations;
 import ca.samanthaireland.engine.core.exception.EntityNotFoundException;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
 import ca.samanthaireland.game.backend.installation.AIFactory;
@@ -30,14 +32,10 @@ import ca.samanthaireland.engine.internal.ext.module.ModuleManager;
 import ca.samanthaireland.engine.internal.ext.ai.AIManager;
 import ca.samanthaireland.engine.core.match.Match;
 import ca.samanthaireland.engine.core.match.Player;
-import ca.samanthaireland.engine.core.match.PlayerMatch;
-import ca.samanthaireland.engine.core.match.PlayerMatchService;
-import ca.samanthaireland.engine.core.match.PlayerService;
 import ca.samanthaireland.engine.core.container.ExecutionContainer;
 import ca.samanthaireland.engine.core.container.ContainerConfig;
 import ca.samanthaireland.engine.core.container.ContainerManager;
 import ca.samanthaireland.engine.core.session.PlayerSession;
-import ca.samanthaireland.engine.core.session.PlayerSessionService;
 import ca.samanthaireland.engine.core.snapshot.DeltaCompressionService;
 import ca.samanthaireland.engine.core.snapshot.DeltaSnapshot;
 import ca.samanthaireland.engine.core.snapshot.Snapshot;
@@ -53,7 +51,6 @@ import ca.samanthaireland.engine.quarkus.api.dto.MatchRequest;
 import ca.samanthaireland.engine.quarkus.api.dto.MatchResponse;
 import ca.samanthaireland.engine.quarkus.api.dto.ContainerRequest;
 import ca.samanthaireland.engine.quarkus.api.dto.ContainerResponse;
-import ca.samanthaireland.engine.quarkus.api.dto.PlayerMatchResponse;
 import ca.samanthaireland.engine.quarkus.api.dto.PlayerRequest;
 import ca.samanthaireland.engine.quarkus.api.dto.PlayerResponse;
 import ca.samanthaireland.engine.quarkus.api.dto.PlayStatusResponse;
@@ -96,15 +93,6 @@ public class ContainerResource {
     AIManager globalAIManager;
 
     @Inject
-    PlayerSessionService sessionService;
-
-    @Inject
-    PlayerService playerService;
-
-    @Inject
-    PlayerMatchService playerMatchService;
-
-    @Inject
     SnapshotProvider snapshotProvider;
 
     @Inject
@@ -124,6 +112,9 @@ public class ContainerResource {
 
     @Inject
     RestoreConfig restoreConfig;
+
+    @Inject
+    com.mongodb.client.MongoClient mongoClient;
 
     // =========================================================================
     // CONTAINER CRUD
@@ -171,6 +162,11 @@ public class ContainerResource {
         boolean hasModulesToInstall = !request.moduleNames().isEmpty() || !request.aiNames().isEmpty();
         if (hasModulesToInstall) {
             container.lifecycle().start();
+
+            // Register container-scoped snapshot persistence listener if enabled
+            if (persistenceConfig.enabled()) {
+                registerSnapshotPersistenceListener(container);
+            }
         }
 
         // Install selected modules from global pool
@@ -248,6 +244,12 @@ public class ContainerResource {
     public Response startContainer(@PathParam("containerId") long containerId) {
         ExecutionContainer container = getContainerOrThrow(containerId);
         container.lifecycle().start();
+
+        // Register snapshot persistence listener if enabled
+        if (persistenceConfig.enabled()) {
+            registerSnapshotPersistenceListener(container);
+        }
+
         return Response.ok(ContainerResponse.from(container)).build();
     }
 
@@ -723,8 +725,8 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        // Create or reactivate session (skip match validation - already done above)
-        PlayerSession session = sessionService.createSessionForContainer(request.playerId(), matchId);
+        // Create or reactivate session using container-scoped sessions
+        PlayerSession session = container.sessions().create(request.playerId(), matchId);
         log.info("Created session for player {} in match {} (container {})", request.playerId(), matchId, containerId);
 
         return Response.status(Response.Status.CREATED)
@@ -747,7 +749,7 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        return sessionService.findMatchSessions(matchId).stream()
+        return container.sessions().forMatch(matchId).stream()
                 .map(SessionResponse::from)
                 .toList();
     }
@@ -773,7 +775,7 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        PlayerSession session = sessionService.reconnect(playerId, matchId);
+        PlayerSession session = container.sessions().reconnect(playerId, matchId);
         return Response.ok(SessionResponse.from(session)).build();
     }
 
@@ -793,7 +795,7 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        sessionService.disconnect(playerId, matchId);
+        container.sessions().disconnect(playerId, matchId);
         return Response.noContent().build();
     }
 
@@ -813,7 +815,7 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        sessionService.abandon(playerId, matchId);
+        container.sessions().abandon(playerId, matchId);
         return Response.noContent().build();
     }
 
@@ -833,7 +835,7 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        return sessionService.findSession(playerId, matchId)
+        return container.sessions().find(playerId, matchId)
                 .map(session -> Response.ok(SessionResponse.from(session)).build())
                 .orElse(Response.status(Response.Status.NOT_FOUND).build());
     }
@@ -854,7 +856,7 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        boolean canReconnect = sessionService.canReconnect(playerId, matchId);
+        boolean canReconnect = container.sessions().canReconnect(playerId, matchId);
         return Response.ok(Map.of("canReconnect", canReconnect)).build();
     }
 
@@ -873,7 +875,7 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        return sessionService.findActiveMatchSessions(matchId).stream()
+        return container.sessions().activeForMatch(matchId).stream()
                 .map(SessionResponse::from)
                 .toList();
     }
@@ -887,9 +889,8 @@ public class ContainerResource {
     public List<SessionResponse> getAllContainerSessions(@PathParam("containerId") long containerId) {
         ExecutionContainer container = getContainerOrThrow(containerId);
 
-        // Get all sessions for matches in this container
-        return container.matches().all().stream()
-                .flatMap(match -> sessionService.findMatchSessions(match.id()).stream())
+        // Get all sessions in this container
+        return container.sessions().all().stream()
                 .map(SessionResponse::from)
                 .toList();
     }
@@ -907,14 +908,16 @@ public class ContainerResource {
     public Response createPlayer(
             @PathParam("containerId") long containerId,
             PlayerRequest request) {
-        getContainerOrThrow(containerId); // Validate container exists
+        ExecutionContainer container = getContainerOrThrow(containerId);
 
-        // Auto-generate ID if not provided
-        long playerId = (request.id() != null && request.id() > 0)
-                ? request.id()
-                : System.currentTimeMillis();
-        Player player = new Player(playerId);
-        playerService.createPlayer(player);
+        // Auto-generate ID if not provided, or use specified ID
+        Player player;
+        if (request.id() != null && request.id() > 0) {
+            player = container.players().create(request.id());
+        } else {
+            player = container.players().create();
+        }
+
         return Response.status(Response.Status.CREATED)
                 .entity(new PlayerResponse(player.id()))
                 .build();
@@ -929,9 +932,7 @@ public class ContainerResource {
     public Response getPlayer(
             @PathParam("containerId") long containerId,
             @PathParam("playerId") long playerId) {
-        getContainerOrThrow(containerId); // Validate container exists
-
-        return playerService.getPlayer(playerId)
+        return getContainerOrThrow(containerId).players().get(playerId)
                 .map(player -> Response.ok(new PlayerResponse(player.id())).build())
                 .orElse(Response.status(Response.Status.NOT_FOUND).build());
     }
@@ -943,9 +944,7 @@ public class ContainerResource {
     @Path("/{containerId}/players")
     @RolesAllowed({"admin", "command_manager", "view_only"})
     public List<PlayerResponse> getAllPlayers(@PathParam("containerId") long containerId) {
-        getContainerOrThrow(containerId); // Validate container exists
-
-        return playerService.getAllPlayers().stream()
+        return getContainerOrThrow(containerId).players().all().stream()
                 .map(player -> new PlayerResponse(player.id()))
                 .toList();
     }
@@ -959,21 +958,23 @@ public class ContainerResource {
     public Response deletePlayer(
             @PathParam("containerId") long containerId,
             @PathParam("playerId") long playerId) {
-        getContainerOrThrow(containerId); // Validate container exists
+        ExecutionContainer container = getContainerOrThrow(containerId);
+        ContainerPlayerOperations players = container.players();
 
-        if (playerService.getPlayer(playerId).isEmpty()) {
+        if (players.get(playerId).isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        playerService.deletePlayer(playerId);
+        players.delete(playerId);
         return Response.noContent().build();
     }
 
     // =========================================================================
-    // PLAYER-MATCH MANAGEMENT
+    // PLAYER-MATCH MANAGEMENT (using sessions)
     // =========================================================================
 
     /**
      * Join a player to a match in this container.
+     * Creates a session for the player in the match.
      * Returns WebSocket and REST endpoint URLs for receiving player-scoped snapshots.
      */
     @POST
@@ -982,17 +983,18 @@ public class ContainerResource {
     public Response joinMatch(
             @PathParam("containerId") long containerId,
             @PathParam("matchId") long matchId,
-            PlayerMatchRequest request) {
+            JoinMatchRequest request) {
         ExecutionContainer container = getContainerOrThrow(containerId);
 
         // Verify match exists in this container
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        PlayerMatch playerMatch = playerMatchService.joinMatchValidated(request.playerId(), matchId);
+        // Create a session for the player joining the match
+        PlayerSession session = container.sessions().create(request.playerId(), matchId);
         JoinMatchResponse response = JoinMatchResponse.create(
-                playerMatch.playerId(),
-                playerMatch.matchId()
+                session.playerId(),
+                session.matchId()
         );
 
         return Response.status(Response.Status.CREATED)
@@ -1001,17 +1003,17 @@ public class ContainerResource {
     }
 
     /**
-     * Player-match join request DTO.
+     * Join match request DTO.
      */
-    public record PlayerMatchRequest(long playerId) {}
+    public record JoinMatchRequest(long playerId) {}
 
     /**
-     * Get a player-match association.
+     * Get a player's participation in a match (via session).
      */
     @GET
     @Path("/{containerId}/matches/{matchId}/players/{playerId}")
     @RolesAllowed({"admin", "command_manager", "view_only"})
-    public Response getPlayerMatch(
+    public Response getPlayerInMatch(
             @PathParam("containerId") long containerId,
             @PathParam("matchId") long matchId,
             @PathParam("playerId") long playerId) {
@@ -1021,18 +1023,20 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        return playerMatchService.getPlayerMatch(playerId, matchId)
-                .map(pm -> Response.ok(new PlayerMatchResponse(pm.playerId(), pm.matchId())).build())
+        // Use findActive to only return players currently "in" the match
+        // (not abandoned or expired sessions)
+        return container.sessions().findActive(playerId, matchId)
+                .map(session -> Response.ok(SessionResponse.from(session)).build())
                 .orElse(Response.status(Response.Status.NOT_FOUND).build());
     }
 
     /**
-     * Get all players in a match.
+     * Get all players in a match (via sessions).
      */
     @GET
     @Path("/{containerId}/matches/{matchId}/players")
     @RolesAllowed({"admin", "command_manager", "view_only"})
-    public List<PlayerMatchResponse> getPlayersInMatch(
+    public List<SessionResponse> getPlayersInMatch(
             @PathParam("containerId") long containerId,
             @PathParam("matchId") long matchId) {
         ExecutionContainer container = getContainerOrThrow(containerId);
@@ -1041,13 +1045,15 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        return playerMatchService.getPlayersInMatch(matchId).stream()
-                .map(pm -> new PlayerMatchResponse(pm.playerId(), pm.matchId()))
+        // Use activeForMatch to only return players currently "in" the match
+        // (not abandoned or expired sessions)
+        return container.sessions().activeForMatch(matchId).stream()
+                .map(SessionResponse::from)
                 .toList();
     }
 
     /**
-     * Remove a player from a match (leave match).
+     * Remove a player from a match (abandon session).
      */
     @DELETE
     @Path("/{containerId}/matches/{matchId}/players/{playerId}")
@@ -1062,10 +1068,10 @@ public class ContainerResource {
         container.matches().get(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match " + matchId + " not found in container " + containerId));
 
-        if (playerMatchService.getPlayerMatch(playerId, matchId).isEmpty()) {
+        if (container.sessions().find(playerId, matchId).isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
-        playerMatchService.leaveMatch(playerId, matchId);
+        container.sessions().abandon(playerId, matchId);
         return Response.noContent().build();
     }
 
@@ -1279,7 +1285,7 @@ public class ContainerResource {
     // =========================================================================
 
     /**
-     * Get overall MongoDB history summary.
+     * Get container-scoped MongoDB history summary.
      */
     @GET
     @Path("/{containerId}/history")
@@ -1295,8 +1301,9 @@ public class ContainerResource {
                     .build();
         }
 
-        SnapshotHistoryService.HistorySummary summary = historyService.getSummary();
+        SnapshotHistoryService.ContainerHistorySummary summary = historyService.getContainerSummary(containerId);
         return Response.ok(Map.of(
+                "containerId", containerId,
                 "totalSnapshots", summary.totalSnapshots(),
                 "matchCount", summary.matchCount(),
                 "matchIds", summary.matchIds(),
@@ -1307,7 +1314,7 @@ public class ContainerResource {
     }
 
     /**
-     * Get MongoDB history summary for a specific match.
+     * Get MongoDB history summary for a specific match in a container.
      */
     @GET
     @Path("/{containerId}/matches/{matchId}/history")
@@ -1326,8 +1333,9 @@ public class ContainerResource {
             return persistenceNotEnabled();
         }
 
-        SnapshotHistoryService.MatchHistorySummary summary = historyService.getMatchSummary(matchId);
+        SnapshotHistoryService.MatchHistorySummary summary = historyService.getMatchSummary(containerId, matchId);
         return Response.ok(Map.of(
+                "containerId", containerId,
                 "matchId", summary.matchId(),
                 "snapshotCount", summary.snapshotCount(),
                 "firstTick", summary.firstTick() != null ? summary.firstTick() : -1,
@@ -1366,8 +1374,9 @@ public class ContainerResource {
                     .build();
         }
 
-        List<SnapshotDocument> snapshots = historyService.getSnapshotsInRange(matchId, fromTick, toTick, limit);
+        List<SnapshotDocument> snapshots = historyService.getSnapshotsInRange(containerId, matchId, fromTick, toTick, limit);
         return Response.ok(Map.of(
+                "containerId", containerId,
                 "matchId", matchId,
                 "fromTick", fromTick,
                 "toTick", toTick,
@@ -1403,8 +1412,9 @@ public class ContainerResource {
                     .build();
         }
 
-        List<SnapshotDocument> snapshots = historyService.getLatestSnapshots(matchId, limit);
+        List<SnapshotDocument> snapshots = historyService.getLatestSnapshots(containerId, matchId, limit);
         return Response.ok(Map.of(
+                "containerId", containerId,
                 "matchId", matchId,
                 "count", snapshots.size(),
                 "snapshots", snapshots.stream().map(this::toHistoryDto).toList()
@@ -1432,10 +1442,10 @@ public class ContainerResource {
             return persistenceNotEnabled();
         }
 
-        Optional<SnapshotDocument> snapshot = historyService.getSnapshot(matchId, tick);
+        Optional<SnapshotDocument> snapshot = historyService.getSnapshot(containerId, matchId, tick);
         if (snapshot.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(Map.of("error", "Snapshot not found for match " + matchId + " at tick " + tick))
+                    .entity(Map.of("error", "Snapshot not found for container " + containerId + " match " + matchId + " at tick " + tick))
                     .build();
         }
 
@@ -1462,8 +1472,9 @@ public class ContainerResource {
             return persistenceNotEnabled();
         }
 
-        long deleted = historyService.deleteSnapshots(matchId);
+        long deleted = historyService.deleteSnapshots(containerId, matchId);
         return Response.ok(Map.of(
+                "containerId", containerId,
                 "matchId", matchId,
                 "deletedCount", deleted
         )).build();
@@ -1490,8 +1501,9 @@ public class ContainerResource {
             return persistenceNotEnabled();
         }
 
-        long deleted = historyService.deleteSnapshotsOlderThan(matchId, olderThanTick);
+        long deleted = historyService.deleteSnapshotsOlderThan(containerId, matchId, olderThanTick);
         return Response.ok(Map.of(
+                "containerId", containerId,
                 "matchId", matchId,
                 "olderThanTick", olderThanTick,
                 "deletedCount", deleted
@@ -1641,12 +1653,13 @@ public class ContainerResource {
     }
 
     private Map<String, Object> toHistoryDto(SnapshotDocument doc) {
-        return Map.of(
-                "matchId", doc.matchId(),
-                "tick", doc.tick(),
-                "timestamp", doc.timestamp() != null ? doc.timestamp().toString() : null,
-                "data", doc.data()
-        );
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("containerId", doc.containerId());
+        result.put("matchId", doc.matchId());
+        result.put("tick", doc.tick());
+        result.put("timestamp", doc.timestamp() != null ? doc.timestamp().toString() : null);
+        result.put("data", doc.data());
+        return result;
     }
 
     /**
@@ -1676,5 +1689,38 @@ public class ContainerResource {
                 .flatMap(moduleData -> moduleData.values().stream())
                 .mapToInt(List::size)
                 .sum();
+    }
+
+    /**
+     * Register a container-scoped snapshot persistence listener.
+     *
+     * <p>This listener persists snapshots for the container's matches to MongoDB
+     * after each tick (or at the configured interval).
+     */
+    private void registerSnapshotPersistenceListener(ExecutionContainer container) {
+        // Cast to InMemoryExecutionContainer to access the game loop
+        if (!(container instanceof ca.samanthaireland.engine.internal.container.InMemoryExecutionContainer inMemoryContainer)) {
+            log.warn("Cannot register snapshot persistence listener for container {}: not an InMemoryExecutionContainer",
+                    container.getId());
+            return;
+        }
+
+        if (inMemoryContainer.getGameLoop() == null) {
+            log.warn("Cannot register snapshot persistence listener for container {}: GameLoop not initialized",
+                    container.getId());
+            return;
+        }
+
+        var listener = new ca.samanthaireland.engine.quarkus.api.persistence.ContainerSnapshotPersistenceListener(
+                container.getId(),
+                container,
+                mongoClient,
+                persistenceConfig.database(),
+                persistenceConfig.collection(),
+                persistenceConfig.tickInterval()
+        );
+
+        inMemoryContainer.getGameLoop().addTickListener(listener);
+        log.info("Registered snapshot persistence listener for container {}", container.getId());
     }
 }

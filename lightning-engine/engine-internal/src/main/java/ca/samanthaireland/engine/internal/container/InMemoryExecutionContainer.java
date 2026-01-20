@@ -38,6 +38,8 @@ import ca.samanthaireland.engine.core.container.ContainerLifecycleOperations;
 import ca.samanthaireland.engine.core.container.ContainerTickOperations;
 import ca.samanthaireland.engine.core.container.ContainerCommandOperations;
 import ca.samanthaireland.engine.core.container.ContainerMatchOperations;
+import ca.samanthaireland.engine.core.container.ContainerPlayerOperations;
+import ca.samanthaireland.engine.core.container.ContainerSessionOperations;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
 import ca.samanthaireland.engine.core.store.PermissionRegistry;
 import ca.samanthaireland.engine.ext.module.ModuleResolver;
@@ -125,6 +127,8 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     private ContainerCommandOperations commandOperations;
     private ContainerMatchOperations matchOperations;
     private ContainerSnapshotOperations snapshotOperations;
+    private ContainerPlayerOperations playerOperations;
+    private ContainerSessionOperations sessionOperations;
 
     // Tick execution
     private final ScheduledExecutorService tickExecutor;
@@ -655,5 +659,21 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
             }
         }
         return snapshotOperations;
+    }
+
+    @Override
+    public ContainerPlayerOperations players() {
+        if (playerOperations == null) {
+            playerOperations = new DefaultContainerPlayerOperations(this);
+        }
+        return playerOperations;
+    }
+
+    @Override
+    public ContainerSessionOperations sessions() {
+        if (sessionOperations == null) {
+            sessionOperations = new DefaultContainerSessionOperations(this);
+        }
+        return sessionOperations;
     }
 }

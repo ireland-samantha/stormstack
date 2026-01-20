@@ -37,6 +37,7 @@ import java.util.Map;
  * including all entity component data organized by module.
  *
  * @param id MongoDB document ID
+ * @param containerId the container this snapshot belongs to
  * @param matchId the match this snapshot belongs to
  * @param tick the simulation tick number
  * @param timestamp when the snapshot was captured
@@ -44,6 +45,7 @@ import java.util.Map;
  */
 public record SnapshotDocument(
         @BsonId ObjectId id,
+        long containerId,
         long matchId,
         long tick,
         Instant timestamp,
@@ -53,27 +55,29 @@ public record SnapshotDocument(
     /**
      * Create a new snapshot document without an ID (for insertion).
      *
+     * @param containerId the container ID
      * @param matchId the match ID
      * @param tick the tick number
      * @param timestamp when the snapshot was captured
      * @param data the component data
      * @return a new snapshot document
      */
-    public static SnapshotDocument create(long matchId, long tick, Instant timestamp,
+    public static SnapshotDocument create(long containerId, long matchId, long tick, Instant timestamp,
                                           Map<String, Map<String, List<Float>>> data) {
-        return new SnapshotDocument(null, matchId, tick, timestamp, data);
+        return new SnapshotDocument(null, containerId, matchId, tick, timestamp, data);
     }
 
     /**
      * Create a new snapshot document with the current timestamp.
      *
+     * @param containerId the container ID
      * @param matchId the match ID
      * @param tick the tick number
      * @param data the component data
      * @return a new snapshot document
      */
-    public static SnapshotDocument create(long matchId, long tick,
+    public static SnapshotDocument create(long containerId, long matchId, long tick,
                                           Map<String, Map<String, List<Float>>> data) {
-        return create(matchId, tick, Instant.now(), data);
+        return create(containerId, matchId, tick, Instant.now(), data);
     }
 }

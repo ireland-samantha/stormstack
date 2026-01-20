@@ -36,7 +36,6 @@ import ca.samanthaireland.engine.core.GameSimulation;
 import ca.samanthaireland.engine.core.command.CommandExecutor;
 import ca.samanthaireland.engine.core.command.CommandQueue;
 import ca.samanthaireland.engine.core.match.MatchService;
-import ca.samanthaireland.engine.core.match.PlayerMatchService;
 import ca.samanthaireland.engine.core.match.PlayerService;
 import ca.samanthaireland.engine.core.container.ContainerManager;
 import ca.samanthaireland.engine.core.session.PlayerSessionRepository;
@@ -58,8 +57,6 @@ import ca.samanthaireland.engine.internal.core.command.CommandExecutorFromResolv
 import ca.samanthaireland.engine.internal.core.match.InMemoryGameSimulation;
 import ca.samanthaireland.engine.internal.core.match.InMemoryMatchRepository;
 import ca.samanthaireland.engine.internal.core.match.InMemoryMatchService;
-import ca.samanthaireland.engine.internal.core.match.InMemoryPlayerMatchRepository;
-import ca.samanthaireland.engine.internal.core.match.InMemoryPlayerMatchService;
 import ca.samanthaireland.engine.internal.core.match.InMemoryPlayerRepository;
 import ca.samanthaireland.engine.internal.core.match.InMemoryPlayerService;
 import ca.samanthaireland.engine.core.snapshot.DeltaCompressionService;
@@ -274,15 +271,6 @@ public class SimulationConfig {
         return new InMemoryPlayerService(new InMemoryPlayerRepository());
     }
 
-    @Produces
-    @ApplicationScoped
-    public PlayerMatchService playerMatchService(PlayerService playerService, MatchService matchService) {
-        return new InMemoryPlayerMatchService(
-                new InMemoryPlayerMatchRepository(),
-                playerService,
-                matchService);
-    }
-
     // ---------- Session management ----------
 
     @Produces
@@ -444,7 +432,7 @@ public class SimulationConfig {
     public GameSimulation gameSimulation(
             MatchService matchService,
             PlayerService playerService,
-            PlayerMatchService playerMatchService,
+            PlayerSessionService sessionService,
             ModuleManager moduleManager,
             CommandResolver commandResolver,
             CommandQueue commandQueue,
@@ -454,7 +442,7 @@ public class SimulationConfig {
         return new InMemoryGameSimulation(
                 matchService,
                 playerService,
-                playerMatchService,
+                sessionService,
                 moduleManager,
                 commandResolver,
                 commandQueue,

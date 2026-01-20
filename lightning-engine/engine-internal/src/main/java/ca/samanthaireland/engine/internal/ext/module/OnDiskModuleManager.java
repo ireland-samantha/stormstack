@@ -33,6 +33,7 @@ import ca.samanthaireland.engine.ext.module.ModuleExports;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
 import ca.samanthaireland.engine.auth.module.ModuleAuthService;
 import ca.samanthaireland.engine.auth.module.ModuleAuthToken;
+import ca.samanthaireland.engine.auth.module.ModulePermissionClaimBuilder;
 import ca.samanthaireland.engine.internal.core.store.ModuleScopedStore;
 import ca.samanthaireland.engine.internal.ext.jar.FactoryClassloader;
 import lombok.extern.slf4j.Slf4j;

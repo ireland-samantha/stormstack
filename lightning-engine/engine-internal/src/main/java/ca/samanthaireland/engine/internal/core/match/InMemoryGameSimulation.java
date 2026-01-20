@@ -31,10 +31,9 @@ import ca.samanthaireland.engine.core.exception.EntityNotFoundException;
 import ca.samanthaireland.engine.core.match.Match;
 import ca.samanthaireland.engine.core.match.MatchService;
 import ca.samanthaireland.engine.core.match.Player;
-import ca.samanthaireland.engine.core.match.PlayerMatch;
-import ca.samanthaireland.engine.core.match.PlayerMatchService;
 import ca.samanthaireland.engine.core.match.PlayerService;
-import ca.samanthaireland.engine.core.snapshot.Snapshot;
+import ca.samanthaireland.engine.core.session.PlayerSession;
+import ca.samanthaireland.engine.core.session.PlayerSessionService;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
 import ca.samanthaireland.engine.internal.GameLoop;
 import ca.samanthaireland.engine.internal.core.command.CommandResolver;
@@ -70,7 +69,7 @@ public class InMemoryGameSimulation implements GameSimulation {
 
     private final MatchService matchService;
     private final PlayerService playerService;
-    private final PlayerMatchService playerMatchService;
+    private final PlayerSessionService sessionService;
     private final ModuleManager moduleManager;
     private final CommandResolver commandResolver;
     private final CommandQueue commandQueue;
@@ -86,7 +85,7 @@ public class InMemoryGameSimulation implements GameSimulation {
     public InMemoryGameSimulation(
             MatchService matchService,
             PlayerService playerService,
-            PlayerMatchService playerMatchService,
+            PlayerSessionService sessionService,
             ModuleManager moduleManager,
             CommandResolver commandResolver,
             CommandQueue commandQueue,
@@ -94,7 +93,7 @@ public class InMemoryGameSimulation implements GameSimulation {
             GameLoop gameLoop) {
         this.matchService = Objects.requireNonNull(matchService, "matchService must not be null");
         this.playerService = Objects.requireNonNull(playerService, "playerService must not be null");
-        this.playerMatchService = Objects.requireNonNull(playerMatchService, "playerMatchService must not be null");
+        this.sessionService = Objects.requireNonNull(sessionService, "sessionService must not be null");
         this.moduleManager = moduleManager;
         this.commandResolver = commandResolver;
         this.commandQueue = commandQueue;
@@ -236,34 +235,35 @@ public class InMemoryGameSimulation implements GameSimulation {
         }
     }
 
-    // PlayerMatch operations
+    // Session operations (replaces PlayerMatch)
 
     @Override
-    public void joinMatch(PlayerMatch playerMatch) {
-        log.debug("Player {} joining match {}", playerMatch.playerId(), playerMatch.matchId());
-        playerMatchService.joinMatch(playerMatch.playerId(), playerMatch.matchId());
+    public PlayerSession joinMatch(long playerId, long matchId) {
+        log.debug("Player {} joining match {}", playerId, matchId);
+        return sessionService.createSession(playerId, matchId);
     }
 
     @Override
-    public Optional<PlayerMatch> getPlayerMatch(long playerId, long matchId) {
-        return playerMatchService.getPlayerMatch(playerId, matchId);
+    public Optional<PlayerSession> getSession(long playerId, long matchId) {
+        return sessionService.findSession(playerId, matchId);
     }
 
     @Override
-    public List<PlayerMatch> getPlayerMatchesByMatch(long matchId) {
-        return playerMatchService.getPlayersInMatch(matchId);
+    public List<PlayerSession> getSessionsByMatch(long matchId) {
+        return sessionService.findMatchSessions(matchId);
     }
 
     @Override
-    public List<PlayerMatch> getPlayerMatchesByPlayer(long playerId) {
-        return playerMatchService.getMatchesForPlayer(playerId);
+    public List<PlayerSession> getSessionsByPlayer(long playerId) {
+        return sessionService.findAllSessions().stream()
+                .filter(s -> s.playerId() == playerId)
+                .toList();
     }
 
     @Override
-    public void leaveMatch(PlayerMatch playerMatch) {
-        log.debug("Player {} leaving match {}", playerMatch.playerId(), playerMatch.matchId());
-        if (playerMatchService.isPlayerInMatch(playerMatch.playerId(), playerMatch.matchId())) {
-            playerMatchService.leaveMatch(playerMatch.playerId(), playerMatch.matchId());
-        }
+    public void leaveMatch(long playerId, long matchId) {
+        log.debug("Player {} leaving match {}", playerId, matchId);
+        sessionService.findSession(playerId, matchId)
+                .ifPresent(session -> sessionService.abandon(playerId, matchId));
     }
 }

@@ -159,6 +159,9 @@ public class PWSidebarNavigator {
      * Selects a container from the sidebar dropdown.
      * This sets the active container for container-scoped panels (Modules, AI, Resources).
      *
+     * <p>After selection, this method waits for the React context to update and navigates
+     * to the Overview page to ensure a clean state before navigating to other container-scoped pages.
+     *
      * @param containerName the name of the container to select
      */
     public void selectContainer(String containerName) {
@@ -169,8 +172,13 @@ public class PWSidebarNavigator {
             page.locator(".MuiMenu-paper .MuiMenuItem-root")
                 .filter(new Locator.FilterOptions().setHasText(containerName))
                 .click();
-            // Wait for menu to close
-            page.waitForTimeout(300);
+            // Wait for menu to close and React context to update
+            page.waitForTimeout(500);
+            // Verify the selector now shows the selected container name
+            selector.filter(new Locator.FilterOptions().setHasText(containerName))
+                .waitFor(new Locator.WaitForOptions().setTimeout(5000));
+            // Wait additional time for the context to propagate
+            page.waitForTimeout(500);
         }
     }
 

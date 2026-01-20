@@ -87,6 +87,9 @@ const PlayersPanel: React.FC = () => {
         setDeletingPlayer(null);
         setSuccess('Player deleted');
       } catch (err) {
+        // Close dialog and show error in main panel so it doesn't block subsequent interactions
+        setDeleteDialogOpen(false);
+        setDeletingPlayer(null);
         setLocalError(err instanceof Error ? err.message : 'Failed to delete player');
       }
     }

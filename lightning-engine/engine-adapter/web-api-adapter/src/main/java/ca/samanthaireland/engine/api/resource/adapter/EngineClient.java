@@ -70,6 +70,7 @@ public class EngineClient {
     private final String baseUrl;
     private final AdapterConfig config;
     private final HttpClient httpClient;
+    private final SnapshotParser snapshotParser;
 
     private volatile ContainerAdapter containerAdapter;
     private volatile ModuleAdapter moduleAdapter;
@@ -77,10 +78,11 @@ public class EngineClient {
     private volatile UserAdapter userAdapter;
     private volatile RoleAdapter roleAdapter;
 
-    private EngineClient(String baseUrl, AdapterConfig config, HttpClient httpClient) {
+    private EngineClient(String baseUrl, AdapterConfig config, HttpClient httpClient, SnapshotParser snapshotParser) {
         this.baseUrl = normalizeUrl(baseUrl);
         this.config = config;
         this.httpClient = httpClient;
+        this.snapshotParser = snapshotParser;
     }
 
     /**
@@ -327,87 +329,21 @@ public class EngineClient {
      * Useful when working with container-scoped snapshot responses.
      *
      * @param jsonData the JSON string containing snapshot data
-     * @return a Snapshot object with matchId=0, tick=0, and parsed data
+     * @return a Snapshot object with parsed module/component data
      */
     public Snapshot parseSnapshot(String jsonData) {
-        return parseSnapshotData(0, 0, jsonData);
+        return new Snapshot(snapshotParser.parse(jsonData));
     }
 
-    private Snapshot parseSnapshotData(long matchId, long tick, String jsonData) {
-        if (jsonData == null || jsonData.isBlank()) {
-            return new Snapshot(matchId, tick, Map.of());
-        }
-
-        Map<String, Map<String, List<Float>>> data = new LinkedHashMap<>();
-        int pos = 1; // Skip opening brace
-
-        while (pos < jsonData.length()) {
-            int moduleNameStart = jsonData.indexOf("\"", pos);
-            if (moduleNameStart == -1) break;
-            int moduleNameEnd = jsonData.indexOf("\"", moduleNameStart + 1);
-            if (moduleNameEnd == -1) break;
-            String moduleName = jsonData.substring(moduleNameStart + 1, moduleNameEnd);
-
-            int colonPos = jsonData.indexOf(":", moduleNameEnd);
-            int moduleObjStart = jsonData.indexOf("{", colonPos);
-            if (moduleObjStart == -1) break;
-
-            int braceCount = 1;
-            int moduleObjEnd = moduleObjStart + 1;
-            while (moduleObjEnd < jsonData.length() && braceCount > 0) {
-                if (jsonData.charAt(moduleObjEnd) == '{') braceCount++;
-                else if (jsonData.charAt(moduleObjEnd) == '}') braceCount--;
-                moduleObjEnd++;
-            }
-
-            String moduleJson = jsonData.substring(moduleObjStart, moduleObjEnd);
-            Map<String, List<Float>> moduleData = parseModuleData(moduleJson);
-            if (!moduleData.isEmpty()) {
-                data.put(moduleName, moduleData);
-            }
-
-            pos = moduleObjEnd;
-        }
-
-        return new Snapshot(matchId, tick, data);
-    }
-
-    private Map<String, List<Float>> parseModuleData(String json) {
-        Map<String, List<Float>> moduleData = new LinkedHashMap<>();
-        int pos = 1;
-
-        while (pos < json.length()) {
-            int compNameStart = json.indexOf("\"", pos);
-            if (compNameStart == -1) break;
-            int compNameEnd = json.indexOf("\"", compNameStart + 1);
-            if (compNameEnd == -1) break;
-            String compName = json.substring(compNameStart + 1, compNameEnd);
-
-            int arrayStart = json.indexOf("[", compNameEnd);
-            if (arrayStart == -1) break;
-            int arrayEnd = json.indexOf("]", arrayStart);
-            if (arrayEnd == -1) break;
-
-            String arrayStr = json.substring(arrayStart + 1, arrayEnd);
-            List<Float> values = new ArrayList<>();
-            if (!arrayStr.trim().isEmpty()) {
-                for (String val : arrayStr.split(",")) {
-                    String trimmed = val.trim();
-                    if (!trimmed.isEmpty()) {
-                        try {
-                            values.add(Float.parseFloat(trimmed));
-                        } catch (NumberFormatException e) {
-                            // Skip non-numeric values
-                        }
-                    }
-                }
-            }
-            moduleData.put(compName, values);
-
-            pos = arrayEnd + 1;
-        }
-
-        return moduleData;
+    /**
+     * Parse snapshot data from a Map (e.g., from HistorySnapshotDto.data()).
+     * Useful when working with history snapshots that return parsed data.
+     *
+     * @param dataMap the map containing snapshot data (module -> component -> values)
+     * @return a Snapshot object with parsed module/component data
+     */
+    public Snapshot parseSnapshotFromMap(Map<String, Object> dataMap) {
+        return new Snapshot(snapshotParser.parseFromMap(dataMap));
     }
 
     // ========== Domain Records ==========
@@ -418,8 +354,8 @@ public class EngineClient {
     /** Module information. */
     public record Module(String name, String flagComponentName) {}
 
-    /** Snapshot of ECS state. */
-    public record Snapshot(long matchId, long tick, Map<String, Map<String, List<Float>>> data) {
+    /** Snapshot of ECS state containing module/component data. */
+    public record Snapshot(Map<String, Map<String, List<Float>>> data) {
         /** Access a module's data. */
         public ModuleData module(String moduleName) {
             return new ModuleData(data.getOrDefault(moduleName, Map.of()));
@@ -791,6 +727,45 @@ public class EngineClient {
                 throw new UncheckedIOException("Failed to join match " + matchId + " for player " + playerId, e);
             }
         }
+
+        // ==================== HISTORY OPERATIONS ====================
+
+        /** Get history summary for a match. */
+        public ca.samanthaireland.engine.api.resource.adapter.dto.MatchHistorySummaryDto getMatchHistorySummary(long matchId) {
+            try {
+                return scope.getMatchHistorySummary(matchId);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to get history summary for match " + matchId, e);
+            }
+        }
+
+        /** Get historical snapshots for a match with query parameters. */
+        public List<ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto> getHistorySnapshots(
+                long matchId, ca.samanthaireland.engine.api.resource.adapter.dto.HistoryQueryParams params) {
+            try {
+                return scope.getHistorySnapshots(matchId, params);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to get history snapshots for match " + matchId, e);
+            }
+        }
+
+        /** Get the latest historical snapshots for a match. */
+        public List<ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto> getLatestHistorySnapshots(long matchId, int limit) {
+            try {
+                return scope.getLatestHistorySnapshots(matchId, limit);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to get latest history snapshots for match " + matchId, e);
+            }
+        }
+
+        /** Get a specific historical snapshot by tick. */
+        public Optional<ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto> getHistorySnapshotAtTick(long matchId, long tick) {
+            try {
+                return scope.getHistorySnapshotAtTick(matchId, tick);
+            } catch (IOException e) {
+                throw new UncheckedIOException("Failed to get history snapshot for match " + matchId + " at tick " + tick, e);
+            }
+        }
     }
 
     /** Resource information in a container. */
@@ -1000,6 +975,7 @@ public class EngineClient {
         private Duration connectTimeout = Duration.ofSeconds(5);
         private HttpClient httpClient;
         private String bearerToken;
+        private SnapshotParser snapshotParser;
 
         private Builder() {}
 
@@ -1050,6 +1026,18 @@ public class EngineClient {
         }
 
         /**
+         * Set a custom SnapshotParser for parsing snapshot data.
+         * If not set, a default parser will be created using SnapshotParserFactory.
+         *
+         * @param parser the SnapshotParser to use
+         * @return this builder
+         */
+        public Builder withSnapshotParser(SnapshotParser parser) {
+            this.snapshotParser = parser;
+            return this;
+        }
+
+        /**
          * Build the EngineClient instance.
          *
          * @return a new EngineClient
@@ -1064,7 +1052,12 @@ public class EngineClient {
             if (bearerToken != null) {
                 config = config.withBearerToken(bearerToken);
             }
-            return new EngineClient(baseUrl, config, httpClient);
+
+            SnapshotParser parser = snapshotParser != null
+                    ? snapshotParser
+                    : SnapshotParserFactory.create();
+
+            return new EngineClient(baseUrl, config, httpClient, parser);
         }
     }
 }

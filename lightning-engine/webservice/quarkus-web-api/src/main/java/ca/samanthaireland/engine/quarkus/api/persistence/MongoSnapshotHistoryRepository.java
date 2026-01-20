@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,113 @@ public class MongoSnapshotHistoryRepository implements SnapshotHistoryRepository
         this.databaseName = databaseName;
         this.collectionName = collectionName;
     }
+
+    // =========================================================================
+    // CONTAINER-SCOPED METHODS
+    // =========================================================================
+
+    @Override
+    public Optional<SnapshotDocument> findByContainerAndMatchIdAndTick(long containerId, long matchId, long tick) {
+        Document doc = getCollection()
+                .find(Filters.and(
+                        Filters.eq("containerId", containerId),
+                        Filters.eq("matchId", matchId),
+                        Filters.eq("tick", tick)))
+                .first();
+        return Optional.ofNullable(doc).map(this::toSnapshotDocument);
+    }
+
+    @Override
+    public List<SnapshotDocument> findByContainerAndMatchIdAndTickBetween(long containerId, long matchId, long fromTick, long toTick, int limit) {
+        List<SnapshotDocument> result = new ArrayList<>();
+        getCollection()
+                .find(Filters.and(
+                        Filters.eq("containerId", containerId),
+                        Filters.eq("matchId", matchId),
+                        Filters.gte("tick", fromTick),
+                        Filters.lte("tick", toTick)))
+                .sort(Sorts.ascending("tick"))
+                .limit(limit)
+                .forEach(doc -> result.add(toSnapshotDocument(doc)));
+        return result;
+    }
+
+    @Override
+    public List<SnapshotDocument> findLatestByContainerAndMatchId(long containerId, long matchId, int limit) {
+        List<SnapshotDocument> result = new ArrayList<>();
+        getCollection()
+                .find(Filters.and(
+                        Filters.eq("containerId", containerId),
+                        Filters.eq("matchId", matchId)))
+                .sort(Sorts.descending("tick"))
+                .limit(limit)
+                .forEach(doc -> result.add(toSnapshotDocument(doc)));
+        return result;
+    }
+
+    @Override
+    public Optional<SnapshotDocument> findFirstByContainerAndMatchId(long containerId, long matchId) {
+        Document doc = getCollection()
+                .find(Filters.and(
+                        Filters.eq("containerId", containerId),
+                        Filters.eq("matchId", matchId)))
+                .sort(Sorts.ascending("tick"))
+                .first();
+        return Optional.ofNullable(doc).map(this::toSnapshotDocument);
+    }
+
+    @Override
+    public Optional<SnapshotDocument> findLastByContainerAndMatchId(long containerId, long matchId) {
+        Document doc = getCollection()
+                .find(Filters.and(
+                        Filters.eq("containerId", containerId),
+                        Filters.eq("matchId", matchId)))
+                .sort(Sorts.descending("tick"))
+                .first();
+        return Optional.ofNullable(doc).map(this::toSnapshotDocument);
+    }
+
+    @Override
+    public long countByContainerAndMatchId(long containerId, long matchId) {
+        return getCollection().countDocuments(Filters.and(
+                Filters.eq("containerId", containerId),
+                Filters.eq("matchId", matchId)));
+    }
+
+    @Override
+    public long countByContainerId(long containerId) {
+        return getCollection().countDocuments(Filters.eq("containerId", containerId));
+    }
+
+    @Override
+    public List<Long> findDistinctMatchIdsByContainerId(long containerId) {
+        List<Long> matchIds = new ArrayList<>();
+        getCollection()
+                .distinct("matchId", Filters.eq("containerId", containerId), Long.class)
+                .forEach(matchIds::add);
+        return matchIds;
+    }
+
+    @Override
+    public long deleteByContainerAndMatchId(long containerId, long matchId) {
+        return getCollection().deleteMany(Filters.and(
+                Filters.eq("containerId", containerId),
+                Filters.eq("matchId", matchId))).getDeletedCount();
+    }
+
+    @Override
+    public long deleteByContainerAndMatchIdAndTickLessThan(long containerId, long matchId, long olderThanTick) {
+        return getCollection().deleteMany(
+                Filters.and(
+                        Filters.eq("containerId", containerId),
+                        Filters.eq("matchId", matchId),
+                        Filters.lt("tick", olderThanTick)))
+                .getDeletedCount();
+    }
+
+    // =========================================================================
+    // LEGACY METHODS
+    // =========================================================================
 
     @Override
     public Optional<SnapshotDocument> findByMatchIdAndTick(long matchId, long tick) {
@@ -149,7 +257,7 @@ public class MongoSnapshotHistoryRepository implements SnapshotHistoryRepository
         if (snapshot.id() == null) {
             getCollection().insertOne(doc);
             ObjectId id = doc.getObjectId("_id");
-            return new SnapshotDocument(id, snapshot.matchId(), snapshot.tick(),
+            return new SnapshotDocument(id, snapshot.containerId(), snapshot.matchId(), snapshot.tick(),
                     snapshot.timestamp(), snapshot.data());
         } else {
             doc.append("_id", snapshot.id());
@@ -187,6 +295,7 @@ public class MongoSnapshotHistoryRepository implements SnapshotHistoryRepository
 
     private Document toDocument(SnapshotDocument snapshot) {
         Document doc = new Document();
+        doc.append("containerId", snapshot.containerId());
         doc.append("matchId", snapshot.matchId());
         doc.append("tick", snapshot.tick());
         doc.append("timestamp", snapshot.timestamp());
@@ -228,11 +337,22 @@ public class MongoSnapshotHistoryRepository implements SnapshotHistoryRepository
             }
         }
 
+        // Handle legacy documents that may not have containerId (default to 0)
+        Long containerId = doc.getLong("containerId");
+        if (containerId == null) {
+            containerId = 0L;
+        }
+
+        // MongoDB stores timestamps as java.util.Date, convert to Instant
+        Date timestampDate = doc.getDate("timestamp");
+        Instant timestamp = timestampDate != null ? timestampDate.toInstant() : Instant.now();
+
         return new SnapshotDocument(
                 doc.getObjectId("_id"),
+                containerId,
                 doc.getLong("matchId"),
                 doc.getLong("tick"),
-                doc.get("timestamp", Instant.class),
+                timestamp,
                 data
         );
     }
