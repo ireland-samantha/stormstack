@@ -27,7 +27,6 @@ import ca.samanthaireland.engine.core.GameSimulation;
 import ca.samanthaireland.engine.core.match.Match;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.ext.module.EngineModule;
-import ca.samanthaireland.engine.internal.ext.module.ModuleManagementModuleImpl;
 import ca.samanthaireland.engine.internal.ext.module.ModuleManager;
 import ca.samanthaireland.engine.quarkus.api.dto.ModuleResponse;
 import jakarta.annotation.security.RolesAllowed;
@@ -190,8 +189,6 @@ public class ModuleResource {
     public Response reloadModules() {
         try {
             moduleManager.reset();
-            // Re-register built-in modules that are not loaded from JAR files
-            moduleManager.installModule(ModuleManagementModuleImpl.class);
             moduleManager.reloadInstalled();
             log.info("Reloaded all modules");
             return Response.ok(getAllModules()).build();

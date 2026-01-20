@@ -35,6 +35,108 @@ import java.util.Optional;
  */
 public interface SnapshotHistoryRepository {
 
+    // =========================================================================
+    // CONTAINER-SCOPED METHODS (preferred for container isolation)
+    // =========================================================================
+
+    /**
+     * Get a snapshot for a container/match at a specific tick.
+     *
+     * @param containerId the container ID
+     * @param matchId the match ID
+     * @param tick the tick number
+     * @return the snapshot if found
+     */
+    Optional<SnapshotDocument> findByContainerAndMatchIdAndTick(long containerId, long matchId, long tick);
+
+    /**
+     * Get snapshots for a container/match within a tick range.
+     *
+     * @param containerId the container ID
+     * @param matchId the match ID
+     * @param fromTick the starting tick (inclusive)
+     * @param toTick the ending tick (inclusive)
+     * @param limit maximum number of snapshots to return
+     * @return list of snapshots ordered by tick ascending
+     */
+    List<SnapshotDocument> findByContainerAndMatchIdAndTickBetween(long containerId, long matchId, long fromTick, long toTick, int limit);
+
+    /**
+     * Get the latest N snapshots for a container/match.
+     *
+     * @param containerId the container ID
+     * @param matchId the match ID
+     * @param limit maximum number of snapshots to return
+     * @return list of snapshots ordered by tick descending
+     */
+    List<SnapshotDocument> findLatestByContainerAndMatchId(long containerId, long matchId, int limit);
+
+    /**
+     * Get the first snapshot for a container/match (earliest tick).
+     *
+     * @param containerId the container ID
+     * @param matchId the match ID
+     * @return the first snapshot if any exist
+     */
+    Optional<SnapshotDocument> findFirstByContainerAndMatchId(long containerId, long matchId);
+
+    /**
+     * Get the last snapshot for a container/match (latest tick).
+     *
+     * @param containerId the container ID
+     * @param matchId the match ID
+     * @return the last snapshot if any exist
+     */
+    Optional<SnapshotDocument> findLastByContainerAndMatchId(long containerId, long matchId);
+
+    /**
+     * Count snapshots for a container/match.
+     *
+     * @param containerId the container ID
+     * @param matchId the match ID
+     * @return the number of snapshots
+     */
+    long countByContainerAndMatchId(long containerId, long matchId);
+
+    /**
+     * Count all snapshots for a container.
+     *
+     * @param containerId the container ID
+     * @return the number of snapshots
+     */
+    long countByContainerId(long containerId);
+
+    /**
+     * Get all unique match IDs that have snapshots in a container.
+     *
+     * @param containerId the container ID
+     * @return list of match IDs
+     */
+    List<Long> findDistinctMatchIdsByContainerId(long containerId);
+
+    /**
+     * Delete all snapshots for a container/match.
+     *
+     * @param containerId the container ID
+     * @param matchId the match ID
+     * @return the number of deleted snapshots
+     */
+    long deleteByContainerAndMatchId(long containerId, long matchId);
+
+    /**
+     * Delete snapshots with tick less than specified value.
+     *
+     * @param containerId the container ID
+     * @param matchId the match ID
+     * @param olderThanTick delete snapshots with tick < this value
+     * @return the number of deleted snapshots
+     */
+    long deleteByContainerAndMatchIdAndTickLessThan(long containerId, long matchId, long olderThanTick);
+
+    // =========================================================================
+    // LEGACY METHODS (for backward compatibility, query across all containers)
+    // =========================================================================
+
     /**
      * Get a snapshot for a match at a specific tick.
      *

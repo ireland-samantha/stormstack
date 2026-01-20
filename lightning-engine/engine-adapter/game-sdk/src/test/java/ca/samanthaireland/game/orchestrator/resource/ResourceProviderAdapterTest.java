@@ -251,5 +251,9 @@ class ResourceProviderAdapterTest {
         @Override public void connectSession(long matchId, long playerId) throws IOException {}
         @Override public void disconnectSession(long matchId, long playerId) throws IOException {}
         @Override public void joinMatch(long matchId, long playerId) throws IOException {}
+        @Override public ca.samanthaireland.engine.api.resource.adapter.dto.MatchHistorySummaryDto getMatchHistorySummary(long matchId) throws IOException { return null; }
+        @Override public List<ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto> getHistorySnapshots(long matchId, ca.samanthaireland.engine.api.resource.adapter.dto.HistoryQueryParams params) throws IOException { return List.of(); }
+        @Override public List<ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto> getLatestHistorySnapshots(long matchId, int limit) throws IOException { return List.of(); }
+        @Override public Optional<ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto> getHistorySnapshotAtTick(long matchId, long tick) throws IOException { return Optional.empty(); }
     }
 }

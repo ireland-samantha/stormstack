@@ -45,6 +45,33 @@ public class PWPlayersPage {
     public void addPlayer() {
         clickAddPlayer();
         waitForSuccessAlert();
+        // Wait for alert to auto-dismiss (takes about 3 seconds)
+        waitForAlertToClose();
+    }
+
+    private void waitForAlertToClose() {
+        // Wait for any visible alert to close
+        Locator alert = page.locator(".MuiAlert-root");
+        try {
+            if (alert.count() > 0 && alert.isVisible()) {
+                alert.waitFor(new Locator.WaitForOptions()
+                        .setState(com.microsoft.playwright.options.WaitForSelectorState.HIDDEN)
+                        .setTimeout(5000));
+            }
+        } catch (Exception e) {
+            // Alert might have already closed
+        }
+        // Also wait for any dialog to close
+        Locator dialog = page.locator(".MuiDialog-root");
+        try {
+            if (dialog.count() > 0 && dialog.isVisible()) {
+                dialog.waitFor(new Locator.WaitForOptions()
+                        .setState(com.microsoft.playwright.options.WaitForSelectorState.HIDDEN)
+                        .setTimeout(5000));
+            }
+        } catch (Exception e) {
+            // Dialog might have already closed
+        }
     }
 
     public int getPlayerCount() {
@@ -66,7 +93,24 @@ public class PWPlayersPage {
     }
 
     public void refresh() {
+        // First ensure any open dialog is closed
+        waitForDialogToClose();
         page.locator("button[title='Refresh']").click();
+    }
+
+    private void waitForDialogToClose() {
+        // Press Escape to close any open dialog
+        Locator dialog = page.locator(".MuiDialog-root");
+        if (dialog.count() > 0 && dialog.isVisible()) {
+            page.keyboard().press("Escape");
+            try {
+                dialog.waitFor(new Locator.WaitForOptions()
+                        .setState(com.microsoft.playwright.options.WaitForSelectorState.HIDDEN)
+                        .setTimeout(5000));
+            } catch (Exception e) {
+                // Dialog might have already closed
+            }
+        }
     }
 
     public void waitForSuccessAlert() {

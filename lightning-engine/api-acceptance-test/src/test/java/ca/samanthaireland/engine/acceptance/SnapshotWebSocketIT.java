@@ -22,6 +22,8 @@
 
 package ca.samanthaireland.engine.acceptance;
 
+import ca.samanthaireland.engine.acceptance.fixture.EntitySpawner;
+import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
 import ca.samanthaireland.engine.api.resource.adapter.ContainerAdapter;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerClient;
@@ -36,8 +38,6 @@ import org.testcontainers.utility.DockerImageName;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.net.http.WebSocket;
 import java.time.Duration;
 import java.util.*;
@@ -85,35 +85,14 @@ class SnapshotWebSocketIT {
         baseUrl = String.format("http://%s:%d", host, port);
         log.info("Backend URL: {}", baseUrl);
 
-        // Authenticate to get JWT token
-        String token = authenticate(baseUrl, "admin", "admin");
+        AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
+        String token = auth.login("admin", "admin").token();
         log.info("Authenticated successfully");
 
         client = EngineClient.builder()
                 .baseUrl(baseUrl)
                 .withBearerToken(token)
                 .build();
-    }
-
-    private String authenticate(String baseUrl, String username, String password) throws Exception {
-        HttpClient httpClient = HttpClient.newHttpClient();
-        String json = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/auth/login"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IOException("Authentication failed: " + response.statusCode() + " - " + response.body());
-        }
-
-        String body = response.body();
-        int tokenStart = body.indexOf("\"token\":\"") + 9;
-        int tokenEnd = body.indexOf("\"", tokenStart);
-        return body.substring(tokenStart, tokenEnd);
     }
 
     @AfterEach
@@ -148,7 +127,9 @@ class SnapshotWebSocketIT {
                 "positionY", 200.0f,
                 "mass", 1.0f
         ));
-        container.tick();
+        // Wait for rigid body components to appear
+        EntitySpawner.waitForComponent(client, container, matchId, "RigidBodyModule", "MASS");
+        EntitySpawner.waitForComponent(client, container, matchId, "GridMapModule", "POSITION_X");
 
         // Set velocity
         container.forMatch(matchId).custom("setVelocity")
@@ -200,7 +181,9 @@ class SnapshotWebSocketIT {
                 "positionY", 200.0f,
                 "mass", 1.0f
         ));
-        container.tick();
+        // Wait for rigid body components to appear
+        EntitySpawner.waitForComponent(client, container, matchId, "RigidBodyModule", "MASS");
+        EntitySpawner.waitForComponent(client, container, matchId, "GridMapModule", "POSITION_X");
 
         // Set velocity
         container.forMatch(matchId).custom("setVelocity")
@@ -280,7 +263,9 @@ class SnapshotWebSocketIT {
                 "positionY", 200.0f,
                 "mass", 1.0f
         ));
-        container.tick();
+        // Wait for rigid body components to appear
+        EntitySpawner.waitForComponent(client, container, matchId, "RigidBodyModule", "MASS");
+        EntitySpawner.waitForComponent(client, container, matchId, "GridMapModule", "POSITION_X");
 
         // Set velocity
         container.forMatch(matchId).custom("setVelocity")
@@ -354,27 +339,16 @@ class SnapshotWebSocketIT {
         container = client.container(containerId);
         container.play(60);
 
+        // Wait for container to be fully running
+        EntitySpawner.waitForContainerRunning(client, containerId);
+
         var match = container.createMatch(REQUIRED_MODULES);
         matchId = match.id();
         log.info("Created container {} and match {}", containerId, matchId);
     }
 
     private long spawnEntity() throws IOException {
-        container.forMatch(matchId).spawn()
-                .forPlayer(1)
-                .ofType(100)
-                .execute();
-        container.tick();
-
-        var snapshotOpt = container.getSnapshot(matchId);
-        if (snapshotOpt.isPresent()) {
-            var snapshot = client.parseSnapshot(snapshotOpt.get().data());
-            List<Float> entityIds = snapshot.entityIds();
-            if (!entityIds.isEmpty()) {
-                return entityIds.get(entityIds.size() - 1).longValue();
-            }
-        }
-        throw new IllegalStateException("Failed to spawn entity");
+        return EntitySpawner.spawnEntity(client, container, matchId);
     }
 
     private EngineClient.Snapshot getSnapshot() throws IOException {

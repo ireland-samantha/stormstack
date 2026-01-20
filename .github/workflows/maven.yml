@@ -9,8 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -55,7 +54,7 @@ jobs:
         run: mvn -B package --file pom.xml
 
 #  playwright-tests:
-#    runs-on: ubuntu-latest
+#    runs-on: ubuntu-22.04
 #    needs: build
 #
 #    steps:
@@ -76,8 +75,23 @@ jobs:
 #      - name: Generate JWT keys
 #        run: python gen_secrets.py
 #
+#      - name: Set up Node.js
+#        uses: actions/setup-node@v4
+#        with:
+#          node-version: '20'
+#          cache: 'npm'
+#          cache-dependency-path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/package-lock.json
+#
+#      - name: Install frontend dependencies
+#        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+#        run: npm ci
+#
+#      - name: Build frontend
+#        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+#        run: npm run build
+#
 #      - name: Build and install all modules
-#        run: mvn clean install -DskipTests
+#        run: mvn clean install -DskipTests -Pdocker
 #
 #      - name: Build Docker image for Quarkus API
 #        run: mvn -B package -DskipTests -Dquarkus.container-image.build=true -pl lightning-engine/webservice/quarkus-web-api
@@ -86,15 +100,9 @@ jobs:
 #        run: docker tag samantha/quarkus-web-api:0.0.1-SNAPSHOT lightning-backend:0.1.0
 #
 #      - name: Install Playwright browsers and system dependencies
-#        uses: microsoft/playwright-github-action@v1
-#        with:
-#          browser: chromium
-#          enable-deps: true
+#        run: npx playwright install chromium --with-deps
 #
 #      - name: Run Playwright dashboard tests
-#        env:
-#          # Playwright action installs browsers to /ms-playwright by default; ensure the Java tests look there
-#          PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
 #        run: mvn -B verify -Pacceptance-tests -pl lightning-engine/webservice/playwright-test
 #
 #      - name: Upload Playwright test results
@@ -106,44 +114,59 @@ jobs:
 #            lightning-engine/webservice/playwright-test/target/failsafe-reports
 #            lightning-engine/webservice/playwright-test/target/screenshots
 #          retention-days: 14
-#
-#  integration-tests:
-#    runs-on: ubuntu-latest
-#    needs: build
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#
-#      - name: Set up JDK 25
-#        uses: actions/setup-java@v4
-#        with:
-#          java-version: '25'
-#          distribution: 'temurin'
-#          cache: maven
-#
-#      - name: Set up Python
-#        uses: actions/setup-python@v5
-#        with:
-#          python-version: '3.x'
-#
-#      - name: Generate JWT keys
-#        run: python gen_secrets.py
-#
-#      - name: Build and install all modules
-#        run: mvn clean install -DskipTests
-#
-#      - name: Build Docker image
-#        run: docker build -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt -t lightning-backend:latest .
-#
-#      - name: Run API integration tests
-#        run: mvn -B verify -Pacceptance-tests -pl lightning-engine/api-acceptance-test
-#
-#      - name: Upload integration test results
-#        uses: actions/upload-artifact@v4
-#        if: always()
-#        with:
-#          name: integration-test-results
-#          path: |
-#            lightning-engine/api-acceptance-test/target/failsafe-reports
-#            lightning-engine/api-acceptance-test/target/surefire-reports
-#          retention-days: 14
+
+  integration-tests:
+    runs-on: ubuntu-22.04
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate JWT keys
+        run: python gen_secrets.py
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
+        run: npm run build
+
+      - name: Build and install all modules
+        run: mvn clean install -DskipTests
+
+      - name: Build Docker image
+        run: docker build -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt -t lightning-backend:latest .
+
+      - name: Run API integration tests
+        run: mvn -B verify -Pacceptance-tests -pl lightning-engine/api-acceptance-test
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            lightning-engine/api-acceptance-test/target/failsafe-reports
+            lightning-engine/api-acceptance-test/target/surefire-reports
+          retention-days: 14

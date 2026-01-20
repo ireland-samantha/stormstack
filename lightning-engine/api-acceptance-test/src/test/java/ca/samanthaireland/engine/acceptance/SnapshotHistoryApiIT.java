@@ -23,15 +23,16 @@
 
 package ca.samanthaireland.engine.acceptance;
 
+import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
 import ca.samanthaireland.engine.api.resource.adapter.ContainerAdapter;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerClient;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerMatch;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import ca.samanthaireland.engine.api.resource.adapter.dto.HistoryQueryParams;
+import ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto;
+import ca.samanthaireland.engine.api.resource.adapter.dto.MatchHistorySummaryDto;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.Network;
@@ -40,6 +41,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -47,6 +51,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -126,31 +131,15 @@ class SnapshotHistoryApiIT {
                 .build();
         objectMapper = new ObjectMapper();
 
-        // Authenticate to get JWT token
-        bearerToken = authenticate();
+        // Authenticate to get JWT token using AuthAdapter
+        AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
+        bearerToken = auth.login("admin", "admin").token();
 
         // Create client with authentication
         client = EngineClient.builder()
                 .baseUrl(baseUrl)
                 .withBearerToken(bearerToken)
                 .build();
-    }
-
-    private String authenticate() throws Exception {
-        String loginJson = "{\"username\":\"admin\",\"password\":\"admin\"}";
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/auth/login"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(loginJson))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new RuntimeException("Authentication failed: " + response.statusCode() + " - " + response.body());
-        }
-
-        JsonNode tokenResponse = objectMapper.readTree(response.body());
-        return tokenResponse.path("token").asText();
     }
 
     @AfterEach
@@ -166,10 +155,9 @@ class SnapshotHistoryApiIT {
     }
 
     @Test
-    @Disabled("MongoDB persistence not yet integrated with container-scoped matches - requires backend work")
-    @DisplayName("GET /api/history returns summary when persistence is enabled")
-    void historySummaryReturnsCorrectInfo() throws Exception {
-        log.info("=== Starting history summary test ===");
+    @DisplayName("GET /api/containers/{id}/matches/{matchId}/history returns match history summary")
+    void matchHistorySummaryReturnsCorrectInfo() throws Exception {
+        log.info("=== Starting match history summary test ===");
 
         // Create container, start it, and create a match
         ContainerAdapter.ContainerResponse containerResponse = client.containers()
@@ -178,7 +166,6 @@ class SnapshotHistoryApiIT {
                 .withModules(ENTITY_MODULE_NAME, MOVE_MODULE_NAME)
                 .execute();
         containerId = containerResponse.id();
-        // Container is already started since modules were specified
 
         ContainerClient container = client.container(containerId);
         ContainerMatch match = container.createMatch(List.of(ENTITY_MODULE_NAME, MOVE_MODULE_NAME));
@@ -193,132 +180,72 @@ class SnapshotHistoryApiIT {
         // Give MongoDB time to persist
         Thread.sleep(500);
 
-        // Get history summary
-        JsonNode summary = getHistorySummary();
+        // Get match history summary using adapter
+        MatchHistorySummaryDto summary = container.getMatchHistorySummary(createdMatchId);
 
-        assertThat(summary.path("totalSnapshots").asLong())
-                .as("Should have persisted at least 3 snapshots")
-                .isGreaterThanOrEqualTo(3);
-
-        assertThat(summary.path("database").asText())
-                .as("Database name should match config")
-                .isEqualTo("lightningfirefly");
-
-        assertThat(summary.path("collection").asText())
-                .as("Collection name should match config")
-                .isEqualTo("snapshots");
-
-        log.info("=== HISTORY SUMMARY TEST PASSED ===");
-    }
-
-    @Test
-    @Disabled("MongoDB persistence not yet integrated with container-scoped matches - requires backend work")
-    @DisplayName("GET /api/history/{matchId} returns match-specific history")
-    void matchHistoryReturnsCorrectInfo() throws Exception {
-        log.info("=== Starting match history test ===");
-
-        // Create container, start it, and create a match
-        ContainerAdapter.ContainerResponse containerResponse = client.containers()
-                .create()
-                .name("match-history-test")
-                .withModules(ENTITY_MODULE_NAME, MOVE_MODULE_NAME)
-                .execute();
-        containerId = containerResponse.id();
-        // Container is already started since modules were specified
-
-        ContainerClient container = client.container(containerId);
-        ContainerMatch match = container.createMatch(List.of(ENTITY_MODULE_NAME, MOVE_MODULE_NAME));
-        createdMatchId = match.id();
-
-        // Spawn entity and advance ticks
-        container.forMatch(createdMatchId).spawn().forPlayer(1).ofType(100).execute();
-        container.tick();
-        container.tick();
-
-        // Give MongoDB time to persist
-        Thread.sleep(500);
-
-        // Get match history
-        JsonNode matchHistory = getMatchHistory(createdMatchId);
-
-        assertThat(matchHistory.path("matchId").asLong())
+        assertThat(summary.matchId())
                 .as("Match ID should match")
                 .isEqualTo(createdMatchId);
 
-        assertThat(matchHistory.path("snapshotCount").asLong())
-                .as("Should have at least 2 snapshots for this match")
-                .isGreaterThanOrEqualTo(2);
+        assertThat(summary.snapshotCount())
+                .as("Should have persisted at least 3 snapshots")
+                .isGreaterThanOrEqualTo(3);
 
-        assertThat(matchHistory.path("firstTick").asLong())
-                .as("First tick should be >= 0")
-                .isGreaterThanOrEqualTo(0);
-
-        assertThat(matchHistory.path("lastTick").asLong())
-                .as("Last tick should be > first tick")
-                .isGreaterThan(matchHistory.path("firstTick").asLong());
-
-        log.info("=== MATCH HISTORY TEST PASSED ===");
+        log.info("Match history summary: matchId={}, snapshotCount={}, firstTick={}, lastTick={}",
+                summary.matchId(), summary.snapshotCount(), summary.firstTick(), summary.lastTick());
+        log.info("=== MATCH HISTORY SUMMARY TEST PASSED ===");
     }
 
     @Test
-    @Disabled("MongoDB persistence not yet integrated with container-scoped matches - requires backend work")
-    @DisplayName("GET /api/history/{matchId}/snapshots returns snapshots in tick range")
-    void snapshotsInRangeReturnsCorrectData() throws Exception {
-        log.info("=== Starting snapshots in range test ===");
+    @DisplayName("GET history snapshots with tick range query parameters")
+    void historySnapshotsWithQueryParams() throws Exception {
+        log.info("=== Starting history snapshots with query params test ===");
 
         // Create container, start it, and create a match
         ContainerAdapter.ContainerResponse containerResponse = client.containers()
                 .create()
-                .name("snapshots-range-test")
+                .name("history-query-test")
                 .withModules(ENTITY_MODULE_NAME, MOVE_MODULE_NAME)
                 .execute();
         containerId = containerResponse.id();
-        // Container is already started since modules were specified
 
         ContainerClient container = client.container(containerId);
         ContainerMatch match = container.createMatch(List.of(ENTITY_MODULE_NAME, MOVE_MODULE_NAME));
         createdMatchId = match.id();
 
-        // Spawn entity and advance ticks
+        // Spawn entity and advance several ticks
         container.forMatch(createdMatchId).spawn().forPlayer(1).ofType(100).execute();
-
         long tick1 = container.tick();
         long tick2 = container.tick();
         long tick3 = container.tick();
         long tick4 = container.tick();
+        long tick5 = container.tick();
 
         // Give MongoDB time to persist
         Thread.sleep(500);
 
-        // Get snapshots in range
-        JsonNode result = getSnapshotsInRange(createdMatchId, tick1, tick3, 100);
+        // Get history snapshots using adapter with query parameters
+        HistoryQueryParams params = new HistoryQueryParams(tick2, tick4, 100);
+        List<HistorySnapshotDto> snapshots = container.getHistorySnapshots(createdMatchId, params);
 
-        assertThat(result.path("matchId").asLong())
-                .as("Match ID should match")
-                .isEqualTo(createdMatchId);
+        log.info("Got {} snapshots between tick {} and {}", snapshots.size(), tick2, tick4);
 
-        assertThat(result.path("count").asInt())
-                .as("Should return snapshots in the tick range")
-                .isGreaterThanOrEqualTo(1);
+        assertThat(snapshots)
+                .as("Should have at least 1 snapshot in the range")
+                .isNotEmpty();
 
-        JsonNode snapshots = result.path("snapshots");
-        assertThat(snapshots.isArray())
-                .as("Snapshots should be an array")
-                .isTrue();
-
-        // Verify each snapshot has expected structure
-        for (JsonNode snapshot : snapshots) {
-            assertThat(snapshot.has("matchId")).isTrue();
-            assertThat(snapshot.has("tick")).isTrue();
-            assertThat(snapshot.has("timestamp")).isTrue();
-            assertThat(snapshot.has("data")).isTrue();
+        // Verify snapshots are within the requested range
+        for (HistorySnapshotDto snapshot : snapshots) {
+            assertThat(snapshot.matchId()).isEqualTo(createdMatchId);
+            assertThat(snapshot.tick()).isBetween(tick2, tick4);
+            assertThat(snapshot.data()).isNotNull();
         }
 
-        log.info("=== SNAPSHOTS IN RANGE TEST PASSED ===");
+        log.info("=== HISTORY SNAPSHOTS QUERY TEST PASSED ===");
     }
 
     @Test
-    @DisplayName("GET /api/history/{matchId}/snapshots/latest returns most recent snapshots")
+    @DisplayName("GET latest snapshots returns most recent snapshots in descending order")
     void latestSnapshotsReturnsCorrectData() throws Exception {
         log.info("=== Starting latest snapshots test ===");
 
@@ -329,7 +256,6 @@ class SnapshotHistoryApiIT {
                 .withModules(ENTITY_MODULE_NAME, MOVE_MODULE_NAME)
                 .execute();
         containerId = containerResponse.id();
-        // Container is already started since modules were specified
 
         ContainerClient container = client.container(containerId);
         ContainerMatch match = container.createMatch(List.of(ENTITY_MODULE_NAME, MOVE_MODULE_NAME));
@@ -345,23 +271,27 @@ class SnapshotHistoryApiIT {
         // Give MongoDB time to persist
         Thread.sleep(500);
 
-        // Get latest 5 snapshots
-        JsonNode result = getLatestSnapshots(createdMatchId, 5);
+        // Get latest 5 snapshots using adapter
+        List<HistorySnapshotDto> snapshots = container.getLatestHistorySnapshots(createdMatchId, 5);
 
-        assertThat(result.path("count").asInt())
+        log.info("Got {} latest snapshots", snapshots.size());
+
+        assertThat(snapshots)
                 .as("Should return up to 5 latest snapshots")
-                .isLessThanOrEqualTo(5);
+                .hasSizeLessThanOrEqualTo(5);
 
-        JsonNode snapshots = result.path("snapshots");
         if (snapshots.size() > 1) {
             // Verify ordering (should be descending by tick)
             long previousTick = Long.MAX_VALUE;
-            for (JsonNode snapshot : snapshots) {
-                long currentTick = snapshot.path("tick").asLong();
-                assertThat(currentTick)
+            for (HistorySnapshotDto snapshot : snapshots) {
+                assertThat(snapshot.tick())
                         .as("Snapshots should be in descending tick order")
                         .isLessThanOrEqualTo(previousTick);
-                previousTick = currentTick;
+                previousTick = snapshot.tick();
+
+                // Verify structure
+                assertThat(snapshot.matchId()).isEqualTo(createdMatchId);
+                assertThat(snapshot.data()).isNotNull();
             }
         }
 
@@ -439,8 +369,7 @@ class SnapshotHistoryApiIT {
     }
 
     @Test
-    @Disabled("MongoDB persistence not yet integrated with container-scoped matches - requires backend work")
-    @DisplayName("GET /api/history/{matchId}/snapshot/{tick} returns specific snapshot")
+    @DisplayName("GET specific snapshot at tick returns correct data")
     void specificSnapshotReturnsCorrectData() throws Exception {
         log.info("=== Starting specific snapshot test ===");
 
@@ -451,7 +380,6 @@ class SnapshotHistoryApiIT {
                 .withModules(ENTITY_MODULE_NAME, MOVE_MODULE_NAME)
                 .execute();
         containerId = containerResponse.id();
-        // Container is already started since modules were specified
 
         ContainerClient container = client.container(containerId);
         ContainerMatch match = container.createMatch(List.of(ENTITY_MODULE_NAME, MOVE_MODULE_NAME));
@@ -461,104 +389,38 @@ class SnapshotHistoryApiIT {
         container.forMatch(createdMatchId).spawn().forPlayer(1).ofType(100).execute();
         container.tick();
         long targetTick = container.tick();
+        container.tick();
 
         // Give MongoDB time to persist
         Thread.sleep(500);
 
-        // Get specific snapshot
-        JsonNode snapshot = getSpecificSnapshot(createdMatchId, targetTick);
+        // Get specific snapshot using adapter
+        Optional<HistorySnapshotDto> snapshotOpt = container.getHistorySnapshotAtTick(createdMatchId, targetTick);
 
-        assertThat(snapshot.path("matchId").asLong())
+        assertThat(snapshotOpt)
+                .as("Should find snapshot at tick " + targetTick)
+                .isPresent();
+
+        HistorySnapshotDto snapshot = snapshotOpt.get();
+
+        assertThat(snapshot.matchId())
                 .as("Match ID should match")
                 .isEqualTo(createdMatchId);
 
-        assertThat(snapshot.path("tick").asLong())
+        assertThat(snapshot.tick())
                 .as("Tick should match requested tick")
                 .isEqualTo(targetTick);
 
-        assertThat(snapshot.has("data"))
+        assertThat(snapshot.data())
                 .as("Snapshot should have data")
-                .isTrue();
+                .isNotNull();
 
+        log.info("Retrieved snapshot at tick {}: containerId={}, matchId={}",
+                snapshot.tick(), snapshot.containerId(), snapshot.matchId());
         log.info("=== SPECIFIC SNAPSHOT TEST PASSED ===");
     }
 
-    // ========== Helper Methods (using raw HTTP for history API) ==========
-
-    private JsonNode getHistorySummary() throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/containers/" + containerId + "/history"))
-                .GET()
-                .header("Authorization", "Bearer " + bearerToken)
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).as("Get history summary should succeed").isEqualTo(200);
-
-        return objectMapper.readTree(response.body());
-    }
-
-    private JsonNode getMatchHistory(long matchId) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + "/api/containers/" + containerId + "/matches/" + matchId + "/history"))
-                .GET()
-                .header("Authorization", "Bearer " + bearerToken)
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).as("Get match history should succeed").isEqualTo(200);
-
-        return objectMapper.readTree(response.body());
-    }
-
-    private JsonNode getSnapshotsInRange(long matchId, long fromTick, long toTick, int limit)
-            throws IOException, InterruptedException {
-        String url = String.format("%s/api/containers/%d/matches/%d/history/snapshots?fromTick=%d&toTick=%d&limit=%d",
-                baseUrl, containerId, matchId, fromTick, toTick, limit);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET()
-                .header("Authorization", "Bearer " + bearerToken)
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).as("Get snapshots in range should succeed").isEqualTo(200);
-
-        return objectMapper.readTree(response.body());
-    }
-
-    private JsonNode getLatestSnapshots(long matchId, int limit) throws IOException, InterruptedException {
-        String url = String.format("%s/api/containers/%d/matches/%d/history/snapshots/latest?limit=%d",
-                baseUrl, containerId, matchId, limit);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET()
-                .header("Authorization", "Bearer " + bearerToken)
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).as("Get latest snapshots should succeed").isEqualTo(200);
-
-        return objectMapper.readTree(response.body());
-    }
-
-    private JsonNode getSpecificSnapshot(long matchId, long tick) throws IOException, InterruptedException {
-        String url = String.format("%s/api/containers/%d/matches/%d/history/snapshots/%d",
-                baseUrl, containerId, matchId, tick);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET()
-                .header("Authorization", "Bearer " + bearerToken)
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        assertThat(response.statusCode()).as("Get specific snapshot should succeed").isEqualTo(200);
-
-        return objectMapper.readTree(response.body());
-    }
+    // ========== Helper Methods (using raw HTTP for endpoints not in adapter) ==========
 
     private JsonNode getDelta(long matchId, long fromTick, long toTick) throws IOException, InterruptedException {
         String url = String.format("%s/api/containers/%d/matches/%d/snapshots/delta?fromTick=%d&toTick=%d",

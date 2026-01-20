@@ -20,9 +20,8 @@
  * SOFTWARE.
  */
 
-package ca.samanthaireland.engine.internal.ext.module;
+package ca.samanthaireland.engine.auth.module;
 
-import ca.samanthaireland.engine.auth.module.ModuleAuthToken;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.PermissionComponent;
 import ca.samanthaireland.engine.core.store.PermissionLevel;

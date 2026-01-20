@@ -182,6 +182,47 @@ public interface ExecutionContainer {
      */
     ContainerSnapshotOperations snapshots();
 
+    /**
+     * Returns a fluent API for player operations.
+     *
+     * <p>Players are container-scoped - a player created in one container
+     * is not visible to other containers.</p>
+     *
+     * <p>Example usage:
+     * <pre>{@code
+     * // Create a player
+     * Player player = container.players().create();
+     *
+     * // Get all players in this container
+     * List<Player> all = container.players().all();
+     * }</pre>
+     *
+     * @return the player operations interface
+     */
+    ContainerPlayerOperations players();
+
+    /**
+     * Returns a fluent API for session operations.
+     *
+     * <p>Sessions are container-scoped - a session created in one container
+     * is not visible to other containers.</p>
+     *
+     * <p>Example usage:
+     * <pre>{@code
+     * // Create a session (player joins match)
+     * PlayerSession session = container.sessions().create(playerId, matchId);
+     *
+     * // Get all sessions for a match
+     * List<PlayerSession> sessions = container.sessions().forMatch(matchId);
+     *
+     * // Disconnect a player
+     * container.sessions().disconnect(playerId, matchId);
+     * }</pre>
+     *
+     * @return the session operations interface
+     */
+    ContainerSessionOperations sessions();
+
 
     // Note for Claude: Do not add any non-fluent methods to this class.
     /**

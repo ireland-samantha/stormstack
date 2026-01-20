@@ -31,9 +31,10 @@ import ca.samanthaireland.engine.core.exception.EntityNotFoundException;
 import ca.samanthaireland.engine.core.match.Match;
 import ca.samanthaireland.engine.core.match.MatchService;
 import ca.samanthaireland.engine.core.match.Player;
-import ca.samanthaireland.engine.core.match.PlayerMatch;
-import ca.samanthaireland.engine.core.match.PlayerMatchService;
 import ca.samanthaireland.engine.core.match.PlayerService;
+import ca.samanthaireland.engine.core.session.PlayerSession;
+import ca.samanthaireland.engine.core.session.PlayerSessionService;
+import ca.samanthaireland.engine.core.session.SessionStatus;
 import ca.samanthaireland.engine.internal.core.match.InMemoryGameSimulation;
 import ca.samanthaireland.engine.internal.core.command.CommandResolver;
 import ca.samanthaireland.engine.internal.core.snapshot.SnapshotProvider;
@@ -48,6 +49,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -71,7 +73,7 @@ class InMemoryGameSimulationTest {
     private PlayerService playerService;
 
     @Mock
-    private PlayerMatchService playerMatchService;
+    private PlayerSessionService sessionService;
 
     @Mock
     private ModuleManager moduleManager;
@@ -93,7 +95,7 @@ class InMemoryGameSimulationTest {
     @BeforeEach
     void setUp() {
         simulation = new InMemoryGameSimulation(
-                matchService, playerService, playerMatchService,
+                matchService, playerService, sessionService,
                 moduleManager, commandResolver, commandQueue,
                 snapshotProvider, gameLoop);
     }
@@ -242,82 +244,89 @@ class InMemoryGameSimulationTest {
     }
 
     @Nested
-    @DisplayName("player-match operations")
-    class PlayerMatchOperations {
+    @DisplayName("session operations")
+    class SessionOperations {
 
-        @Test
-        @DisplayName("joinMatch should delegate to service")
-        void joinMatchShouldDelegateToService() {
-            PlayerMatch playerMatch = new PlayerMatch(1L, 100L);
-            when(playerMatchService.joinMatch(1L, 100L)).thenReturn(playerMatch);
-
-            simulation.joinMatch(playerMatch);
-
-            verify(playerMatchService).joinMatch(1L, 100L);
+        private PlayerSession createSession(long playerId, long matchId) {
+            Instant now = Instant.now();
+            return new PlayerSession(1L, playerId, matchId, SessionStatus.ACTIVE, now, now, null);
         }
 
         @Test
-        @DisplayName("leaveMatch should check existence and delete")
-        void leaveMatchShouldCheckExistenceAndDelete() {
-            PlayerMatch playerMatch = new PlayerMatch(1L, 100L);
-            when(playerMatchService.isPlayerInMatch(1L, 100L)).thenReturn(true);
+        @DisplayName("joinMatch should delegate to session service")
+        void joinMatchShouldDelegateToSessionService() {
+            PlayerSession session = createSession(1L, 100L);
+            when(sessionService.createSession(1L, 100L)).thenReturn(session);
 
-            simulation.leaveMatch(playerMatch);
+            PlayerSession result = simulation.joinMatch(1L, 100L);
 
-            verify(playerMatchService).isPlayerInMatch(1L, 100L);
-            verify(playerMatchService).leaveMatch(1L, 100L);
+            assertThat(result).isEqualTo(session);
+            verify(sessionService).createSession(1L, 100L);
         }
 
         @Test
-        @DisplayName("leaveMatch non-existent should not call service")
-        void leaveMatchNonExistentShouldNotCallService() {
-            PlayerMatch playerMatch = new PlayerMatch(1L, 100L);
-            when(playerMatchService.isPlayerInMatch(1L, 100L)).thenReturn(false);
+        @DisplayName("leaveMatch should check existence and abandon")
+        void leaveMatchShouldCheckExistenceAndAbandon() {
+            PlayerSession session = createSession(1L, 100L);
+            when(sessionService.findSession(1L, 100L)).thenReturn(Optional.of(session));
 
-            simulation.leaveMatch(playerMatch);
+            simulation.leaveMatch(1L, 100L);
 
-            verify(playerMatchService).isPlayerInMatch(1L, 100L);
-            verify(playerMatchService, never()).leaveMatch(anyLong(), anyLong());
+            verify(sessionService).findSession(1L, 100L);
+            verify(sessionService).abandon(1L, 100L);
         }
 
         @Test
-        @DisplayName("getPlayerMatch should delegate to service")
-        void getPlayerMatchShouldDelegateToService() {
-            PlayerMatch playerMatch = new PlayerMatch(1L, 100L);
-            when(playerMatchService.getPlayerMatch(1L, 100L)).thenReturn(Optional.of(playerMatch));
+        @DisplayName("leaveMatch non-existent should not call abandon")
+        void leaveMatchNonExistentShouldNotCallAbandon() {
+            when(sessionService.findSession(1L, 100L)).thenReturn(Optional.empty());
 
-            Optional<PlayerMatch> result = simulation.getPlayerMatch(1L, 100L);
+            simulation.leaveMatch(1L, 100L);
 
-            assertThat(result).contains(playerMatch);
-            verify(playerMatchService).getPlayerMatch(1L, 100L);
+            verify(sessionService).findSession(1L, 100L);
+            verify(sessionService, never()).abandon(anyLong(), anyLong());
         }
 
         @Test
-        @DisplayName("getPlayerMatchesByMatch should delegate to service")
-        void getPlayerMatchesByMatchShouldDelegateToService() {
-            List<PlayerMatch> playerMatches = List.of(
-                    new PlayerMatch(1L, 100L),
-                    new PlayerMatch(2L, 100L));
-            when(playerMatchService.getPlayersInMatch(100L)).thenReturn(playerMatches);
+        @DisplayName("getSession should delegate to service")
+        void getSessionShouldDelegateToService() {
+            PlayerSession session = createSession(1L, 100L);
+            when(sessionService.findSession(1L, 100L)).thenReturn(Optional.of(session));
 
-            List<PlayerMatch> result = simulation.getPlayerMatchesByMatch(100L);
+            Optional<PlayerSession> result = simulation.getSession(1L, 100L);
 
-            assertThat(result).isEqualTo(playerMatches);
-            verify(playerMatchService).getPlayersInMatch(100L);
+            assertThat(result).contains(session);
+            verify(sessionService).findSession(1L, 100L);
         }
 
         @Test
-        @DisplayName("getPlayerMatchesByPlayer should delegate to service")
-        void getPlayerMatchesByPlayerShouldDelegateToService() {
-            List<PlayerMatch> playerMatches = List.of(
-                    new PlayerMatch(1L, 100L),
-                    new PlayerMatch(1L, 200L));
-            when(playerMatchService.getMatchesForPlayer(1L)).thenReturn(playerMatches);
+        @DisplayName("getSessionsByMatch should delegate to service")
+        void getSessionsByMatchShouldDelegateToService() {
+            List<PlayerSession> sessions = List.of(
+                    createSession(1L, 100L),
+                    createSession(2L, 100L));
+            when(sessionService.findMatchSessions(100L)).thenReturn(sessions);
 
-            List<PlayerMatch> result = simulation.getPlayerMatchesByPlayer(1L);
+            List<PlayerSession> result = simulation.getSessionsByMatch(100L);
 
-            assertThat(result).isEqualTo(playerMatches);
-            verify(playerMatchService).getMatchesForPlayer(1L);
+            assertThat(result).isEqualTo(sessions);
+            verify(sessionService).findMatchSessions(100L);
+        }
+
+        @Test
+        @DisplayName("getSessionsByPlayer should filter all sessions")
+        void getSessionsByPlayerShouldFilterAllSessions() {
+            List<PlayerSession> allSessions = List.of(
+                    createSession(1L, 100L),
+                    createSession(1L, 200L),
+                    createSession(2L, 100L));
+            when(sessionService.findAllSessions()).thenReturn(allSessions);
+
+            List<PlayerSession> result = simulation.getSessionsByPlayer(1L);
+
+            assertThat(result).hasSize(2);
+            assertThat(result).allMatch(s -> s.playerId() == 1L);
+            verify(sessionService).findAllSessions();
         }
     }
 
@@ -339,7 +348,7 @@ class InMemoryGameSimulationTest {
         @DisplayName("installModule with null module manager should not throw")
         void installModuleWithNullModuleManagerShouldNotThrow() {
             InMemoryGameSimulation simWithoutModuleManager = new InMemoryGameSimulation(
-                    matchService, playerService, playerMatchService, null, commandResolver, commandQueue,
+                    matchService, playerService, sessionService, null, commandResolver, commandQueue,
                     snapshotProvider, gameLoop);
 
             simWithoutModuleManager.installModule("/path/to/module.jar");

@@ -30,7 +30,6 @@ import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleResolver;
 import ca.samanthaireland.engine.ext.modules.*;
 import ca.samanthaireland.engine.internal.ext.ai.AIManager;
-import ca.samanthaireland.engine.internal.ext.module.ModuleManagementModuleImpl;
 import ca.samanthaireland.engine.internal.ext.module.ModuleManager;
 import io.quarkus.runtime.Startup;
 import io.quarkus.runtime.StartupEvent;
@@ -63,7 +62,6 @@ public class Bootstrap {
 
     void onStart(@Observes StartupEvent event) {
         // Install core engine modules
-//        moduleManager.installModule(ModuleManagementModuleImpl.class);
         moduleManager.installModule(EntityModuleFactory.class);
         moduleManager.installModule(GridMapModuleFactory.class);
         moduleManager.installModule(RigidBodyModuleFactory.class);

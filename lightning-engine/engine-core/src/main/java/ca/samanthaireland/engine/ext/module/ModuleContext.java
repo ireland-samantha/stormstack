@@ -153,19 +153,8 @@ public interface ModuleContext {
     /**
      * Look up an arbitrary dependency by type.
      *
-     * <p><b>Deprecated:</b> Prefer using the explicit getter methods
-     * ({@link #getEntityComponentStore()}, {@link #getMatchService()}, etc.)
-     * for better compile-time safety and documentation.
-     *
-     * <p>This method is provided for backward compatibility and edge cases
-     * where a module needs a dependency not covered by the explicit methods.
-     *
-     * @param <T> the type of dependency
-     * @param type the class of the dependency to look up
-     * @return the dependency instance, or null if not found
-     * @deprecated Use explicit getter methods instead
+     * @throws
      */
-    @Deprecated
     <T> T getClass(Class<? extends T> type);
 
     /**
