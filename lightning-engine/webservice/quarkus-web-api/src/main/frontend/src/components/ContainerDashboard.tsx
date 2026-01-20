@@ -136,6 +136,12 @@ const ContainerDashboard: React.FC = () => {
       setSelectedAINames([]);
       setSuccess('Container created successfully');
     } catch (err) {
+      // Close dialog and show error in main panel so it doesn't block subsequent interactions
+      setCreateDialogOpen(false);
+      setNewContainerName('');
+      setNewContainerMaxMemoryMb('');
+      setSelectedModuleNames([]);
+      setSelectedAINames([]);
       setLocalError(err instanceof Error ? err.message : 'Failed to create container');
     }
   };

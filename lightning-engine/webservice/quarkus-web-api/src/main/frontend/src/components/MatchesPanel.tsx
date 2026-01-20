@@ -62,6 +62,9 @@ const MatchesPanel: React.FC = () => {
       setSelectedModules([]);
       setSuccess('Match created successfully');
     } catch (err) {
+      // Close dialog and show error in main panel so it doesn't block subsequent interactions
+      setDialogOpen(false);
+      setSelectedModules([]);
       setLocalError(err instanceof Error ? err.message : 'Failed to create match');
     }
   };
@@ -75,6 +78,9 @@ const MatchesPanel: React.FC = () => {
       setDeletingMatchId(null);
       setSuccess('Match deleted successfully');
     } catch (err) {
+      // Close dialog and show error in main panel so it doesn't block subsequent interactions
+      setDeleteDialogOpen(false);
+      setDeletingMatchId(null);
       setLocalError(err instanceof Error ? err.message : 'Failed to delete match');
     }
   };

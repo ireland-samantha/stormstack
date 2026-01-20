@@ -23,6 +23,9 @@
 
 package ca.samanthaireland.engine.api.resource.adapter;
 
+import ca.samanthaireland.engine.api.resource.adapter.dto.HistoryQueryParams;
+import ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto;
+import ca.samanthaireland.engine.api.resource.adapter.dto.MatchHistorySummaryDto;
 import ca.samanthaireland.engine.api.resource.adapter.json.JsonMapper;
 
 import java.io.IOException;
@@ -30,6 +33,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -312,6 +316,43 @@ public interface ContainerAdapter {
          * @param playerId the player ID
          */
         void joinMatch(long matchId, long playerId) throws IOException;
+
+        // ==================== HISTORY OPERATIONS ====================
+
+        /**
+         * Get history summary for a match.
+         *
+         * @param matchId the match ID
+         * @return the history summary
+         */
+        MatchHistorySummaryDto getMatchHistorySummary(long matchId) throws IOException;
+
+        /**
+         * Get historical snapshots for a match.
+         *
+         * @param matchId the match ID
+         * @param params query parameters (tick range, limit)
+         * @return list of historical snapshots
+         */
+        List<HistorySnapshotDto> getHistorySnapshots(long matchId, HistoryQueryParams params) throws IOException;
+
+        /**
+         * Get the latest historical snapshots for a match.
+         *
+         * @param matchId the match ID
+         * @param limit maximum snapshots to return
+         * @return list of latest snapshots (ordered by tick descending)
+         */
+        List<HistorySnapshotDto> getLatestHistorySnapshots(long matchId, int limit) throws IOException;
+
+        /**
+         * Get a specific historical snapshot by tick.
+         *
+         * @param matchId the match ID
+         * @param tick the tick number
+         * @return the snapshot if found
+         */
+        Optional<HistorySnapshotDto> getHistorySnapshotAtTick(long matchId, long tick) throws IOException;
     }
 
     /**
@@ -1041,6 +1082,128 @@ public interface ContainerAdapter {
                     Thread.currentThread().interrupt();
                     throw new IOException("Request interrupted", e);
                 }
+            }
+
+            // ==================== HISTORY OPERATIONS ====================
+
+            @Override
+            public MatchHistorySummaryDto getMatchHistorySummary(long matchId) throws IOException {
+                HttpRequest request = requestBuilder("/matches/" + matchId + "/history")
+                        .GET()
+                        .build();
+
+                try {
+                    HttpResponse<String> response = adapter.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() == 200) {
+                        return parseMatchHistorySummary(response.body());
+                    }
+                    throw new IOException("Get match history summary failed with status: " + response.statusCode() + " - " + response.body());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Request interrupted", e);
+                }
+            }
+
+            @Override
+            public List<HistorySnapshotDto> getHistorySnapshots(long matchId, HistoryQueryParams params) throws IOException {
+                String path = "/matches/" + matchId + "/history/snapshots" +
+                        "?fromTick=" + params.fromTick() +
+                        "&toTick=" + params.toTick() +
+                        "&limit=" + params.limit();
+
+                HttpRequest request = requestBuilder(path)
+                        .GET()
+                        .build();
+
+                try {
+                    HttpResponse<String> response = adapter.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() == 200) {
+                        return parseHistorySnapshotList(response.body());
+                    }
+                    throw new IOException("Get history snapshots failed with status: " + response.statusCode() + " - " + response.body());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Request interrupted", e);
+                }
+            }
+
+            @Override
+            public List<HistorySnapshotDto> getLatestHistorySnapshots(long matchId, int limit) throws IOException {
+                HttpRequest request = requestBuilder("/matches/" + matchId + "/history/snapshots/latest?limit=" + limit)
+                        .GET()
+                        .build();
+
+                try {
+                    HttpResponse<String> response = adapter.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() == 200) {
+                        return parseHistorySnapshotList(response.body());
+                    }
+                    throw new IOException("Get latest history snapshots failed with status: " + response.statusCode() + " - " + response.body());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Request interrupted", e);
+                }
+            }
+
+            @Override
+            public Optional<HistorySnapshotDto> getHistorySnapshotAtTick(long matchId, long tick) throws IOException {
+                HttpRequest request = requestBuilder("/matches/" + matchId + "/history/snapshots/" + tick)
+                        .GET()
+                        .build();
+
+                try {
+                    HttpResponse<String> response = adapter.httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                    if (response.statusCode() == 200) {
+                        return Optional.of(parseHistorySnapshot(response.body()));
+                    } else if (response.statusCode() == 404) {
+                        return Optional.empty();
+                    }
+                    throw new IOException("Get history snapshot failed with status: " + response.statusCode());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Request interrupted", e);
+                }
+            }
+
+            private MatchHistorySummaryDto parseMatchHistorySummary(String json) throws IOException {
+                Map<String, Object> map = JsonMapper.fromJson(json, Map.class);
+                long cId = ((Number) map.get("containerId")).longValue();
+                long mId = ((Number) map.get("matchId")).longValue();
+                long count = ((Number) map.get("snapshotCount")).longValue();
+                long firstTick = map.get("firstTick") != null ? ((Number) map.get("firstTick")).longValue() : -1;
+                long lastTick = map.get("lastTick") != null ? ((Number) map.get("lastTick")).longValue() : -1;
+                Instant firstTs = map.get("firstTimestamp") != null ? Instant.parse((String) map.get("firstTimestamp")) : null;
+                Instant lastTs = map.get("lastTimestamp") != null ? Instant.parse((String) map.get("lastTimestamp")) : null;
+                return new MatchHistorySummaryDto(cId, mId, count, firstTick, lastTick, firstTs, lastTs);
+            }
+
+            @SuppressWarnings("unchecked")
+            private List<HistorySnapshotDto> parseHistorySnapshotList(String json) throws IOException {
+                Map<String, Object> response = JsonMapper.fromJson(json, Map.class);
+                List<Map<String, Object>> snapshots = (List<Map<String, Object>>) response.get("snapshots");
+                List<HistorySnapshotDto> result = new ArrayList<>();
+                if (snapshots != null) {
+                    for (Map<String, Object> snap : snapshots) {
+                        result.add(parseHistorySnapshotFromMap(snap));
+                    }
+                }
+                return result;
+            }
+
+            @SuppressWarnings("unchecked")
+            private HistorySnapshotDto parseHistorySnapshot(String json) throws IOException {
+                Map<String, Object> map = JsonMapper.fromJson(json, Map.class);
+                return parseHistorySnapshotFromMap(map);
+            }
+
+            @SuppressWarnings("unchecked")
+            private HistorySnapshotDto parseHistorySnapshotFromMap(Map<String, Object> map) {
+                long cId = ((Number) map.get("containerId")).longValue();
+                long mId = ((Number) map.get("matchId")).longValue();
+                long tick = ((Number) map.get("tick")).longValue();
+                Instant ts = map.get("timestamp") != null ? Instant.parse((String) map.get("timestamp")) : null;
+                Map<String, Object> data = (Map<String, Object>) map.get("data");
+                return new HistorySnapshotDto(cId, mId, tick, ts, data != null ? data : Map.of());
             }
 
             private ResourceResponse parseResourceResponse(String json) throws IOException {

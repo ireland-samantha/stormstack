@@ -102,6 +102,10 @@ const SessionsPanel: React.FC = () => {
       setSelectedPlayerId(null);
       setSuccess('Session created successfully');
     } catch (err) {
+      // Close dialog and show error in main panel so it doesn't block subsequent interactions
+      setCreateDialogOpen(false);
+      setSelectedMatchId(null);
+      setSelectedPlayerId(null);
       setLocalError(err instanceof Error ? err.message : 'Failed to create session');
     }
   };

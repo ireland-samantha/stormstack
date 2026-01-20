@@ -43,3 +43,4 @@ quarkus-api/modules/
 **/frontend/dist/
 **/resources/META-INF/resources/admin/dashboard/
 *.log
+.DS_Store

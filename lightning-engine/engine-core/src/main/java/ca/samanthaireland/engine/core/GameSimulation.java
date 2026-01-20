@@ -26,8 +26,7 @@ package ca.samanthaireland.engine.core;
 import ca.samanthaireland.engine.core.command.CommandPayload;
 import ca.samanthaireland.engine.core.match.Match;
 import ca.samanthaireland.engine.core.match.Player;
-import ca.samanthaireland.engine.core.match.PlayerMatch;
-import ca.samanthaireland.engine.core.snapshot.Snapshot;
+import ca.samanthaireland.engine.core.session.PlayerSession;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
 
 import java.util.List;
@@ -74,10 +73,10 @@ public interface GameSimulation {
     List<Player> getAllPlayers();
     void deletePlayer(long playerId);
 
-    // PlayerMatch operations
-    void joinMatch(PlayerMatch playerMatch);
-    Optional<PlayerMatch> getPlayerMatch(long playerId, long matchId);
-    List<PlayerMatch> getPlayerMatchesByMatch(long matchId);
-    List<PlayerMatch> getPlayerMatchesByPlayer(long playerId);
-    void leaveMatch(PlayerMatch playerMatch);
+    // Session operations (replaces PlayerMatch)
+    PlayerSession joinMatch(long playerId, long matchId);
+    Optional<PlayerSession> getSession(long playerId, long matchId);
+    List<PlayerSession> getSessionsByMatch(long matchId);
+    List<PlayerSession> getSessionsByPlayer(long playerId);
+    void leaveMatch(long playerId, long matchId);
 }

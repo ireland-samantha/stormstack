@@ -123,29 +123,6 @@ class DefaultInjectorTest {
     }
 
     @Nested
-    @DisplayName("getStoreRequired")
-    class GetStoreRequired {
-
-        @Test
-        @DisplayName("should return registered store")
-        void shouldReturnRegisteredStore() {
-            injector.addClass(EntityComponentStore.class, entityComponentStore);
-
-            EntityComponentStore result = injector.getStoreRequired();
-
-            assertThat(result).isSameAs(entityComponentStore);
-        }
-
-        @Test
-        @DisplayName("should throw when not registered")
-        void shouldThrowWhenNotRegistered() {
-            assertThatThrownBy(() -> injector.getStoreRequired())
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("EntityComponentStore not registered");
-        }
-    }
-
-    @Nested
     @DisplayName("getMatchService")
     class GetMatchService {
 
@@ -272,10 +249,8 @@ class DefaultInjectorTest {
         @Test
         @DisplayName("should return null when not registered")
         void shouldReturnNullWhenNotRegistered() {
-            @SuppressWarnings("deprecation")
-            MatchService result = injector.getClass(MatchService.class);
-
-            assertThat(result).isNull();
+            assertThatThrownBy(() -> injector.getClass(MatchService.class))
+                    .isInstanceOf(RuntimeException.class);
         }
     }
 

@@ -20,18 +20,23 @@
  * SOFTWARE.
  */
 
+package ca.samanthaireland.engine.api.resource.adapter.dto;
 
-package ca.samanthaireland.engine.core.system;
+import java.util.List;
+import java.util.Map;
 
-import ca.samanthaireland.engine.ext.module.EngineModule;
-import ca.samanthaireland.engine.ext.module.Injector;
+/**
+ * DTO representing raw snapshot data as parsed from JSON.
+ * Structure: module name -> component name -> list of numeric values
+ *
+ * @param modules map of module name to module data
+ */
+public record SnapshotDataDto(Map<String, ModuleDataDto> modules) {
 
-public abstract class BaseEngineSystem implements EngineSystem {
-    protected final EngineModule engineModule;
-    protected final Injector injector;
-
-    protected BaseEngineSystem(EngineModule engineModule, Injector injector) {
-        this.engineModule = engineModule;
-        this.injector = injector;
-    }
+    /**
+     * DTO representing a single module's component data.
+     *
+     * @param components map of component name to list of values
+     */
+    public record ModuleDataDto(Map<String, List<Number>> components) {}
 }

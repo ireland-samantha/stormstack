@@ -68,6 +68,41 @@ public class PWSessionsPage {
 
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Connect")).click();
         waitForSuccessAlert();
+        // Wait for alert to auto-dismiss
+        waitForAlertToClose();
+    }
+
+    /**
+     * Creates a session by selecting options by index (0-based).
+     * Useful when the exact option text may vary.
+     *
+     * @param matchIndex index of match to select (0-based)
+     * @param playerIndex index of player to select (0-based)
+     */
+    public void createSessionByIndex(int matchIndex, int playerIndex) {
+        clickCreateSession();
+        page.locator(".MuiDialog-root").waitFor();
+        page.waitForTimeout(500); // Wait for dialog content and data to load
+
+        // Select match by index
+        Locator matchInput = page.getByLabel("Select Match");
+        matchInput.click();
+        page.locator("[role='listbox']").waitFor(new Locator.WaitForOptions().setTimeout(10000));
+        page.waitForTimeout(300);
+        page.getByRole(AriaRole.OPTION).nth(matchIndex).click();
+        page.waitForTimeout(300);
+
+        // Select player by index
+        Locator playerInput = page.getByLabel("Select Player");
+        playerInput.click();
+        page.locator("[role='listbox']").waitFor(new Locator.WaitForOptions().setTimeout(10000));
+        page.waitForTimeout(300);
+        page.getByRole(AriaRole.OPTION).nth(playerIndex).click();
+        page.waitForTimeout(300);
+
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Connect")).click();
+        waitForSuccessAlert();
+        waitForAlertToClose();
     }
 
     /**
@@ -96,6 +131,33 @@ public class PWSessionsPage {
 
         page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName("Connect")).click();
         waitForSuccessAlert();
+        // Wait for alert to auto-dismiss
+        waitForAlertToClose();
+    }
+
+    private void waitForAlertToClose() {
+        // Wait for any visible alert to close
+        Locator alert = page.locator(".MuiAlert-root");
+        try {
+            if (alert.count() > 0 && alert.isVisible()) {
+                alert.waitFor(new Locator.WaitForOptions()
+                        .setState(com.microsoft.playwright.options.WaitForSelectorState.HIDDEN)
+                        .setTimeout(5000));
+            }
+        } catch (Exception e) {
+            // Alert might have already closed
+        }
+        // Also wait for any dialog to close
+        Locator dialog = page.locator(".MuiDialog-root");
+        try {
+            if (dialog.count() > 0 && dialog.isVisible()) {
+                dialog.waitFor(new Locator.WaitForOptions()
+                        .setState(com.microsoft.playwright.options.WaitForSelectorState.HIDDEN)
+                        .setTimeout(5000));
+            }
+        } catch (Exception e) {
+            // Dialog might have already closed
+        }
     }
 
     public int getSessionCount() {
@@ -126,7 +188,24 @@ public class PWSessionsPage {
     }
 
     public void refresh() {
+        // First ensure any open dialog is closed
+        waitForDialogToClose();
         page.locator("button[title='Refresh']").click();
+    }
+
+    private void waitForDialogToClose() {
+        // Press Escape to close any open dialog
+        Locator dialog = page.locator(".MuiDialog-root");
+        if (dialog.count() > 0 && dialog.isVisible()) {
+            page.keyboard().press("Escape");
+            try {
+                dialog.waitFor(new Locator.WaitForOptions()
+                        .setState(com.microsoft.playwright.options.WaitForSelectorState.HIDDEN)
+                        .setTimeout(5000));
+            } catch (Exception e) {
+                // Dialog might have already closed
+            }
+        }
     }
 
     public void waitForSuccessAlert() {
