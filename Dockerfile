@@ -1,10 +1,25 @@
 # ======================
-# Stage 1: Build
+# Stage 1: Build Frontend
+# ======================
+FROM node:22-alpine AS frontend-build
+
+WORKDIR /app/frontend
+COPY lightning-engine/webservice/quarkus-web-api/src/main/frontend/package*.json ./
+RUN npm ci
+COPY lightning-engine/webservice/quarkus-web-api/src/main/frontend/ ./
+# Vite outputs to ../resources/META-INF/resources/admin/dashboard relative to frontend dir
+RUN npm run build
+
+# ======================
+# Stage 2: Build Backend
 # ======================
 FROM maven:3.9-eclipse-temurin-25 AS build
 
 WORKDIR /app
 COPY . .
+
+# Copy built frontend to where Quarkus expects it (vite outputs to /app/resources/... in frontend stage)
+COPY --from=frontend-build /app/resources/META-INF/resources/admin/dashboard/ lightning-engine/webservice/quarkus-web-api/src/main/resources/META-INF/resources/admin/dashboard/
 
 # Generate JWT RSA key pairs (same as gen_secrets.py but without Python dependency)
 # These are required for SmallRye JWT signing/verification
