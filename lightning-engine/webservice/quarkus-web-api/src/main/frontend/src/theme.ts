@@ -20,38 +20,37 @@
  * SOFTWARE.
  */
 
-
-import { createTheme } from '@mui/material/styles';
+import { createTheme } from "@mui/material/styles";
 
 export const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: "dark",
     primary: {
-      main: '#4d9de0',
-      light: '#7ec4f7',
-      dark: '#1b6fb0',
+      main: "#4d9de0",
+      light: "#7ec4f7",
+      dark: "#1b6fb0",
     },
     secondary: {
-      main: '#e15554',
-      light: '#ff8a80',
-      dark: '#a83232',
+      main: "#e15554",
+      light: "#ff8a80",
+      dark: "#a83232",
     },
     success: {
-      main: '#3bb273',
+      main: "#3bb273",
     },
     warning: {
-      main: '#e1bc29',
+      main: "#e1bc29",
     },
     error: {
-      main: '#e15554',
+      main: "#e15554",
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: "#121212",
+      paper: "#1e1e1e",
     },
     text: {
-      primary: '#e0e0e0',
-      secondary: '#9e9e9e',
+      primary: "#e0e0e0",
+      secondary: "#9e9e9e",
     },
   },
   typography: {
@@ -67,28 +66,28 @@ export const theme = createTheme({
     MuiAppBar: {
       styleOverrides: {
         root: {
-          backgroundImage: 'none',
+          backgroundImage: "none",
         },
       },
     },
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          backgroundImage: 'none',
+          backgroundImage: "none",
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          backgroundImage: 'none',
+          backgroundImage: "none",
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundImage: 'none',
+          backgroundImage: "none",
         },
       },
     },

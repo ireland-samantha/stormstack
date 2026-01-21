@@ -49,6 +49,29 @@ public record DeltaSnapshotResponse(
         Set<Long> addedEntities,
         Set<Long> removedEntities,
         int changeCount,
-        double compressionRatio
+        double compressionRatio,
+        String error
 ) {
+    /**
+     * Constructor for successful responses (no error).
+     */
+    public DeltaSnapshotResponse(
+            long matchId,
+            long fromTick,
+            long toTick,
+            Map<String, Map<String, Map<Long, Float>>> changedComponents,
+            Set<Long> addedEntities,
+            Set<Long> removedEntities,
+            int changeCount,
+            double compressionRatio
+    ) {
+        this(matchId, fromTick, toTick, changedComponents, addedEntities, removedEntities, changeCount, compressionRatio, null);
+    }
+
+    /**
+     * Create an error response.
+     */
+    public static DeltaSnapshotResponse error(String message) {
+        return new DeltaSnapshotResponse(-1, 0, 0, Map.of(), Set.of(), Set.of(), 0, 1.0, message);
+    }
 }

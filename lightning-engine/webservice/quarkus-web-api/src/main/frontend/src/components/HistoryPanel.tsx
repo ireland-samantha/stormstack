@@ -20,52 +20,41 @@
  * SOFTWARE.
  */
 
-
-import { useState } from 'react';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  Typography,
-  Box,
-  Chip,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Tooltip,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Divider,
-  Grid,
-  Paper
-} from '@mui/material';
+    Compress as CompressIcon, History as HistoryIcon, Refresh as RefreshIcon, Timeline as TimelineIcon
+} from "@mui/icons-material";
 import {
-  Refresh as RefreshIcon,
-  History as HistoryIcon,
-  Timeline as TimelineIcon,
-  Compress as CompressIcon
-} from '@mui/icons-material';
+    Alert, Box, Card,
+    CardContent,
+    CardHeader, Chip,
+    CircularProgress, Divider,
+    Grid, IconButton, List,
+    ListItem,
+    ListItemButton,
+    ListItemText, Paper, Tooltip, Typography
+} from "@mui/material";
+import { useState } from "react";
+import { useContainerContext } from "../contexts/ContainerContext";
 import {
-  useGetHistorySummaryQuery,
-  useGetMatchHistorySummaryQuery,
-  useGetHistorySnapshotsQuery,
-  useGetDeltaQuery
-} from '../store/api/apiSlice';
+    useGetContainerHistorySnapshotsQuery, useGetContainerHistorySummaryQuery,
+    useGetContainerMatchHistorySummaryQuery, useGetDeltaQuery
+} from "../store/api/apiSlice";
 
 export const HistoryPanel: React.FC = () => {
+  const { selectedContainerId } = useContainerContext();
   const [selectedMatchId, setSelectedMatchId] = useState<number | null>(null);
   const [selectedTick, setSelectedTick] = useState<number | null>(null);
   const [previousTick, setPreviousTick] = useState<number | null>(null);
 
-  // Fetch history summary
+  // Fetch history summary for the selected container
   const {
     data: summary,
     isLoading: summaryLoading,
     error: summaryError,
-    refetch: refetchSummary
-  } = useGetHistorySummaryQuery();
+    refetch: refetchSummary,
+  } = useGetContainerHistorySummaryQuery(selectedContainerId!, {
+    skip: !selectedContainerId,
+  });
 
   // Fetch match summaries for all matches
   // We'll use a map approach - fetch each match summary individually
@@ -75,22 +64,30 @@ export const HistoryPanel: React.FC = () => {
   const {
     data: snapshots = [],
     isLoading: snapshotsLoading,
-    refetch: refetchSnapshots
-  } = useGetHistorySnapshotsQuery(
-    { matchId: selectedMatchId!, limit: 100 },
-    { skip: !selectedMatchId }
+    refetch: refetchSnapshots,
+  } = useGetContainerHistorySnapshotsQuery(
+    {
+      containerId: selectedContainerId!,
+      matchId: selectedMatchId!,
+      limit: 100,
+    },
+    { skip: !selectedContainerId || !selectedMatchId },
   );
 
   // Fetch delta between ticks
-  const {
-    data: delta
-  } = useGetDeltaQuery(
-    { matchId: selectedMatchId!, fromTick: previousTick!, toTick: selectedTick! },
-    { skip: !selectedMatchId || previousTick === null || selectedTick === null }
+  const { data: delta } = useGetDeltaQuery(
+    {
+      matchId: selectedMatchId!,
+      fromTick: previousTick!,
+      toTick: selectedTick!,
+    },
+    {
+      skip: !selectedMatchId || previousTick === null || selectedTick === null,
+    },
   );
 
   const loading = summaryLoading || snapshotsLoading;
-  const error = summaryError ? 'Failed to load history summary' : null;
+  const error = summaryError ? "Failed to load history summary" : null;
 
   const handleMatchSelect = (matchId: number) => {
     setSelectedMatchId(matchId);
@@ -112,8 +109,28 @@ export const HistoryPanel: React.FC = () => {
     }
   };
 
+  if (!selectedContainerId) {
+    return (
+      <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+        <CardHeader title="Snapshot History" avatar={<HistoryIcon />} />
+        <CardContent
+          sx={{
+            flexGrow: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Typography color="text.secondary" textAlign="center">
+            Select a container to view snapshot history
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title="Snapshot History"
         avatar={<HistoryIcon />}
@@ -125,7 +142,7 @@ export const HistoryPanel: React.FC = () => {
           </Tooltip>
         }
       />
-      <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <CardContent sx={{ flexGrow: 1, overflow: "auto" }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -133,14 +150,14 @@ export const HistoryPanel: React.FC = () => {
         )}
 
         {loading && !summary && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
             <CircularProgress />
           </Box>
         )}
 
         {summary && (
           <>
-            <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
               <Chip
                 icon={<TimelineIcon />}
                 label={`${summary.totalSnapshots} Total Snapshots`}
@@ -158,14 +175,18 @@ export const HistoryPanel: React.FC = () => {
               {/* Match List */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper variant="outlined" sx={{ height: 300 }}>
-                  <Typography variant="subtitle2" sx={{ p: 1.5, bgcolor: 'background.default' }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ p: 1.5, bgcolor: "background.default" }}
+                  >
                     Match History
                   </Typography>
                   <Divider />
-                  <List dense sx={{ overflow: 'auto', maxHeight: 250 }}>
+                  <List dense sx={{ overflow: "auto", maxHeight: 250 }}>
                     {matchIds.map((matchId) => (
                       <MatchListItem
                         key={matchId}
+                        containerId={selectedContainerId!}
                         matchId={matchId}
                         selected={selectedMatchId === matchId}
                         onClick={() => handleMatchSelect(matchId)}
@@ -175,7 +196,7 @@ export const HistoryPanel: React.FC = () => {
                       <ListItem>
                         <ListItemText
                           secondary="No matches found"
-                          sx={{ textAlign: 'center' }}
+                          sx={{ textAlign: "center" }}
                         />
                       </ListItem>
                     )}
@@ -186,11 +207,15 @@ export const HistoryPanel: React.FC = () => {
               {/* Snapshot List */}
               <Grid size={{ xs: 12, md: 6 }}>
                 <Paper variant="outlined" sx={{ height: 300 }}>
-                  <Typography variant="subtitle2" sx={{ p: 1.5, bgcolor: 'background.default' }}>
-                    Snapshots {selectedMatchId ? `(Match ${selectedMatchId})` : ''}
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ p: 1.5, bgcolor: "background.default" }}
+                  >
+                    Snapshots{" "}
+                    {selectedMatchId ? `(Match ${selectedMatchId})` : ""}
                   </Typography>
                   <Divider />
-                  <List dense sx={{ overflow: 'auto', maxHeight: 250 }}>
+                  <List dense sx={{ overflow: "auto", maxHeight: 250 }}>
                     {snapshots.map((snapshot) => (
                       <ListItem key={snapshot.tick} disablePadding>
                         <ListItemButton
@@ -208,7 +233,7 @@ export const HistoryPanel: React.FC = () => {
                       <ListItem>
                         <ListItemText
                           secondary="No snapshots found"
-                          sx={{ textAlign: 'center' }}
+                          sx={{ textAlign: "center" }}
                         />
                       </ListItem>
                     )}
@@ -216,7 +241,7 @@ export const HistoryPanel: React.FC = () => {
                       <ListItem>
                         <ListItemText
                           secondary="Select a match to view snapshots"
-                          sx={{ textAlign: 'center' }}
+                          sx={{ textAlign: "center" }}
                         />
                       </ListItem>
                     )}
@@ -228,13 +253,15 @@ export const HistoryPanel: React.FC = () => {
             {/* Delta Information */}
             {delta && (
               <Paper variant="outlined" sx={{ mt: 2, p: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <Box
+                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}
+                >
                   <CompressIcon color="primary" />
                   <Typography variant="subtitle1" fontWeight="medium">
                     Delta Compression
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                   <Chip
                     label={`Tick ${delta.fromTick} → ${delta.toTick}`}
                     variant="outlined"
@@ -272,13 +299,22 @@ export const HistoryPanel: React.FC = () => {
 
 // Separate component for match list items to use individual RTK Query hooks
 interface MatchListItemProps {
+  containerId: number;
   matchId: number;
   selected: boolean;
   onClick: () => void;
 }
 
-const MatchListItem: React.FC<MatchListItemProps> = ({ matchId, selected, onClick }) => {
-  const { data: matchSummary } = useGetMatchHistorySummaryQuery(matchId);
+const MatchListItem: React.FC<MatchListItemProps> = ({
+  containerId,
+  matchId,
+  selected,
+  onClick,
+}) => {
+  const { data: matchSummary } = useGetContainerMatchHistorySummaryQuery({
+    containerId,
+    matchId,
+  });
 
   return (
     <ListItem disablePadding>
@@ -288,7 +324,7 @@ const MatchListItem: React.FC<MatchListItemProps> = ({ matchId, selected, onClic
           secondary={
             matchSummary
               ? `${matchSummary.snapshotCount} snapshots (tick ${matchSummary.firstTick}-${matchSummary.lastTick})`
-              : 'Loading...'
+              : "Loading..."
           }
         />
       </ListItemButton>

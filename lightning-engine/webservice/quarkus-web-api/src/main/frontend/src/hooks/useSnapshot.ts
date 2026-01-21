@@ -20,9 +20,8 @@
  * SOFTWARE.
  */
 
-
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { WebSocketClient, SnapshotData } from '../services/websocket';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { SnapshotData, WebSocketClient } from "../services/websocket";
 
 interface UseSnapshotResult {
   snapshot: SnapshotData | null;
@@ -31,14 +30,17 @@ interface UseSnapshotResult {
   requestSnapshot: () => void;
 }
 
-export function useSnapshot(containerId: number, matchId: number): UseSnapshotResult {
+export function useSnapshot(
+  containerId: number,
+  matchId: number,
+): UseSnapshotResult {
   const [snapshot, setSnapshot] = useState<SnapshotData | null>(null);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const clientRef = useRef<WebSocketClient | null>(null);
 
   useEffect(() => {
-    const wsUrl = window.location.origin.replace(/^http/, 'ws');
+    const wsUrl = window.location.origin.replace(/^http/, "ws");
     const client = new WebSocketClient(wsUrl, containerId, matchId);
     clientRef.current = client;
 

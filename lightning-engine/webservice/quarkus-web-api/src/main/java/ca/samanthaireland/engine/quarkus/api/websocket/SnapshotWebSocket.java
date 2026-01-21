@@ -20,22 +20,28 @@
  * SOFTWARE.
  */
 
-
 package ca.samanthaireland.engine.quarkus.api.websocket;
 
-import ca.samanthaireland.engine.quarkus.api.dto.SnapshotResponse;
-import ca.samanthaireland.engine.core.container.ContainerManager;
-import ca.samanthaireland.engine.core.container.ExecutionContainer;
-import ca.samanthaireland.engine.core.snapshot.Snapshot;
-import io.quarkus.websockets.next.*;
-import io.smallrye.mutiny.Multi;
+import java.time.Duration;
+import java.util.Map;
+
 import jakarta.inject.Inject;
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.Map;
+import io.quarkus.websockets.next.OnClose;
+import io.quarkus.websockets.next.OnOpen;
+import io.quarkus.websockets.next.OnTextMessage;
+import io.quarkus.websockets.next.PathParam;
+import io.quarkus.websockets.next.WebSocket;
+import io.quarkus.websockets.next.WebSocketConnection;
+import io.smallrye.mutiny.Multi;
+
+import ca.samanthaireland.engine.core.container.ContainerManager;
+import ca.samanthaireland.engine.core.snapshot.Snapshot;
+import ca.samanthaireland.engine.quarkus.api.dto.SnapshotResponse;
 
 /**
  * WebSocket endpoint for streaming container-scoped match snapshots.
@@ -50,6 +56,15 @@ public class SnapshotWebSocket {
     @Inject
     ContainerManager containerManager;
 
+    @Inject
+    WebSocketConnection connection;
+
+    @Inject
+    WebSocketAuthenticator authenticator;
+
+    @Inject
+    WebSocketMetrics metrics;
+
     @ConfigProperty(name = "simulation.snapshot.broadcast-interval-ms", defaultValue = "100")
     long broadcastIntervalMs;
 
@@ -57,9 +72,24 @@ public class SnapshotWebSocket {
     public Multi<SnapshotResponse> onOpen(
             @PathParam String containerId,
             @PathParam String matchId) {
+        // Use shared authenticator with view roles (allows view_only users)
+        WebSocketAuthenticator.AuthResult authResult =
+                authenticator.authenticate(connection, WebSocketAuthenticator.VIEW_ROLES);
+
+        if (authResult instanceof WebSocketAuthenticator.AuthResult.Failure failure) {
+            metrics.authFailure();
+            log.warn("Snapshot WebSocket auth failed: {}", failure.message());
+            return Multi.createFrom().item(SnapshotResponse.error(failure.message()));
+        }
+
+        WebSocketAuthenticator.AuthResult.Success success =
+                (WebSocketAuthenticator.AuthResult.Success) authResult;
+
         long cId = Long.parseLong(containerId);
         long mId = Long.parseLong(matchId);
-        log.debug("Snapshot WebSocket opened for container {} match {}", cId, mId);
+        metrics.connectionOpened();
+        log.debug("Snapshot WebSocket opened for container {} match {} by user '{}'",
+                cId, mId, success.subject());
 
         return Multi.createFrom().ticks().every(Duration.ofMillis(broadcastIntervalMs))
                 .map(tick -> createSnapshotResponse(cId, mId));
@@ -79,6 +109,7 @@ public class SnapshotWebSocket {
     public void onClose(
             @PathParam String containerId,
             @PathParam String matchId) {
+        metrics.connectionClosed();
         log.debug("Snapshot WebSocket closed for container {} match {}", containerId, matchId);
     }
 

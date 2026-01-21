@@ -22,9 +22,12 @@
 
 package ca.samanthaireland.engine.acceptance.fixture;
 
+import ca.samanthaireland.engine.api.resource.adapter.CommandWebSocketClient;
+import ca.samanthaireland.engine.api.resource.adapter.ContainerCommands;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerClient;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -177,6 +180,43 @@ public class TestEngineContainer {
         try {
             client.containers().deleteContainer(containerId);
         } catch (Exception ignored) {}
+    }
+
+    /**
+     * Get a CommandWebSocketClient connected to this container.
+     *
+     * <p>The client should be closed when done to release resources.
+     *
+     * @param token JWT token for authentication (must have admin or command_manager role)
+     * @return a connected CommandWebSocketClient
+     * @throws IOException if connection fails
+     */
+    public CommandWebSocketClient commandWebSocket(String token) throws IOException {
+        return CommandWebSocketClient.connect(client.baseUrl(), containerId, token);
+    }
+
+    /**
+     * Get WebSocket-based match commands for a specific match.
+     *
+     * <p>Commands sent through this interface use WebSocket instead of HTTP.
+     *
+     * @param matchId the match ID
+     * @param wsClient the WebSocket client (must be connected)
+     * @return match commands interface using WebSocket
+     */
+    public ContainerCommands.MatchCommands forMatchWs(long matchId, CommandWebSocketClient wsClient) {
+        return new ContainerCommands.WebSocketMatchCommands(wsClient, matchId);
+    }
+
+    /**
+     * Get WebSocket-based match commands for a TestMatch.
+     *
+     * @param match the test match
+     * @param wsClient the WebSocket client (must be connected)
+     * @return match commands interface using WebSocket
+     */
+    public ContainerCommands.MatchCommands forMatchWs(TestMatch match, CommandWebSocketClient wsClient) {
+        return forMatchWs(match.id(), wsClient);
     }
 
     /**

@@ -29,6 +29,14 @@ import java.util.Map;
 public record SnapshotResponse(
         long matchId,
         long tick,
-        Map<String, Map<String, List<Float>>> data
+        Map<String, Map<String, List<Float>>> data,
+        String error
 ) {
+    public SnapshotResponse(long matchId, long tick, Map<String, Map<String, List<Float>>> data) {
+        this(matchId, tick, data, null);
+    }
+
+    public static SnapshotResponse error(String message) {
+        return new SnapshotResponse(0, 0, Map.of(), message);
+    }
 }

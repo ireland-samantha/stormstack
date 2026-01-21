@@ -3,11 +3,11 @@
  * MIT License
  */
 
-import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import { setupListeners } from '@reduxjs/toolkit/query';
-import { apiSlice } from './api/apiSlice';
-import authReducer from './slices/authSlice';
-import uiReducer from './slices/uiSlice';
+import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import { apiSlice } from "./api/apiSlice";
+import authReducer from "./slices/authSlice";
+import uiReducer from "./slices/uiSlice";
 
 const rootReducer = combineReducers({
   [apiSlice.reducerPath]: apiSlice.reducer,
@@ -33,4 +33,4 @@ export const store = setupStore();
 
 export type RootState = ReturnType<typeof rootReducer>;
 export type AppStore = ReturnType<typeof setupStore>;
-export type AppDispatch = AppStore['dispatch'];
+export type AppDispatch = AppStore["dispatch"];

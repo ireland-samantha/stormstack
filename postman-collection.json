@@ -348,6 +348,11 @@
       ]
     },
     {
+      "name": "WebSocket",
+      "description": "WebSocket endpoints for real-time communication.\n\n## Command WebSocket\n\n**Endpoint:** `ws://localhost:8080/containers/{containerId}/commands?token=xxx`\n\n**Authentication:** JWT token passed as query parameter. Must have `admin` or `command_manager` role.\n\n**Protocol:** Binary Protocol Buffer messages.\n\n### Message Types\n\n**CommandRequest:**\n```json\n{\n  \"commandName\": \"spawn\",\n  \"matchId\": 1,\n  \"playerId\": 1,\n  \"spawn\": {\n    \"entityType\": 100,\n    \"positionX\": 10,\n    \"positionY\": 20\n  }\n}\n```\n\n**CommandResponse:**\n```json\n{\n  \"status\": \"ACCEPTED\",\n  \"commandName\": \"spawn\",\n  \"message\": \"Command accepted\"\n}\n```\n\n### Supported Payloads\n\n- `spawn`: Create entity (entityType, positionX, positionY)\n- `attachRigidBody`: Add physics (entityId, mass, positionX, positionY, velocityX, velocityY)\n- `attachSprite`: Add sprite (entityId, resourceId, width, height, visible)\n- `generic`: Custom params (stringParams, longParams, doubleParams, boolParams)\n\n## Snapshot WebSocket\n\n**Endpoint:** `ws://localhost:8080/ws/containers/{containerId}/snapshots/{matchId}`\n\nReceives JSON snapshots after each tick.",
+      "item": []
+    },
+    {
       "name": "Workflows",
       "description": "Common multi-step operations",
       "item": [

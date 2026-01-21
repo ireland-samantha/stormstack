@@ -165,11 +165,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Protocol Buffers -->
+        <!-- Shared Protocol Buffers -->
         <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>3.25.1</version>
+            <groupId>ca.samanthaireland</groupId>
+            <artifactId>api-proto</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!-- MongoDB for snapshot persistence -->
@@ -288,21 +288,6 @@
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     </systemPropertyVariables>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.6.1</version>
-                <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:3.25.1:exe:${os.detected.classifier}</protocArtifact>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <!-- Copy module JARs to modules directory for runtime loading -->
             <plugin>

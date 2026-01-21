@@ -20,39 +20,42 @@
  * SOFTWARE.
  */
 
+import { Button as MuiButton } from "@mui/material";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+import { render } from "../test/testUtils";
 
-import { describe, it, expect, vi } from 'vitest';
-import { screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { render } from '../test/testUtils';
-import { Button as MuiButton } from '@mui/material';
-
-describe('MUI Button', () => {
-  it('renders with text', () => {
+describe("MUI Button", () => {
+  it("renders with text", () => {
     render(<MuiButton>Click me</MuiButton>);
-    expect(screen.getByRole('button', { name: /click me/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /click me/i }),
+    ).toBeInTheDocument();
   });
 
-  it('handles click events', async () => {
+  it("handles click events", async () => {
     const user = userEvent.setup();
     const handleClick = vi.fn();
 
     render(<MuiButton onClick={handleClick}>Click me</MuiButton>);
 
-    await user.click(screen.getByRole('button'));
+    await user.click(screen.getByRole("button"));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 
-  it('can be disabled', () => {
+  it("can be disabled", () => {
     render(<MuiButton disabled>Disabled</MuiButton>);
-    expect(screen.getByRole('button')).toBeDisabled();
+    expect(screen.getByRole("button")).toBeDisabled();
   });
 
-  it('renders with different variants', () => {
-    const { rerender } = render(<MuiButton variant="contained">Contained</MuiButton>);
-    expect(screen.getByRole('button')).toHaveClass('MuiButton-contained');
+  it("renders with different variants", () => {
+    const { rerender } = render(
+      <MuiButton variant="contained">Contained</MuiButton>,
+    );
+    expect(screen.getByRole("button")).toHaveClass("MuiButton-contained");
 
     rerender(<MuiButton variant="outlined">Outlined</MuiButton>);
-    expect(screen.getByRole('button')).toHaveClass('MuiButton-outlined');
+    expect(screen.getByRole("button")).toHaveClass("MuiButton-outlined");
   });
 });

@@ -3,25 +3,34 @@
  * MIT License
  */
 
-import { useState, useMemo } from 'react';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, IconButton, Button, Chip, CircularProgress, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, Autocomplete, Tabs, Tab,
-  Stack, FormControl, InputLabel, Select, MenuItem, Divider
-} from '@mui/material';
+    Cable as WebSocketIcon, Code as CodeIcon,
+    Dns as ContainerIcon,
+    FilterList as FilterIcon, Refresh as RefreshIcon, Send as SendIcon
+} from "@mui/icons-material";
 import {
-  Send as SendIcon, Refresh as RefreshIcon, Code as CodeIcon,
-  Dns as ContainerIcon, FilterList as FilterIcon
-} from '@mui/icons-material';
-import { CommandParameter } from '../services/api';
+    Alert, Autocomplete, Box, Button,
+    Chip,
+    CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Paper, Select, Stack, Switch, Tab, Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow, Tabs, TextField, Tooltip, Typography
+} from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCommandWebSocket } from "../hooks/useCommandWebSocket";
+import { CommandParameter } from "../services/api";
+import { CommandResponse } from "../services/commandWebSocket";
 import {
-  useGetContainerCommandsQuery,
-  useSendCommandToContainerMutation,
-  useGetContainerQuery,
-} from '../store/api/apiSlice';
-import { useAppSelector } from '../store/hooks';
-import CommandForm, { buildInitialValues, detectFieldType, getDefaultValue } from './CommandForm';
+    useGetContainerCommandsQuery, useGetContainerQuery, useSendCommandToContainerMutation
+} from "../store/api/apiSlice";
+import { useAppSelector } from "../store/hooks";
+import CommandForm, {
+    buildInitialValues,
+    detectFieldType,
+    getDefaultValue
+} from "./CommandForm";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -49,9 +58,11 @@ interface CommandData {
  * Generates a JSON template from command parameters.
  * Creates placeholder values based on parameter types.
  */
-export function generateParameterTemplate(parameters?: CommandParameter[]): string {
+export function generateParameterTemplate(
+  parameters?: CommandParameter[],
+): string {
   if (!parameters || parameters.length === 0) {
-    return '{}';
+    return "{}";
   }
 
   const template: Record<string, unknown> = {};
@@ -63,35 +74,102 @@ export function generateParameterTemplate(parameters?: CommandParameter[]): stri
 }
 
 const CommandsPanel: React.FC = () => {
-  const selectedContainerId = useAppSelector((state) => state.ui.selectedContainerId);
+  const selectedContainerId = useAppSelector(
+    (state) => state.ui.selectedContainerId,
+  );
 
-  const { data: selectedContainer } = useGetContainerQuery(selectedContainerId!, {
+  const { data: selectedContainer } = useGetContainerQuery(
+    selectedContainerId!,
+    {
+      skip: !selectedContainerId,
+    },
+  );
+
+  const {
+    data: commands = [],
+    isLoading,
+    error: fetchError,
+    refetch,
+  } = useGetContainerCommandsQuery(selectedContainerId!, {
     skip: !selectedContainerId,
   });
 
-  const { data: commands = [], isLoading, error: fetchError, refetch } = useGetContainerCommandsQuery(
-    selectedContainerId!,
-    { skip: !selectedContainerId }
-  );
-
-  const [sendCommand] = useSendCommandToContainerMutation();
+  const [sendCommandRest] = useSendCommandToContainerMutation();
 
   const [localError, setLocalError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
 
+  // WebSocket mode toggle
+  const [useWebSocket, setUseWebSocket] = useState(true);
+
+  // WebSocket command hook
+  const handleWsResponse = useCallback((response: CommandResponse) => {
+    if (response.status === "ACCEPTED") {
+      setSuccess(`Command "${response.commandName}" sent via WebSocket`);
+    } else if (response.status === "ERROR") {
+      setLocalError(`WebSocket error: ${response.message}`);
+    }
+  }, []);
+
+  const handleWsError = useCallback((error: Error) => {
+    setLocalError(`WebSocket error: ${error.message}`);
+  }, []);
+
+  const {
+    isConnected: wsConnected,
+    isConnecting: wsConnecting,
+    error: wsError,
+    sendCommand: sendCommandWs,
+    connect: connectWs,
+    disconnect: disconnectWs,
+  } = useCommandWebSocket({
+    containerId: selectedContainerId,
+    onResponse: handleWsResponse,
+    onError: handleWsError,
+  });
+
+  // Auto-connect WebSocket when container is selected and WebSocket mode is enabled
+  useEffect(() => {
+    if (
+      useWebSocket &&
+      selectedContainerId &&
+      selectedContainer?.status === "RUNNING" &&
+      !wsConnected &&
+      !wsConnecting
+    ) {
+      connectWs();
+    }
+  }, [
+    useWebSocket,
+    selectedContainerId,
+    selectedContainer?.status,
+    wsConnected,
+    wsConnecting,
+    connectWs,
+  ]);
+
+  // Disconnect when switching to REST mode
+  useEffect(() => {
+    if (!useWebSocket && wsConnected) {
+      disconnectWs();
+    }
+  }, [useWebSocket, wsConnected, disconnectWs]);
+
   // Module filter
-  const [selectedModule, setSelectedModule] = useState<string>('all');
+  const [selectedModule, setSelectedModule] = useState<string>("all");
 
   // Send dialog state
   const [sendDialogOpen, setSendDialogOpen] = useState(false);
-  const [selectedCommand, setSelectedCommand] = useState<CommandData | null>(null);
+  const [selectedCommand, setSelectedCommand] = useState<CommandData | null>(
+    null,
+  );
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
 
   // Extract unique modules from commands
   const modules = useMemo(() => {
     const moduleSet = new Set<string>();
-    commands.forEach(cmd => {
+    commands.forEach((cmd) => {
       if (cmd.module) {
         moduleSet.add(cmd.module);
       }
@@ -101,10 +179,10 @@ const CommandsPanel: React.FC = () => {
 
   // Filter commands by selected module
   const filteredCommands = useMemo(() => {
-    if (selectedModule === 'all') {
+    if (selectedModule === "all") {
       return commands;
     }
-    return commands.filter(cmd => cmd.module === selectedModule);
+    return commands.filter((cmd) => cmd.module === selectedModule);
   }, [commands, selectedModule]);
 
   const handleOpenSendDialog = (command: CommandData) => {
@@ -126,28 +204,48 @@ const CommandsPanel: React.FC = () => {
     if (!selectedCommand || !selectedContainerId) return;
 
     try {
-      await sendCommand({
-        containerId: selectedContainerId,
-        body: { commandName: selectedCommand.name, parameters: formValues }
-      }).unwrap();
-      setSuccess(`Command "${selectedCommand.name}" sent to container ${selectedContainer?.name}`);
+      if (useWebSocket && wsConnected) {
+        // Send via WebSocket
+        const matchId =
+          typeof formValues.matchId === "number" ? formValues.matchId : 0;
+        const playerId =
+          typeof formValues.playerId === "number" ? formValues.playerId : 0;
+        await sendCommandWs(
+          selectedCommand.name,
+          matchId,
+          playerId,
+          formValues,
+        );
+        // Success is handled by the WebSocket response listener
+      } else {
+        // Send via REST API
+        await sendCommandRest({
+          containerId: selectedContainerId,
+          body: { commandName: selectedCommand.name, parameters: formValues },
+        }).unwrap();
+        setSuccess(
+          `Command "${selectedCommand.name}" sent to container ${selectedContainer?.name}`,
+        );
+      }
       setSendDialogOpen(false);
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to send command');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to send command",
+      );
     }
   };
 
   const getParameterSummary = (params?: CommandParameter[]) => {
-    if (!params || params.length === 0) return 'No parameters';
-    return params.map(p => `${p.name}: ${p.type}`).join(', ');
+    if (!params || params.length === 0) return "No parameters";
+    return params.map((p) => `${p.name}: ${p.type}`).join(", ");
   };
 
-  const error = localError || (fetchError ? 'Failed to fetch commands' : null);
+  const error = localError || (fetchError ? "Failed to fetch commands" : null);
 
   if (!selectedContainerId || !selectedContainer) {
     return (
-      <Paper sx={{ p: 4, textAlign: 'center' }}>
-        <ContainerIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+      <Paper sx={{ p: 4, textAlign: "center" }}>
+        <ContainerIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
         <Typography variant="h6" color="text.secondary" gutterBottom>
           No Container Selected
         </Typography>
@@ -159,15 +257,28 @@ const CommandsPanel: React.FC = () => {
   }
 
   if (isLoading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
     <Box>
       {/* Header with container context */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 3,
+        }}
+      >
         <Box>
-          <Typography variant="h4" fontWeight={700}>Commands</Typography>
+          <Typography variant="h4" fontWeight={700}>
+            Commands
+          </Typography>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
             <Chip
               icon={<ContainerIcon />}
@@ -179,23 +290,89 @@ const CommandsPanel: React.FC = () => {
             <Chip
               label={selectedContainer.status}
               size="small"
-              color={selectedContainer.status === 'RUNNING' ? 'success' : 'default'}
+              color={
+                selectedContainer.status === "RUNNING" ? "success" : "default"
+              }
             />
             <Chip
               label={`${commands.length} commands`}
               size="small"
               variant="outlined"
             />
+            <Tooltip
+              title={
+                useWebSocket
+                  ? wsConnected
+                    ? "WebSocket connected"
+                    : wsConnecting
+                      ? "Connecting..."
+                      : "WebSocket disconnected"
+                  : "Using REST API"
+              }
+            >
+              <Chip
+                icon={<WebSocketIcon />}
+                label={
+                  useWebSocket
+                    ? wsConnected
+                      ? "WS"
+                      : wsConnecting
+                        ? "..."
+                        : "WS Off"
+                    : "REST"
+                }
+                size="small"
+                color={useWebSocket && wsConnected ? "success" : "default"}
+                variant="outlined"
+              />
+            </Tooltip>
           </Stack>
         </Box>
-        <IconButton onClick={() => refetch()} title="Refresh"><RefreshIcon /></IconButton>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <FormControlLabel
+            control={
+              <Switch
+                checked={useWebSocket}
+                onChange={(e) => setUseWebSocket(e.target.checked)}
+                size="small"
+              />
+            }
+            label="WebSocket"
+            sx={{ mr: 1 }}
+          />
+          <IconButton onClick={() => refetch()} title="Refresh">
+            <RefreshIcon />
+          </IconButton>
+        </Stack>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
+      {wsError && useWebSocket && (
+        <Alert severity="warning" sx={{ mb: 2 }} onClose={() => {}}>
+          WebSocket: {wsError}. Commands will be sent via REST API.
+        </Alert>
+      )}
+
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setLocalError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+      {success && (
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setSuccess(null)}
+        >
+          {success}
+        </Alert>
+      )}
 
       {/* Warning if container not running */}
-      {selectedContainer.status !== 'RUNNING' && (
+      {selectedContainer.status !== "RUNNING" && (
         <Alert severity="warning" sx={{ mb: 2 }}>
           Container is not running. Start the container to send commands.
         </Alert>
@@ -208,7 +385,7 @@ const CommandsPanel: React.FC = () => {
 
       <TabPanel value={tabValue} index={0}>
         {/* Module Filter */}
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 2 }}>
           <FilterIcon color="action" />
           <FormControl size="small" sx={{ minWidth: 200 }}>
             <InputLabel>Filter by Module</InputLabel>
@@ -219,20 +396,20 @@ const CommandsPanel: React.FC = () => {
             >
               <MenuItem value="all">All Modules ({commands.length})</MenuItem>
               <Divider />
-              {modules.map(mod => (
+              {modules.map((mod) => (
                 <MenuItem key={mod} value={mod}>
-                  {mod} ({commands.filter(c => c.module === mod).length})
+                  {mod} ({commands.filter((c) => c.module === mod).length})
                 </MenuItem>
               ))}
-              {commands.some(c => !c.module) && (
+              {commands.some((c) => !c.module) && (
                 <MenuItem value="">
-                  No Module ({commands.filter(c => !c.module).length})
+                  No Module ({commands.filter((c) => !c.module).length})
                 </MenuItem>
               )}
             </Select>
           </FormControl>
-          {selectedModule !== 'all' && (
-            <Button size="small" onClick={() => setSelectedModule('all')}>
+          {selectedModule !== "all" && (
+            <Button size="small" onClick={() => setSelectedModule("all")}>
               Clear Filter
             </Button>
           )}
@@ -252,10 +429,12 @@ const CommandsPanel: React.FC = () => {
               {filteredCommands.map((command) => (
                 <TableRow key={command.name} hover>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <CodeIcon fontSize="small" color="primary" />
                       <Box>
-                        <Typography sx={{ fontFamily: 'monospace', fontWeight: 500 }}>
+                        <Typography
+                          sx={{ fontFamily: "monospace", fontWeight: 500 }}
+                        >
                           {command.name}
                         </Typography>
                         {command.description && (
@@ -267,7 +446,11 @@ const CommandsPanel: React.FC = () => {
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
+                    >
                       {getParameterSummary(command.parameters)}
                     </Typography>
                   </TableCell>
@@ -278,10 +461,12 @@ const CommandsPanel: React.FC = () => {
                         size="small"
                         variant="outlined"
                         onClick={() => setSelectedModule(command.module!)}
-                        sx={{ cursor: 'pointer' }}
+                        sx={{ cursor: "pointer" }}
                       />
                     ) : (
-                      <Typography variant="body2" color="text.secondary">-</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        -
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell align="right">
@@ -290,7 +475,7 @@ const CommandsPanel: React.FC = () => {
                       variant="contained"
                       startIcon={<SendIcon />}
                       onClick={() => handleOpenSendDialog(command)}
-                      disabled={selectedContainer.status !== 'RUNNING'}
+                      disabled={selectedContainer.status !== "RUNNING"}
                     >
                       Send
                     </Button>
@@ -302,7 +487,7 @@ const CommandsPanel: React.FC = () => {
                   <TableCell colSpan={4} align="center">
                     <Typography color="text.secondary" sx={{ py: 2 }}>
                       {commands.length === 0
-                        ? 'No commands available'
+                        ? "No commands available"
                         : `No commands found for module "${selectedModule}"`}
                     </Typography>
                   </TableCell>
@@ -315,10 +500,12 @@ const CommandsPanel: React.FC = () => {
 
       <TabPanel value={tabValue} index={1}>
         <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>Send Command to Container</Typography>
+          <Typography variant="h6" gutterBottom>
+            Send Command to Container
+          </Typography>
 
           {/* Module filter for command selection */}
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
             <FormControl size="small" sx={{ minWidth: 150 }}>
               <InputLabel>Module</InputLabel>
               <Select
@@ -331,8 +518,10 @@ const CommandsPanel: React.FC = () => {
                 }}
               >
                 <MenuItem value="all">All</MenuItem>
-                {modules.map(mod => (
-                  <MenuItem key={mod} value={mod}>{mod}</MenuItem>
+                {modules.map((mod) => (
+                  <MenuItem key={mod} value={mod}>
+                    {mod}
+                  </MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -342,11 +531,16 @@ const CommandsPanel: React.FC = () => {
               value={selectedCommand}
               onChange={(_, v) => handleCommandSelect(v)}
               sx={{ flex: 1 }}
-              renderInput={(params) => <TextField {...params} label="Command" size="small" />}
+              renderInput={(params) => (
+                <TextField {...params} label="Command" size="small" />
+              )}
               renderOption={(props, option) => (
                 <li {...props} key={option.name}>
                   <Box>
-                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontFamily: "monospace" }}
+                    >
                       {option.name}
                     </Typography>
                     {option.description && (
@@ -363,21 +557,25 @@ const CommandsPanel: React.FC = () => {
           {selectedCommand && (
             <>
               <Divider sx={{ my: 2 }} />
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                gutterBottom
+              >
                 Parameters for {selectedCommand.name}
               </Typography>
               <CommandForm
                 parameters={selectedCommand.parameters || []}
                 values={formValues}
                 onChange={setFormValues}
-                disabled={selectedContainer.status !== 'RUNNING'}
+                disabled={selectedContainer.status !== "RUNNING"}
               />
               <Box sx={{ mt: 3 }}>
                 <Button
                   variant="contained"
                   startIcon={<SendIcon />}
                   onClick={handleSendCommand}
-                  disabled={selectedContainer.status !== 'RUNNING'}
+                  disabled={selectedContainer.status !== "RUNNING"}
                   fullWidth
                 >
                   Send {selectedCommand.name} to {selectedContainer.name}
@@ -387,7 +585,10 @@ const CommandsPanel: React.FC = () => {
           )}
 
           {!selectedCommand && (
-            <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+            <Typography
+              color="text.secondary"
+              sx={{ py: 2, textAlign: "center" }}
+            >
               Select a command to configure and send
             </Typography>
           )}
@@ -395,11 +596,20 @@ const CommandsPanel: React.FC = () => {
       </TabPanel>
 
       {/* Send Command Dialog */}
-      <Dialog open={sendDialogOpen} onClose={() => setSendDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={sendDialogOpen}
+        onClose={() => setSendDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle sx={{ pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <CodeIcon color="primary" />
-            <Typography variant="h6" component="span" sx={{ fontFamily: 'monospace' }}>
+            <Typography
+              variant="h6"
+              component="span"
+              sx={{ fontFamily: "monospace" }}
+            >
               {selectedCommand?.name}
             </Typography>
           </Box>
@@ -411,14 +621,15 @@ const CommandsPanel: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mb: 2 }}>
-            Command will be sent to container "{selectedContainer.name}" and executed on the next tick.
+            Command will be sent to container "{selectedContainer.name}" and
+            executed on the next tick.
           </Alert>
 
           <CommandForm
             parameters={selectedCommand?.parameters || []}
             values={formValues}
             onChange={setFormValues}
-            disabled={selectedContainer.status !== 'RUNNING'}
+            disabled={selectedContainer.status !== "RUNNING"}
           />
         </DialogContent>
         <DialogActions>
@@ -427,7 +638,7 @@ const CommandsPanel: React.FC = () => {
             onClick={handleSendCommand}
             variant="contained"
             startIcon={<SendIcon />}
-            disabled={selectedContainer.status !== 'RUNNING'}
+            disabled={selectedContainer.status !== "RUNNING"}
           >
             Send Command
           </Button>

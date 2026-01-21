@@ -23,23 +23,31 @@
 
 package ca.samanthaireland.engine.quarkus.api.websocket;
 
+import java.time.Duration;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
+import jakarta.inject.Inject;
+
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.quarkus.websockets.next.OnClose;
+import io.quarkus.websockets.next.OnOpen;
+import io.quarkus.websockets.next.OnTextMessage;
+import io.quarkus.websockets.next.PathParam;
+import io.quarkus.websockets.next.WebSocket;
+import io.quarkus.websockets.next.WebSocketConnection;
+import io.smallrye.mutiny.Multi;
+
 import ca.samanthaireland.engine.core.container.ContainerManager;
 import ca.samanthaireland.engine.core.container.ExecutionContainer;
 import ca.samanthaireland.engine.core.snapshot.DeltaCompressionService;
 import ca.samanthaireland.engine.core.snapshot.DeltaSnapshot;
 import ca.samanthaireland.engine.core.snapshot.Snapshot;
 import ca.samanthaireland.engine.quarkus.api.dto.DeltaSnapshotResponse;
-import io.quarkus.websockets.next.*;
-import io.smallrye.mutiny.Multi;
-import jakarta.inject.Inject;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Duration;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * WebSocket endpoint for streaming container-scoped delta snapshots.
@@ -61,6 +69,12 @@ public class DeltaSnapshotWebSocket {
     @Inject
     DeltaCompressionService deltaCompressionService;
 
+    @Inject
+    WebSocketAuthenticator authenticator;
+
+    @Inject
+    WebSocketMetrics metrics;
+
     @ConfigProperty(name = "simulation.snapshot.broadcast-interval-ms", defaultValue = "100")
     long broadcastIntervalMs;
 
@@ -72,11 +86,26 @@ public class DeltaSnapshotWebSocket {
             WebSocketConnection connection,
             @PathParam String containerId,
             @PathParam String matchId) {
+        // Use shared authenticator with view roles (allows view_only users)
+        WebSocketAuthenticator.AuthResult authResult =
+                authenticator.authenticate(connection, WebSocketAuthenticator.VIEW_ROLES);
+
+        if (authResult instanceof WebSocketAuthenticator.AuthResult.Failure failure) {
+            metrics.authFailure();
+            log.warn("Delta WebSocket auth failed: {}", failure.message());
+            return Multi.createFrom().item(DeltaSnapshotResponse.error(failure.message()));
+        }
+
+        WebSocketAuthenticator.AuthResult.Success success =
+                (WebSocketAuthenticator.AuthResult.Success) authResult;
+
         long cId = Long.parseLong(containerId);
         long mId = Long.parseLong(matchId);
         String connectionId = connection.id();
 
-        log.debug("Delta WebSocket opened for container {} match {} with connection {}", cId, mId, connectionId);
+        metrics.connectionOpened();
+        log.debug("Delta WebSocket opened for container {} match {} by user '{}' with connection {}",
+                cId, mId, success.subject(), connectionId);
 
         // Initialize state for this connection
         connectionStates.put(connectionId, new SnapshotState(null, -1));
@@ -92,6 +121,7 @@ public class DeltaSnapshotWebSocket {
             @PathParam String matchId) {
         String connectionId = connection.id();
         connectionStates.remove(connectionId);
+        metrics.connectionClosed();
         log.debug("Delta WebSocket closed for container {} match {} with connection {}", containerId, matchId, connectionId);
     }
 

@@ -7,11 +7,23 @@ info:
     ## Overview
 
     The engine uses a tick-based simulation model:
-    1. **Commands** are queued via POST requests
+    1. **Commands** are queued via POST requests or WebSocket
     2. **Tick** advances process commands and run all module systems
     3. **Snapshots** return the current ECS state
 
-    For real-time updates, connect via WebSocket at `ws://localhost:8080/snapshots/{matchId}`.
+    ## WebSocket Endpoints
+
+    ### Snapshot Streaming
+    Connect via WebSocket at `ws://localhost:8080/ws/containers/{containerId}/snapshots/{matchId}` for real-time updates.
+
+    ### Command WebSocket (Recommended for high-performance)
+    Connect via WebSocket at `ws://localhost:8080/containers/{containerId}/commands?token=xxx` to submit commands using Protocol Buffers.
+
+    **Authentication:** JWT token passed as query parameter (must have `admin` or `command_manager` role).
+
+    **Protocol:** Binary Protocol Buffer messages (`CommandRequest`/`CommandResponse`).
+
+    See `api-proto/src/main/proto/command.proto` for message definitions.
 
   version: 1.0.0
   license:
@@ -26,6 +38,18 @@ tags:
     description: Tick control and playback
   - name: Commands
     description: Queue commands for execution
+  - name: WebSocket
+    description: |
+      WebSocket endpoints for real-time communication.
+
+      **Command WebSocket:** `ws://host/containers/{id}/commands?token=xxx`
+      - Authentication via JWT query parameter
+      - Binary Protocol Buffer messages
+      - Requires `admin` or `command_manager` role
+
+      **Snapshot WebSocket:** `ws://host/ws/containers/{id}/snapshots/{matchId}`
+      - JSON snapshot streaming
+      - No authentication required
   - name: Matches
     description: Game instance management
   - name: Snapshots

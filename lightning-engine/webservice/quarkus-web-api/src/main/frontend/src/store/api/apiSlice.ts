@@ -3,48 +3,30 @@
  * MIT License
  */
 
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type {
-  ContainerData,
-  CreateContainerRequest,
-  ContainerStatsData,
-  MatchData,
-  UserData,
-  CreateUserRequest,
-  RoleData,
-  CreateRoleRequest,
-  PlayerData,
-  PlayerMatchData,
-  SessionData,
-  CommandData,
-  ModuleData,
-  AIData,
-  ResourceData,
-  SnapshotData,
-  HistorySummary,
-  MatchHistorySummary,
-  LoginResponse,
-  DeltaSnapshotData,
-} from '../../services/api';
+    AIData, CommandData, ContainerData, ContainerStatsData, CreateContainerRequest, CreateRoleRequest, CreateUserRequest, DeltaSnapshotData, HistorySummary, LoginResponse, MatchData, MatchHistorySummary, ModuleData, PlayerData,
+    PlayerMatchData, ResourceData, RoleData, SessionData, SnapshotData, UserData
+} from "../../services/api";
 
 // Re-export types for convenience
 export type {
-  ContainerData,
-  CreateContainerRequest,
-  ContainerStatsData,
-  MatchData,
-  UserData,
-  CreateUserRequest,
-  RoleData,
-  CreateRoleRequest,
-  PlayerData,
-  PlayerMatchData,
-  SessionData,
-  CommandData,
-  ModuleData,
-  AIData,
-  ResourceData,
-  SnapshotData,
+    ContainerData,
+    CreateContainerRequest,
+    ContainerStatsData,
+    MatchData,
+    UserData,
+    CreateUserRequest,
+    RoleData,
+    CreateRoleRequest,
+    PlayerData,
+    PlayerMatchData,
+    SessionData,
+    CommandData,
+    ModuleData,
+    AIData,
+    ResourceData,
+    SnapshotData,
 };
 
 interface CreateMatchRequest {
@@ -62,152 +44,171 @@ interface EnqueueCommandRequest {
 // Use full URL for MSW compatibility in tests
 const getBaseUrl = () => {
   // In browser, use relative path; in tests/SSR, use full URL
-  if (typeof window !== 'undefined' && window.location && window.location.origin !== 'null') {
-    return window.location.origin + '/api';
+  if (
+    typeof window !== "undefined" &&
+    window.location &&
+    window.location.origin !== "null"
+  ) {
+    return window.location.origin + "/api";
   }
-  return 'http://localhost/api';
+  return "http://localhost/api";
 };
 
 export const apiSlice = createApi({
-  reducerPath: 'api',
+  reducerPath: "api",
   baseQuery: fetchBaseQuery({
     baseUrl: getBaseUrl(),
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem("authToken");
       if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        headers.set("Authorization", `Bearer ${token}`);
       }
       return headers;
     },
   }),
   tagTypes: [
-    'Container',
-    'Match',
-    'User',
-    'Role',
-    'Player',
-    'Session',
-    'Command',
-    'Module',
-    'AI',
-    'Resource',
-    'Snapshot',
-    'History',
+    "Container",
+    "Match",
+    "User",
+    "Role",
+    "Player",
+    "Session",
+    "Command",
+    "Module",
+    "AI",
+    "Resource",
+    "Snapshot",
+    "History",
   ],
   endpoints: (builder) => ({
     // =========================================================================
     // AUTH ENDPOINTS
     // =========================================================================
-    login: builder.mutation<LoginResponse, { username: string; password: string }>({
+    login: builder.mutation<
+      LoginResponse,
+      { username: string; password: string }
+    >({
       query: (credentials) => ({
-        url: '/auth/login',
-        method: 'POST',
+        url: "/auth/login",
+        method: "POST",
         body: credentials,
       }),
     }),
 
     getCurrentUser: builder.query<UserData, void>({
-      query: () => '/auth/me',
-      providesTags: ['User'],
+      query: () => "/auth/me",
+      providesTags: ["User"],
     }),
 
     // =========================================================================
     // CONTAINER ENDPOINTS
     // =========================================================================
     getContainers: builder.query<ContainerData[], void>({
-      query: () => '/containers',
+      query: () => "/containers",
       providesTags: (result) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'Container' as const, id })), { type: 'Container', id: 'LIST' }]
-          : [{ type: 'Container', id: 'LIST' }],
+          ? [
+              ...result.map(({ id }) => ({ type: "Container" as const, id })),
+              { type: "Container", id: "LIST" },
+            ]
+          : [{ type: "Container", id: "LIST" }],
     }),
 
     getContainer: builder.query<ContainerData, number>({
       query: (id) => `/containers/${id}`,
-      providesTags: (_, __, id) => [{ type: 'Container', id }],
+      providesTags: (_, __, id) => [{ type: "Container", id }],
     }),
 
     createContainer: builder.mutation<ContainerData, CreateContainerRequest>({
       query: (body) => ({
-        url: '/containers',
-        method: 'POST',
+        url: "/containers",
+        method: "POST",
         body,
       }),
-      invalidatesTags: [{ type: 'Container', id: 'LIST' }],
+      invalidatesTags: [{ type: "Container", id: "LIST" }],
     }),
 
     deleteContainer: builder.mutation<void, number>({
       query: (id) => ({
         url: `/containers/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Container', id }, { type: 'Container', id: 'LIST' }],
+      invalidatesTags: (_, __, id) => [
+        { type: "Container", id },
+        { type: "Container", id: "LIST" },
+      ],
     }),
 
     startContainer: builder.mutation<ContainerData, number>({
       query: (id) => ({
         url: `/containers/${id}/start`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Container', id }],
+      invalidatesTags: (_, __, id) => [{ type: "Container", id }],
     }),
 
     stopContainer: builder.mutation<ContainerData, number>({
       query: (id) => ({
         url: `/containers/${id}/stop`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Container', id }],
+      invalidatesTags: (_, __, id) => [{ type: "Container", id }],
     }),
 
     pauseContainer: builder.mutation<ContainerData, number>({
       query: (id) => ({
         url: `/containers/${id}/pause`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Container', id }],
+      invalidatesTags: (_, __, id) => [{ type: "Container", id }],
     }),
 
     resumeContainer: builder.mutation<ContainerData, number>({
       query: (id) => ({
         url: `/containers/${id}/resume`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Container', id }],
+      invalidatesTags: (_, __, id) => [{ type: "Container", id }],
     }),
 
     advanceContainerTick: builder.mutation<{ tick: number }, number>({
       query: (id) => ({
         url: `/containers/${id}/tick`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Container', id }, { type: 'Snapshot' }],
+      invalidatesTags: (_, __, id) => [
+        { type: "Container", id },
+        { type: "Snapshot" },
+      ],
     }),
 
-    playContainer: builder.mutation<ContainerData, { id: number; intervalMs?: number }>({
+    playContainer: builder.mutation<
+      ContainerData,
+      { id: number; intervalMs?: number }
+    >({
       query: ({ id, intervalMs = 16 }) => ({
         url: `/containers/${id}/play?intervalMs=${intervalMs}`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, { id }) => [{ type: 'Container', id }],
+      invalidatesTags: (_, __, { id }) => [{ type: "Container", id }],
     }),
 
     stopContainerAutoAdvance: builder.mutation<ContainerData, number>({
       query: (id) => ({
         url: `/containers/${id}/stop-auto`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Container', id }],
+      invalidatesTags: (_, __, id) => [{ type: "Container", id }],
     }),
 
     getContainerTick: builder.query<{ tick: number }, number>({
       query: (id) => `/containers/${id}/tick`,
-      providesTags: (_, __, id) => [{ type: 'Container', id }],
+      providesTags: (_, __, id) => [{ type: "Container", id }],
     }),
 
     getContainerStats: builder.query<ContainerStatsData, number>({
       query: (id) => `/containers/${id}/stats`,
-      providesTags: (_, __, id) => [{ type: 'Container', id: `STATS_${id}` }],
+      providesTags: (_, __, id) => [{ type: "Container", id: `STATS_${id}` }],
     }),
 
     // =========================================================================
@@ -218,33 +219,39 @@ export const apiSlice = createApi({
       providesTags: (result, _, containerId) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: 'Match' as const, id })),
-              { type: 'Match', id: `CONTAINER_${containerId}` },
+              ...result.map(({ id }) => ({ type: "Match" as const, id })),
+              { type: "Match", id: `CONTAINER_${containerId}` },
             ]
-          : [{ type: 'Match', id: `CONTAINER_${containerId}` }],
+          : [{ type: "Match", id: `CONTAINER_${containerId}` }],
     }),
 
-    createMatchInContainer: builder.mutation<MatchData, { containerId: number; body: CreateMatchRequest }>({
+    createMatchInContainer: builder.mutation<
+      MatchData,
+      { containerId: number; body: CreateMatchRequest }
+    >({
       query: ({ containerId, body }) => ({
         url: `/containers/${containerId}/matches`,
-        method: 'POST',
+        method: "POST",
         body,
       }),
       invalidatesTags: (_, __, { containerId }) => [
-        { type: 'Match', id: `CONTAINER_${containerId}` },
-        { type: 'Container', id: containerId },
+        { type: "Match", id: `CONTAINER_${containerId}` },
+        { type: "Container", id: containerId },
       ],
     }),
 
-    deleteMatchFromContainer: builder.mutation<void, { containerId: number; matchId: number }>({
+    deleteMatchFromContainer: builder.mutation<
+      void,
+      { containerId: number; matchId: number }
+    >({
       query: ({ containerId, matchId }) => ({
         url: `/containers/${containerId}/matches/${matchId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
       invalidatesTags: (_, __, { containerId, matchId }) => [
-        { type: 'Match', id: matchId },
-        { type: 'Match', id: `CONTAINER_${containerId}` },
-        { type: 'Container', id: containerId },
+        { type: "Match", id: matchId },
+        { type: "Match", id: `CONTAINER_${containerId}` },
+        { type: "Container", id: containerId },
       ],
     }),
 
@@ -252,52 +259,67 @@ export const apiSlice = createApi({
     // USER ENDPOINTS
     // =========================================================================
     getUsers: builder.query<UserData[], void>({
-      query: () => '/auth/users',
+      query: () => "/auth/users",
       providesTags: (result) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'User' as const, id })), { type: 'User', id: 'LIST' }]
-          : [{ type: 'User', id: 'LIST' }],
+          ? [
+              ...result.map(({ id }) => ({ type: "User" as const, id })),
+              { type: "User", id: "LIST" },
+            ]
+          : [{ type: "User", id: "LIST" }],
     }),
 
     createUser: builder.mutation<UserData, CreateUserRequest>({
       query: (body) => ({
-        url: '/auth/users',
-        method: 'POST',
+        url: "/auth/users",
+        method: "POST",
         body,
       }),
-      invalidatesTags: [{ type: 'User', id: 'LIST' }],
+      invalidatesTags: [{ type: "User", id: "LIST" }],
     }),
 
-    updateUserRoles: builder.mutation<UserData, { userId: number; roles: string[] }>({
+    updateUserRoles: builder.mutation<
+      UserData,
+      { userId: number; roles: string[] }
+    >({
       query: ({ userId, roles }) => ({
         url: `/auth/users/${userId}/roles`,
-        method: 'PUT',
+        method: "PUT",
         body: { roles },
       }),
-      invalidatesTags: (_, __, { userId }) => [{ type: 'User', id: userId }],
+      invalidatesTags: (_, __, { userId }) => [{ type: "User", id: userId }],
     }),
 
     deleteUser: builder.mutation<void, number>({
       query: (id) => ({
         url: `/auth/users/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'User', id }, { type: 'User', id: 'LIST' }],
+      invalidatesTags: (_, __, id) => [
+        { type: "User", id },
+        { type: "User", id: "LIST" },
+      ],
     }),
 
-    setUserEnabled: builder.mutation<UserData, { userId: number; enabled: boolean }>({
+    setUserEnabled: builder.mutation<
+      UserData,
+      { userId: number; enabled: boolean }
+    >({
       query: ({ userId, enabled }) => ({
         url: `/auth/users/${userId}/enabled`,
-        method: 'PUT',
+        method: "PUT",
         body: { enabled },
       }),
-      invalidatesTags: (_, __, { userId }) => [{ type: 'User', id: userId }],
+      invalidatesTags: (_, __, { userId }) => [{ type: "User", id: userId }],
     }),
 
-    updateUserPassword: builder.mutation<void, { userId: number; password: string }>({
+    updateUserPassword: builder.mutation<
+      void,
+      { userId: number; password: string }
+    >({
       query: ({ userId, password }) => ({
         url: `/auth/users/${userId}/password`,
-        method: 'PUT',
+        method: "PUT",
         body: { password },
       }),
     }),
@@ -306,46 +328,58 @@ export const apiSlice = createApi({
     // ROLE ENDPOINTS
     // =========================================================================
     getRoles: builder.query<RoleData[], void>({
-      query: () => '/auth/roles',
+      query: () => "/auth/roles",
       providesTags: (result) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'Role' as const, id })), { type: 'Role', id: 'LIST' }]
-          : [{ type: 'Role', id: 'LIST' }],
+          ? [
+              ...result.map(({ id }) => ({ type: "Role" as const, id })),
+              { type: "Role", id: "LIST" },
+            ]
+          : [{ type: "Role", id: "LIST" }],
     }),
 
     createRole: builder.mutation<RoleData, CreateRoleRequest>({
       query: (body) => ({
-        url: '/auth/roles',
-        method: 'POST',
+        url: "/auth/roles",
+        method: "POST",
         body,
       }),
-      invalidatesTags: [{ type: 'Role', id: 'LIST' }],
+      invalidatesTags: [{ type: "Role", id: "LIST" }],
     }),
 
     deleteRole: builder.mutation<void, number>({
       query: (id) => ({
         url: `/auth/roles/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Role', id }, { type: 'Role', id: 'LIST' }],
+      invalidatesTags: (_, __, id) => [
+        { type: "Role", id },
+        { type: "Role", id: "LIST" },
+      ],
     }),
 
-    updateRoleDescription: builder.mutation<RoleData, { roleId: number; description: string }>({
+    updateRoleDescription: builder.mutation<
+      RoleData,
+      { roleId: number; description: string }
+    >({
       query: ({ roleId, description }) => ({
         url: `/auth/roles/${roleId}/description`,
-        method: 'PUT',
+        method: "PUT",
         body: { description },
       }),
-      invalidatesTags: (_, __, { roleId }) => [{ type: 'Role', id: roleId }],
+      invalidatesTags: (_, __, { roleId }) => [{ type: "Role", id: roleId }],
     }),
 
-    updateRoleIncludes: builder.mutation<RoleData, { roleId: number; includes: string[] }>({
+    updateRoleIncludes: builder.mutation<
+      RoleData,
+      { roleId: number; includes: string[] }
+    >({
       query: ({ roleId, includes }) => ({
         url: `/auth/roles/${roleId}/includes`,
-        method: 'PUT',
+        method: "PUT",
         body: { includes },
       }),
-      invalidatesTags: (_, __, { roleId }) => [{ type: 'Role', id: roleId }],
+      invalidatesTags: (_, __, { roleId }) => [{ type: "Role", id: roleId }],
     }),
 
     // =========================================================================
@@ -356,36 +390,48 @@ export const apiSlice = createApi({
       providesTags: (result, _, containerId) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: 'Player' as const, id })),
-              { type: 'Player', id: `CONTAINER_${containerId}` },
+              ...result.map(({ id }) => ({ type: "Player" as const, id })),
+              { type: "Player", id: `CONTAINER_${containerId}` },
             ]
-          : [{ type: 'Player', id: `CONTAINER_${containerId}` }],
+          : [{ type: "Player", id: `CONTAINER_${containerId}` }],
     }),
 
-    createPlayerInContainer: builder.mutation<PlayerData, { containerId: number; id?: number }>({
+    createPlayerInContainer: builder.mutation<
+      PlayerData,
+      { containerId: number; id?: number }
+    >({
       query: ({ containerId, id }) => ({
         url: `/containers/${containerId}/players`,
-        method: 'POST',
+        method: "POST",
         body: { id },
       }),
-      invalidatesTags: (_, __, { containerId }) => [{ type: 'Player', id: `CONTAINER_${containerId}` }],
-    }),
-
-    deletePlayerInContainer: builder.mutation<void, { containerId: number; playerId: number }>({
-      query: ({ containerId, playerId }) => ({
-        url: `/containers/${containerId}/players/${playerId}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: (_, __, { containerId, playerId }) => [
-        { type: 'Player', id: playerId },
-        { type: 'Player', id: `CONTAINER_${containerId}` },
+      invalidatesTags: (_, __, { containerId }) => [
+        { type: "Player", id: `CONTAINER_${containerId}` },
       ],
     }),
 
-    getPlayersInMatch: builder.query<PlayerMatchData[], { containerId: number; matchId: number }>({
-      query: ({ containerId, matchId }) => `/containers/${containerId}/matches/${matchId}/players`,
+    deletePlayerInContainer: builder.mutation<
+      void,
+      { containerId: number; playerId: number }
+    >({
+      query: ({ containerId, playerId }) => ({
+        url: `/containers/${containerId}/players/${playerId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_, __, { containerId, playerId }) => [
+        { type: "Player", id: playerId },
+        { type: "Player", id: `CONTAINER_${containerId}` },
+      ],
+    }),
+
+    getPlayersInMatch: builder.query<
+      PlayerMatchData[],
+      { containerId: number; matchId: number }
+    >({
+      query: ({ containerId, matchId }) =>
+        `/containers/${containerId}/matches/${matchId}/players`,
       providesTags: (_, __, { containerId, matchId }) => [
-        { type: 'Player', id: `MATCH_${containerId}_${matchId}` },
+        { type: "Player", id: `MATCH_${containerId}_${matchId}` },
       ],
     }),
 
@@ -397,10 +443,10 @@ export const apiSlice = createApi({
       providesTags: (result, _, containerId) =>
         result
           ? [
-              ...result.map(({ id }) => ({ type: 'Session' as const, id })),
-              { type: 'Session', id: `CONTAINER_${containerId}` },
+              ...result.map(({ id }) => ({ type: "Session" as const, id })),
+              { type: "Session", id: `CONTAINER_${containerId}` },
             ]
-          : [{ type: 'Session', id: `CONTAINER_${containerId}` }],
+          : [{ type: "Session", id: `CONTAINER_${containerId}` }],
     }),
 
     connectSessionInContainer: builder.mutation<
@@ -409,10 +455,12 @@ export const apiSlice = createApi({
     >({
       query: ({ containerId, matchId, playerId }) => ({
         url: `/containers/${containerId}/matches/${matchId}/sessions`,
-        method: 'POST',
+        method: "POST",
         body: { playerId },
       }),
-      invalidatesTags: (_, __, { containerId }) => [{ type: 'Session', id: `CONTAINER_${containerId}` }],
+      invalidatesTags: (_, __, { containerId }) => [
+        { type: "Session", id: `CONTAINER_${containerId}` },
+      ],
     }),
 
     disconnectSessionInContainer: builder.mutation<
@@ -421,9 +469,11 @@ export const apiSlice = createApi({
     >({
       query: ({ containerId, matchId, playerId }) => ({
         url: `/containers/${containerId}/matches/${matchId}/sessions/${playerId}/disconnect`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, { containerId }) => [{ type: 'Session', id: `CONTAINER_${containerId}` }],
+      invalidatesTags: (_, __, { containerId }) => [
+        { type: "Session", id: `CONTAINER_${containerId}` },
+      ],
     }),
 
     reconnectSessionInContainer: builder.mutation<
@@ -432,9 +482,11 @@ export const apiSlice = createApi({
     >({
       query: ({ containerId, matchId, playerId }) => ({
         url: `/containers/${containerId}/matches/${matchId}/sessions/${playerId}/reconnect`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, { containerId }) => [{ type: 'Session', id: `CONTAINER_${containerId}` }],
+      invalidatesTags: (_, __, { containerId }) => [
+        { type: "Session", id: `CONTAINER_${containerId}` },
+      ],
     }),
 
     abandonSessionInContainer: builder.mutation<
@@ -443,9 +495,11 @@ export const apiSlice = createApi({
     >({
       query: ({ containerId, matchId, playerId }) => ({
         url: `/containers/${containerId}/matches/${matchId}/sessions/${playerId}/abandon`,
-        method: 'POST',
+        method: "POST",
       }),
-      invalidatesTags: (_, __, { containerId }) => [{ type: 'Session', id: `CONTAINER_${containerId}` }],
+      invalidatesTags: (_, __, { containerId }) => [
+        { type: "Session", id: `CONTAINER_${containerId}` },
+      ],
     }),
 
     // =========================================================================
@@ -453,112 +507,144 @@ export const apiSlice = createApi({
     // =========================================================================
     getContainerCommands: builder.query<CommandData[], number>({
       query: (containerId) => `/containers/${containerId}/commands`,
-      providesTags: (_, __, containerId) => [{ type: 'Command', id: `CONTAINER_${containerId}` }],
+      providesTags: (_, __, containerId) => [
+        { type: "Command", id: `CONTAINER_${containerId}` },
+      ],
     }),
 
-    sendCommandToContainer: builder.mutation<void, { containerId: number; body: EnqueueCommandRequest }>({
+    sendCommandToContainer: builder.mutation<
+      void,
+      { containerId: number; body: EnqueueCommandRequest }
+    >({
       query: ({ containerId, body }) => ({
         url: `/containers/${containerId}/commands`,
-        method: 'POST',
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Snapshot'],
+      invalidatesTags: ["Snapshot"],
     }),
 
     // =========================================================================
     // MODULE ENDPOINTS
     // =========================================================================
     getModules: builder.query<ModuleData[], void>({
-      query: () => '/modules',
+      query: () => "/modules",
       providesTags: (result) =>
         result
-          ? [...result.map(({ name }) => ({ type: 'Module' as const, id: name })), { type: 'Module', id: 'LIST' }]
-          : [{ type: 'Module', id: 'LIST' }],
+          ? [
+              ...result.map(({ name }) => ({
+                type: "Module" as const,
+                id: name,
+              })),
+              { type: "Module", id: "LIST" },
+            ]
+          : [{ type: "Module", id: "LIST" }],
     }),
 
     getContainerModules: builder.query<string[], number>({
       query: (containerId) => `/containers/${containerId}/modules`,
-      providesTags: (_, __, containerId) => [{ type: 'Module', id: `CONTAINER_${containerId}` }],
+      providesTags: (_, __, containerId) => [
+        { type: "Module", id: `CONTAINER_${containerId}` },
+      ],
     }),
 
     reloadContainerModules: builder.mutation<string[], number>({
       query: (containerId) => ({
         url: `/containers/${containerId}/modules/reload`,
-        method: 'POST',
+        method: "POST",
       }),
       invalidatesTags: (_, __, containerId) => [
-        { type: 'Module', id: `CONTAINER_${containerId}` },
-        { type: 'Module', id: 'LIST' },
+        { type: "Module", id: `CONTAINER_${containerId}` },
+        { type: "Module", id: "LIST" },
       ],
     }),
 
     deleteModule: builder.mutation<void, string>({
       query: (name) => ({
         url: `/modules/${name}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: (_, __, name) => [{ type: 'Module', id: name }, { type: 'Module', id: 'LIST' }],
+      invalidatesTags: (_, __, name) => [
+        { type: "Module", id: name },
+        { type: "Module", id: "LIST" },
+      ],
     }),
 
     // =========================================================================
     // AI ENDPOINTS
     // =========================================================================
     getAIs: builder.query<AIData[], void>({
-      query: () => '/ai',
+      query: () => "/ai",
       providesTags: (result) =>
         result
           ? [
-              ...result.map(({ name }) => ({ type: 'AI' as const, id: name })),
-              { type: 'AI', id: 'LIST' },
+              ...result.map(({ name }) => ({ type: "AI" as const, id: name })),
+              { type: "AI", id: "LIST" },
             ]
-          : [{ type: 'AI', id: 'LIST' }],
+          : [{ type: "AI", id: "LIST" }],
     }),
 
     getContainerAI: builder.query<string[], number>({
       query: (containerId) => `/containers/${containerId}/ai`,
-      providesTags: (_, __, containerId) => [{ type: 'AI', id: `CONTAINER_${containerId}` }],
+      providesTags: (_, __, containerId) => [
+        { type: "AI", id: `CONTAINER_${containerId}` },
+      ],
     }),
 
     deleteAI: builder.mutation<void, string>({
       query: (name) => ({
         url: `/ai/${name}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: (_, __, name) => [{ type: 'AI', id: name }, { type: 'AI', id: 'LIST' }],
+      invalidatesTags: (_, __, name) => [
+        { type: "AI", id: name },
+        { type: "AI", id: "LIST" },
+      ],
     }),
 
     // =========================================================================
     // RESOURCE ENDPOINTS
     // =========================================================================
     getResources: builder.query<ResourceData[], void>({
-      query: () => '/resources',
+      query: () => "/resources",
       providesTags: (result) =>
         result
-          ? [...result.map(({ id }) => ({ type: 'Resource' as const, id })), { type: 'Resource', id: 'LIST' }]
-          : [{ type: 'Resource', id: 'LIST' }],
+          ? [
+              ...result.map(({ id }) => ({ type: "Resource" as const, id })),
+              { type: "Resource", id: "LIST" },
+            ]
+          : [{ type: "Resource", id: "LIST" }],
     }),
 
     getContainerResources: builder.query<ResourceData[], number>({
       query: (containerId) => `/containers/${containerId}/resources`,
-      providesTags: (_, __, containerId) => [{ type: 'Resource', id: `CONTAINER_${containerId}` }],
+      providesTags: (_, __, containerId) => [
+        { type: "Resource", id: `CONTAINER_${containerId}` },
+      ],
     }),
 
     deleteResource: builder.mutation<void, string>({
       query: (id) => ({
         url: `/resources/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
-      invalidatesTags: (_, __, id) => [{ type: 'Resource', id }, { type: 'Resource', id: 'LIST' }],
+      invalidatesTags: (_, __, id) => [
+        { type: "Resource", id },
+        { type: "Resource", id: "LIST" },
+      ],
     }),
 
-    deleteContainerResource: builder.mutation<void, { containerId: number; resourceId: number }>({
+    deleteContainerResource: builder.mutation<
+      void,
+      { containerId: number; resourceId: number }
+    >({
       query: ({ containerId, resourceId }) => ({
         url: `/containers/${containerId}/resources/${resourceId}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
       invalidatesTags: (_, __, { containerId, resourceId }) => [
-        { type: 'Resource', id: resourceId },
-        { type: 'Resource', id: `CONTAINER_${containerId}` },
+        { type: "Resource", id: resourceId },
+        { type: "Resource", id: `CONTAINER_${containerId}` },
       ],
     }),
 
@@ -567,20 +653,73 @@ export const apiSlice = createApi({
     // =========================================================================
     getSnapshot: builder.query<SnapshotData, number>({
       query: (matchId) => `/snapshots/match/${matchId}`,
-      providesTags: (_, __, matchId) => [{ type: 'Snapshot', id: matchId }],
+      providesTags: (_, __, matchId) => [{ type: "Snapshot", id: matchId }],
     }),
 
     // =========================================================================
-    // HISTORY ENDPOINTS
+    // HISTORY ENDPOINTS (Container-scoped)
     // =========================================================================
+    getContainerHistorySummary: builder.query<HistorySummary, number>({
+      query: (containerId) => `/containers/${containerId}/history`,
+      providesTags: (_, __, containerId) => [
+        { type: "History", id: `CONTAINER_${containerId}` },
+      ],
+    }),
+
+    getContainerMatchHistorySummary: builder.query<
+      MatchHistorySummary,
+      { containerId: number; matchId: number }
+    >({
+      query: ({ containerId, matchId }) =>
+        `/containers/${containerId}/matches/${matchId}/history`,
+      providesTags: (_, __, { containerId, matchId }) => [
+        { type: "History", id: `MATCH_${containerId}_${matchId}` },
+      ],
+    }),
+
+    getContainerHistorySnapshots: builder.query<
+      SnapshotData[],
+      {
+        containerId: number;
+        matchId: number;
+        fromTick?: number;
+        toTick?: number;
+        limit?: number;
+      }
+    >({
+      query: ({ containerId, matchId, fromTick, toTick, limit }) => {
+        const params = new URLSearchParams();
+        if (fromTick !== undefined) params.set("fromTick", String(fromTick));
+        if (toTick !== undefined) params.set("toTick", String(toTick));
+        if (limit !== undefined) params.set("limit", String(limit));
+        const query = params.toString();
+        return `/containers/${containerId}/matches/${matchId}/history/snapshots${query ? `?${query}` : ""}`;
+      },
+      providesTags: (_, __, { containerId, matchId }) => [
+        { type: "History", id: `MATCH_${containerId}_${matchId}` },
+      ],
+    }),
+
+    getContainerLatestSnapshots: builder.query<
+      SnapshotData[],
+      { containerId: number; matchId: number; limit?: number }
+    >({
+      query: ({ containerId, matchId, limit = 10 }) =>
+        `/containers/${containerId}/matches/${matchId}/history/snapshots/latest?limit=${limit}`,
+      providesTags: (_, __, { containerId, matchId }) => [
+        { type: "History", id: `MATCH_${containerId}_${matchId}` },
+      ],
+    }),
+
+    // Legacy global history endpoints (kept for backwards compatibility)
     getHistorySummary: builder.query<HistorySummary, void>({
-      query: () => '/history',
-      providesTags: [{ type: 'History', id: 'SUMMARY' }],
+      query: () => "/history",
+      providesTags: [{ type: "History", id: "SUMMARY" }],
     }),
 
     getMatchHistorySummary: builder.query<MatchHistorySummary, number>({
       query: (matchId) => `/history/${matchId}`,
-      providesTags: (_, __, matchId) => [{ type: 'History', id: matchId }],
+      providesTags: (_, __, matchId) => [{ type: "History", id: matchId }],
     }),
 
     getHistorySnapshots: builder.query<
@@ -589,35 +728,44 @@ export const apiSlice = createApi({
     >({
       query: ({ matchId, fromTick, toTick, limit }) => {
         const params = new URLSearchParams();
-        if (fromTick !== undefined) params.set('fromTick', String(fromTick));
-        if (toTick !== undefined) params.set('toTick', String(toTick));
-        if (limit !== undefined) params.set('limit', String(limit));
+        if (fromTick !== undefined) params.set("fromTick", String(fromTick));
+        if (toTick !== undefined) params.set("toTick", String(toTick));
+        if (limit !== undefined) params.set("limit", String(limit));
         const query = params.toString();
-        return `/history/${matchId}/snapshots${query ? `?${query}` : ''}`;
+        return `/history/${matchId}/snapshots${query ? `?${query}` : ""}`;
       },
-      providesTags: (_, __, { matchId }) => [{ type: 'History', id: matchId }],
+      providesTags: (_, __, { matchId }) => [{ type: "History", id: matchId }],
     }),
 
-    getLatestSnapshots: builder.query<SnapshotData[], { matchId: number; limit?: number }>({
-      query: ({ matchId, limit = 10 }) => `/history/${matchId}/snapshots/latest?limit=${limit}`,
-      providesTags: (_, __, { matchId }) => [{ type: 'History', id: matchId }],
+    getLatestSnapshots: builder.query<
+      SnapshotData[],
+      { matchId: number; limit?: number }
+    >({
+      query: ({ matchId, limit = 10 }) =>
+        `/history/${matchId}/snapshots/latest?limit=${limit}`,
+      providesTags: (_, __, { matchId }) => [{ type: "History", id: matchId }],
     }),
 
     // =========================================================================
     // DELTA ENDPOINTS
     // =========================================================================
-    getDelta: builder.query<DeltaSnapshotData, { matchId: number; fromTick: number; toTick: number }>({
+    getDelta: builder.query<
+      DeltaSnapshotData,
+      { matchId: number; fromTick: number; toTick: number }
+    >({
       query: ({ matchId, fromTick, toTick }) =>
         `/snapshots/delta/${matchId}?fromTick=${fromTick}&toTick=${toTick}`,
-      providesTags: (_, __, { matchId }) => [{ type: 'Snapshot', id: `DELTA_${matchId}` }],
+      providesTags: (_, __, { matchId }) => [
+        { type: "Snapshot", id: `DELTA_${matchId}` },
+      ],
     }),
 
     restoreMatch: builder.mutation<void, { matchId: number; tick?: number }>({
       query: ({ matchId, tick }) => ({
-        url: `/restore/match/${matchId}${tick !== undefined ? `?tick=${tick}` : ''}`,
-        method: 'POST',
+        url: `/restore/match/${matchId}${tick !== undefined ? `?tick=${tick}` : ""}`,
+        method: "POST",
       }),
-      invalidatesTags: ['Snapshot', 'Match'],
+      invalidatesTags: ["Snapshot", "Match"],
     }),
   }),
 });
@@ -688,7 +836,12 @@ export const {
   useDeleteContainerResourceMutation,
   // Snapshots
   useGetSnapshotQuery,
-  // History
+  // History (Container-scoped)
+  useGetContainerHistorySummaryQuery,
+  useGetContainerMatchHistorySummaryQuery,
+  useGetContainerHistorySnapshotsQuery,
+  useGetContainerLatestSnapshotsQuery,
+  // History (Legacy global)
   useGetHistorySummaryQuery,
   useGetMatchHistorySummaryQuery,
   useGetHistorySnapshotsQuery,

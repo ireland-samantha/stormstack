@@ -3,46 +3,33 @@
  * MIT License
  */
 
-import { useState } from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Button,
-  Chip,
-  CircularProgress,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Autocomplete
-} from '@mui/material';
+    Add as AddIcon, Delete as DeleteIcon, Edit as EditIcon, Refresh as RefreshIcon
+} from "@mui/icons-material";
 import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Refresh as RefreshIcon
-} from '@mui/icons-material';
+    Alert, Autocomplete, Box, Button,
+    Chip,
+    CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow, TextField, Typography
+} from "@mui/material";
+import { useState } from "react";
 import {
-  useGetRolesQuery,
-  useCreateRoleMutation,
-  useUpdateRoleDescriptionMutation,
-  useUpdateRoleIncludesMutation,
-  useDeleteRoleMutation,
-  RoleData,
-} from '../store/api/apiSlice';
+    RoleData, useCreateRoleMutation, useDeleteRoleMutation, useGetRolesQuery, useUpdateRoleDescriptionMutation,
+    useUpdateRoleIncludesMutation
+} from "../store/api/apiSlice";
 
 const RolesPanel: React.FC = () => {
-  const { data: roles = [], isLoading, error: fetchError, refetch } = useGetRolesQuery();
+  const {
+    data: roles = [],
+    isLoading,
+    error: fetchError,
+    refetch,
+  } = useGetRolesQuery();
 
   const [createRole] = useCreateRoleMutation();
   const [updateRoleDescription] = useUpdateRoleDescriptionMutation();
@@ -55,9 +42,9 @@ const RolesPanel: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<RoleData | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    includedRoles: [] as string[]
+    name: "",
+    description: "",
+    includedRoles: [] as string[],
   });
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -68,15 +55,15 @@ const RolesPanel: React.FC = () => {
       setEditingRole(role);
       setFormData({
         name: role.name,
-        description: role.description || '',
-        includedRoles: role.includedRoles || []
+        description: role.description || "",
+        includedRoles: role.includedRoles || [],
       });
     } else {
       setEditingRole(null);
       setFormData({
-        name: '',
-        description: '',
-        includedRoles: []
+        name: "",
+        description: "",
+        includedRoles: [],
       });
     }
     setDialogOpen(true);
@@ -92,24 +79,36 @@ const RolesPanel: React.FC = () => {
       if (editingRole) {
         // Update description if changed
         if (editingRole.description !== formData.description) {
-          await updateRoleDescription({ roleId: editingRole.id, description: formData.description }).unwrap();
+          await updateRoleDescription({
+            roleId: editingRole.id,
+            description: formData.description,
+          }).unwrap();
         }
         // Update includes if changed
-        if (JSON.stringify(editingRole.includedRoles || []) !== JSON.stringify(formData.includedRoles)) {
-          await updateRoleIncludes({ roleId: editingRole.id, includes: formData.includedRoles }).unwrap();
+        if (
+          JSON.stringify(editingRole.includedRoles || []) !==
+          JSON.stringify(formData.includedRoles)
+        ) {
+          await updateRoleIncludes({
+            roleId: editingRole.id,
+            includes: formData.includedRoles,
+          }).unwrap();
         }
-        setSuccess('Role updated successfully');
+        setSuccess("Role updated successfully");
       } else {
         await createRole({
           name: formData.name,
           description: formData.description || undefined,
-          includedRoles: formData.includedRoles.length > 0 ? formData.includedRoles : undefined
+          includedRoles:
+            formData.includedRoles.length > 0
+              ? formData.includedRoles
+              : undefined,
         }).unwrap();
-        setSuccess('Role created successfully');
+        setSuccess("Role created successfully");
       }
       handleCloseDialog();
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to save role');
+      setLocalError(err instanceof Error ? err.message : "Failed to save role");
     }
   };
 
@@ -124,24 +123,27 @@ const RolesPanel: React.FC = () => {
         await deleteRole(deletingRole.id).unwrap();
         setDeleteDialogOpen(false);
         setDeletingRole(null);
-        setSuccess('Role deleted successfully');
+        setSuccess("Role deleted successfully");
       } catch (err) {
-        setLocalError(err instanceof Error ? err.message : 'Failed to delete role');
+        setLocalError(
+          err instanceof Error ? err.message : "Failed to delete role",
+        );
       }
     }
   };
 
-  const getRoleColor = (roleName: string): 'error' | 'primary' | 'default' => {
-    if (roleName === 'admin') return 'error';
-    if (roleName.includes('manager') || roleName.includes('command')) return 'primary';
-    return 'default';
+  const getRoleColor = (roleName: string): "error" | "primary" | "default" => {
+    if (roleName === "admin") return "error";
+    if (roleName.includes("manager") || roleName.includes("command"))
+      return "primary";
+    return "default";
   };
 
-  const error = localError || (fetchError ? 'Failed to fetch roles' : null);
+  const error = localError || (fetchError ? "Failed to fetch roles" : null);
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -149,9 +151,16 @@ const RolesPanel: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography variant="h5">Role Management</Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1 }}>
           <IconButton onClick={() => refetch()} title="Refresh">
             <RefreshIcon />
           </IconButton>
@@ -166,13 +175,21 @@ const RolesPanel: React.FC = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setLocalError(null)}
+        >
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setSuccess(null)}
+        >
           {success}
         </Alert>
       )}
@@ -197,9 +214,9 @@ const RolesPanel: React.FC = () => {
                     size="small"
                   />
                 </TableCell>
-                <TableCell>{role.description || '-'}</TableCell>
+                <TableCell>{role.description || "-"}</TableCell>
                 <TableCell>
-                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                  <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
                     {(role.includedRoles || []).map((inc) => (
                       <Chip
                         key={inc}
@@ -208,7 +225,8 @@ const RolesPanel: React.FC = () => {
                         variant="outlined"
                       />
                     ))}
-                    {(!role.includedRoles || role.includedRoles.length === 0) && (
+                    {(!role.includedRoles ||
+                      role.includedRoles.length === 0) && (
                       <Typography color="text.secondary" variant="body2">
                         None
                       </Typography>
@@ -228,7 +246,7 @@ const RolesPanel: React.FC = () => {
                     onClick={() => handleOpenDeleteDialog(role)}
                     title="Delete"
                     color="error"
-                    disabled={role.name === 'admin'}
+                    disabled={role.name === "admin"}
                   >
                     <DeleteIcon />
                   </IconButton>
@@ -247,14 +265,21 @@ const RolesPanel: React.FC = () => {
       </TableContainer>
 
       {/* Add/Edit Role Dialog */}
-      <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{editingRole ? 'Edit Role' : 'Add Role'}</DialogTitle>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>{editingRole ? "Edit Role" : "Add Role"}</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <TextField
               label="Name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               fullWidth
               required
               disabled={!!editingRole}
@@ -262,17 +287,25 @@ const RolesPanel: React.FC = () => {
             <TextField
               label="Description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               fullWidth
               multiline
               rows={2}
             />
             <Autocomplete
               multiple
-              options={roles.map(r => r.name).filter(n => n !== formData.name)}
+              options={roles
+                .map((r) => r.name)
+                .filter((n) => n !== formData.name)}
               value={formData.includedRoles}
-              onChange={(_, newValue) => setFormData({ ...formData, includedRoles: newValue })}
-              renderInput={(params) => <TextField {...params} label="Includes Roles" />}
+              onChange={(_, newValue) =>
+                setFormData({ ...formData, includedRoles: newValue })
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Includes Roles" />
+              )}
               renderTags={(value, getTagProps) =>
                 value.map((option, index) => {
                   const { key, ...rest } = getTagProps({ index });
@@ -292,19 +325,26 @@ const RolesPanel: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
-          <Button onClick={handleSaveRole} variant="contained" disabled={!formData.name}>
+          <Button
+            onClick={handleSaveRole}
+            variant="contained"
+            disabled={!formData.name}
+          >
             Save
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Delete Role</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete role "{deletingRole?.name}"?
-            This action cannot be undone.
+            Are you sure you want to delete role "{deletingRole?.name}"? This
+            action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions>

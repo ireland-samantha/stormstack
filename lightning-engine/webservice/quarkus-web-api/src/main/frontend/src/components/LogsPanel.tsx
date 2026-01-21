@@ -3,42 +3,49 @@
  * MIT License
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, IconButton, Chip, CircularProgress, Alert,
-  TextField, Autocomplete, FormControlLabel, Switch, Collapse, Stack, Button
-} from '@mui/material';
+    Delete as DeleteIcon, Dns as ContainerIcon, Error as ErrorIcon, ExpandLess as ExpandLessIcon, ExpandMore as ExpandMoreIcon, Info as InfoIcon, PlayArrow as PlayIcon, Refresh as RefreshIcon, Stop as StopIcon, Warning as WarningIcon
+} from "@mui/icons-material";
 import {
-  Refresh as RefreshIcon, Delete as DeleteIcon, Error as ErrorIcon,
-  Warning as WarningIcon, Info as InfoIcon, ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon, PlayArrow as PlayIcon, Stop as StopIcon,
-  Dns as ContainerIcon
-} from '@mui/icons-material';
-import { GameError, buildPlayerErrorWebSocketUrl } from '../services/api';
+    Alert, Autocomplete, Box, Button, Chip,
+    CircularProgress, Collapse, FormControlLabel, IconButton, Paper, Stack, Switch, Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow, TextField, Typography
+} from "@mui/material";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { buildPlayerErrorWebSocketUrl, GameError } from "../services/api";
 import {
-  useGetContainerQuery,
-  useGetContainerMatchesQuery,
-  useGetPlayersInContainerQuery,
-} from '../store/api/apiSlice';
-import { useAppSelector } from '../store/hooks';
+    useGetContainerMatchesQuery, useGetContainerQuery, useGetPlayersInContainerQuery
+} from "../store/api/apiSlice";
+import { useAppSelector } from "../store/hooks";
 
 const LogsPanel: React.FC = () => {
-  const selectedContainerId = useAppSelector((state) => state.ui.selectedContainerId);
+  const selectedContainerId = useAppSelector(
+    (state) => state.ui.selectedContainerId,
+  );
 
-  const { data: selectedContainer } = useGetContainerQuery(selectedContainerId!, {
+  const { data: selectedContainer } = useGetContainerQuery(
+    selectedContainerId!,
+    {
+      skip: !selectedContainerId,
+    },
+  );
+
+  const { data: matches = [], refetch: refetchMatches } =
+    useGetContainerMatchesQuery(selectedContainerId!, {
+      skip: !selectedContainerId,
+    });
+
+  const {
+    data: players = [],
+    isLoading,
+    error: fetchError,
+  } = useGetPlayersInContainerQuery(selectedContainerId!, {
     skip: !selectedContainerId,
   });
-
-  const { data: matches = [], refetch: refetchMatches } = useGetContainerMatchesQuery(
-    selectedContainerId!,
-    { skip: !selectedContainerId }
-  );
-
-  const { data: players = [], isLoading, error: fetchError } = useGetPlayersInContainerQuery(
-    selectedContainerId!,
-    { skip: !selectedContainerId }
-  );
 
   const [errors, setErrors] = useState<GameError[]>([]);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -58,7 +65,7 @@ const LogsPanel: React.FC = () => {
 
   useEffect(() => {
     if (autoScroll && tableEndRef.current) {
-      tableEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      tableEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [errors, autoScroll]);
 
@@ -73,7 +80,7 @@ const LogsPanel: React.FC = () => {
 
   const startStreaming = useCallback(() => {
     if (!selectedMatchId || !selectedPlayerId) {
-      setLocalError('Please select a match and player');
+      setLocalError("Please select a match and player");
       return;
     }
 
@@ -81,7 +88,10 @@ const LogsPanel: React.FC = () => {
       wsRef.current.close();
     }
 
-    const wsUrl = buildPlayerErrorWebSocketUrl(selectedMatchId, selectedPlayerId);
+    const wsUrl = buildPlayerErrorWebSocketUrl(
+      selectedMatchId,
+      selectedPlayerId,
+    );
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
@@ -92,14 +102,14 @@ const LogsPanel: React.FC = () => {
     ws.onmessage = (event) => {
       try {
         const gameError: GameError = JSON.parse(event.data);
-        setErrors(prev => [...prev.slice(-999), gameError]); // Keep last 1000 errors
+        setErrors((prev) => [...prev.slice(-999), gameError]); // Keep last 1000 errors
       } catch (e) {
-        console.error('Failed to parse error:', e);
+        console.error("Failed to parse error:", e);
       }
     };
 
     ws.onerror = () => {
-      setLocalError('WebSocket connection error');
+      setLocalError("WebSocket connection error");
       setIsStreaming(false);
     };
 
@@ -124,20 +134,23 @@ const LogsPanel: React.FC = () => {
 
   const getErrorIcon = (type: string) => {
     switch (type) {
-      case 'COMMAND':
+      case "COMMAND":
         return <ErrorIcon fontSize="small" color="error" />;
-      case 'SYSTEM':
+      case "SYSTEM":
         return <WarningIcon fontSize="small" color="warning" />;
       default:
         return <InfoIcon fontSize="small" color="info" />;
     }
   };
 
-  const getErrorTypeColor = (type: string): 'error' | 'warning' | 'info' => {
+  const getErrorTypeColor = (type: string): "error" | "warning" | "info" => {
     switch (type) {
-      case 'COMMAND': return 'error';
-      case 'SYSTEM': return 'warning';
-      default: return 'info';
+      case "COMMAND":
+        return "error";
+      case "SYSTEM":
+        return "warning";
+      default:
+        return "info";
     }
   };
 
@@ -149,12 +162,12 @@ const LogsPanel: React.FC = () => {
     }
   };
 
-  const error = localError || (fetchError ? 'Failed to fetch data' : null);
+  const error = localError || (fetchError ? "Failed to fetch data" : null);
 
   if (!selectedContainerId || !selectedContainer) {
     return (
-      <Paper sx={{ p: 4, textAlign: 'center' }}>
-        <ContainerIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+      <Paper sx={{ p: 4, textAlign: "center" }}>
+        <ContainerIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
         <Typography variant="h6" color="text.secondary" gutterBottom>
           No Container Selected
         </Typography>
@@ -166,15 +179,28 @@ const LogsPanel: React.FC = () => {
   }
 
   if (isLoading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
     <Box>
       {/* Header with container context */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 3,
+        }}
+      >
         <Box>
-          <Typography variant="h4" fontWeight={700}>Logs</Typography>
+          <Typography variant="h4" fontWeight={700}>
+            Logs
+          </Typography>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
             <Chip
               icon={<ContainerIcon />}
@@ -186,38 +212,67 @@ const LogsPanel: React.FC = () => {
             <Chip
               label={selectedContainer.status}
               size="small"
-              color={selectedContainer.status === 'RUNNING' ? 'success' : 'default'}
+              color={
+                selectedContainer.status === "RUNNING" ? "success" : "default"
+              }
             />
           </Stack>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton onClick={fetchData} title="Refresh matches/players"><RefreshIcon /></IconButton>
-          <IconButton onClick={clearLogs} title="Clear logs" color="error"><DeleteIcon /></IconButton>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={fetchData} title="Refresh matches/players">
+            <RefreshIcon />
+          </IconButton>
+          <IconButton onClick={clearLogs} title="Clear logs" color="error">
+            <DeleteIcon />
+          </IconButton>
         </Box>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>{error}</Alert>}
+      {error && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setLocalError(null)}
+        >
+          {error}
+        </Alert>
+      )}
 
       {/* Connection Controls */}
       <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle1" gutterBottom>Error Stream Connection</Typography>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Error Stream Connection
+        </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <Autocomplete
             sx={{ minWidth: 200 }}
             options={matches}
             getOptionLabel={(m) => `Match ${m.id}`}
-            value={matches.find(m => m.id === selectedMatchId) || null}
+            value={matches.find((m) => m.id === selectedMatchId) || null}
             onChange={(_, v) => setSelectedMatchId(v?.id || null)}
-            renderInput={(params) => <TextField {...params} label="Match" size="small" />}
+            renderInput={(params) => (
+              <TextField {...params} label="Match" size="small" />
+            )}
             disabled={isStreaming}
           />
           <Autocomplete
             sx={{ minWidth: 200 }}
             options={players}
-            getOptionLabel={(p) => `Player ${p.id}${p.name ? ` (${p.name})` : ''}`}
-            value={players.find(p => p.id === selectedPlayerId) || null}
+            getOptionLabel={(p) =>
+              `Player ${p.id}${p.name ? ` (${p.name})` : ""}`
+            }
+            value={players.find((p) => p.id === selectedPlayerId) || null}
             onChange={(_, v) => setSelectedPlayerId(v?.id || null)}
-            renderInput={(params) => <TextField {...params} label="Player" size="small" />}
+            renderInput={(params) => (
+              <TextField {...params} label="Player" size="small" />
+            )}
             disabled={isStreaming}
           />
           {!isStreaming ? (
@@ -241,7 +296,12 @@ const LogsPanel: React.FC = () => {
             </Button>
           )}
           <FormControlLabel
-            control={<Switch checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} />}
+            control={
+              <Switch
+                checked={autoScroll}
+                onChange={(e) => setAutoScroll(e.target.checked)}
+              />
+            }
             label="Auto-scroll"
           />
           {isStreaming && (
@@ -270,15 +330,25 @@ const LogsPanel: React.FC = () => {
                 <TableRow
                   key={err.id}
                   hover
-                  onClick={() => setExpandedErrorId(expandedErrorId === err.id ? null : err.id)}
-                  sx={{ cursor: 'pointer' }}
+                  onClick={() =>
+                    setExpandedErrorId(
+                      expandedErrorId === err.id ? null : err.id,
+                    )
+                  }
+                  sx={{ cursor: "pointer" }}
                 >
                   <TableCell>
                     <IconButton size="small">
-                      {expandedErrorId === err.id ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      {expandedErrorId === err.id ? (
+                        <ExpandLessIcon />
+                      ) : (
+                        <ExpandMoreIcon />
+                      )}
                     </IconButton>
                   </TableCell>
-                  <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                  <TableCell
+                    sx={{ fontFamily: "monospace", fontSize: "0.75rem" }}
+                  >
                     {formatTimestamp(err.timestamp)}
                   </TableCell>
                   <TableCell>
@@ -290,39 +360,56 @@ const LogsPanel: React.FC = () => {
                       variant="outlined"
                     />
                   </TableCell>
-                  <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                  <TableCell
+                    sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}
+                  >
                     {err.source}
                   </TableCell>
-                  <TableCell sx={{
-                    maxWidth: 300,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
+                  <TableCell
+                    sx={{
+                      maxWidth: 300,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
                     {err.message}
                   </TableCell>
-                  <TableCell>{err.matchId || '-'}</TableCell>
-                  <TableCell>{err.playerId || '-'}</TableCell>
+                  <TableCell>{err.matchId || "-"}</TableCell>
+                  <TableCell>{err.playerId || "-"}</TableCell>
                 </TableRow>
                 <TableRow key={`${err.id}-details`}>
                   <TableCell colSpan={7} sx={{ p: 0 }}>
                     <Collapse in={expandedErrorId === err.id}>
-                      <Box sx={{ p: 2, bgcolor: 'grey.50' }}>
-                        <Typography variant="subtitle2" gutterBottom>Message</Typography>
-                        <Typography variant="body2" sx={{ mb: 2 }}>{err.message}</Typography>
+                      <Box sx={{ p: 2, bgcolor: "grey.50" }}>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Message
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 2 }}>
+                          {err.message}
+                        </Typography>
                         {err.details && (
                           <>
-                            <Typography variant="subtitle2" gutterBottom>Stack Trace</Typography>
-                            <Paper sx={{ p: 1, bgcolor: 'grey.100', maxHeight: 200, overflow: 'auto' }}>
+                            <Typography variant="subtitle2" gutterBottom>
+                              Stack Trace
+                            </Typography>
+                            <Paper
+                              sx={{
+                                p: 1,
+                                bgcolor: "grey.100",
+                                maxHeight: 200,
+                                overflow: "auto",
+                              }}
+                            >
                               <Typography
                                 variant="body2"
                                 component="pre"
                                 sx={{
-                                  fontFamily: 'monospace',
-                                  fontSize: '0.7rem',
-                                  whiteSpace: 'pre-wrap',
-                                  wordBreak: 'break-all',
-                                  m: 0
+                                  fontFamily: "monospace",
+                                  fontSize: "0.7rem",
+                                  whiteSpace: "pre-wrap",
+                                  wordBreak: "break-all",
+                                  m: 0,
                                 }}
                               >
                                 {err.details}
@@ -341,8 +428,8 @@ const LogsPanel: React.FC = () => {
                 <TableCell colSpan={7} align="center">
                   <Typography color="text.secondary" sx={{ py: 4 }}>
                     {isStreaming
-                      ? 'Waiting for errors... (This is good!)'
-                      : 'No errors logged. Start streaming to receive errors.'}
+                      ? "Waiting for errors... (This is good!)"
+                      : "No errors logged. Start streaming to receive errors."}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -352,9 +439,16 @@ const LogsPanel: React.FC = () => {
         <div ref={tableEndRef} />
       </TableContainer>
 
-      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box
+        sx={{
+          mt: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Typography variant="body2" color="text.secondary">
-          {errors.length} error{errors.length !== 1 ? 's' : ''} logged
+          {errors.length} error{errors.length !== 1 ? "s" : ""} logged
         </Typography>
       </Box>
     </Box>

@@ -22,28 +22,40 @@
 
 package ca.samanthaireland.engine.acceptance;
 
-import ca.samanthaireland.engine.acceptance.fixture.EntitySpawner;
-import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
-import ca.samanthaireland.engine.api.resource.adapter.ContainerAdapter;
-import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
-import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerClient;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.*;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Timeout;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+
+import ca.samanthaireland.engine.acceptance.fixture.EntitySpawner;
+import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
+import ca.samanthaireland.engine.api.resource.adapter.ContainerAdapter;
+import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
+import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerClient;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Acceptance test for WebSocket snapshot streaming.
@@ -77,6 +89,7 @@ class SnapshotWebSocketIT {
     private long containerId = -1;
     private long matchId = -1;
     private String baseUrl;
+    private String authToken;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -86,12 +99,12 @@ class SnapshotWebSocketIT {
         log.info("Backend URL: {}", baseUrl);
 
         AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
-        String token = auth.login("admin", "admin").token();
+        authToken = auth.login("admin", "admin").token();
         log.info("Authenticated successfully");
 
         client = EngineClient.builder()
                 .baseUrl(baseUrl)
-                .withBearerToken(token)
+                .withBearerToken(authToken)
                 .build();
     }
 
@@ -194,9 +207,9 @@ class SnapshotWebSocketIT {
                 .execute();
         container.tick();
 
-        // Connect to WebSocket and receive snapshot
+        // Connect to WebSocket and receive snapshot (with JWT token for authentication)
         String wsUrl = baseUrl.replace("http://", "ws://") +
-                "/ws/containers/" + containerId + "/matches/" + matchId + "/snapshot";
+                "/ws/containers/" + containerId + "/matches/" + matchId + "/snapshot?token=" + authToken;
         log.info("Connecting to WebSocket: {}", wsUrl);
 
         CompletableFuture<String> snapshotFuture = new CompletableFuture<>();
@@ -276,9 +289,9 @@ class SnapshotWebSocketIT {
                 .execute();
         container.tick();
 
-        // Connect to Delta WebSocket and receive delta snapshot
+        // Connect to Delta WebSocket and receive delta snapshot (with JWT token for authentication)
         String wsUrl = baseUrl.replace("http://", "ws://") +
-                "/ws/containers/" + containerId + "/matches/" + matchId + "/delta";
+                "/ws/containers/" + containerId + "/matches/" + matchId + "/delta?token=" + authToken;
         log.info("Connecting to Delta WebSocket: {}", wsUrl);
 
         CompletableFuture<String> deltaFuture = new CompletableFuture<>();
