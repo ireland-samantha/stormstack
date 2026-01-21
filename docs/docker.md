@@ -67,7 +67,7 @@ docker compose down
 - `8080` - REST API and WebSocket
 - `27017` - MongoDB (optional, for external access)
 
-**Health Check:** `GET /api/containers` (30s interval)
+**Health Check:** `GET /api/health` (30s interval)
 
 **Environment Variables:**
 

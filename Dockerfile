@@ -6,6 +6,15 @@ FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /app
 COPY . .
 
+# Generate JWT RSA key pairs (same as gen_secrets.py but without Python dependency)
+# These are required for SmallRye JWT signing/verification
+RUN mkdir -p lightning-engine/webservice/quarkus-web-api/src/main/resources \
+             lightning-engine/webservice/quarkus-web-api/src/test/resources && \
+    openssl genpkey -algorithm RSA -out lightning-engine/webservice/quarkus-web-api/src/main/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 && \
+    openssl rsa -pubout -in lightning-engine/webservice/quarkus-web-api/src/main/resources/privateKey.pem -out lightning-engine/webservice/quarkus-web-api/src/main/resources/publicKey.pem && \
+    cp lightning-engine/webservice/quarkus-web-api/src/main/resources/privateKey.pem lightning-engine/webservice/quarkus-web-api/src/test/resources/ && \
+    cp lightning-engine/webservice/quarkus-web-api/src/main/resources/publicKey.pem lightning-engine/webservice/quarkus-web-api/src/test/resources/
+
 RUN mvn -B clean install
 
 # ======================
