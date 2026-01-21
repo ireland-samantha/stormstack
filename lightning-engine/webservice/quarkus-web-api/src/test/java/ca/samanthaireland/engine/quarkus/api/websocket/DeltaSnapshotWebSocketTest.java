@@ -23,22 +23,29 @@
 
 package ca.samanthaireland.engine.quarkus.api.websocket;
 
-import ca.samanthaireland.engine.core.container.ContainerConfig;
-import ca.samanthaireland.engine.core.container.ContainerManager;
-import ca.samanthaireland.engine.core.container.ExecutionContainer;
-import io.quarkus.test.common.http.TestHTTPResource;
-import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.websockets.next.BasicWebSocketConnector;
-import io.quarkus.websockets.next.WebSocketClientConnection;
+import java.net.URI;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
+
 import jakarta.inject.Inject;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import java.net.URI;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.TimeUnit;
+import io.quarkus.test.common.http.TestHTTPResource;
+import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.websockets.next.BasicWebSocketConnector;
+import io.quarkus.websockets.next.WebSocketClientConnection;
+import io.smallrye.jwt.build.Jwt;
+
+import ca.samanthaireland.engine.core.container.ContainerConfig;
+import ca.samanthaireland.engine.core.container.ContainerManager;
+import ca.samanthaireland.engine.core.container.ExecutionContainer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -90,18 +97,28 @@ class DeltaSnapshotWebSocketTest {
         }
     }
 
-    private URI getDeltaWsUri() {
-        String wsPath = String.format("/ws/containers/%d/matches/%d/delta", containerId, matchId);
+    private URI getDeltaWsUri(String token) {
+        String wsPath = String.format("/ws/containers/%d/matches/%d/delta?token=%s", containerId, matchId, token);
         return URI.create(baseUri.toString().replace("http://", "ws://") + wsPath.substring(1));
+    }
+
+    private String generateViewToken() {
+        return Jwt.issuer("https://lightningfirefly.com")
+                .subject("test-viewer")
+                .groups(Set.of("view_only"))
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plus(1, ChronoUnit.HOURS))
+                .sign();
     }
 
     @Test
     @Timeout(30)
     void shouldConnectAndReceiveDeltaSnapshot() throws Exception {
         LinkedBlockingDeque<String> messages = new LinkedBlockingDeque<>();
+        String token = generateViewToken();
 
         WebSocketClientConnection connection = connector
-                .baseUri(getDeltaWsUri())
+                .baseUri(getDeltaWsUri(token))
                 .onTextMessage((c, m) -> messages.add(m))
                 .connectAndAwait();
 
@@ -123,9 +140,10 @@ class DeltaSnapshotWebSocketTest {
     @Timeout(30)
     void shouldReceiveDeltaOnMessage() throws Exception {
         LinkedBlockingDeque<String> messages = new LinkedBlockingDeque<>();
+        String token = generateViewToken();
 
         WebSocketClientConnection connection = connector
-                .baseUri(getDeltaWsUri())
+                .baseUri(getDeltaWsUri(token))
                 .onTextMessage((c, m) -> messages.add(m))
                 .connectAndAwait();
 
@@ -152,9 +170,10 @@ class DeltaSnapshotWebSocketTest {
     @Timeout(30)
     void shouldResetDeltaStateOnResetCommand() throws Exception {
         LinkedBlockingDeque<String> messages = new LinkedBlockingDeque<>();
+        String token = generateViewToken();
 
         WebSocketClientConnection connection = connector
-                .baseUri(getDeltaWsUri())
+                .baseUri(getDeltaWsUri(token))
                 .onTextMessage((c, m) -> messages.add(m))
                 .connectAndAwait();
 
@@ -185,9 +204,10 @@ class DeltaSnapshotWebSocketTest {
     @Timeout(30)
     void shouldReceiveMultipleDeltaSnapshots() throws Exception {
         LinkedBlockingDeque<String> messages = new LinkedBlockingDeque<>();
+        String token = generateViewToken();
 
         WebSocketClientConnection connection = connector
-                .baseUri(getDeltaWsUri())
+                .baseUri(getDeltaWsUri(token))
                 .onTextMessage((c, m) -> messages.add(m))
                 .connectAndAwait();
 
@@ -211,9 +231,10 @@ class DeltaSnapshotWebSocketTest {
     @Timeout(30)
     void deltaSnapshotShouldContainChangeMetrics() throws Exception {
         LinkedBlockingDeque<String> messages = new LinkedBlockingDeque<>();
+        String token = generateViewToken();
 
         WebSocketClientConnection connection = connector
-                .baseUri(getDeltaWsUri())
+                .baseUri(getDeltaWsUri(token))
                 .onTextMessage((c, m) -> messages.add(m))
                 .connectAndAwait();
 

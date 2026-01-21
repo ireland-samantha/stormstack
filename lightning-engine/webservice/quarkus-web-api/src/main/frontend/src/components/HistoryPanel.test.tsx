@@ -20,87 +20,82 @@
  * SOFTWARE.
  */
 
+import { screen, waitFor } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
+import { beforeEach, describe, expect, it } from "vitest";
+import { server } from "../test/mocks/server";
+import { renderWithProviders } from "../test/testUtils";
+import HistoryPanel from "./HistoryPanel";
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
-import { http, HttpResponse } from 'msw';
-import { renderWithProviders } from '../test/testUtils';
-import { server } from '../test/mocks/server';
-import HistoryPanel from './HistoryPanel';
-
-describe('HistoryPanel', () => {
+describe("HistoryPanel", () => {
   beforeEach(() => {
     server.resetHandlers();
   });
 
-  it('renders loading state initially', () => {
+  const preloadedStateWithContainer = {
+    ui: { selectedContainerId: 1 },
+  };
+
+  it("renders loading state initially", () => {
     // Set up a delayed response to show loading
     server.use(
-      http.get('*/api/history', async () => {
-        await new Promise(resolve => setTimeout(resolve, 100));
+      http.get("/api/containers/:containerId/history", async () => {
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return HttpResponse.json({
           totalSnapshots: 0,
           matchCount: 0,
-          matchIds: []
+          matchIds: [],
         });
-      })
+      }),
     );
 
-    renderWithProviders(<HistoryPanel />);
+    renderWithProviders(<HistoryPanel />, {
+      preloadedState: preloadedStateWithContainer,
+    });
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
   });
 
-  it('renders error state', async () => {
+  it("renders error state", async () => {
     server.use(
-      http.get('*/api/history', () => {
+      http.get("/api/containers/:containerId/history", () => {
         return new HttpResponse(null, { status: 500 });
-      })
+      }),
     );
 
-    renderWithProviders(<HistoryPanel />);
+    renderWithProviders(<HistoryPanel />, {
+      preloadedState: preloadedStateWithContainer,
+    });
 
     await waitFor(() => {
-      expect(screen.getByText(/failed to load history summary/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/failed to load history summary/i),
+      ).toBeInTheDocument();
     });
   });
 
-  it('renders summary data', async () => {
+  it("renders summary data", async () => {
     server.use(
-      http.get('*/api/history', () => {
+      http.get("/api/containers/:containerId/history", () => {
         return HttpResponse.json({
           totalSnapshots: 150,
           matchCount: 3,
-          matchIds: [1, 2, 3]
+          matchIds: [1, 2, 3],
         });
       }),
-      http.get('*/api/history/1', () => {
+      http.get("/api/containers/:containerId/matches/:matchId/history", () => {
         return HttpResponse.json({
           matchId: 1,
           snapshotCount: 50,
           firstTick: 0,
-          lastTick: 49
+          lastTick: 49,
         });
       }),
-      http.get('*/api/history/2', () => {
-        return HttpResponse.json({
-          matchId: 2,
-          snapshotCount: 100,
-          firstTick: 0,
-          lastTick: 99
-        });
-      }),
-      http.get('*/api/history/3', () => {
-        return HttpResponse.json({
-          matchId: 3,
-          snapshotCount: 0,
-          firstTick: 0,
-          lastTick: 0
-        });
-      })
     );
 
-    renderWithProviders(<HistoryPanel />);
+    renderWithProviders(<HistoryPanel />, {
+      preloadedState: preloadedStateWithContainer,
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/150 total snapshots/i)).toBeInTheDocument();
@@ -108,18 +103,20 @@ describe('HistoryPanel', () => {
     expect(screen.getByText(/3 matches/i)).toBeInTheDocument();
   });
 
-  it('renders empty state when no matches', async () => {
+  it("renders empty state when no matches", async () => {
     server.use(
-      http.get('*/api/history', () => {
+      http.get("/api/containers/:containerId/history", () => {
         return HttpResponse.json({
           totalSnapshots: 0,
           matchCount: 0,
-          matchIds: []
+          matchIds: [],
         });
-      })
+      }),
     );
 
-    renderWithProviders(<HistoryPanel />);
+    renderWithProviders(<HistoryPanel />, {
+      preloadedState: preloadedStateWithContainer,
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/0 total snapshots/i)).toBeInTheDocument();

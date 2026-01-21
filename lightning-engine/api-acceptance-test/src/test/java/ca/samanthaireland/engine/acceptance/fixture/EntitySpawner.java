@@ -378,6 +378,44 @@ public final class EntitySpawner {
     }
 
     /**
+     * Wait for a component to have a specific value at index 0.
+     *
+     * @param client the EngineClient for parsing snapshots
+     * @param container the container client
+     * @param matchId the match ID
+     * @param moduleName the module name
+     * @param componentName the component name
+     * @param expectedValue the expected value
+     * @param tolerance the tolerance for float comparison
+     */
+    public static void waitForComponentValue(EngineClient client, ContainerClient container,
+                                              long matchId, String moduleName, String componentName,
+                                              float expectedValue, float tolerance) {
+        int maxAttempts = 50;
+        long pollIntervalMs = 50;
+
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            container.tick();
+            try {
+                var snapshotOpt = container.getSnapshot(matchId);
+                if (snapshotOpt.isPresent()) {
+                    var snapshot = client.parseSnapshot(snapshotOpt.get().data());
+                    var module = snapshot.module(moduleName);
+                    List<Float> values = module.component(componentName);
+                    if (!values.isEmpty() && Math.abs(values.get(0) - expectedValue) < tolerance) {
+                        return;
+                    }
+                }
+            } catch (Exception ignored) {
+                // Snapshot not ready yet
+            }
+            sleep(pollIntervalMs);
+        }
+        throw new IllegalStateException("Component " + moduleName + "." + componentName +
+                " did not reach value " + expectedValue + " after " + maxAttempts + " attempts");
+    }
+
+    /**
      * Wait for a module to have at least the expected number of entities.
      * Uses extended timeout for large batch operations.
      *

@@ -20,8 +20,32 @@
  * SOFTWARE.
  */
 
-
 package ca.samanthaireland.engine.acceptance;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Timeout;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import ca.samanthaireland.engine.acceptance.fixture.EntitySpawner;
 import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
@@ -29,20 +53,6 @@ import ca.samanthaireland.engine.api.resource.adapter.ContainerAdapter;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient.ContainerClient;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.Disabled;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
-
-import java.io.IOException;
-import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Physics functionality acceptance tests.
@@ -265,7 +275,8 @@ class PhysicsIT {
                 .param("positionZ", 0.0f)
                 .execute();
 
-        container.tick();
+        // Wait for position to be updated to the new value
+        EntitySpawner.waitForComponentValue(client, container, matchId, "GridMapModule", "POSITION_X", 500.0f, 0.1f);
 
         var snapshot = getSnapshot();
         var gridMap = snapshot.module("GridMapModule");

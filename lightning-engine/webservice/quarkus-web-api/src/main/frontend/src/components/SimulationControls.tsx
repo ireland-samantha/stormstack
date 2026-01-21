@@ -20,38 +20,30 @@
  * SOFTWARE.
  */
 
-
 import {
-  Box,
-  Tooltip,
-  ButtonGroup,
-  Button,
-  Typography
-} from '@mui/material';
+    PlayArrow as PlayIcon, SkipNext as TickIcon, Stop as StopIcon
+} from "@mui/icons-material";
+import { Box, Button, ButtonGroup, Tooltip, Typography } from "@mui/material";
+import { useContainerContext } from "../contexts/ContainerContext";
 import {
-  PlayArrow as PlayIcon,
-  Stop as StopIcon,
-  SkipNext as TickIcon
-} from '@mui/icons-material';
-import { useContainerContext } from '../contexts/ContainerContext';
-import {
-  useAdvanceContainerTickMutation,
-  usePlayContainerMutation,
-  useStopContainerAutoAdvanceMutation,
-  useGetContainerQuery
-} from '../store/api/apiSlice';
+    useAdvanceContainerTickMutation, useGetContainerQuery, usePlayContainerMutation,
+    useStopContainerAutoAdvanceMutation
+} from "../store/api/apiSlice";
 
 export const SimulationControls: React.FC = () => {
   const { selectedContainerId } = useContainerContext();
 
   const { data: container } = useGetContainerQuery(selectedContainerId!, {
     skip: !selectedContainerId,
-    pollingInterval: 1000
+    pollingInterval: 1000,
   });
 
-  const [advanceTick, { isLoading: isTickLoading }] = useAdvanceContainerTickMutation();
-  const [playContainer, { isLoading: isPlayLoading }] = usePlayContainerMutation();
-  const [stopAutoAdvance, { isLoading: isStopLoading }] = useStopContainerAutoAdvanceMutation();
+  const [advanceTick, { isLoading: isTickLoading }] =
+    useAdvanceContainerTickMutation();
+  const [playContainer, { isLoading: isPlayLoading }] =
+    usePlayContainerMutation();
+  const [stopAutoAdvance, { isLoading: isStopLoading }] =
+    useStopContainerAutoAdvanceMutation();
 
   const isPlaying = container?.autoAdvancing ?? false;
   const isLoading = isTickLoading || isPlayLoading || isStopLoading;
@@ -76,7 +68,7 @@ export const SimulationControls: React.FC = () => {
 
   if (!selectedContainerId) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Typography variant="body2" color="text.secondary">
           Select a container
         </Typography>
@@ -85,7 +77,7 @@ export const SimulationControls: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       <ButtonGroup variant="outlined" size="small">
         <Tooltip title="Advance one tick">
           <Button onClick={handleTick} disabled={isPlaying || isLoading}>

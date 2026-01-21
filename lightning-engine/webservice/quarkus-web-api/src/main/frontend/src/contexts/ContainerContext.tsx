@@ -26,19 +26,18 @@
  * as the original ContainerContext for backward compatibility.
  */
 
-import { useCallback, useEffect } from 'react';
-import { ContainerData, MatchData } from '../services/api';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useCallback, useEffect } from "react";
+import { ContainerData, MatchData } from "../services/api";
 import {
-  selectSelectedContainerId,
-  selectSelectedMatchId,
-  setSelectedContainerId,
-  setSelectedMatchId,
-} from '../store/slices/uiSlice';
+    useGetContainerMatchesQuery, useGetContainersQuery
+} from "../store/api/apiSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
-  useGetContainersQuery,
-  useGetContainerMatchesQuery,
-} from '../store/api/apiSlice';
+    selectSelectedContainerId,
+    selectSelectedMatchId,
+    setSelectedContainerId,
+    setSelectedMatchId
+} from "../store/slices/uiSlice";
 
 interface ContainerContextType {
   containers: ContainerData[];
@@ -90,15 +89,26 @@ export const useContainerContext = (): ContainerContextType => {
   });
 
   // Derived state
-  const selectedContainer = containers.find(c => c.id === selectedContainerId) || null;
-  const selectedMatch = matches.find(m => m.id === selectedMatchId) || null;
+  const selectedContainer =
+    containers.find((c) => c.id === selectedContainerId) || null;
+  const selectedMatch = matches.find((m) => m.id === selectedMatchId) || null;
   const loading = isContainersLoading || isMatchesLoading;
 
   // Error handling
   const error = isContainersError
-    ? (containersError && 'data' in containersError ? String((containersError.data as { message?: string })?.message || 'Failed to fetch containers') : 'Failed to fetch containers')
+    ? containersError && "data" in containersError
+      ? String(
+          (containersError.data as { message?: string })?.message ||
+            "Failed to fetch containers",
+        )
+      : "Failed to fetch containers"
     : isMatchesError
-      ? (matchesError && 'data' in matchesError ? String((matchesError.data as { message?: string })?.message || 'Failed to fetch matches') : 'Failed to fetch matches')
+      ? matchesError && "data" in matchesError
+        ? String(
+            (matchesError.data as { message?: string })?.message ||
+              "Failed to fetch matches",
+          )
+        : "Failed to fetch matches"
       : null;
 
   // Auto-select first container if none selected
@@ -116,14 +126,20 @@ export const useContainerContext = (): ContainerContextType => {
   }, [matches, selectedMatchId, dispatch]);
 
   // Action handlers
-  const selectContainer = useCallback((containerId: number | null) => {
-    dispatch(setSelectedContainerId(containerId));
-    dispatch(setSelectedMatchId(null)); // Reset match when container changes
-  }, [dispatch]);
+  const selectContainer = useCallback(
+    (containerId: number | null) => {
+      dispatch(setSelectedContainerId(containerId));
+      dispatch(setSelectedMatchId(null)); // Reset match when container changes
+    },
+    [dispatch],
+  );
 
-  const selectMatch = useCallback((matchId: number | null) => {
-    dispatch(setSelectedMatchId(matchId));
-  }, [dispatch]);
+  const selectMatch = useCallback(
+    (matchId: number | null) => {
+      dispatch(setSelectedMatchId(matchId));
+    },
+    [dispatch],
+  );
 
   const refreshContainers = useCallback(async () => {
     await refetchContainers();
@@ -167,7 +183,9 @@ interface ContainerProviderProps {
   children: React.ReactNode;
 }
 
-export const ContainerProvider: React.FC<ContainerProviderProps> = ({ children }) => {
+export const ContainerProvider: React.FC<ContainerProviderProps> = ({
+  children,
+}) => {
   return <>{children}</>;
 };
 

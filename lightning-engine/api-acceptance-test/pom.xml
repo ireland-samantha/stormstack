@@ -23,6 +23,14 @@
     </properties>
 
     <dependencies>
+        <!-- Shared Protocol Buffers for WebSocket commands -->
+        <dependency>
+            <groupId>ca.samanthaireland</groupId>
+            <artifactId>api-proto</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Web API Adapter for REST clients -->
         <dependency>
             <groupId>ca.samanthaireland</groupId>

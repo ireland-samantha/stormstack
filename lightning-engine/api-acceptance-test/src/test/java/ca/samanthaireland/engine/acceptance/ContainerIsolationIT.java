@@ -22,21 +22,7 @@
 
 package ca.samanthaireland.engine.acceptance;
 
-import ca.samanthaireland.engine.acceptance.fixture.SnapshotAssertions;
-import ca.samanthaireland.engine.acceptance.fixture.TestEngineContainer;
-import ca.samanthaireland.engine.acceptance.fixture.TestMatch;
-import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
-import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
-import ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.*;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,10 +31,38 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.WebSocket;
 import java.time.Duration;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.Timeout;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+
+import ca.samanthaireland.engine.acceptance.fixture.SnapshotAssertions;
+import ca.samanthaireland.engine.acceptance.fixture.TestEngineContainer;
+import ca.samanthaireland.engine.acceptance.fixture.TestMatch;
+import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
+import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
+import ca.samanthaireland.engine.api.resource.adapter.dto.HistorySnapshotDto;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Comprehensive isolation test for containers, matches, and players.
@@ -759,8 +773,9 @@ class ContainerIsolationIT {
     // ==================== Helper Methods ====================
 
     private String receiveWebSocketSnapshot(long containerId, long matchId) throws Exception {
+        String token = getToken();
         String wsUrl = baseUrl.replace("http://", "ws://") +
-                "/ws/containers/" + containerId + "/matches/" + matchId + "/snapshot";
+                "/ws/containers/" + containerId + "/matches/" + matchId + "/snapshot?token=" + token;
         log.debug("Connecting to WebSocket: {}", wsUrl);
 
         CompletableFuture<String> snapshotFuture = new CompletableFuture<>();

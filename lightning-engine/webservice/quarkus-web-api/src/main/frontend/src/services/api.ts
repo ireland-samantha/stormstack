@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-
 /**
  * Complete REST API client for the Lightning Engine backend.
  * Covers all 82 endpoints across all resource categories.
@@ -107,7 +106,7 @@ export interface GameError {
   timestamp: string;
   matchId: number;
   playerId: number;
-  type: 'COMMAND' | 'SYSTEM' | 'GENERAL';
+  type: "COMMAND" | "SYSTEM" | "GENERAL";
   source: string;
   message: string;
   details: string;
@@ -119,7 +118,7 @@ export interface SessionData {
   matchId: number;
   token?: string;
   sessionToken?: string;
-  status?: 'CONNECTED' | 'DISCONNECTED' | 'ABANDONED';
+  status?: "CONNECTED" | "DISCONNECTED" | "ABANDONED";
   connectedAt?: string;
   disconnectedAt?: string;
 }
@@ -191,7 +190,7 @@ export interface ModuleData {
   description?: string;
   components: string[];
   commands?: string[];
-  source?: 'builtin' | 'jar';
+  source?: "builtin" | "jar";
   jarFile?: string;
 }
 
@@ -200,7 +199,7 @@ export interface AIData {
   version?: string;
   description?: string;
   requiredModules?: string[];
-  source?: 'builtin' | 'jar';
+  source?: "builtin" | "jar";
   jarFile?: string;
 }
 
@@ -237,7 +236,13 @@ export interface RestoreConfig {
 export interface ContainerData {
   id: number;
   name: string;
-  status: 'CREATED' | 'STARTING' | 'RUNNING' | 'PAUSED' | 'STOPPING' | 'STOPPED';
+  status:
+    | "CREATED"
+    | "STARTING"
+    | "RUNNING"
+    | "PAUSED"
+    | "STOPPING"
+    | "STOPPED";
   currentTick: number;
   autoAdvancing: boolean;
   autoAdvanceIntervalMs: number;
@@ -280,7 +285,7 @@ class ApiClient {
   private authToken: string | null = null;
   private refreshToken: string | null = null;
 
-  constructor(baseUrl: string = '') {
+  constructor(baseUrl: string = "") {
     this.baseUrl = baseUrl;
   }
 
@@ -315,22 +320,24 @@ class ApiClient {
 
   private async fetch<T>(path: string, options: RequestInit = {}): Promise<T> {
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string> || {})
+      "Content-Type": "application/json",
+      ...((options.headers as Record<string, string>) || {}),
     };
 
     if (this.authToken) {
-      headers['Authorization'] = `Bearer ${this.authToken}`;
+      headers["Authorization"] = `Bearer ${this.authToken}`;
     }
 
     const response = await fetch(`${this.baseUrl}${path}`, {
       ...options,
-      headers
+      headers,
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      throw new Error(`API error: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ''}`);
+      const errorText = await response.text().catch(() => "");
+      throw new Error(
+        `API error: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`,
+      );
     }
 
     const text = await response.text();
@@ -340,7 +347,7 @@ class ApiClient {
   private async fetchBlob(path: string): Promise<Blob> {
     const headers: Record<string, string> = {};
     if (this.authToken) {
-      headers['Authorization'] = `Bearer ${this.authToken}`;
+      headers["Authorization"] = `Bearer ${this.authToken}`;
     }
 
     const response = await fetch(`${this.baseUrl}${path}`, { headers });
@@ -350,19 +357,23 @@ class ApiClient {
     return response.blob();
   }
 
-  private async uploadFile<T>(path: string, file: File | Blob, filename?: string): Promise<T> {
+  private async uploadFile<T>(
+    path: string,
+    file: File | Blob,
+    filename?: string,
+  ): Promise<T> {
     const formData = new FormData();
-    formData.append('file', file, filename || 'upload');
+    formData.append("file", file, filename || "upload");
 
     const headers: Record<string, string> = {};
     if (this.authToken) {
-      headers['Authorization'] = `Bearer ${this.authToken}`;
+      headers["Authorization"] = `Bearer ${this.authToken}`;
     }
 
     const response = await fetch(`${this.baseUrl}${path}`, {
-      method: 'POST',
+      method: "POST",
       headers,
-      body: formData
+      body: formData,
     });
 
     if (!response.ok) {
@@ -378,9 +389,9 @@ class ApiClient {
   // =========================================================================
 
   async login(username: string, password: string): Promise<LoginResponse> {
-    const response = await this.fetch<LoginResponse>('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
+    const response = await this.fetch<LoginResponse>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
     });
     if (response.token) {
       this.authToken = response.token;
@@ -392,9 +403,9 @@ class ApiClient {
   }
 
   async refreshAuthToken(): Promise<LoginResponse> {
-    const response = await this.fetch<LoginResponse>('/api/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken: this.refreshToken })
+    const response = await this.fetch<LoginResponse>("/api/auth/refresh", {
+      method: "POST",
+      body: JSON.stringify({ refreshToken: this.refreshToken }),
     });
     if (response.token) {
       this.authToken = response.token;
@@ -403,7 +414,7 @@ class ApiClient {
   }
 
   async getCurrentUser(): Promise<UserData> {
-    return this.fetch<UserData>('/api/auth/me');
+    return this.fetch<UserData>("/api/auth/me");
   }
 
   // =========================================================================
@@ -411,7 +422,7 @@ class ApiClient {
   // =========================================================================
 
   async getUsers(): Promise<UserData[]> {
-    return this.fetch<UserData[]>('/api/auth/users');
+    return this.fetch<UserData[]>("/api/auth/users");
   }
 
   async getUser(userId: number): Promise<UserData> {
@@ -423,47 +434,47 @@ class ApiClient {
   }
 
   async createUser(request: CreateUserRequest): Promise<UserData> {
-    return this.fetch<UserData>('/api/auth/users', {
-      method: 'POST',
-      body: JSON.stringify(request)
+    return this.fetch<UserData>("/api/auth/users", {
+      method: "POST",
+      body: JSON.stringify(request),
     });
   }
 
   async updateUserPassword(userId: number, newPassword: string): Promise<void> {
     await this.fetch<void>(`/api/auth/users/${userId}/password`, {
-      method: 'PUT',
-      body: JSON.stringify({ password: newPassword })
+      method: "PUT",
+      body: JSON.stringify({ password: newPassword }),
     });
   }
 
   async updateUserRoles(userId: number, roles: string[]): Promise<UserData> {
     return this.fetch<UserData>(`/api/auth/users/${userId}/roles`, {
-      method: 'PUT',
-      body: JSON.stringify({ roles })
+      method: "PUT",
+      body: JSON.stringify({ roles }),
     });
   }
 
   async addUserRole(userId: number, roleName: string): Promise<UserData> {
     return this.fetch<UserData>(`/api/auth/users/${userId}/roles/${roleName}`, {
-      method: 'POST'
+      method: "POST",
     });
   }
 
   async removeUserRole(userId: number, roleName: string): Promise<UserData> {
     return this.fetch<UserData>(`/api/auth/users/${userId}/roles/${roleName}`, {
-      method: 'DELETE'
+      method: "DELETE",
     });
   }
 
   async setUserEnabled(userId: number, enabled: boolean): Promise<UserData> {
     return this.fetch<UserData>(`/api/auth/users/${userId}/enabled`, {
-      method: 'PUT',
-      body: JSON.stringify({ enabled })
+      method: "PUT",
+      body: JSON.stringify({ enabled }),
     });
   }
 
   async deleteUser(userId: number): Promise<void> {
-    await this.fetch<void>(`/api/auth/users/${userId}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/auth/users/${userId}`, { method: "DELETE" });
   }
 
   // =========================================================================
@@ -471,7 +482,7 @@ class ApiClient {
   // =========================================================================
 
   async getRoles(): Promise<RoleData[]> {
-    return this.fetch<RoleData[]>('/api/auth/roles');
+    return this.fetch<RoleData[]>("/api/auth/roles");
   }
 
   async getRole(roleId: number): Promise<RoleData> {
@@ -483,28 +494,34 @@ class ApiClient {
   }
 
   async createRole(request: CreateRoleRequest): Promise<RoleData> {
-    return this.fetch<RoleData>('/api/auth/roles', {
-      method: 'POST',
-      body: JSON.stringify(request)
+    return this.fetch<RoleData>("/api/auth/roles", {
+      method: "POST",
+      body: JSON.stringify(request),
     });
   }
 
-  async updateRoleDescription(roleId: number, description: string): Promise<RoleData> {
+  async updateRoleDescription(
+    roleId: number,
+    description: string,
+  ): Promise<RoleData> {
     return this.fetch<RoleData>(`/api/auth/roles/${roleId}/description`, {
-      method: 'PUT',
-      body: JSON.stringify({ description })
+      method: "PUT",
+      body: JSON.stringify({ description }),
     });
   }
 
-  async updateRoleIncludes(roleId: number, includes: string[]): Promise<RoleData> {
+  async updateRoleIncludes(
+    roleId: number,
+    includes: string[],
+  ): Promise<RoleData> {
     return this.fetch<RoleData>(`/api/auth/roles/${roleId}/includes`, {
-      method: 'PUT',
-      body: JSON.stringify({ includes })
+      method: "PUT",
+      body: JSON.stringify({ includes }),
     });
   }
 
   async deleteRole(roleId: number): Promise<void> {
-    await this.fetch<void>(`/api/auth/roles/${roleId}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/auth/roles/${roleId}`, { method: "DELETE" });
   }
 
   // =========================================================================
@@ -512,7 +529,7 @@ class ApiClient {
   // =========================================================================
 
   async getMatches(): Promise<MatchData[]> {
-    return this.fetch<MatchData[]>('/api/matches');
+    return this.fetch<MatchData[]>("/api/matches");
   }
 
   async getMatch(matchId: number): Promise<MatchData> {
@@ -520,14 +537,14 @@ class ApiClient {
   }
 
   async createMatch(modules?: string[]): Promise<MatchData> {
-    return this.fetch<MatchData>('/api/matches', {
-      method: 'POST',
-      body: JSON.stringify({ modules: modules || [] })
+    return this.fetch<MatchData>("/api/matches", {
+      method: "POST",
+      body: JSON.stringify({ modules: modules || [] }),
     });
   }
 
   async deleteMatch(matchId: number): Promise<void> {
-    await this.fetch<void>(`/api/matches/${matchId}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/matches/${matchId}`, { method: "DELETE" });
   }
 
   // =========================================================================
@@ -535,7 +552,7 @@ class ApiClient {
   // =========================================================================
 
   async getPlayers(): Promise<PlayerData[]> {
-    return this.fetch<PlayerData[]>('/api/players');
+    return this.fetch<PlayerData[]>("/api/players");
   }
 
   async getPlayer(playerId: number): Promise<PlayerData> {
@@ -543,14 +560,14 @@ class ApiClient {
   }
 
   async createPlayer(name?: string, externalId?: string): Promise<PlayerData> {
-    return this.fetch<PlayerData>('/api/players', {
-      method: 'POST',
-      body: JSON.stringify({ name, externalId })
+    return this.fetch<PlayerData>("/api/players", {
+      method: "POST",
+      body: JSON.stringify({ name, externalId }),
     });
   }
 
   async deletePlayer(playerId: number): Promise<void> {
-    await this.fetch<void>(`/api/players/${playerId}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/players/${playerId}`, { method: "DELETE" });
   }
 
   // =========================================================================
@@ -561,49 +578,73 @@ class ApiClient {
    * Join a player to a match.
    * Returns WebSocket endpoints for player-scoped snapshot streaming.
    */
-  async joinPlayerToMatch(playerId: number, matchId: number, team?: number): Promise<JoinMatchResponse> {
-    return this.fetch<JoinMatchResponse>('/api/player-matches', {
-      method: 'POST',
-      body: JSON.stringify({ playerId, matchId, team })
+  async joinPlayerToMatch(
+    playerId: number,
+    matchId: number,
+    team?: number,
+  ): Promise<JoinMatchResponse> {
+    return this.fetch<JoinMatchResponse>("/api/player-matches", {
+      method: "POST",
+      body: JSON.stringify({ playerId, matchId, team }),
     });
   }
 
-  async getPlayerMatch(playerId: number, matchId: number): Promise<PlayerMatchData> {
-    return this.fetch<PlayerMatchData>(`/api/player-matches/player/${playerId}/match/${matchId}`);
+  async getPlayerMatch(
+    playerId: number,
+    matchId: number,
+  ): Promise<PlayerMatchData> {
+    return this.fetch<PlayerMatchData>(
+      `/api/player-matches/player/${playerId}/match/${matchId}`,
+    );
   }
 
   async getMatchPlayers(matchId: number): Promise<PlayerMatchData[]> {
-    return this.fetch<PlayerMatchData[]>(`/api/player-matches/match/${matchId}`);
+    return this.fetch<PlayerMatchData[]>(
+      `/api/player-matches/match/${matchId}`,
+    );
   }
 
   async getPlayerMatches(playerId: number): Promise<PlayerMatchData[]> {
-    return this.fetch<PlayerMatchData[]>(`/api/player-matches/player/${playerId}`);
+    return this.fetch<PlayerMatchData[]>(
+      `/api/player-matches/player/${playerId}`,
+    );
   }
 
-  async removePlayerFromMatch(playerId: number, matchId: number): Promise<void> {
-    await this.fetch<void>(`/api/player-matches/player/${playerId}/match/${matchId}`, {
-      method: 'DELETE'
-    });
+  async removePlayerFromMatch(
+    playerId: number,
+    matchId: number,
+  ): Promise<void> {
+    await this.fetch<void>(
+      `/api/player-matches/player/${playerId}/match/${matchId}`,
+      {
+        method: "DELETE",
+      },
+    );
   }
 
   // =========================================================================
   // SESSION ENDPOINTS (/api/sessions)
   // =========================================================================
 
-  async connectSession(playerId: number, matchId: number): Promise<SessionData> {
-    return this.fetch<SessionData>('/api/sessions/connect', {
-      method: 'POST',
-      body: JSON.stringify({ playerId, matchId })
+  async connectSession(
+    playerId: number,
+    matchId: number,
+  ): Promise<SessionData> {
+    return this.fetch<SessionData>("/api/sessions/connect", {
+      method: "POST",
+      body: JSON.stringify({ playerId, matchId }),
     });
   }
 
   async getSession(playerId: number, matchId: number): Promise<SessionData> {
-    return this.fetch<SessionData>(`/api/sessions/player/${playerId}/match/${matchId}`);
+    return this.fetch<SessionData>(
+      `/api/sessions/player/${playerId}/match/${matchId}`,
+    );
   }
 
   async canReconnect(playerId: number, matchId: number): Promise<boolean> {
     const result = await this.fetch<{ canReconnect: boolean }>(
-      `/api/sessions/player/${playerId}/match/${matchId}/can-reconnect`
+      `/api/sessions/player/${playerId}/match/${matchId}/can-reconnect`,
     );
     return result.canReconnect;
   }
@@ -617,26 +658,29 @@ class ApiClient {
   }
 
   async getSessions(): Promise<SessionData[]> {
-    return this.fetch<SessionData[]>('/api/sessions');
+    return this.fetch<SessionData[]>("/api/sessions");
   }
 
   /**
    * Create a session by connecting a player to a match.
    */
   async createSession(playerId: number, matchId: number): Promise<SessionData> {
-    return this.fetch<SessionData>('/api/sessions/connect', {
-      method: 'POST',
-      body: JSON.stringify({ playerId, matchId })
+    return this.fetch<SessionData>("/api/sessions/connect", {
+      method: "POST",
+      body: JSON.stringify({ playerId, matchId }),
     });
   }
 
   /**
    * Reconnect a player to an existing disconnected session.
    */
-  async reconnectSession(playerId: number, matchId: number): Promise<SessionData> {
-    return this.fetch<SessionData>('/api/sessions/reconnect', {
-      method: 'POST',
-      body: JSON.stringify({ playerId, matchId })
+  async reconnectSession(
+    playerId: number,
+    matchId: number,
+  ): Promise<SessionData> {
+    return this.fetch<SessionData>("/api/sessions/reconnect", {
+      method: "POST",
+      body: JSON.stringify({ playerId, matchId }),
     });
   }
 
@@ -644,9 +688,9 @@ class ApiClient {
    * Disconnect a player's session (can be reconnected later).
    */
   async disconnectSession(playerId: number, matchId: number): Promise<void> {
-    await this.fetch<void>('/api/sessions/disconnect', {
-      method: 'POST',
-      body: JSON.stringify({ playerId, matchId })
+    await this.fetch<void>("/api/sessions/disconnect", {
+      method: "POST",
+      body: JSON.stringify({ playerId, matchId }),
     });
   }
 
@@ -654,9 +698,9 @@ class ApiClient {
    * Abandon a player's session (cannot be reconnected).
    */
   async abandonSession(playerId: number, matchId: number): Promise<void> {
-    await this.fetch<void>('/api/sessions/abandon', {
-      method: 'POST',
-      body: JSON.stringify({ playerId, matchId })
+    await this.fetch<void>("/api/sessions/abandon", {
+      method: "POST",
+      body: JSON.stringify({ playerId, matchId }),
     });
   }
 
@@ -665,24 +709,32 @@ class ApiClient {
   // =========================================================================
 
   async getCommands(): Promise<CommandData[]> {
-    return this.fetch<CommandData[]>('/api/commands');
+    return this.fetch<CommandData[]>("/api/commands");
   }
 
   async enqueueCommand(request: EnqueueCommandRequest): Promise<void> {
-    await this.fetch<void>('/api/commands', {
-      method: 'POST',
-      body: JSON.stringify(request)
+    await this.fetch<void>("/api/commands", {
+      method: "POST",
+      body: JSON.stringify(request),
     });
   }
 
-  async sendCommandToMatch(matchId: number, commandName: string, parameters?: Record<string, unknown>): Promise<void> {
+  async sendCommandToMatch(
+    matchId: number,
+    commandName: string,
+    parameters?: Record<string, unknown>,
+  ): Promise<void> {
     await this.enqueueCommand({ matchId, commandName, parameters });
   }
 
-  async sendCommandToSession(sessionId: number, commandName: string, parameters?: Record<string, unknown>): Promise<void> {
+  async sendCommandToSession(
+    sessionId: number,
+    commandName: string,
+    parameters?: Record<string, unknown>,
+  ): Promise<void> {
     await this.fetch<void>(`/api/commands/session/${sessionId}`, {
-      method: 'POST',
-      body: JSON.stringify({ commandName, parameters })
+      method: "POST",
+      body: JSON.stringify({ commandName, parameters }),
     });
   }
 
@@ -691,29 +743,29 @@ class ApiClient {
   // =========================================================================
 
   async getCurrentTick(): Promise<number> {
-    const result = await this.fetch<{ tick: number }>('/api/simulation/tick');
+    const result = await this.fetch<{ tick: number }>("/api/simulation/tick");
     return result.tick;
   }
 
   async tick(): Promise<number> {
-    const result = await this.fetch<{ tick: number }>('/api/simulation/tick', {
-      method: 'POST'
+    const result = await this.fetch<{ tick: number }>("/api/simulation/tick", {
+      method: "POST",
     });
     return result.tick ?? 0;
   }
 
   async play(intervalMs: number = 16): Promise<void> {
     await this.fetch<void>(`/api/simulation/play?intervalMs=${intervalMs}`, {
-      method: 'POST'
+      method: "POST",
     });
   }
 
   async stop(): Promise<void> {
-    await this.fetch<void>('/api/simulation/stop', { method: 'POST' });
+    await this.fetch<void>("/api/simulation/stop", { method: "POST" });
   }
 
   async getSimulationStatus(): Promise<SimulationStatus> {
-    return this.fetch<SimulationStatus>('/api/simulation/status');
+    return this.fetch<SimulationStatus>("/api/simulation/status");
   }
 
   // =========================================================================
@@ -721,7 +773,7 @@ class ApiClient {
   // =========================================================================
 
   async getAllSnapshots(): Promise<Record<number, SnapshotData>> {
-    return this.fetch<Record<number, SnapshotData>>('/api/snapshots');
+    return this.fetch<Record<number, SnapshotData>>("/api/snapshots");
   }
 
   async getSnapshot(matchId: number): Promise<SnapshotData> {
@@ -732,30 +784,47 @@ class ApiClient {
    * Get player-scoped snapshot for a specific match.
    * Returns only entities owned by the specified player.
    */
-  async getPlayerSnapshot(matchId: number, playerId: number): Promise<SnapshotData> {
-    return this.fetch<SnapshotData>(`/api/snapshots/match/${matchId}/player/${playerId}`);
+  async getPlayerSnapshot(
+    matchId: number,
+    playerId: number,
+  ): Promise<SnapshotData> {
+    return this.fetch<SnapshotData>(
+      `/api/snapshots/match/${matchId}/player/${playerId}`,
+    );
   }
 
   // =========================================================================
   // DELTA SNAPSHOT ENDPOINTS (/api/snapshots/delta)
   // =========================================================================
 
-  async getDelta(matchId: number, fromTick: number, toTick: number): Promise<DeltaSnapshotData> {
+  async getDelta(
+    matchId: number,
+    fromTick: number,
+    toTick: number,
+  ): Promise<DeltaSnapshotData> {
     return this.fetch<DeltaSnapshotData>(
-      `/api/snapshots/delta/${matchId}?fromTick=${fromTick}&toTick=${toTick}`
+      `/api/snapshots/delta/${matchId}?fromTick=${fromTick}&toTick=${toTick}`,
     );
   }
 
   async recordSnapshotForDelta(matchId: number): Promise<void> {
-    await this.fetch<void>(`/api/snapshots/delta/${matchId}/record`, { method: 'POST' });
+    await this.fetch<void>(`/api/snapshots/delta/${matchId}/record`, {
+      method: "POST",
+    });
   }
 
-  async getDeltaHistory(matchId: number): Promise<{ ticks: number[]; count: number }> {
-    return this.fetch<{ ticks: number[]; count: number }>(`/api/snapshots/delta/${matchId}/history`);
+  async getDeltaHistory(
+    matchId: number,
+  ): Promise<{ ticks: number[]; count: number }> {
+    return this.fetch<{ ticks: number[]; count: number }>(
+      `/api/snapshots/delta/${matchId}/history`,
+    );
   }
 
   async clearDeltaHistory(matchId: number): Promise<void> {
-    await this.fetch<void>(`/api/snapshots/delta/${matchId}/history`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/snapshots/delta/${matchId}/history`, {
+      method: "DELETE",
+    });
   }
 
   // =========================================================================
@@ -763,7 +832,7 @@ class ApiClient {
   // =========================================================================
 
   async getHistorySummary(): Promise<HistorySummary> {
-    return this.fetch<HistorySummary>('/api/history');
+    return this.fetch<HistorySummary>("/api/history");
   }
 
   async getMatchHistorySummary(matchId: number): Promise<MatchHistorySummary> {
@@ -772,32 +841,51 @@ class ApiClient {
 
   async getHistorySnapshots(
     matchId: number,
-    options?: { fromTick?: number; toTick?: number; limit?: number }
+    options?: { fromTick?: number; toTick?: number; limit?: number },
   ): Promise<SnapshotData[]> {
     const params = new URLSearchParams();
-    if (options?.fromTick !== undefined) params.set('fromTick', String(options.fromTick));
-    if (options?.toTick !== undefined) params.set('toTick', String(options.toTick));
-    if (options?.limit !== undefined) params.set('limit', String(options.limit));
+    if (options?.fromTick !== undefined)
+      params.set("fromTick", String(options.fromTick));
+    if (options?.toTick !== undefined)
+      params.set("toTick", String(options.toTick));
+    if (options?.limit !== undefined)
+      params.set("limit", String(options.limit));
     const query = params.toString();
-    return this.fetch<SnapshotData[]>(`/api/history/${matchId}/snapshots${query ? `?${query}` : ''}`);
+    return this.fetch<SnapshotData[]>(
+      `/api/history/${matchId}/snapshots${query ? `?${query}` : ""}`,
+    );
   }
 
-  async getLatestSnapshots(matchId: number, limit: number = 10): Promise<SnapshotData[]> {
-    return this.fetch<SnapshotData[]>(`/api/history/${matchId}/snapshots/latest?limit=${limit}`);
+  async getLatestSnapshots(
+    matchId: number,
+    limit: number = 10,
+  ): Promise<SnapshotData[]> {
+    return this.fetch<SnapshotData[]>(
+      `/api/history/${matchId}/snapshots/latest?limit=${limit}`,
+    );
   }
 
-  async getSnapshotAtTick(matchId: number, tick: number): Promise<SnapshotData> {
+  async getSnapshotAtTick(
+    matchId: number,
+    tick: number,
+  ): Promise<SnapshotData> {
     return this.fetch<SnapshotData>(`/api/history/${matchId}/snapshot/${tick}`);
   }
 
   async deleteMatchHistory(matchId: number): Promise<void> {
-    await this.fetch<void>(`/api/history/${matchId}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/history/${matchId}`, { method: "DELETE" });
   }
 
-  async deleteOldSnapshots(matchId: number, olderThanTick: number): Promise<void> {
-    await this.fetch<void>(`/api/history/${matchId}/older-than/${olderThanTick}`, {
-      method: 'DELETE'
-    });
+  async deleteOldSnapshots(
+    matchId: number,
+    olderThanTick: number,
+  ): Promise<void> {
+    await this.fetch<void>(
+      `/api/history/${matchId}/older-than/${olderThanTick}`,
+      {
+        method: "DELETE",
+      },
+    );
   }
 
   // =========================================================================
@@ -805,7 +893,7 @@ class ApiClient {
   // =========================================================================
 
   async getModules(): Promise<ModuleData[]> {
-    return this.fetch<ModuleData[]>('/api/modules');
+    return this.fetch<ModuleData[]>("/api/modules");
   }
 
   async getModule(moduleName: string): Promise<ModuleData> {
@@ -813,11 +901,15 @@ class ApiClient {
   }
 
   async uploadModule(jarFile: File): Promise<ModuleData> {
-    return this.uploadFile<ModuleData>('/api/modules/upload', jarFile, jarFile.name);
+    return this.uploadFile<ModuleData>(
+      "/api/modules/upload",
+      jarFile,
+      jarFile.name,
+    );
   }
 
   async uninstallModule(moduleName: string): Promise<void> {
-    await this.fetch<void>(`/api/modules/${moduleName}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/modules/${moduleName}`, { method: "DELETE" });
   }
 
   async deleteModule(moduleName: string): Promise<void> {
@@ -825,7 +917,7 @@ class ApiClient {
   }
 
   async reloadModules(): Promise<ModuleData[]> {
-    return this.fetch<ModuleData[]>('/api/modules/reload', { method: 'POST' });
+    return this.fetch<ModuleData[]>("/api/modules/reload", { method: "POST" });
   }
 
   // =========================================================================
@@ -833,7 +925,7 @@ class ApiClient {
   // =========================================================================
 
   async getAIs(): Promise<AIData[]> {
-    return this.fetch<AIData[]>('/api/ai');
+    return this.fetch<AIData[]>("/api/ai");
   }
 
   async getAI(aiName: string): Promise<AIData> {
@@ -841,11 +933,11 @@ class ApiClient {
   }
 
   async uploadAI(jarFile: File): Promise<AIData> {
-    return this.uploadFile<AIData>('/api/ai/upload', jarFile, jarFile.name);
+    return this.uploadFile<AIData>("/api/ai/upload", jarFile, jarFile.name);
   }
 
   async uninstallAI(aiName: string): Promise<void> {
-    await this.fetch<void>(`/api/ai/${aiName}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/ai/${aiName}`, { method: "DELETE" });
   }
 
   async deleteAI(aiName: string): Promise<void> {
@@ -853,7 +945,7 @@ class ApiClient {
   }
 
   async reloadAIs(): Promise<AIData[]> {
-    return this.fetch<AIData[]>('/api/ai/reload', { method: 'POST' });
+    return this.fetch<AIData[]>("/api/ai/reload", { method: "POST" });
   }
 
   // =========================================================================
@@ -861,7 +953,7 @@ class ApiClient {
   // =========================================================================
 
   async getResources(): Promise<ResourceData[]> {
-    return this.fetch<ResourceData[]>('/api/resources');
+    return this.fetch<ResourceData[]>("/api/resources");
   }
 
   async getResource(resourceId: string): Promise<ResourceData> {
@@ -869,11 +961,22 @@ class ApiClient {
   }
 
   async uploadResource(file: File, name?: string): Promise<ResourceData> {
-    return this.uploadFile<ResourceData>('/api/resources', file, name || file.name);
+    return this.uploadFile<ResourceData>(
+      "/api/resources",
+      file,
+      name || file.name,
+    );
   }
 
-  async uploadResourceChunk(resourceId: string, chunkIndex: number, chunk: Blob): Promise<void> {
-    await this.uploadFile<void>(`/api/resources/${resourceId}/chunks/${chunkIndex}`, chunk);
+  async uploadResourceChunk(
+    resourceId: string,
+    chunkIndex: number,
+    chunk: Blob,
+  ): Promise<void> {
+    await this.uploadFile<void>(
+      `/api/resources/${resourceId}/chunks/${chunkIndex}`,
+      chunk,
+    );
   }
 
   async downloadResource(resourceId: string): Promise<Blob> {
@@ -881,15 +984,22 @@ class ApiClient {
   }
 
   async getResourceChunks(resourceId: string): Promise<ResourceChunkInfo[]> {
-    return this.fetch<ResourceChunkInfo[]>(`/api/resources/${resourceId}/chunks`);
+    return this.fetch<ResourceChunkInfo[]>(
+      `/api/resources/${resourceId}/chunks`,
+    );
   }
 
-  async downloadResourceChunk(resourceId: string, chunkIndex: number): Promise<Blob> {
+  async downloadResourceChunk(
+    resourceId: string,
+    chunkIndex: number,
+  ): Promise<Blob> {
     return this.fetchBlob(`/api/resources/${resourceId}/chunks/${chunkIndex}`);
   }
 
   async deleteResource(resourceId: string): Promise<void> {
-    await this.fetch<void>(`/api/resources/${resourceId}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/resources/${resourceId}`, {
+      method: "DELETE",
+    });
   }
 
   // =========================================================================
@@ -897,15 +1007,15 @@ class ApiClient {
   // =========================================================================
 
   async getGuiInfo(): Promise<GuiInfo> {
-    return this.fetch<GuiInfo>('/api/gui/info');
+    return this.fetch<GuiInfo>("/api/gui/info");
   }
 
   async downloadGui(): Promise<Blob> {
-    return this.fetchBlob('/api/gui/download');
+    return this.fetchBlob("/api/gui/download");
   }
 
   async downloadGuiJar(): Promise<Blob> {
-    return this.fetchBlob('/api/gui/download/jar');
+    return this.fetchBlob("/api/gui/download/jar");
   }
 
   // =========================================================================
@@ -913,21 +1023,25 @@ class ApiClient {
   // =========================================================================
 
   async restoreMatch(matchId: number, tick?: number): Promise<void> {
-    const params = tick !== undefined ? `?tick=${tick}` : '';
-    await this.fetch<void>(`/api/restore/match/${matchId}${params}`, { method: 'POST' });
+    const params = tick !== undefined ? `?tick=${tick}` : "";
+    await this.fetch<void>(`/api/restore/match/${matchId}${params}`, {
+      method: "POST",
+    });
   }
 
   async restoreAllMatches(): Promise<void> {
-    await this.fetch<void>('/api/restore/all', { method: 'POST' });
+    await this.fetch<void>("/api/restore/all", { method: "POST" });
   }
 
   async canRestoreMatch(matchId: number): Promise<boolean> {
-    const result = await this.fetch<{ available: boolean }>(`/api/restore/match/${matchId}/available`);
+    const result = await this.fetch<{ available: boolean }>(
+      `/api/restore/match/${matchId}/available`,
+    );
     return result.available;
   }
 
   async getRestoreConfig(): Promise<RestoreConfig> {
-    return this.fetch<RestoreConfig>('/api/restore/config');
+    return this.fetch<RestoreConfig>("/api/restore/config");
   }
 
   // =========================================================================
@@ -935,45 +1049,49 @@ class ApiClient {
   // =========================================================================
 
   async getContainers(): Promise<ContainerData[]> {
-    return this.fetch<ContainerData[]>('/api/containers');
+    return this.fetch<ContainerData[]>("/api/containers");
   }
 
   async getContainer(containerId: number): Promise<ContainerData> {
     return this.fetch<ContainerData>(`/api/containers/${containerId}`);
   }
 
-  async createContainer(request: CreateContainerRequest): Promise<ContainerData> {
-    return this.fetch<ContainerData>('/api/containers', {
-      method: 'POST',
-      body: JSON.stringify(request)
+  async createContainer(
+    request: CreateContainerRequest,
+  ): Promise<ContainerData> {
+    return this.fetch<ContainerData>("/api/containers", {
+      method: "POST",
+      body: JSON.stringify(request),
     });
   }
 
   async deleteContainer(containerId: number): Promise<void> {
-    await this.fetch<void>(`/api/containers/${containerId}`, { method: 'DELETE' });
+    await this.fetch<void>(`/api/containers/${containerId}`, {
+      method: "DELETE",
+    });
   }
 
   async startContainer(containerId: number): Promise<ContainerData> {
     return this.fetch<ContainerData>(`/api/containers/${containerId}/start`, {
-      method: 'POST'
+      method: "POST",
     });
   }
 
   async stopContainer(containerId: number): Promise<ContainerData> {
     return this.fetch<ContainerData>(`/api/containers/${containerId}/stop`, {
-      method: 'POST'
+      method: "POST",
     });
   }
 
   async pauseContainer(containerId: number): Promise<ContainerData> {
     return this.fetch<ContainerData>(`/api/containers/${containerId}/pause`, {
-      method: 'POST'
+      method: "POST",
     });
   }
 
   async resumeContainer(containerId: number): Promise<ContainerData> {
     return this.fetch<ContainerData>(`/api/containers/${containerId}/resume`, {
-      method: 'POST'
+      method: "POST",
     });
   }
 
@@ -983,54 +1101,77 @@ class ApiClient {
 
   async advanceContainerTick(containerId: number): Promise<{ tick: number }> {
     return this.fetch<{ tick: number }>(`/api/containers/${containerId}/tick`, {
-      method: 'POST'
+      method: "POST",
     });
   }
 
-  async playContainer(containerId: number, intervalMs: number = 16): Promise<ContainerData> {
-    return this.fetch<ContainerData>(`/api/containers/${containerId}/play?intervalMs=${intervalMs}`, {
-      method: 'POST'
-    });
+  async playContainer(
+    containerId: number,
+    intervalMs: number = 16,
+  ): Promise<ContainerData> {
+    return this.fetch<ContainerData>(
+      `/api/containers/${containerId}/play?intervalMs=${intervalMs}`,
+      {
+        method: "POST",
+      },
+    );
   }
 
-  async startContainerAutoAdvance(containerId: number, intervalMs: number = 16): Promise<ContainerData> {
+  async startContainerAutoAdvance(
+    containerId: number,
+    intervalMs: number = 16,
+  ): Promise<ContainerData> {
     return this.playContainer(containerId, intervalMs);
   }
 
   async stopContainerAutoAdvance(containerId: number): Promise<ContainerData> {
-    return this.fetch<ContainerData>(`/api/containers/${containerId}/stop-auto`, {
-      method: 'POST'
-    });
+    return this.fetch<ContainerData>(
+      `/api/containers/${containerId}/stop-auto`,
+      {
+        method: "POST",
+      },
+    );
   }
 
   async getContainerMatches(containerId: number): Promise<MatchData[]> {
     return this.fetch<MatchData[]>(`/api/containers/${containerId}/matches`);
   }
 
-  async getMatchInContainer(containerId: number, matchId: number): Promise<MatchData> {
-    return this.fetch<MatchData>(`/api/containers/${containerId}/matches/${matchId}`);
+  async getMatchInContainer(
+    containerId: number,
+    matchId: number,
+  ): Promise<MatchData> {
+    return this.fetch<MatchData>(
+      `/api/containers/${containerId}/matches/${matchId}`,
+    );
   }
 
   async createMatchInContainer(
     containerId: number,
     matchId: number,
     enabledModuleNames?: string[],
-    enabledAINames?: string[]
+    enabledAINames?: string[],
   ): Promise<MatchData> {
     return this.fetch<MatchData>(`/api/containers/${containerId}/matches`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({
         id: matchId,
         enabledModuleNames: enabledModuleNames || [],
-        enabledAINames: enabledAINames || []
-      })
+        enabledAINames: enabledAINames || [],
+      }),
     });
   }
 
-  async deleteMatchFromContainer(containerId: number, matchId: number): Promise<void> {
-    await this.fetch<void>(`/api/containers/${containerId}/matches/${matchId}`, {
-      method: 'DELETE'
-    });
+  async deleteMatchFromContainer(
+    containerId: number,
+    matchId: number,
+  ): Promise<void> {
+    await this.fetch<void>(
+      `/api/containers/${containerId}/matches/${matchId}`,
+      {
+        method: "DELETE",
+      },
+    );
   }
 
   async getContainerModules(containerId: number): Promise<string[]> {
@@ -1038,9 +1179,12 @@ class ApiClient {
   }
 
   async reloadContainerModules(containerId: number): Promise<string[]> {
-    return this.fetch<string[]>(`/api/containers/${containerId}/modules/reload`, {
-      method: 'POST'
-    });
+    return this.fetch<string[]>(
+      `/api/containers/${containerId}/modules/reload`,
+      {
+        method: "POST",
+      },
+    );
   }
 
   async getContainerCommands(containerId: number): Promise<CommandData[]> {
@@ -1050,30 +1194,35 @@ class ApiClient {
   async sendCommandToContainer(
     containerId: number,
     commandName: string,
-    parameters?: Record<string, unknown>
+    parameters?: Record<string, unknown>,
   ): Promise<void> {
     await this.fetch<void>(`/api/containers/${containerId}/commands`, {
-      method: 'POST',
-      body: JSON.stringify({ commandName, parameters: parameters || {} })
+      method: "POST",
+      body: JSON.stringify({ commandName, parameters: parameters || {} }),
     });
   }
 
   async connectSessionInContainer(
     containerId: number,
     matchId: number,
-    playerId: number
+    playerId: number,
   ): Promise<SessionData> {
-    return this.fetch<SessionData>(`/api/containers/${containerId}/matches/${matchId}/sessions`, {
-      method: 'POST',
-      body: JSON.stringify({ playerId })
-    });
+    return this.fetch<SessionData>(
+      `/api/containers/${containerId}/matches/${matchId}/sessions`,
+      {
+        method: "POST",
+        body: JSON.stringify({ playerId }),
+      },
+    );
   }
 
   async getSessionsInContainer(
     containerId: number,
-    matchId: number
+    matchId: number,
   ): Promise<SessionData[]> {
-    return this.fetch<SessionData[]>(`/api/containers/${containerId}/matches/${matchId}/sessions`);
+    return this.fetch<SessionData[]>(
+      `/api/containers/${containerId}/matches/${matchId}/sessions`,
+    );
   }
 
   /**
@@ -1089,11 +1238,11 @@ class ApiClient {
   async reconnectSessionInContainer(
     containerId: number,
     matchId: number,
-    playerId: number
+    playerId: number,
   ): Promise<SessionData> {
     return this.fetch<SessionData>(
       `/api/containers/${containerId}/matches/${matchId}/sessions/${playerId}/reconnect`,
-      { method: 'POST' }
+      { method: "POST" },
     );
   }
 
@@ -1103,11 +1252,11 @@ class ApiClient {
   async disconnectSessionInContainer(
     containerId: number,
     matchId: number,
-    playerId: number
+    playerId: number,
   ): Promise<void> {
     await this.fetch<void>(
       `/api/containers/${containerId}/matches/${matchId}/sessions/${playerId}/disconnect`,
-      { method: 'POST' }
+      { method: "POST" },
     );
   }
 
@@ -1117,11 +1266,11 @@ class ApiClient {
   async abandonSessionInContainer(
     containerId: number,
     matchId: number,
-    playerId: number
+    playerId: number,
   ): Promise<void> {
     await this.fetch<void>(
       `/api/containers/${containerId}/matches/${matchId}/sessions/${playerId}/abandon`,
-      { method: 'POST' }
+      { method: "POST" },
     );
   }
 
@@ -1139,27 +1288,41 @@ class ApiClient {
   /**
    * Create a player (container-scoped).
    */
-  async createPlayerInContainer(containerId: number, id?: number): Promise<PlayerData> {
+  async createPlayerInContainer(
+    containerId: number,
+    id?: number,
+  ): Promise<PlayerData> {
     return this.fetch<PlayerData>(`/api/containers/${containerId}/players`, {
-      method: 'POST',
-      body: JSON.stringify({ id })
+      method: "POST",
+      body: JSON.stringify({ id }),
     });
   }
 
   /**
    * Get a player by ID (container-scoped).
    */
-  async getPlayerInContainer(containerId: number, playerId: number): Promise<PlayerData> {
-    return this.fetch<PlayerData>(`/api/containers/${containerId}/players/${playerId}`);
+  async getPlayerInContainer(
+    containerId: number,
+    playerId: number,
+  ): Promise<PlayerData> {
+    return this.fetch<PlayerData>(
+      `/api/containers/${containerId}/players/${playerId}`,
+    );
   }
 
   /**
    * Delete a player (container-scoped).
    */
-  async deletePlayerInContainer(containerId: number, playerId: number): Promise<void> {
-    await this.fetch<void>(`/api/containers/${containerId}/players/${playerId}`, {
-      method: 'DELETE'
-    });
+  async deletePlayerInContainer(
+    containerId: number,
+    playerId: number,
+  ): Promise<void> {
+    await this.fetch<void>(
+      `/api/containers/${containerId}/players/${playerId}`,
+      {
+        method: "DELETE",
+      },
+    );
   }
 
   // =========================================================================
@@ -1172,23 +1335,26 @@ class ApiClient {
   async joinPlayerToMatchInContainer(
     containerId: number,
     matchId: number,
-    playerId: number
+    playerId: number,
   ): Promise<JoinMatchResponse> {
     return this.fetch<JoinMatchResponse>(
       `/api/containers/${containerId}/matches/${matchId}/players`,
       {
-        method: 'POST',
-        body: JSON.stringify({ playerId })
-      }
+        method: "POST",
+        body: JSON.stringify({ playerId }),
+      },
     );
   }
 
   /**
    * Get all players in a match (container-scoped).
    */
-  async getPlayersInMatch(containerId: number, matchId: number): Promise<PlayerMatchData[]> {
+  async getPlayersInMatch(
+    containerId: number,
+    matchId: number,
+  ): Promise<PlayerMatchData[]> {
     return this.fetch<PlayerMatchData[]>(
-      `/api/containers/${containerId}/matches/${matchId}/players`
+      `/api/containers/${containerId}/matches/${matchId}/players`,
     );
   }
 
@@ -1198,11 +1364,11 @@ class ApiClient {
   async removePlayerFromMatchInContainer(
     containerId: number,
     matchId: number,
-    playerId: number
+    playerId: number,
   ): Promise<void> {
     await this.fetch<void>(
       `/api/containers/${containerId}/matches/${matchId}/players/${playerId}`,
-      { method: 'DELETE' }
+      { method: "DELETE" },
     );
   }
 
@@ -1215,7 +1381,9 @@ class ApiClient {
     return this.getContainer(partitionId);
   }
 
-  async createPartition(request: CreateContainerRequest): Promise<ContainerData> {
+  async createPartition(
+    request: CreateContainerRequest,
+  ): Promise<ContainerData> {
     return this.createContainer(request);
   }
 
@@ -1247,11 +1415,17 @@ class ApiClient {
     return this.advanceContainerTick(partitionId);
   }
 
-  async playPartition(partitionId: number, intervalMs: number = 16): Promise<ContainerData> {
+  async playPartition(
+    partitionId: number,
+    intervalMs: number = 16,
+  ): Promise<ContainerData> {
     return this.playContainer(partitionId, intervalMs);
   }
 
-  async startPartitionAutoAdvance(partitionId: number, intervalMs: number = 16): Promise<ContainerData> {
+  async startPartitionAutoAdvance(
+    partitionId: number,
+    intervalMs: number = 16,
+  ): Promise<ContainerData> {
     return this.startContainerAutoAdvance(partitionId, intervalMs);
   }
 
@@ -1267,12 +1441,20 @@ class ApiClient {
     partitionId: number,
     matchId: number,
     enabledModuleNames?: string[],
-    enabledAINames?: string[]
+    enabledAINames?: string[],
   ): Promise<MatchData> {
-    return this.createMatchInContainer(partitionId, matchId, enabledModuleNames, enabledAINames);
+    return this.createMatchInContainer(
+      partitionId,
+      matchId,
+      enabledModuleNames,
+      enabledAINames,
+    );
   }
 
-  async deleteMatchFromPartition(partitionId: number, matchId: number): Promise<void> {
+  async deleteMatchFromPartition(
+    partitionId: number,
+    matchId: number,
+  ): Promise<void> {
     return this.deleteMatchFromContainer(partitionId, matchId);
   }
 
@@ -1291,7 +1473,7 @@ class ApiClient {
   async sendCommandToPartition(
     partitionId: number,
     commandName: string,
-    parameters?: Record<string, unknown>
+    parameters?: Record<string, unknown>,
   ): Promise<void> {
     return this.sendCommandToContainer(partitionId, commandName, parameters);
   }
@@ -1299,7 +1481,7 @@ class ApiClient {
   async connectSessionInPartition(
     partitionId: number,
     matchId: number,
-    playerId: number
+    playerId: number,
   ): Promise<SessionData> {
     return this.connectSessionInContainer(partitionId, matchId, playerId);
   }
@@ -1317,8 +1499,11 @@ export default apiClient;
  * @param containerId - The container ID
  * @param matchId - The match ID
  */
-export function buildSnapshotWebSocketUrl(containerId: number, matchId: number): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+export function buildSnapshotWebSocketUrl(
+  containerId: number,
+  matchId: number,
+): string {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${window.location.host}/ws/containers/${containerId}/matches/${matchId}/snapshot`;
 }
 
@@ -1328,8 +1513,12 @@ export function buildSnapshotWebSocketUrl(containerId: number, matchId: number):
  * @param matchId - The match ID
  * @param playerId - The player ID
  */
-export function buildPlayerSnapshotWebSocketUrl(containerId: number, matchId: number, playerId: number): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+export function buildPlayerSnapshotWebSocketUrl(
+  containerId: number,
+  matchId: number,
+  playerId: number,
+): string {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${window.location.host}/ws/containers/${containerId}/matches/${matchId}/players/${playerId}/snapshot`;
 }
 
@@ -1339,15 +1528,22 @@ export function buildPlayerSnapshotWebSocketUrl(containerId: number, matchId: nu
  * @param matchId - The match ID
  * @param playerId - The player ID
  */
-export function buildPlayerDeltaSnapshotWebSocketUrl(containerId: number, matchId: number, playerId: number): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+export function buildPlayerDeltaSnapshotWebSocketUrl(
+  containerId: number,
+  matchId: number,
+  playerId: number,
+): string {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${window.location.host}/ws/containers/${containerId}/matches/${matchId}/players/${playerId}/delta`;
 }
 
 /**
  * Build WebSocket URL for player-scoped error streaming.
  */
-export function buildPlayerErrorWebSocketUrl(matchId: number, playerId: number): string {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+export function buildPlayerErrorWebSocketUrl(
+  matchId: number,
+  playerId: number,
+): string {
+  const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${window.location.host}/ws/matches/${matchId}/players/${playerId}/errors`;
 }

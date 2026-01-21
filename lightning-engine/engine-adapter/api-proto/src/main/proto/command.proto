@@ -19,7 +19,9 @@ message CommandRequest {
     // Command-specific payload
     oneof payload {
         SpawnPayload spawn = 10;
-        MovePayload move = 11;
+        AttachRigidBodyPayload attach_rigid_body = 11;
+        AttachSpritePayload attach_sprite = 12;
+        GenericPayload generic = 13;
     }
 }
 
@@ -35,6 +37,33 @@ message MovePayload {
     int64 entity_id = 1;
     int64 target_x = 2;
     int64 target_y = 3;
+}
+
+// Payload for attachRigidBody commands
+message AttachRigidBodyPayload {
+    int64 entity_id = 1;
+    int64 mass = 2;
+    int64 position_x = 3;
+    int64 position_y = 4;
+    int64 velocity_x = 5;
+    int64 velocity_y = 6;
+}
+
+// Payload for attachSprite commands
+message AttachSpritePayload {
+    int64 entity_id = 1;
+    int64 resource_id = 2;
+    int64 width = 3;
+    int64 height = 4;
+    bool visible = 5;
+}
+
+// Generic payload for custom commands with arbitrary parameters
+message GenericPayload {
+    map<string, string> string_params = 1;
+    map<string, int64> long_params = 2;
+    map<string, double> double_params = 3;
+    map<string, bool> bool_params = 4;
 }
 
 // Response sent back to clients

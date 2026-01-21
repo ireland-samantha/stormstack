@@ -20,34 +20,37 @@
  * SOFTWARE.
  */
 
-
-import { useState } from 'react';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, IconButton, Button, Chip, CircularProgress, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions, Stack
-} from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon, Refresh as RefreshIcon, Dns as ContainerIcon } from '@mui/icons-material';
-import { useAppSelector } from '../store/hooks';
-import { selectSelectedContainerId } from '../store/slices/uiSlice';
+    Add as AddIcon,
+    Delete as DeleteIcon, Dns as ContainerIcon, Refresh as RefreshIcon
+} from "@mui/icons-material";
 import {
-  useGetContainerQuery,
-  useGetPlayersInContainerQuery,
-  useCreatePlayerInContainerMutation,
-  useDeletePlayerInContainerMutation,
-  type PlayerData,
-} from '../store/api/apiSlice';
+    Alert, Box, Button,
+    Chip,
+    CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Stack, Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow, Typography
+} from "@mui/material";
+import { useState } from "react";
+import {
+    useCreatePlayerInContainerMutation,
+    useDeletePlayerInContainerMutation, useGetContainerQuery,
+    useGetPlayersInContainerQuery, type PlayerData
+} from "../store/api/apiSlice";
+import { useAppSelector } from "../store/hooks";
+import { selectSelectedContainerId } from "../store/slices/uiSlice";
 
 const PlayersPanel: React.FC = () => {
   const selectedContainerId = useAppSelector(selectSelectedContainerId);
 
   // RTK Query hooks
-  const {
-    data: selectedContainer,
-    isLoading: isContainerLoading,
-  } = useGetContainerQuery(selectedContainerId!, {
-    skip: selectedContainerId === null,
-  });
+  const { data: selectedContainer, isLoading: isContainerLoading } =
+    useGetContainerQuery(selectedContainerId!, {
+      skip: selectedContainerId === null,
+    });
 
   const {
     data: players = [],
@@ -73,32 +76,39 @@ const PlayersPanel: React.FC = () => {
     if (!selectedContainerId) return;
     try {
       await createPlayer({ containerId: selectedContainerId }).unwrap();
-      setSuccess('Player created successfully');
+      setSuccess("Player created successfully");
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to create player');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to create player",
+      );
     }
   };
 
   const handleDeletePlayer = async () => {
     if (deletingPlayer && selectedContainerId) {
       try {
-        await deletePlayer({ containerId: selectedContainerId, playerId: deletingPlayer.id }).unwrap();
+        await deletePlayer({
+          containerId: selectedContainerId,
+          playerId: deletingPlayer.id,
+        }).unwrap();
         setDeleteDialogOpen(false);
         setDeletingPlayer(null);
-        setSuccess('Player deleted');
+        setSuccess("Player deleted");
       } catch (err) {
         // Close dialog and show error in main panel so it doesn't block subsequent interactions
         setDeleteDialogOpen(false);
         setDeletingPlayer(null);
-        setLocalError(err instanceof Error ? err.message : 'Failed to delete player');
+        setLocalError(
+          err instanceof Error ? err.message : "Failed to delete player",
+        );
       }
     }
   };
 
   if (!selectedContainerId) {
     return (
-      <Paper sx={{ p: 4, textAlign: 'center' }}>
-        <ContainerIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+      <Paper sx={{ p: 4, textAlign: "center" }}>
+        <ContainerIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
         <Typography variant="h6" color="text.secondary" gutterBottom>
           No Container Selected
         </Typography>
@@ -110,18 +120,36 @@ const PlayersPanel: React.FC = () => {
   }
 
   if (isLoading || !selectedContainer) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   const errorMessage = isError
-    ? (error && 'data' in error ? String((error.data as { message?: string })?.message || 'Failed to fetch players') : 'Failed to fetch players')
+    ? error && "data" in error
+      ? String(
+          (error.data as { message?: string })?.message ||
+            "Failed to fetch players",
+        )
+      : "Failed to fetch players"
     : localError;
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 3,
+        }}
+      >
         <Box>
-          <Typography variant="h4" fontWeight={700}>Players</Typography>
+          <Typography variant="h4" fontWeight={700}>
+            Players
+          </Typography>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
             <Chip
               icon={<ContainerIcon />}
@@ -133,20 +161,44 @@ const PlayersPanel: React.FC = () => {
             <Chip
               label={selectedContainer.status}
               size="small"
-              color={selectedContainer.status === 'RUNNING' ? 'success' : 'default'}
+              color={
+                selectedContainer.status === "RUNNING" ? "success" : "default"
+              }
             />
           </Stack>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton onClick={() => refetch()} title="Refresh"><RefreshIcon /></IconButton>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleCreatePlayer}>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={() => refetch()} title="Refresh">
+            <RefreshIcon />
+          </IconButton>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreatePlayer}
+          >
             Add Player
           </Button>
         </Box>
       </Box>
 
-      {errorMessage && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>{errorMessage}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
+      {errorMessage && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setLocalError(null)}
+        >
+          {errorMessage}
+        </Alert>
+      )}
+      {success && (
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setSuccess(null)}
+        >
+          {success}
+        </Alert>
+      )}
 
       <TableContainer component={Paper}>
         <Table>
@@ -161,16 +213,25 @@ const PlayersPanel: React.FC = () => {
             {players.map((player) => (
               <TableRow key={player.id}>
                 <TableCell>
-                  <Chip label={`Player ${player.id}`} size="small" color="primary" />
+                  <Chip
+                    label={`Player ${player.id}`}
+                    size="small"
+                    color="primary"
+                  />
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2">{player.name || `Player ${player.id}`}</Typography>
+                  <Typography variant="body2">
+                    {player.name || `Player ${player.id}`}
+                  </Typography>
                 </TableCell>
                 <TableCell align="right">
                   <IconButton
                     size="small"
                     color="error"
-                    onClick={() => { setDeletingPlayer(player); setDeleteDialogOpen(true); }}
+                    onClick={() => {
+                      setDeletingPlayer(player);
+                      setDeleteDialogOpen(true);
+                    }}
                     title="Delete player"
                   >
                     <DeleteIcon />
@@ -189,14 +250,25 @@ const PlayersPanel: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
         <DialogTitle>Delete Player</DialogTitle>
         <DialogContent>
-          <Typography>Delete player {deletingPlayer?.id}? This cannot be undone.</Typography>
+          <Typography>
+            Delete player {deletingPlayer?.id}? This cannot be undone.
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleDeletePlayer} color="error" variant="contained">Delete</Button>
+          <Button
+            onClick={handleDeletePlayer}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

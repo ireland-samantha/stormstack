@@ -20,45 +20,39 @@
  * SOFTWARE.
  */
 
-
-import { useEffect, useState } from 'react';
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  Typography,
-  Box,
-  Chip,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Tooltip,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper
-} from '@mui/material';
+    Circle as CircleIcon, ExpandMore as ExpandMoreIcon, Refresh as RefreshIcon
+} from "@mui/icons-material";
 import {
-  Refresh as RefreshIcon,
-  ExpandMore as ExpandMoreIcon,
-  Circle as CircleIcon
-} from '@mui/icons-material';
-import { useSnapshot } from '../hooks/useSnapshot';
+    Accordion, AccordionDetails, AccordionSummary, Alert, Box, Card,
+    CardContent,
+    CardHeader, Chip,
+    CircularProgress, IconButton, Paper, Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow, Tooltip, Typography
+} from "@mui/material";
+import { useEffect, useState } from "react";
+import { useSnapshot } from "../hooks/useSnapshot";
 
 interface SnapshotPanelProps {
   containerId: number;
   matchId: number;
 }
 
-export const SnapshotPanel: React.FC<SnapshotPanelProps> = ({ containerId, matchId }) => {
-  const { snapshot, connected, error, requestSnapshot } = useSnapshot(containerId, matchId);
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+export const SnapshotPanel: React.FC<SnapshotPanelProps> = ({
+  containerId,
+  matchId,
+}) => {
+  const { snapshot, connected, error, requestSnapshot } = useSnapshot(
+    containerId,
+    matchId,
+  );
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(
+    new Set(),
+  );
 
   useEffect(() => {
     // Expand first module by default
@@ -71,7 +65,7 @@ export const SnapshotPanel: React.FC<SnapshotPanelProps> = ({ containerId, match
   }, [snapshot]);
 
   const handleModuleToggle = (moduleName: string) => {
-    setExpandedModules(prev => {
+    setExpandedModules((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(moduleName)) {
         newSet.delete(moduleName);
@@ -92,17 +86,17 @@ export const SnapshotPanel: React.FC<SnapshotPanelProps> = ({ containerId, match
   };
 
   return (
-    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardHeader
         title="Live Snapshot"
         subheader={`Match ${matchId}`}
         action={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Tooltip title={connected ? 'Connected' : 'Disconnected'}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Tooltip title={connected ? "Connected" : "Disconnected"}>
               <CircleIcon
                 sx={{
                   fontSize: 12,
-                  color: connected ? 'success.main' : 'error.main'
+                  color: connected ? "success.main" : "error.main",
                 }}
               />
             </Tooltip>
@@ -114,7 +108,7 @@ export const SnapshotPanel: React.FC<SnapshotPanelProps> = ({ containerId, match
           </Box>
         }
       />
-      <CardContent sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <CardContent sx={{ flexGrow: 1, overflow: "auto" }}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
@@ -122,14 +116,14 @@ export const SnapshotPanel: React.FC<SnapshotPanelProps> = ({ containerId, match
         )}
 
         {!snapshot && !error && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
             <CircularProgress />
           </Box>
         )}
 
         {snapshot && (
           <>
-            <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
+            <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
               <Chip
                 label={`Tick ${snapshot.tick}`}
                 color="primary"
@@ -174,34 +168,40 @@ export const SnapshotPanel: React.FC<SnapshotPanelProps> = ({ containerId, match
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {Object.entries(moduleData).map(([componentName, values]) => (
-                          <TableRow key={componentName}>
-                            <TableCell component="th" scope="row">
-                              <Typography variant="body2" fontFamily="monospace">
-                                {componentName}
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="right">
-                              {Array.isArray(values) ? values.length : 0}
-                            </TableCell>
-                            <TableCell>
-                              <Typography
-                                variant="body2"
-                                fontFamily="monospace"
-                                sx={{
-                                  maxWidth: 200,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap'
-                                }}
-                              >
-                                {Array.isArray(values)
-                                  ? values.slice(0, 3).join(', ') + (values.length > 3 ? '...' : '')
-                                  : String(values)}
-                              </Typography>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {Object.entries(moduleData).map(
+                          ([componentName, values]) => (
+                            <TableRow key={componentName}>
+                              <TableCell component="th" scope="row">
+                                <Typography
+                                  variant="body2"
+                                  fontFamily="monospace"
+                                >
+                                  {componentName}
+                                </Typography>
+                              </TableCell>
+                              <TableCell align="right">
+                                {Array.isArray(values) ? values.length : 0}
+                              </TableCell>
+                              <TableCell>
+                                <Typography
+                                  variant="body2"
+                                  fontFamily="monospace"
+                                  sx={{
+                                    maxWidth: 200,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                >
+                                  {Array.isArray(values)
+                                    ? values.slice(0, 3).join(", ") +
+                                      (values.length > 3 ? "..." : "")
+                                    : String(values)}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          ),
+                        )}
                       </TableBody>
                     </Table>
                   </TableContainer>

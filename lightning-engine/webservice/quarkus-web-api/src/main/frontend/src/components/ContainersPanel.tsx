@@ -3,63 +3,43 @@
  * MIT License
  */
 
-import { useState } from 'react';
 import {
-  Box,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Chip,
-  CircularProgress,
-  Alert,
-  Tooltip,
-  Stack
-} from '@mui/material';
+    Add as AddIcon,
+    Delete as DeleteIcon, Pause as PauseIcon, PlayArrow as PlayIcon, Refresh as RefreshIcon,
+    SkipNext as TickIcon, Stop as StopIcon
+} from "@mui/icons-material";
 import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  PlayArrow as PlayIcon,
-  Stop as StopIcon,
-  Pause as PauseIcon,
-  Refresh as RefreshIcon,
-  SkipNext as TickIcon
-} from '@mui/icons-material';
+    Alert, Box, Button, Chip,
+    CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Stack, Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow, TextField, Tooltip, Typography
+} from "@mui/material";
+import { useState } from "react";
 import {
-  useGetContainersQuery,
-  useCreateContainerMutation,
-  useDeleteContainerMutation,
-  useStartContainerMutation,
-  useStopContainerMutation,
-  usePauseContainerMutation,
-  useResumeContainerMutation,
-  useAdvanceContainerTickMutation,
-  usePlayContainerMutation,
-  useStopContainerAutoAdvanceMutation,
-} from '../store/api/apiSlice';
+    useAdvanceContainerTickMutation, useCreateContainerMutation,
+    useDeleteContainerMutation, useGetContainersQuery, usePauseContainerMutation, usePlayContainerMutation, useResumeContainerMutation, useStartContainerMutation, useStopContainerAutoAdvanceMutation, useStopContainerMutation
+} from "../store/api/apiSlice";
 
 const ContainersPanel: React.FC = () => {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newContainerName, setNewContainerName] = useState('');
+  const [newContainerName, setNewContainerName] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
   // RTK Query hooks
-  const { data: containers = [], isLoading, error: fetchError, refetch } = useGetContainersQuery(undefined, {
+  const {
+    data: containers = [],
+    isLoading,
+    error: fetchError,
+    refetch,
+  } = useGetContainersQuery(undefined, {
     pollingInterval: 2000, // Auto-refresh every 2 seconds
   });
 
-  const [createContainer, { isLoading: isCreating }] = useCreateContainerMutation();
+  const [createContainer, { isLoading: isCreating }] =
+    useCreateContainerMutation();
   const [deleteContainer] = useDeleteContainerMutation();
   const [startContainer] = useStartContainerMutation();
   const [stopContainer] = useStopContainerMutation();
@@ -80,19 +60,19 @@ const ContainersPanel: React.FC = () => {
     try {
       await createContainer({ name: newContainerName.trim() }).unwrap();
       setCreateDialogOpen(false);
-      setNewContainerName('');
+      setNewContainerName("");
     } catch (err) {
-      handleError(err, 'create container');
+      handleError(err, "create container");
     }
   };
 
   const handleDeleteContainer = async (containerId: number) => {
-    if (!confirm('Are you sure you want to delete this container?')) return;
+    if (!confirm("Are you sure you want to delete this container?")) return;
 
     try {
       await deleteContainer(containerId).unwrap();
     } catch (err) {
-      handleError(err, 'delete container');
+      handleError(err, "delete container");
     }
   };
 
@@ -100,7 +80,7 @@ const ContainersPanel: React.FC = () => {
     try {
       await startContainer(containerId).unwrap();
     } catch (err) {
-      handleError(err, 'start container');
+      handleError(err, "start container");
     }
   };
 
@@ -108,7 +88,7 @@ const ContainersPanel: React.FC = () => {
     try {
       await stopContainer(containerId).unwrap();
     } catch (err) {
-      handleError(err, 'stop container');
+      handleError(err, "stop container");
     }
   };
 
@@ -116,7 +96,7 @@ const ContainersPanel: React.FC = () => {
     try {
       await pauseContainer(containerId).unwrap();
     } catch (err) {
-      handleError(err, 'pause container');
+      handleError(err, "pause container");
     }
   };
 
@@ -124,7 +104,7 @@ const ContainersPanel: React.FC = () => {
     try {
       await resumeContainer(containerId).unwrap();
     } catch (err) {
-      handleError(err, 'resume container');
+      handleError(err, "resume container");
     }
   };
 
@@ -132,7 +112,7 @@ const ContainersPanel: React.FC = () => {
     try {
       await playContainer({ id: containerId, intervalMs: 16 }).unwrap();
     } catch (err) {
-      handleError(err, 'play container');
+      handleError(err, "play container");
     }
   };
 
@@ -140,7 +120,7 @@ const ContainersPanel: React.FC = () => {
     try {
       await stopAutoAdvance(containerId).unwrap();
     } catch (err) {
-      handleError(err, 'stop auto-advance');
+      handleError(err, "stop auto-advance");
     }
   };
 
@@ -148,32 +128,33 @@ const ContainersPanel: React.FC = () => {
     try {
       await advanceTick(containerId).unwrap();
     } catch (err) {
-      handleError(err, 'advance tick');
+      handleError(err, "advance tick");
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'RUNNING':
-        return 'success';
-      case 'PAUSED':
-        return 'warning';
-      case 'STOPPED':
-      case 'STOPPING':
-        return 'error';
-      case 'CREATED':
-      case 'STARTING':
-        return 'info';
+      case "RUNNING":
+        return "success";
+      case "PAUSED":
+        return "warning";
+      case "STOPPED":
+      case "STOPPING":
+        return "error";
+      case "CREATED":
+      case "STARTING":
+        return "info";
       default:
-        return 'default';
+        return "default";
     }
   };
 
-  const error = localError || (fetchError ? 'Failed to fetch containers' : null);
+  const error =
+    localError || (fetchError ? "Failed to fetch containers" : null);
 
   if (isLoading && containers.length === 0) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
       </Box>
     );
@@ -181,7 +162,14 @@ const ContainersPanel: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Typography variant="h5">Execution Containers</Typography>
         <Stack direction="row" spacing={1}>
           <Button
@@ -202,7 +190,11 @@ const ContainersPanel: React.FC = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setLocalError(null)}
+        >
           {error}
         </Alert>
       )}
@@ -240,7 +232,14 @@ const ContainersPanel: React.FC = () => {
                 <TableCell>
                   <Chip
                     label={container.status}
-                    color={getStatusColor(container.status) as 'success' | 'warning' | 'error' | 'info' | 'default'}
+                    color={
+                      getStatusColor(container.status) as
+                        | "success"
+                        | "warning"
+                        | "error"
+                        | "info"
+                        | "default"
+                    }
                     size="small"
                   />
                 </TableCell>
@@ -258,13 +257,19 @@ const ContainersPanel: React.FC = () => {
                 </TableCell>
                 <TableCell>{container.matchCount}</TableCell>
                 <TableCell>
-                  <Tooltip title={container.loadedModules?.join(', ') || 'No modules'}>
+                  <Tooltip
+                    title={container.loadedModules?.join(", ") || "No modules"}
+                  >
                     <span>{container.loadedModules?.length ?? 0}</span>
                   </Tooltip>
                 </TableCell>
                 <TableCell align="right">
-                  <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                    {container.status === 'CREATED' && (
+                  <Stack
+                    direction="row"
+                    spacing={0.5}
+                    justifyContent="flex-end"
+                  >
+                    {container.status === "CREATED" && (
                       <Tooltip title="Start">
                         <IconButton
                           size="small"
@@ -276,13 +281,15 @@ const ContainersPanel: React.FC = () => {
                       </Tooltip>
                     )}
 
-                    {container.status === 'RUNNING' && (
+                    {container.status === "RUNNING" && (
                       <>
                         {container.autoAdvancing ? (
                           <Tooltip title="Stop Auto-Advance">
                             <IconButton
                               size="small"
-                              onClick={() => handleStopAutoAdvance(container.id)}
+                              onClick={() =>
+                                handleStopAutoAdvance(container.id)
+                              }
                               color="warning"
                             >
                               <PauseIcon />
@@ -293,7 +300,9 @@ const ContainersPanel: React.FC = () => {
                             <Tooltip title="Play (Auto-Advance)">
                               <IconButton
                                 size="small"
-                                onClick={() => handlePlayContainer(container.id)}
+                                onClick={() =>
+                                  handlePlayContainer(container.id)
+                                }
                                 color="success"
                               >
                                 <PlayIcon />
@@ -302,7 +311,9 @@ const ContainersPanel: React.FC = () => {
                             <Tooltip title="Advance One Tick">
                               <IconButton
                                 size="small"
-                                onClick={() => handleTickContainer(container.id)}
+                                onClick={() =>
+                                  handleTickContainer(container.id)
+                                }
                                 color="primary"
                               >
                                 <TickIcon />
@@ -322,7 +333,7 @@ const ContainersPanel: React.FC = () => {
                       </>
                     )}
 
-                    {container.status === 'PAUSED' && (
+                    {container.status === "PAUSED" && (
                       <Tooltip title="Resume">
                         <IconButton
                           size="small"
@@ -334,7 +345,8 @@ const ContainersPanel: React.FC = () => {
                       </Tooltip>
                     )}
 
-                    {(container.status === 'RUNNING' || container.status === 'PAUSED') && (
+                    {(container.status === "RUNNING" ||
+                      container.status === "PAUSED") && (
                       <Tooltip title="Stop">
                         <IconButton
                           size="small"
@@ -346,7 +358,7 @@ const ContainersPanel: React.FC = () => {
                       </Tooltip>
                     )}
 
-                    {container.id !== 0 && container.status === 'STOPPED' && (
+                    {container.id !== 0 && container.status === "STOPPED" && (
                       <Tooltip title="Delete">
                         <IconButton
                           size="small"
@@ -364,7 +376,9 @@ const ContainersPanel: React.FC = () => {
             {containers.length === 0 && (
               <TableRow>
                 <TableCell colSpan={8} align="center">
-                  <Typography color="text.secondary">No containers found</Typography>
+                  <Typography color="text.secondary">
+                    No containers found
+                  </Typography>
                 </TableCell>
               </TableRow>
             )}
@@ -373,7 +387,10 @@ const ContainersPanel: React.FC = () => {
       </TableContainer>
 
       {/* Create Container Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)}>
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+      >
         <DialogTitle>Create New Container</DialogTitle>
         <DialogContent>
           <TextField
@@ -387,7 +404,10 @@ const ContainersPanel: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCreateDialogOpen(false)} disabled={isCreating}>
+          <Button
+            onClick={() => setCreateDialogOpen(false)}
+            disabled={isCreating}
+          >
             Cancel
           </Button>
           <Button
@@ -395,7 +415,7 @@ const ContainersPanel: React.FC = () => {
             variant="contained"
             disabled={isCreating || !newContainerName.trim()}
           >
-            {isCreating ? <CircularProgress size={20} /> : 'Create'}
+            {isCreating ? <CircularProgress size={20} /> : "Create"}
           </Button>
         </DialogActions>
       </Dialog>

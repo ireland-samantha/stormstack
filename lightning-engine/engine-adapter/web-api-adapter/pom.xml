@@ -20,6 +20,12 @@
     <dependencies>
         <dependency>
             <groupId>ca.samanthaireland</groupId>
+            <artifactId>api-proto</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ca.samanthaireland</groupId>
             <artifactId>engine-rendering</artifactId>
             <version>${project.version}</version>
         </dependency>

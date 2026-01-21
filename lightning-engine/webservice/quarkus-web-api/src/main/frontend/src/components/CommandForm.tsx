@@ -20,14 +20,14 @@
  * SOFTWARE.
  */
 
-import { useState, useEffect } from 'react';
 import {
-  Box, TextField,
-  FormControlLabel, Switch, Typography, Chip, Autocomplete
-} from '@mui/material';
-import { CommandParameter } from '../services/api';
-import { useContainerContext } from '../contexts/ContainerContext';
-import { useGetPlayersInContainerQuery } from '../store/api/apiSlice';
+    Autocomplete, Box, Chip, FormControlLabel,
+    Switch, TextField, Typography
+} from "@mui/material";
+import { useEffect, useState } from "react";
+import { useContainerContext } from "../contexts/ContainerContext";
+import { CommandParameter } from "../services/api";
+import { useGetPlayersInContainerQuery } from "../store/api/apiSlice";
 
 export interface CommandFormProps {
   parameters: CommandParameter[];
@@ -36,7 +36,15 @@ export interface CommandFormProps {
   disabled?: boolean;
 }
 
-type FieldType = 'matchId' | 'playerId' | 'entityId' | 'number' | 'boolean' | 'string' | 'array' | 'object';
+type FieldType =
+  | "matchId"
+  | "playerId"
+  | "entityId"
+  | "number"
+  | "boolean"
+  | "string"
+  | "array"
+  | "object";
 
 /**
  * Detects the field type based on parameter name and type.
@@ -46,35 +54,57 @@ export function detectFieldType(param: CommandParameter): FieldType {
   const typeLower = param.type.toLowerCase();
 
   // Check for ID fields based on name
-  if (nameLower === 'matchid' || nameLower === 'match_id' || nameLower === 'match') {
-    return 'matchId';
+  if (
+    nameLower === "matchid" ||
+    nameLower === "match_id" ||
+    nameLower === "match"
+  ) {
+    return "matchId";
   }
-  if (nameLower === 'playerid' || nameLower === 'player_id' || nameLower === 'player') {
-    return 'playerId';
+  if (
+    nameLower === "playerid" ||
+    nameLower === "player_id" ||
+    nameLower === "player"
+  ) {
+    return "playerId";
   }
-  if (nameLower === 'entityid' || nameLower === 'entity_id' || nameLower === 'entity') {
-    return 'entityId';
+  if (
+    nameLower === "entityid" ||
+    nameLower === "entity_id" ||
+    nameLower === "entity"
+  ) {
+    return "entityId";
   }
 
   // Check collection types first (before primitives, since List<int> contains 'int')
-  if (typeLower.includes('list') || typeLower.includes('array') || typeLower.includes('[]')) {
-    return 'array';
+  if (
+    typeLower.includes("list") ||
+    typeLower.includes("array") ||
+    typeLower.includes("[]")
+  ) {
+    return "array";
   }
-  if (typeLower.includes('map') || typeLower.includes('object')) {
-    return 'object';
+  if (typeLower.includes("map") || typeLower.includes("object")) {
+    return "object";
   }
 
   // Check type for primitives
-  if (typeLower.includes('bool')) {
-    return 'boolean';
+  if (typeLower.includes("bool")) {
+    return "boolean";
   }
-  if (typeLower.includes('int') || typeLower.includes('long') ||
-      typeLower.includes('double') || typeLower.includes('float') ||
-      typeLower.includes('number') || typeLower.includes('short') || typeLower.includes('byte')) {
-    return 'number';
+  if (
+    typeLower.includes("int") ||
+    typeLower.includes("long") ||
+    typeLower.includes("double") ||
+    typeLower.includes("float") ||
+    typeLower.includes("number") ||
+    typeLower.includes("short") ||
+    typeLower.includes("byte")
+  ) {
+    return "number";
   }
 
-  return 'string';
+  return "string";
 }
 
 /**
@@ -82,26 +112,28 @@ export function detectFieldType(param: CommandParameter): FieldType {
  */
 export function getDefaultValue(fieldType: FieldType): unknown {
   switch (fieldType) {
-    case 'matchId':
-    case 'playerId':
-    case 'entityId':
-    case 'number':
+    case "matchId":
+    case "playerId":
+    case "entityId":
+    case "number":
       return 0;
-    case 'boolean':
+    case "boolean":
       return false;
-    case 'array':
+    case "array":
       return [];
-    case 'object':
+    case "object":
       return {};
     default:
-      return '';
+      return "";
   }
 }
 
 /**
  * Builds initial form values from parameters.
  */
-export function buildInitialValues(parameters: CommandParameter[]): Record<string, unknown> {
+export function buildInitialValues(
+  parameters: CommandParameter[],
+): Record<string, unknown> {
   const values: Record<string, unknown> = {};
   for (const param of parameters) {
     const fieldType = detectFieldType(param);
@@ -114,25 +146,34 @@ export function buildInitialValues(parameters: CommandParameter[]): Record<strin
  * Form component for command parameters with smart field detection.
  * Renders appropriate input types based on parameter names and types.
  */
-const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange, disabled }) => {
+const CommandForm: React.FC<CommandFormProps> = ({
+  parameters,
+  values,
+  onChange,
+  disabled,
+}) => {
   const { matches, selectedContainerId } = useContainerContext();
   const [entities] = useState<number[]>([]);
 
   // Fetch players if we have a playerId field
-  const hasPlayerIdField = parameters.some(p => detectFieldType(p) === 'playerId');
-  const hasEntityIdField = parameters.some(p => detectFieldType(p) === 'entityId');
+  const hasPlayerIdField = parameters.some(
+    (p) => detectFieldType(p) === "playerId",
+  );
+  const hasEntityIdField = parameters.some(
+    (p) => detectFieldType(p) === "entityId",
+  );
 
   // Use RTK Query to fetch players when needed
-  const { data: players = [], isLoading: loadingPlayers } = useGetPlayersInContainerQuery(
-    selectedContainerId!,
-    { skip: !hasPlayerIdField || !selectedContainerId }
-  );
+  const { data: players = [], isLoading: loadingPlayers } =
+    useGetPlayersInContainerQuery(selectedContainerId!, {
+      skip: !hasPlayerIdField || !selectedContainerId,
+    });
 
   // For entity IDs, we'd need a snapshot or entity list endpoint
   // For now, provide a text field that accepts numbers
   useEffect(() => {
     if (hasEntityIdField) {
-        // todo: fetch from snapshot
+      // todo: fetch from snapshot
     }
   }, [hasEntityIdField]);
 
@@ -147,13 +188,13 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
     const required = param.required;
 
     switch (fieldType) {
-      case 'matchId':
+      case "matchId":
         return (
           <Autocomplete
             key={param.name}
             options={matches}
             getOptionLabel={(m) => `Match ${m.id}`}
-            value={matches.find(m => m.id === value) || null}
+            value={matches.find((m) => m.id === value) || null}
             onChange={(_, v) => handleFieldChange(param.name, v?.id ?? 0)}
             disabled={disabled}
             renderInput={(params) => (
@@ -170,7 +211,7 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
                   <Typography variant="body2">Match {option.id}</Typography>
                   {option.modules && option.modules.length > 0 && (
                     <Typography variant="caption" color="text.secondary">
-                      Modules: {option.modules.join(', ')}
+                      Modules: {option.modules.join(", ")}
                     </Typography>
                   )}
                 </Box>
@@ -179,13 +220,15 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
           />
         );
 
-      case 'playerId':
+      case "playerId":
         return (
           <Autocomplete
             key={param.name}
             options={players}
-            getOptionLabel={(p) => p.name ? `${p.name} (ID: ${p.id})` : `Player ${p.id}`}
-            value={players.find(p => p.id === value) || null}
+            getOptionLabel={(p) =>
+              p.name ? `${p.name} (ID: ${p.id})` : `Player ${p.id}`
+            }
+            value={players.find((p) => p.id === value) || null}
             onChange={(_, v) => handleFieldChange(param.name, v?.id ?? 0)}
             disabled={disabled || loadingPlayers}
             loading={loadingPlayers}
@@ -199,24 +242,32 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
             )}
             renderOption={(props, option) => (
               <li {...props} key={option.id}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Typography variant="body2">
                     {option.name || `Player ${option.id}`}
                   </Typography>
-                  <Chip label={`ID: ${option.id}`} size="small" variant="outlined" />
+                  <Chip
+                    label={`ID: ${option.id}`}
+                    size="small"
+                    variant="outlined"
+                  />
                 </Box>
               </li>
             )}
           />
         );
 
-      case 'entityId':
+      case "entityId":
         return (
           <Autocomplete
             key={param.name}
             options={entities}
             getOptionLabel={(e) => `Entity ${e}`}
-            value={typeof value === 'number' && entities.includes(value) ? value : null}
+            value={
+              typeof value === "number" && entities.includes(value)
+                ? value
+                : null
+            }
             onChange={(_, v) => handleFieldChange(param.name, v ?? 0)}
             disabled={disabled}
             freeSolo
@@ -238,14 +289,16 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
           />
         );
 
-      case 'boolean':
+      case "boolean":
         return (
           <FormControlLabel
             key={param.name}
             control={
               <Switch
                 checked={Boolean(value)}
-                onChange={(e) => handleFieldChange(param.name, e.target.checked)}
+                onChange={(e) =>
+                  handleFieldChange(param.name, e.target.checked)
+                }
                 disabled={disabled}
               />
             }
@@ -253,7 +306,7 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
           />
         );
 
-      case 'number':
+      case "number":
         return (
           <TextField
             key={param.name}
@@ -261,9 +314,11 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
             type="number"
             value={value ?? 0}
             onChange={(e) => {
-              const val = param.type.toLowerCase().includes('int') || param.type.toLowerCase().includes('long')
-                ? parseInt(e.target.value, 10)
-                : parseFloat(e.target.value);
+              const val =
+                param.type.toLowerCase().includes("int") ||
+                param.type.toLowerCase().includes("long")
+                  ? parseInt(e.target.value, 10)
+                  : parseFloat(e.target.value);
               handleFieldChange(param.name, isNaN(val) ? 0 : val);
             }}
             required={required}
@@ -273,7 +328,7 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
           />
         );
 
-      case 'array':
+      case "array":
         return (
           <TextField
             key={param.name}
@@ -295,11 +350,11 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
             multiline
             rows={2}
             helperText="Enter as JSON array, e.g., [1, 2, 3]"
-            sx={{ fontFamily: 'monospace' }}
+            sx={{ fontFamily: "monospace" }}
           />
         );
 
-      case 'object':
+      case "object":
         return (
           <TextField
             key={param.name}
@@ -308,7 +363,7 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
             onChange={(e) => {
               try {
                 const parsed = JSON.parse(e.target.value);
-                if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+                if (typeof parsed === "object" && !Array.isArray(parsed)) {
                   handleFieldChange(param.name, parsed);
                 }
               } catch {
@@ -321,7 +376,7 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
             multiline
             rows={2}
             helperText="Enter as JSON object, e.g., {}"
-            sx={{ fontFamily: 'monospace' }}
+            sx={{ fontFamily: "monospace" }}
           />
         );
 
@@ -330,12 +385,14 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
           <TextField
             key={param.name}
             label={label}
-            value={value ?? ''}
+            value={value ?? ""}
             onChange={(e) => handleFieldChange(param.name, e.target.value)}
             required={required}
             disabled={disabled}
             fullWidth
-            helperText={param.type !== 'String' ? `Type: ${param.type}` : undefined}
+            helperText={
+              param.type !== "String" ? `Type: ${param.type}` : undefined
+            }
           />
         );
     }
@@ -350,7 +407,7 @@ const CommandForm: React.FC<CommandFormProps> = ({ parameters, values, onChange,
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
       {parameters.map(renderField)}
     </Box>
   );

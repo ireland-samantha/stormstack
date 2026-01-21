@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-
 /**
  * WebSocket client for real-time snapshot streaming.
  */
@@ -46,25 +45,28 @@ export class WebSocketClient {
   private connected: boolean = false;
 
   constructor(serverUrl: string, containerId: number, matchId: number) {
-    this.serverUrl = serverUrl.replace(/^http/, 'ws');
+    this.serverUrl = serverUrl.replace(/^http/, "ws");
     this.containerId = containerId;
     this.matchId = matchId;
   }
 
   connect(): void {
     if (this.ws && this.connected) {
-      console.log('WebSocket already connected');
+      console.log("WebSocket already connected");
       return;
     }
 
-    const wsUrl = `${this.serverUrl}/ws/containers/${this.containerId}/matches/${this.matchId}/snapshot`;
+    // Get JWT token from localStorage for authentication
+    const token = localStorage.getItem("authToken");
+    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : "";
+    const wsUrl = `${this.serverUrl}/ws/containers/${this.containerId}/matches/${this.matchId}/snapshot${tokenParam}`;
     console.log(`Connecting to WebSocket: ${wsUrl}`);
 
     try {
       this.ws = new WebSocket(wsUrl);
       this.setupEventHandlers();
     } catch (error) {
-      console.error('Failed to create WebSocket:', error);
+      console.error("Failed to create WebSocket:", error);
       this.scheduleReconnect();
     }
   }
@@ -73,7 +75,7 @@ export class WebSocketClient {
     if (!this.ws) return;
 
     this.ws.onopen = () => {
-      console.log('WebSocket connected');
+      console.log("WebSocket connected");
       this.connected = true;
       this.reconnectAttempts = 0;
     };
@@ -83,12 +85,12 @@ export class WebSocketClient {
         const snapshot = JSON.parse(event.data) as SnapshotData;
         this.notifyListeners(snapshot);
       } catch (error) {
-        console.error('Failed to parse snapshot:', error);
+        console.error("Failed to parse snapshot:", error);
       }
     };
 
     this.ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error("WebSocket error:", error);
     };
 
     this.ws.onclose = (event) => {
@@ -101,12 +103,14 @@ export class WebSocketClient {
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('Max reconnect attempts reached');
+      console.log("Max reconnect attempts reached");
       return;
     }
 
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts);
-    console.log(`Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts + 1})`);
+    console.log(
+      `Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempts + 1})`,
+    );
 
     this.reconnectTimer = window.setTimeout(() => {
       this.reconnectAttempts++;
@@ -126,7 +130,7 @@ export class WebSocketClient {
     }
 
     this.connected = false;
-    console.log('WebSocket disconnected');
+    console.log("WebSocket disconnected");
   }
 
   isConnected(): boolean {
@@ -135,7 +139,7 @@ export class WebSocketClient {
 
   requestSnapshot(): void {
     if (this.ws && this.connected) {
-      this.ws.send(JSON.stringify({ type: 'request_snapshot' }));
+      this.ws.send(JSON.stringify({ type: "request_snapshot" }));
     }
   }
 
@@ -152,7 +156,7 @@ export class WebSocketClient {
       try {
         listener(snapshot);
       } catch (error) {
-        console.error('Error in snapshot listener:', error);
+        console.error("Error in snapshot listener:", error);
       }
     }
   }

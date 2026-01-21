@@ -3,13 +3,13 @@
  * MIT License
  */
 
-import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
-import { afterEach, beforeAll, afterAll, vi } from 'vitest';
-import { server } from './mocks/server';
+import "@testing-library/jest-dom/vitest";
+import { cleanup } from "@testing-library/react";
+import { afterAll, afterEach, beforeAll, vi } from "vitest";
+import { server } from "./mocks/server";
 
 // Start MSW server before all tests
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 
 // Reset handlers after each test (important for test isolation)
 afterEach(() => {
@@ -39,7 +39,7 @@ class MockWebSocket {
     setTimeout(() => {
       this.readyState = MockWebSocket.OPEN;
       if (this.onopen) {
-        this.onopen(new Event('open'));
+        this.onopen(new Event("open"));
       }
     }, 10);
   }
@@ -51,12 +51,12 @@ class MockWebSocket {
   close(): void {
     this.readyState = MockWebSocket.CLOSED;
     if (this.onclose) {
-      this.onclose(new CloseEvent('close'));
+      this.onclose(new CloseEvent("close"));
     }
   }
 }
 
-vi.stubGlobal('WebSocket', MockWebSocket);
+vi.stubGlobal("WebSocket", MockWebSocket);
 
 // Mock localStorage
 const localStorageMock = {
@@ -65,16 +65,16 @@ const localStorageMock = {
   removeItem: vi.fn(),
   clear: vi.fn(),
 };
-vi.stubGlobal('localStorage', localStorageMock);
+vi.stubGlobal("localStorage", localStorageMock);
 
 // Mock navigator.clipboard
 if (!navigator.clipboard) {
-  Object.defineProperty(navigator, 'clipboard', {
+  Object.defineProperty(navigator, "clipboard", {
     value: {
       writeText: vi.fn().mockResolvedValue(undefined),
-      readText: vi.fn().mockResolvedValue('')
+      readText: vi.fn().mockResolvedValue(""),
     },
     writable: true,
-    configurable: true
+    configurable: true,
   });
 }

@@ -3,24 +3,24 @@
  * MIT License
  */
 
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { RootState } from '../store';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import type { RootState } from "../store";
 
 export type PanelType =
-  | 'dashboard'
-  | 'snapshot'
-  | 'history'
-  | 'logs'
-  | 'matches'
-  | 'players'
-  | 'sessions'
-  | 'commands'
-  | 'modules'
-  | 'ai'
-  | 'resources'
-  | 'users'
-  | 'roles'
-  | 'settings';
+  | "dashboard"
+  | "snapshot"
+  | "history"
+  | "logs"
+  | "matches"
+  | "players"
+  | "sessions"
+  | "commands"
+  | "modules"
+  | "ai"
+  | "resources"
+  | "users"
+  | "roles"
+  | "settings";
 
 interface UiState {
   selectedContainerId: number | null;
@@ -35,7 +35,7 @@ interface UiState {
 const initialState: UiState = {
   selectedContainerId: null,
   selectedMatchId: null,
-  activePanel: 'dashboard',
+  activePanel: "dashboard",
   sidebarOpen: true,
   containerMenuOpen: true,
   adminMenuOpen: false,
@@ -43,7 +43,7 @@ const initialState: UiState = {
 };
 
 const uiSlice = createSlice({
-  name: 'ui',
+  name: "ui",
   initialState,
   reducers: {
     setSelectedContainerId: (state, action: PayloadAction<number | null>) => {
@@ -99,11 +99,14 @@ export const {
 } = uiSlice.actions;
 
 // Selectors
-export const selectSelectedContainerId = (state: RootState) => state.ui.selectedContainerId;
-export const selectSelectedMatchId = (state: RootState) => state.ui.selectedMatchId;
+export const selectSelectedContainerId = (state: RootState) =>
+  state.ui.selectedContainerId;
+export const selectSelectedMatchId = (state: RootState) =>
+  state.ui.selectedMatchId;
 export const selectActivePanel = (state: RootState) => state.ui.activePanel;
 export const selectSidebarOpen = (state: RootState) => state.ui.sidebarOpen;
-export const selectContainerMenuOpen = (state: RootState) => state.ui.containerMenuOpen;
+export const selectContainerMenuOpen = (state: RootState) =>
+  state.ui.containerMenuOpen;
 export const selectAdminMenuOpen = (state: RootState) => state.ui.adminMenuOpen;
 export const selectIamMenuOpen = (state: RootState) => state.ui.iamMenuOpen;
 

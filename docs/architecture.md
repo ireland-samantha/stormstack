@@ -125,6 +125,63 @@ ws.onmessage = (event) => {
 };
 ```
 
+## WebSocket Commands
+
+For high-performance command submission, use the container-scoped command WebSocket endpoint. This is recommended for game clients that need to submit many commands with low latency.
+
+### Endpoint
+
+`ws://localhost:8080/containers/{containerId}/commands?token=xxx`
+
+### Authentication
+
+JWT authentication is required via query parameter (since browser WebSocket API doesn't support custom headers). The token must have `admin` or `command_manager` role.
+
+### Protocol
+
+Commands are sent as Protocol Buffer binary messages. The schema is defined in `api-proto/src/main/proto/command.proto`:
+
+```
+Client                          Server
+  │                               │
+  │─── Connect with ?token=xxx ──▶│
+  │                               │
+  │◀── CommandResponse(ACCEPTED) ─│  (connection successful)
+  │                               │
+  │─── CommandRequest(spawn) ────▶│
+  │                               │
+  │◀── CommandResponse(ACCEPTED) ─│  (command queued)
+  │                               │
+  │─── CommandRequest(move) ─────▶│
+  │                               │
+  │◀── CommandResponse(ACCEPTED) ─│
+  │                               │
+```
+
+### Supported Command Types
+
+| Payload Type | Description |
+|--------------|-------------|
+| `SpawnPayload` | Create new entity with type and position |
+| `AttachRigidBodyPayload` | Attach physics body to entity |
+| `AttachSpritePayload` | Attach sprite rendering to entity |
+| `GenericPayload` | Custom commands with arbitrary parameters |
+
+### Error Handling
+
+| Status | Description |
+|--------|-------------|
+| `ACCEPTED` | Command queued for next tick |
+| `ERROR` | Command failed (see message for details) |
+| `INVALID` | Malformed request or missing parameters |
+
+### Benefits vs REST API
+
+- **Lower latency**: No HTTP overhead per command
+- **Binary protocol**: Smaller message size with Protocol Buffers
+- **Persistent connection**: No connection setup per request
+- **Ordered delivery**: Commands processed in order received
+
 ## Snapshot Format
 
 ```json

@@ -20,51 +20,49 @@
  * SOFTWARE.
  */
 
-
-import { useState } from 'react';
 import {
-  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, IconButton, Button, Chip, CircularProgress, Alert,
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, Autocomplete,
-  Stack
-} from '@mui/material';
+    Add as AddIcon, Dns as ContainerIcon, ExitToApp as AbandonIcon, LinkOff as DisconnectIcon, Refresh as RefreshIcon, Replay as ReconnectIcon
+} from "@mui/icons-material";
 import {
-  Add as AddIcon, Refresh as RefreshIcon,
-  LinkOff as DisconnectIcon, ExitToApp as AbandonIcon, Replay as ReconnectIcon,
-  Dns as ContainerIcon
-} from '@mui/icons-material';
-import { useAppSelector } from '../store/hooks';
-import { selectSelectedContainerId } from '../store/slices/uiSlice';
+    Alert, Autocomplete, Box, Button,
+    Chip,
+    CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Stack, Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow, TextField, Typography
+} from "@mui/material";
+import { useState } from "react";
 import {
-  useGetContainerQuery,
-  useGetContainerMatchesQuery,
-  useGetPlayersInContainerQuery,
-  useGetAllContainerSessionsQuery,
-  useConnectSessionInContainerMutation,
-  useDisconnectSessionInContainerMutation,
-  useReconnectSessionInContainerMutation,
-  useAbandonSessionInContainerMutation,
-  type SessionData,
-} from '../store/api/apiSlice';
+    useAbandonSessionInContainerMutation, useConnectSessionInContainerMutation,
+    useDisconnectSessionInContainerMutation, useGetAllContainerSessionsQuery, useGetContainerMatchesQuery, useGetContainerQuery, useGetPlayersInContainerQuery, useReconnectSessionInContainerMutation, type SessionData
+} from "../store/api/apiSlice";
+import { useAppSelector } from "../store/hooks";
+import { selectSelectedContainerId } from "../store/slices/uiSlice";
 
 const SessionsPanel: React.FC = () => {
   const selectedContainerId = useAppSelector(selectSelectedContainerId);
 
   // RTK Query hooks
-  const {
-    data: selectedContainer,
-    isLoading: isContainerLoading,
-  } = useGetContainerQuery(selectedContainerId!, {
-    skip: selectedContainerId === null,
-  });
+  const { data: selectedContainer, isLoading: isContainerLoading } =
+    useGetContainerQuery(selectedContainerId!, {
+      skip: selectedContainerId === null,
+    });
 
-  const { data: matches = [] } = useGetContainerMatchesQuery(selectedContainerId!, {
-    skip: selectedContainerId === null,
-  });
+  const { data: matches = [] } = useGetContainerMatchesQuery(
+    selectedContainerId!,
+    {
+      skip: selectedContainerId === null,
+    },
+  );
 
-  const { data: players = [] } = useGetPlayersInContainerQuery(selectedContainerId!, {
-    skip: selectedContainerId === null,
-  });
+  const { data: players = [] } = useGetPlayersInContainerQuery(
+    selectedContainerId!,
+    {
+      skip: selectedContainerId === null,
+    },
+  );
 
   const {
     data: sessions = [],
@@ -90,7 +88,12 @@ const SessionsPanel: React.FC = () => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
 
   const handleCreateSession = async () => {
-    if (selectedMatchId === null || selectedPlayerId === null || selectedContainerId === null) return;
+    if (
+      selectedMatchId === null ||
+      selectedPlayerId === null ||
+      selectedContainerId === null
+    )
+      return;
     try {
       await connectSession({
         containerId: selectedContainerId,
@@ -100,13 +103,15 @@ const SessionsPanel: React.FC = () => {
       setCreateDialogOpen(false);
       setSelectedMatchId(null);
       setSelectedPlayerId(null);
-      setSuccess('Session created successfully');
+      setSuccess("Session created successfully");
     } catch (err) {
       // Close dialog and show error in main panel so it doesn't block subsequent interactions
       setCreateDialogOpen(false);
       setSelectedMatchId(null);
       setSelectedPlayerId(null);
-      setLocalError(err instanceof Error ? err.message : 'Failed to create session');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to create session",
+      );
     }
   };
 
@@ -118,9 +123,11 @@ const SessionsPanel: React.FC = () => {
         matchId: session.matchId,
         playerId: session.playerId,
       }).unwrap();
-      setSuccess('Session disconnected');
+      setSuccess("Session disconnected");
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to disconnect session');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to disconnect session",
+      );
     }
   };
 
@@ -132,9 +139,11 @@ const SessionsPanel: React.FC = () => {
         matchId: session.matchId,
         playerId: session.playerId,
       }).unwrap();
-      setSuccess('Session reconnected');
+      setSuccess("Session reconnected");
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to reconnect session');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to reconnect session",
+      );
     }
   };
 
@@ -146,38 +155,47 @@ const SessionsPanel: React.FC = () => {
         matchId: session.matchId,
         playerId: session.playerId,
       }).unwrap();
-      setSuccess('Session abandoned');
+      setSuccess("Session abandoned");
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to abandon session');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to abandon session",
+      );
     }
   };
 
   const getMatchName = (matchId: number) => {
-    const match = matches.find(m => m.id === matchId);
+    const match = matches.find((m) => m.id === matchId);
     return match ? `Match ${match.id}` : `Match ${matchId}`;
   };
 
   const getPlayerName = (playerId: number | null) => {
-    if (playerId === null) return 'Unassigned';
-    const player = players.find(p => p.id === playerId);
+    if (playerId === null) return "Unassigned";
+    const player = players.find((p) => p.id === playerId);
     return player?.name || `Player ${playerId}`;
   };
 
-  const getStatusColor = (status: string | undefined): 'success' | 'warning' | 'error' | 'default' => {
+  const getStatusColor = (
+    status: string | undefined,
+  ): "success" | "warning" | "error" | "default" => {
     switch (status) {
-      case 'ACTIVE': return 'success';
-      case 'CONNECTED': return 'success';
-      case 'DISCONNECTED': return 'warning';
-      case 'ABANDONED':
-      case 'EXPIRED': return 'error';
-      default: return 'default';
+      case "ACTIVE":
+        return "success";
+      case "CONNECTED":
+        return "success";
+      case "DISCONNECTED":
+        return "warning";
+      case "ABANDONED":
+      case "EXPIRED":
+        return "error";
+      default:
+        return "default";
     }
   };
 
   if (!selectedContainerId) {
     return (
-      <Paper sx={{ p: 4, textAlign: 'center' }}>
-        <ContainerIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+      <Paper sx={{ p: 4, textAlign: "center" }}>
+        <ContainerIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
         <Typography variant="h6" color="text.secondary" gutterBottom>
           No Container Selected
         </Typography>
@@ -189,19 +207,37 @@ const SessionsPanel: React.FC = () => {
   }
 
   if (isLoading || !selectedContainer) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   const errorMessage = isError
-    ? (error && 'data' in error ? String((error.data as { message?: string })?.message || 'Failed to fetch sessions') : 'Failed to fetch sessions')
+    ? error && "data" in error
+      ? String(
+          (error.data as { message?: string })?.message ||
+            "Failed to fetch sessions",
+        )
+      : "Failed to fetch sessions"
     : localError;
 
   return (
     <Box>
       {/* Header with container context */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 3,
+        }}
+      >
         <Box>
-          <Typography variant="h4" fontWeight={700}>Sessions</Typography>
+          <Typography variant="h4" fontWeight={700}>
+            Sessions
+          </Typography>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
             <Chip
               icon={<ContainerIcon />}
@@ -213,28 +249,48 @@ const SessionsPanel: React.FC = () => {
             <Chip
               label={selectedContainer.status}
               size="small"
-              color={selectedContainer.status === 'RUNNING' ? 'success' : 'default'}
+              color={
+                selectedContainer.status === "RUNNING" ? "success" : "default"
+              }
             />
           </Stack>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton onClick={() => refetch()} title="Refresh"><RefreshIcon /></IconButton>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton onClick={() => refetch()} title="Refresh">
+            <RefreshIcon />
+          </IconButton>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setCreateDialogOpen(true)}
-            disabled={selectedContainer.status !== 'RUNNING'}
+            disabled={selectedContainer.status !== "RUNNING"}
           >
             Create Session
           </Button>
         </Box>
       </Box>
 
-      {errorMessage && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>{errorMessage}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
+      {errorMessage && (
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setLocalError(null)}
+        >
+          {errorMessage}
+        </Alert>
+      )}
+      {success && (
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setSuccess(null)}
+        >
+          {success}
+        </Alert>
+      )}
 
       {/* Warning if container not running */}
-      {selectedContainer.status !== 'RUNNING' && (
+      {selectedContainer.status !== "RUNNING" && (
         <Alert severity="warning" sx={{ mb: 2 }}>
           Container is not running. Start the container to create sessions.
         </Alert>
@@ -258,22 +314,28 @@ const SessionsPanel: React.FC = () => {
                   <Chip label={getMatchName(session.matchId)} size="small" />
                 </TableCell>
                 <TableCell>
-                  <Chip label={getPlayerName(session.playerId)} size="small" color="primary" />
+                  <Chip
+                    label={getPlayerName(session.playerId)}
+                    size="small"
+                    color="primary"
+                  />
                 </TableCell>
                 <TableCell>
                   <Chip
-                    label={session.status || 'UNKNOWN'}
+                    label={session.status || "UNKNOWN"}
                     size="small"
                     color={getStatusColor(session.status)}
                   />
                 </TableCell>
                 <TableCell>
-                  <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                    {session.connectedAt ? new Date(session.connectedAt).toLocaleString() : '-'}
+                  <Typography variant="body2" sx={{ fontSize: "0.75rem" }}>
+                    {session.connectedAt
+                      ? new Date(session.connectedAt).toLocaleString()
+                      : "-"}
                   </Typography>
                 </TableCell>
                 <TableCell align="right">
-                  {session.status === 'CONNECTED' && (
+                  {session.status === "CONNECTED" && (
                     <IconButton
                       size="small"
                       onClick={() => handleDisconnect(session)}
@@ -283,7 +345,7 @@ const SessionsPanel: React.FC = () => {
                       <DisconnectIcon />
                     </IconButton>
                   )}
-                  {session.status === 'DISCONNECTED' && (
+                  {session.status === "DISCONNECTED" && (
                     <IconButton
                       size="small"
                       onClick={() => handleReconnect(session)}
@@ -293,7 +355,8 @@ const SessionsPanel: React.FC = () => {
                       <ReconnectIcon />
                     </IconButton>
                   )}
-                  {(session.status === 'CONNECTED' || session.status === 'DISCONNECTED') && (
+                  {(session.status === "CONNECTED" ||
+                    session.status === "DISCONNECTED") && (
                     <IconButton
                       size="small"
                       color="error"
@@ -318,23 +381,34 @@ const SessionsPanel: React.FC = () => {
       </TableContainer>
 
       {/* Create Session Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Create Session in {selectedContainer.name}</DialogTitle>
         <DialogContent>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
             <Autocomplete
               options={matches}
               getOptionLabel={(m) => `Match ${m.id}`}
-              value={matches.find(m => m.id === selectedMatchId) || null}
+              value={matches.find((m) => m.id === selectedMatchId) || null}
               onChange={(_, v) => setSelectedMatchId(v?.id ?? null)}
-              renderInput={(params) => <TextField {...params} label="Select Match" />}
+              renderInput={(params) => (
+                <TextField {...params} label="Select Match" />
+              )}
             />
             <Autocomplete
               options={players}
-              getOptionLabel={(p) => p.name ? `${p.name} (ID: ${p.id})` : `Player ${p.id}`}
-              value={players.find(p => p.id === selectedPlayerId) || null}
+              getOptionLabel={(p) =>
+                p.name ? `${p.name} (ID: ${p.id})` : `Player ${p.id}`
+              }
+              value={players.find((p) => p.id === selectedPlayerId) || null}
               onChange={(_, v) => setSelectedPlayerId(v?.id ?? null)}
-              renderInput={(params) => <TextField {...params} label="Select Player" />}
+              renderInput={(params) => (
+                <TextField {...params} label="Select Player" />
+              )}
             />
           </Box>
         </DialogContent>

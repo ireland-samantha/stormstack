@@ -3,13 +3,13 @@
  * MIT License
  */
 
-import { PropsWithChildren, ReactElement } from 'react';
-import { render, RenderOptions } from '@testing-library/react';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { Provider } from 'react-redux';
-import { theme } from '../theme';
-import { setupStore, AppStore, RootState } from '../store/store';
-import type { PanelType } from '../store/slices/uiSlice';
+import { CssBaseline, ThemeProvider } from "@mui/material";
+import { render, RenderOptions } from "@testing-library/react";
+import { PropsWithChildren, ReactElement } from "react";
+import { Provider } from "react-redux";
+import type { PanelType } from "../store/slices/uiSlice";
+import { AppStore, RootState, setupStore } from "../store/store";
+import { theme } from "../theme";
 
 // Type for the ui state
 interface UiState {
@@ -26,7 +26,7 @@ interface UiState {
 const defaultUiState: UiState = {
   selectedContainerId: null,
   selectedMatchId: null,
-  activePanel: 'dashboard',
+  activePanel: "dashboard",
   sidebarOpen: true,
   containerMenuOpen: true,
   adminMenuOpen: false,
@@ -36,12 +36,12 @@ const defaultUiState: UiState = {
 // Type for partial preloaded state that allows partial ui state
 interface PartialPreloadedState {
   ui?: Partial<UiState>;
-  auth?: RootState['auth'];
-  api?: RootState['api'];
+  auth?: RootState["auth"];
+  api?: RootState["api"];
 }
 
 // Extended render options for Redux testing
-interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
+interface ExtendedRenderOptions extends Omit<RenderOptions, "queries"> {
   preloadedState?: PartialPreloadedState;
   store?: AppStore;
 }
@@ -52,16 +52,14 @@ interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
  */
 export function renderWithProviders(
   ui: ReactElement,
-  {
-    preloadedState = {},
-    store,
-    ...renderOptions
-  }: ExtendedRenderOptions = {}
+  { preloadedState = {}, store, ...renderOptions }: ExtendedRenderOptions = {},
 ) {
   // Merge partial ui state with defaults
   const mergedState: Partial<RootState> = {
     ...preloadedState,
-    ui: preloadedState.ui ? { ...defaultUiState, ...preloadedState.ui } : undefined,
+    ui: preloadedState.ui
+      ? { ...defaultUiState, ...preloadedState.ui }
+      : undefined,
   };
 
   // Remove undefined values
@@ -100,9 +98,9 @@ const AllTheProviders = ({ children }: PropsWithChildren) => {
 
 const customRender = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
+  options?: Omit<RenderOptions, "wrapper">,
 ) => render(ui, { wrapper: AllTheProviders, ...options });
 
 // Re-export everything from testing-library
-export * from '@testing-library/react';
+export * from "@testing-library/react";
 export { customRender as render };

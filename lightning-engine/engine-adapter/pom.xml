@@ -14,6 +14,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>api-proto</module>
         <module>web-api-adapter</module>
         <module>game-sdk</module>
     </modules>

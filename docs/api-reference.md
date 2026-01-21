@@ -49,6 +49,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8080/api/...
 | **Container Commands** ||||
 | GET | `/api/containers/{id}/commands` | List available commands | Any |
 | POST | `/api/containers/{id}/commands` | Queue command for next tick | admin, command_manager |
+| WS | `/containers/{id}/commands?token=xxx` | Submit commands via WebSocket (Protobuf) | admin, command_manager |
 | **Container Matches** ||||
 | GET | `/api/containers/{id}/matches` | List matches in container | Any |
 | POST | `/api/containers/{id}/matches` | Create match in container | admin, command_manager |
@@ -305,6 +306,94 @@ curl -X POST http://localhost:8080/api/containers/1/commands \
       "playerId": 1
     }
   }'
+```
+
+### WebSocket Command Endpoint
+
+For high-performance command submission, use the WebSocket endpoint. Commands are sent as Protocol Buffer binary messages.
+
+**Endpoint:** `ws://localhost:8080/containers/{id}/commands?token=xxx`
+
+**Authentication:** JWT token is passed as a query parameter (since WebSocket API doesn't support custom headers). The token must have `admin` or `command_manager` role.
+
+**Protocol:** Binary Protocol Buffer messages using the `CommandRequest` and `CommandResponse` message types.
+
+```javascript
+// JavaScript WebSocket example
+const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+const ws = new WebSocket(`ws://localhost:8080/containers/1/commands?token=${token}`);
+
+ws.binaryType = 'arraybuffer';
+
+ws.onopen = () => {
+  console.log('Connected to command WebSocket');
+};
+
+ws.onmessage = (event) => {
+  // Parse Protocol Buffer response
+  const response = CommandResponse.decode(new Uint8Array(event.data));
+  console.log(`Command ${response.commandName}: ${response.status}`);
+};
+
+// Send spawn command
+const request = CommandRequest.create({
+  commandName: 'spawn',
+  matchId: 1,
+  playerId: 1,
+  spawn: {
+    entityType: 100,
+    positionX: 10,
+    positionY: 20
+  }
+});
+ws.send(CommandRequest.encode(request).finish());
+```
+
+```java
+// Java client example
+CommandWebSocketClient client = CommandWebSocketClient.connect(
+    "http://localhost:8080", containerId, token);
+
+// Send spawn command
+client.spawn(matchId, playerId, entityType, posX, posY);
+
+// Send attach rigid body command
+client.attachRigidBody(matchId, playerId, entityId, mass, posX, posY, velX, velY);
+
+// Send attach sprite command
+client.attachSprite(matchId, playerId, entityId, resourceId, width, height, visible);
+
+client.close();
+```
+
+**Protocol Buffer Schema:**
+
+```protobuf
+message CommandRequest {
+  string command_name = 1;
+  int64 match_id = 2;
+  int64 player_id = 3;
+
+  oneof payload {
+    SpawnPayload spawn = 10;
+    AttachRigidBodyPayload attach_rigid_body = 11;
+    AttachSpritePayload attach_sprite = 12;
+    GenericPayload generic = 13;
+  }
+}
+
+message CommandResponse {
+  Status status = 1;
+  string message = 2;
+  string command_name = 3;
+
+  enum Status {
+    UNKNOWN = 0;
+    ACCEPTED = 1;
+    ERROR = 2;
+    INVALID = 3;
+  }
+}
 ```
 
 ### Container Players and Sessions

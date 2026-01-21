@@ -20,45 +20,44 @@
  * SOFTWARE.
  */
 
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
-import { render } from '../test/testUtils';
-import SnapshotPanel from './SnapshotPanel';
+import { screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "../test/testUtils";
+import SnapshotPanel from "./SnapshotPanel";
 
 // Mock the useSnapshot hook
-vi.mock('../hooks/useSnapshot', () => ({
-  useSnapshot: vi.fn()
+vi.mock("../hooks/useSnapshot", () => ({
+  useSnapshot: vi.fn(),
 }));
 
-import { useSnapshot } from '../hooks/useSnapshot';
+import { useSnapshot } from "../hooks/useSnapshot";
 
 const mockUseSnapshot = useSnapshot as ReturnType<typeof vi.fn>;
 
-describe('SnapshotPanel', () => {
+describe("SnapshotPanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders loading state when no snapshot', () => {
+  it("renders loading state when no snapshot", () => {
     mockUseSnapshot.mockReturnValue({
       snapshot: null,
       connected: false,
       error: null,
-      requestSnapshot: vi.fn()
+      requestSnapshot: vi.fn(),
     });
 
     render(<SnapshotPanel containerId={1} matchId={1} />);
 
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
   });
 
-  it('renders error state', () => {
+  it("renders error state", () => {
     mockUseSnapshot.mockReturnValue({
       snapshot: null,
       connected: false,
-      error: 'Connection failed',
-      requestSnapshot: vi.fn()
+      error: "Connection failed",
+      requestSnapshot: vi.fn(),
     });
 
     render(<SnapshotPanel containerId={1} matchId={1} />);
@@ -66,23 +65,23 @@ describe('SnapshotPanel', () => {
     expect(screen.getByText(/connection failed/i)).toBeInTheDocument();
   });
 
-  it('renders snapshot data', async () => {
+  it("renders snapshot data", async () => {
     const mockSnapshot = {
       matchId: 1,
       tick: 42,
       data: {
-        'GameModule': {
-          'POSITION_X': [100, 200, 300],
-          'POSITION_Y': [50, 60, 70]
-        }
-      }
+        GameModule: {
+          POSITION_X: [100, 200, 300],
+          POSITION_Y: [50, 60, 70],
+        },
+      },
     };
 
     mockUseSnapshot.mockReturnValue({
       snapshot: mockSnapshot,
       connected: true,
       error: null,
-      requestSnapshot: vi.fn()
+      requestSnapshot: vi.fn(),
     });
 
     render(<SnapshotPanel containerId={1} matchId={1} />);
@@ -94,12 +93,12 @@ describe('SnapshotPanel', () => {
     expect(screen.getByText(/gamemodule/i)).toBeInTheDocument();
   });
 
-  it('shows connected status indicator', () => {
+  it("shows connected status indicator", () => {
     mockUseSnapshot.mockReturnValue({
       snapshot: null,
       connected: true,
       error: null,
-      requestSnapshot: vi.fn()
+      requestSnapshot: vi.fn(),
     });
 
     render(<SnapshotPanel containerId={1} matchId={1} />);
@@ -108,12 +107,12 @@ describe('SnapshotPanel', () => {
     expect(screen.getByText(/live snapshot/i)).toBeInTheDocument();
   });
 
-  it('displays match ID in subheader', () => {
+  it("displays match ID in subheader", () => {
     mockUseSnapshot.mockReturnValue({
       snapshot: null,
       connected: false,
       error: null,
-      requestSnapshot: vi.fn()
+      requestSnapshot: vi.fn(),
     });
 
     render(<SnapshotPanel containerId={1} matchId={5} />);

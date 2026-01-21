@@ -20,12 +20,13 @@
  * SOFTWARE.
  */
 
-
 package ca.samanthaireland.engine.api.resource.adapter;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import ca.samanthaireland.api.proto.CommandProtos;
 
 /**
  * Command builders for container-scoped game operations.
@@ -475,6 +476,257 @@ public final class ContainerCommands {
         @Override
         public void execute() throws IOException {
             commands.send(commandName, params);
+        }
+    }
+
+    // ==================== WebSocket Implementations ====================
+
+    /**
+     * WebSocket-based match commands implementation.
+     *
+     * <p>Uses CommandWebSocketClient for sending commands via WebSocket
+     * instead of HTTP REST API.</p>
+     */
+    public static class WebSocketMatchCommands implements MatchCommands {
+        private final CommandWebSocketClient wsClient;
+        private final long matchId;
+        private final long defaultPlayerId;
+
+        /**
+         * Creates WebSocket match commands.
+         *
+         * @param wsClient the WebSocket client
+         * @param matchId the target match ID
+         */
+        public WebSocketMatchCommands(CommandWebSocketClient wsClient, long matchId) {
+            this(wsClient, matchId, 1);
+        }
+
+        /**
+         * Creates WebSocket match commands with default player ID.
+         *
+         * @param wsClient the WebSocket client
+         * @param matchId the target match ID
+         * @param defaultPlayerId the default player ID for commands
+         */
+        public WebSocketMatchCommands(CommandWebSocketClient wsClient, long matchId, long defaultPlayerId) {
+            this.wsClient = wsClient;
+            this.matchId = matchId;
+            this.defaultPlayerId = defaultPlayerId;
+        }
+
+        @Override
+        public SpawnBuilder spawn() {
+            return new WebSocketSpawnBuilder(this);
+        }
+
+        @Override
+        public AttachMovementBuilder attachMovement() {
+            return new WebSocketAttachMovementBuilder(this);
+        }
+
+        @Override
+        public AttachSpriteBuilder attachSprite() {
+            return new WebSocketAttachSpriteBuilder(this);
+        }
+
+        @Override
+        public CustomCommandBuilder custom(String commandName) {
+            return new WebSocketCustomCommandBuilder(this, commandName);
+        }
+
+        @Override
+        public void send(String commandName, Map<String, Object> payload) throws IOException {
+            wsClient.sendCommand(commandName, matchId, defaultPlayerId);
+        }
+
+        long matchId() {
+            return matchId;
+        }
+
+        long defaultPlayerId() {
+            return defaultPlayerId;
+        }
+
+        CommandWebSocketClient wsClient() {
+            return wsClient;
+        }
+    }
+
+    /**
+     * WebSocket spawn builder implementation.
+     */
+    static class WebSocketSpawnBuilder implements SpawnBuilder {
+        private final WebSocketMatchCommands commands;
+        private long playerId = 1;
+        private long entityType = 100;
+
+        WebSocketSpawnBuilder(WebSocketMatchCommands commands) {
+            this.commands = commands;
+        }
+
+        @Override
+        public SpawnBuilder forPlayer(long playerId) {
+            this.playerId = playerId;
+            return this;
+        }
+
+        @Override
+        public SpawnBuilder ofType(long entityType) {
+            this.entityType = entityType;
+            return this;
+        }
+
+        @Override
+        public void execute() throws IOException {
+            commands.wsClient().spawn(commands.matchId(), playerId, entityType, 0, 0);
+        }
+    }
+
+    /**
+     * WebSocket attachMovement builder implementation.
+     */
+    static class WebSocketAttachMovementBuilder implements AttachMovementBuilder {
+        private final WebSocketMatchCommands commands;
+        private long entityId;
+        private int posX, posY, posZ;
+        private int velX, velY, velZ;
+
+        WebSocketAttachMovementBuilder(WebSocketMatchCommands commands) {
+            this.commands = commands;
+        }
+
+        @Override
+        public AttachMovementBuilder entity(long entityId) {
+            this.entityId = entityId;
+            return this;
+        }
+
+        @Override
+        public AttachMovementBuilder position(int x, int y, int z) {
+            this.posX = x;
+            this.posY = y;
+            this.posZ = z;
+            return this;
+        }
+
+        @Override
+        public AttachMovementBuilder velocity(int vx, int vy, int vz) {
+            this.velX = vx;
+            this.velY = vy;
+            this.velZ = vz;
+            return this;
+        }
+
+        @Override
+        public void execute() throws IOException {
+            // attachMovement uses attachRigidBody under the hood with mass=1
+            commands.wsClient().attachRigidBody(
+                    commands.matchId(), commands.defaultPlayerId(),
+                    entityId, 1, posX, posY, velX, velY);
+        }
+    }
+
+    /**
+     * WebSocket attachSprite builder implementation.
+     */
+    static class WebSocketAttachSpriteBuilder implements AttachSpriteBuilder {
+        private final WebSocketMatchCommands commands;
+        private long entityId;
+        private long resourceId;
+        private int width = 32;
+        private int height = 32;
+        private boolean visible = true;
+
+        WebSocketAttachSpriteBuilder(WebSocketMatchCommands commands) {
+            this.commands = commands;
+        }
+
+        @Override
+        public AttachSpriteBuilder toEntity(long entityId) {
+            this.entityId = entityId;
+            return this;
+        }
+
+        @Override
+        public AttachSpriteBuilder usingResource(long resourceId) {
+            this.resourceId = resourceId;
+            return this;
+        }
+
+        @Override
+        public AttachSpriteBuilder sized(int width, int height) {
+            this.width = width;
+            this.height = height;
+            return this;
+        }
+
+        @Override
+        public AttachSpriteBuilder visible(boolean visible) {
+            this.visible = visible;
+            return this;
+        }
+
+        @Override
+        public void execute() throws IOException {
+            commands.wsClient().attachSprite(
+                    commands.matchId(), commands.defaultPlayerId(),
+                    entityId, resourceId, width, height, visible);
+        }
+    }
+
+    /**
+     * WebSocket custom command builder implementation.
+     *
+     * <p>Uses GenericPayload to send arbitrary parameters via WebSocket.
+     * For typed commands (spawn, attachRigidBody, attachSprite), use the
+     * dedicated builders instead for better type safety.
+     */
+    static class WebSocketCustomCommandBuilder implements CustomCommandBuilder {
+        private final WebSocketMatchCommands commands;
+        private final String commandName;
+        private final Map<String, Object> params = new HashMap<>();
+
+        WebSocketCustomCommandBuilder(WebSocketMatchCommands commands, String commandName) {
+            this.commands = commands;
+            this.commandName = commandName;
+        }
+
+        @Override
+        public CustomCommandBuilder param(String name, Object value) {
+            params.put(name, value);
+            return this;
+        }
+
+        @Override
+        public void execute() throws IOException {
+            CommandProtos.CommandRequest.Builder requestBuilder = CommandProtos.CommandRequest.newBuilder()
+                    .setCommandName(commandName)
+                    .setMatchId(commands.matchId())
+                    .setPlayerId(commands.defaultPlayerId());
+
+            // Build generic payload with all parameters
+            CommandProtos.GenericPayload.Builder genericPayload = CommandProtos.GenericPayload.newBuilder();
+            for (Map.Entry<String, Object> entry : params.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+
+                if (value instanceof Boolean) {
+                    genericPayload.putBoolParams(key, (Boolean) value);
+                } else if (value instanceof Number) {
+                    Number num = (Number) value;
+                    if (value instanceof Float || value instanceof Double) {
+                        genericPayload.putDoubleParams(key, num.doubleValue());
+                    } else {
+                        genericPayload.putLongParams(key, num.longValue());
+                    }
+                } else if (value != null) {
+                    genericPayload.putStringParams(key, value.toString());
+                }
+            }
+
+            requestBuilder.setGeneric(genericPayload);
+            commands.wsClient().send(requestBuilder.build());
         }
     }
 }

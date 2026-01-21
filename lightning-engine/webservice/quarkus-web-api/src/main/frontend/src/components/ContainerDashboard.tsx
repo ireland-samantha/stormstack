@@ -3,85 +3,70 @@
  * MIT License
  */
 
-import { useState, useEffect } from 'react';
 import {
-  Box, Typography, Card, CardContent, CardActions, Grid, Chip, IconButton,
-  Button, LinearProgress, Tooltip, Dialog, DialogTitle, DialogContent,
-  DialogActions, TextField, Skeleton, Alert, Paper, Divider,
-  Stack, Avatar, FormControl, InputLabel, Select, MenuItem, OutlinedInput,
-  Checkbox, ListItemText
-} from '@mui/material';
+    Add as AddIcon, CheckCircle as RunningIcon, Delete as DeleteIcon, Dns as ContainerIcon, Extension as ModulesIcon, HourglassEmpty as CreatedIcon, Memory as MemoryIcon, Pause as PauseIcon, People as EntitiesIcon, PlayArrow as PlayIcon, PowerSettingsNew as StartIcon, RadioButtonUnchecked as StoppedIcon, Refresh as RefreshIcon, SkipNext as TickIcon,
+    Speed as SpeedIcon,
+    SportsEsports as MatchIcon, Stop as StopIcon, Storage as StorageIcon
+} from "@mui/icons-material";
 import {
-  PlayArrow as PlayIcon,
-  Pause as PauseIcon,
-  Stop as StopIcon,
-  Refresh as RefreshIcon,
-  Add as AddIcon,
-  SkipNext as TickIcon,
-  Speed as SpeedIcon,
-  SportsEsports as MatchIcon,
-  Extension as ModulesIcon,
-  Dns as ContainerIcon,
-  Delete as DeleteIcon,
-  CheckCircle as RunningIcon,
-  RadioButtonUnchecked as StoppedIcon,
-  HourglassEmpty as CreatedIcon,
-  PowerSettingsNew as StartIcon,
-  Memory as MemoryIcon,
-  Storage as StorageIcon,
-  People as EntitiesIcon
-} from '@mui/icons-material';
+    Alert, Avatar, Box, Button, Card, CardActions, CardContent, Checkbox, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, Grid, IconButton, InputLabel, LinearProgress, ListItemText, MenuItem,
+    OutlinedInput, Paper, Select, Skeleton, Stack, TextField, Tooltip, Typography
+} from "@mui/material";
+import { useEffect, useState } from "react";
 import {
-  useGetContainersQuery,
-  useGetContainerQuery,
-  useGetContainerMatchesQuery,
-  useGetContainerTickQuery,
-  useGetContainerStatsQuery,
-  useGetModulesQuery,
-  useGetAIsQuery,
-  useCreateContainerMutation,
-  useStartContainerMutation,
-  useStopContainerMutation,
-  useAdvanceContainerTickMutation,
-  usePlayContainerMutation,
-  useStopContainerAutoAdvanceMutation,
-  useDeleteContainerMutation,
-  ContainerData,
-} from '../store/api/apiSlice';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { setSelectedContainerId } from '../store/slices/uiSlice';
+    ContainerData, useAdvanceContainerTickMutation, useCreateContainerMutation, useDeleteContainerMutation, useGetAIsQuery, useGetContainerMatchesQuery, useGetContainerQuery, useGetContainersQuery, useGetContainerStatsQuery, useGetContainerTickQuery, useGetModulesQuery, usePlayContainerMutation, useStartContainerMutation, useStopContainerAutoAdvanceMutation, useStopContainerMutation
+} from "../store/api/apiSlice";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { setSelectedContainerId } from "../store/slices/uiSlice";
 
 const ContainerDashboard: React.FC = () => {
   const dispatch = useAppDispatch();
-  const selectedContainerId = useAppSelector((state) => state.ui.selectedContainerId);
+  const selectedContainerId = useAppSelector(
+    (state) => state.ui.selectedContainerId,
+  );
 
-  const { data: containers = [], isLoading: containersLoading, error: containersError, refetch: refetchContainers } = useGetContainersQuery(undefined, {
+  const {
+    data: containers = [],
+    isLoading: containersLoading,
+    error: containersError,
+    refetch: refetchContainers,
+  } = useGetContainersQuery(undefined, {
     pollingInterval: 2000,
   });
 
-  const { data: selectedContainer } = useGetContainerQuery(selectedContainerId!, {
-    skip: !selectedContainerId,
-  });
+  const { data: selectedContainer } = useGetContainerQuery(
+    selectedContainerId!,
+    {
+      skip: !selectedContainerId,
+    },
+  );
 
-  const { data: matches = [] } = useGetContainerMatchesQuery(selectedContainerId!, {
-    skip: !selectedContainerId,
-  });
+  const { data: matches = [] } = useGetContainerMatchesQuery(
+    selectedContainerId!,
+    {
+      skip: !selectedContainerId,
+    },
+  );
 
   const { data: tickData } = useGetContainerTickQuery(selectedContainerId!, {
-    skip: !selectedContainerId || selectedContainer?.status !== 'RUNNING',
+    skip: !selectedContainerId || selectedContainer?.status !== "RUNNING",
     pollingInterval: 500,
   });
 
-  const { data: containerStats } = useGetContainerStatsQuery(selectedContainerId!, {
-    skip: !selectedContainerId,
-    pollingInterval: 2000,
-  });
+  const { data: containerStats } = useGetContainerStatsQuery(
+    selectedContainerId!,
+    {
+      skip: !selectedContainerId,
+      pollingInterval: 2000,
+    },
+  );
 
   // Global modules and AI for selection
   const { data: globalModules = [] } = useGetModulesQuery();
   const { data: globalAIs = [] } = useGetAIsQuery();
 
-  const [createContainer, { isLoading: isCreating }] = useCreateContainerMutation();
+  const [createContainer, { isLoading: isCreating }] =
+    useCreateContainerMutation();
   const [startContainer] = useStartContainerMutation();
   const [stopContainer] = useStopContainerMutation();
   const [advanceContainerTick] = useAdvanceContainerTickMutation();
@@ -90,8 +75,10 @@ const ContainerDashboard: React.FC = () => {
   const [deleteContainer] = useDeleteContainerMutation();
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [newContainerName, setNewContainerName] = useState('');
-  const [newContainerMaxMemoryMb, setNewContainerMaxMemoryMb] = useState<number | ''>('');
+  const [newContainerName, setNewContainerName] = useState("");
+  const [newContainerMaxMemoryMb, setNewContainerMaxMemoryMb] = useState<
+    number | ""
+  >("");
   const [selectedModuleNames, setSelectedModuleNames] = useState<string[]>([]);
   const [selectedAINames, setSelectedAINames] = useState<string[]>([]);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -119,7 +106,7 @@ const ContainerDashboard: React.FC = () => {
         moduleNames?: string[];
         aiNames?: string[];
       } = { name: newContainerName.trim() };
-      if (newContainerMaxMemoryMb !== '' && newContainerMaxMemoryMb > 0) {
+      if (newContainerMaxMemoryMb !== "" && newContainerMaxMemoryMb > 0) {
         request.maxMemoryMb = newContainerMaxMemoryMb;
       }
       if (selectedModuleNames.length > 0) {
@@ -130,19 +117,21 @@ const ContainerDashboard: React.FC = () => {
       }
       await createContainer(request).unwrap();
       setCreateDialogOpen(false);
-      setNewContainerName('');
-      setNewContainerMaxMemoryMb('');
+      setNewContainerName("");
+      setNewContainerMaxMemoryMb("");
       setSelectedModuleNames([]);
       setSelectedAINames([]);
-      setSuccess('Container created successfully');
+      setSuccess("Container created successfully");
     } catch (err) {
       // Close dialog and show error in main panel so it doesn't block subsequent interactions
       setCreateDialogOpen(false);
-      setNewContainerName('');
-      setNewContainerMaxMemoryMb('');
+      setNewContainerName("");
+      setNewContainerMaxMemoryMb("");
       setSelectedModuleNames([]);
       setSelectedAINames([]);
-      setLocalError(err instanceof Error ? err.message : 'Failed to create container');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to create container",
+      );
     }
   };
 
@@ -150,9 +139,11 @@ const ContainerDashboard: React.FC = () => {
     setActionLoading(`start-${id}`);
     try {
       await startContainer(id).unwrap();
-      setSuccess('Container started');
+      setSuccess("Container started");
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to start container');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to start container",
+      );
     } finally {
       setActionLoading(null);
     }
@@ -162,9 +153,11 @@ const ContainerDashboard: React.FC = () => {
     setActionLoading(`stop-${id}`);
     try {
       await stopContainer(id).unwrap();
-      setSuccess('Container stopped');
+      setSuccess("Container stopped");
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to stop container');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to stop container",
+      );
     } finally {
       setActionLoading(null);
     }
@@ -172,12 +165,14 @@ const ContainerDashboard: React.FC = () => {
 
   const handleAdvanceTick = async () => {
     if (!selectedContainerId) return;
-    setActionLoading('tick');
+    setActionLoading("tick");
     try {
       const response = await advanceContainerTick(selectedContainerId).unwrap();
       setTick(response.tick);
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to advance tick');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to advance tick",
+      );
     } finally {
       setActionLoading(null);
     }
@@ -185,12 +180,16 @@ const ContainerDashboard: React.FC = () => {
 
   const handlePlay = async (intervalMs: number = 16) => {
     if (!selectedContainerId) return;
-    setActionLoading('play');
+    setActionLoading("play");
     try {
       await playContainer({ id: selectedContainerId, intervalMs }).unwrap();
-      setSuccess(`Auto-advance started at ${Math.round(1000 / intervalMs)} FPS`);
+      setSuccess(
+        `Auto-advance started at ${Math.round(1000 / intervalMs)} FPS`,
+      );
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to start auto-advance');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to start auto-advance",
+      );
     } finally {
       setActionLoading(null);
     }
@@ -198,12 +197,14 @@ const ContainerDashboard: React.FC = () => {
 
   const handleStopAuto = async () => {
     if (!selectedContainerId) return;
-    setActionLoading('stopAuto');
+    setActionLoading("stopAuto");
     try {
       await stopContainerAutoAdvance(selectedContainerId).unwrap();
-      setSuccess('Auto-advance stopped');
+      setSuccess("Auto-advance stopped");
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to stop auto-advance');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to stop auto-advance",
+      );
     } finally {
       setActionLoading(null);
     }
@@ -213,12 +214,14 @@ const ContainerDashboard: React.FC = () => {
     setActionLoading(`delete-${id}`);
     try {
       await deleteContainer(id).unwrap();
-      setSuccess('Container deleted');
+      setSuccess("Container deleted");
       if (selectedContainerId === id) {
         selectContainer(null);
       }
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : 'Failed to delete container');
+      setLocalError(
+        err instanceof Error ? err.message : "Failed to delete container",
+      );
     } finally {
       setActionLoading(null);
     }
@@ -226,36 +229,47 @@ const ContainerDashboard: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'RUNNING': return 'success';
-      case 'PAUSED': return 'warning';
-      case 'STOPPED': return 'error';
-      case 'CREATED': return 'default';
-      default: return 'default';
+      case "RUNNING":
+        return "success";
+      case "PAUSED":
+        return "warning";
+      case "STOPPED":
+        return "error";
+      case "CREATED":
+        return "default";
+      default:
+        return "default";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'RUNNING': return <RunningIcon color="success" />;
-      case 'PAUSED': return <PauseIcon color="warning" />;
-      case 'STOPPED': return <StoppedIcon color="error" />;
-      case 'CREATED': return <CreatedIcon color="disabled" />;
-      default: return <StoppedIcon />;
+      case "RUNNING":
+        return <RunningIcon color="success" />;
+      case "PAUSED":
+        return <PauseIcon color="warning" />;
+      case "STOPPED":
+        return <StoppedIcon color="error" />;
+      case "CREATED":
+        return <CreatedIcon color="disabled" />;
+      default:
+        return <StoppedIcon />;
     }
   };
 
   const formatBytes = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return "0 B";
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
   };
 
   const renderContainerCard = (container: ContainerData) => {
     const isSelected = selectedContainerId === container.id;
-    const isRunning = container.status === 'RUNNING';
-    const isCardLoading = actionLoading?.startsWith(`start-${container.id}`) ||
+    const isRunning = container.status === "RUNNING";
+    const isCardLoading =
+      actionLoading?.startsWith(`start-${container.id}`) ||
       actionLoading?.startsWith(`stop-${container.id}`) ||
       actionLoading?.startsWith(`delete-${container.id}`);
 
@@ -264,30 +278,41 @@ const ContainerDashboard: React.FC = () => {
         <Card
           elevation={isSelected ? 8 : 2}
           sx={{
-            cursor: 'pointer',
-            transition: 'all 0.2s ease-in-out',
+            cursor: "pointer",
+            transition: "all 0.2s ease-in-out",
             border: isSelected ? 2 : 0,
-            borderColor: 'primary.main',
-            '&:hover': {
+            borderColor: "primary.main",
+            "&:hover": {
               elevation: 4,
-              transform: 'translateY(-2px)',
-              boxShadow: 4
+              transform: "translateY(-2px)",
+              boxShadow: 4,
             },
-            position: 'relative',
-            overflow: 'visible'
+            position: "relative",
+            overflow: "visible",
           }}
           onClick={() => selectContainer(container.id)}
         >
-          {isCardLoading && <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0 }} />}
+          {isCardLoading && (
+            <LinearProgress
+              sx={{ position: "absolute", top: 0, left: 0, right: 0 }}
+            />
+          )}
 
           <CardContent>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                mb: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <Avatar
                   sx={{
-                    bgcolor: isRunning ? 'success.light' : 'grey.300',
+                    bgcolor: isRunning ? "success.light" : "grey.300",
                     width: 40,
-                    height: 40
+                    height: 40,
                   }}
                 >
                   <ContainerIcon />
@@ -305,7 +330,13 @@ const ContainerDashboard: React.FC = () => {
                 icon={getStatusIcon(container.status)}
                 label={container.status}
                 size="small"
-                color={getStatusColor(container.status) as 'success' | 'warning' | 'error' | 'default'}
+                color={
+                  getStatusColor(container.status) as
+                    | "success"
+                    | "warning"
+                    | "error"
+                    | "default"
+                }
                 variant="outlined"
               />
             </Box>
@@ -346,14 +377,18 @@ const ContainerDashboard: React.FC = () => {
 
           <Divider />
 
-          <CardActions sx={{ justifyContent: 'space-between', px: 2 }}>
+          <CardActions sx={{ justifyContent: "space-between", px: 2 }}>
             <Box>
-              {container.status === 'CREATED' || container.status === 'STOPPED' ? (
+              {container.status === "CREATED" ||
+              container.status === "STOPPED" ? (
                 <Tooltip title="Start Container">
                   <IconButton
                     size="small"
                     color="success"
-                    onClick={(e) => { e.stopPropagation(); handleStartContainer(container.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStartContainer(container.id);
+                    }}
                     disabled={isCardLoading}
                   >
                     <StartIcon />
@@ -364,7 +399,10 @@ const ContainerDashboard: React.FC = () => {
                   <IconButton
                     size="small"
                     color="error"
-                    onClick={(e) => { e.stopPropagation(); handleStopContainer(container.id); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStopContainer(container.id);
+                    }}
                     disabled={isCardLoading}
                   >
                     <StopIcon />
@@ -377,7 +415,10 @@ const ContainerDashboard: React.FC = () => {
                 <IconButton
                   size="small"
                   color="error"
-                  onClick={(e) => { e.stopPropagation(); handleDeleteContainer(container.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteContainer(container.id);
+                  }}
                   disabled={isCardLoading || isRunning}
                 >
                   <DeleteIcon />
@@ -390,7 +431,8 @@ const ContainerDashboard: React.FC = () => {
     );
   };
 
-  const error = localError || (containersError ? 'Failed to fetch containers' : null);
+  const error =
+    localError || (containersError ? "Failed to fetch containers" : null);
 
   if (containersLoading && containers.length === 0) {
     return (
@@ -398,7 +440,11 @@ const ContainerDashboard: React.FC = () => {
         <Grid container spacing={3}>
           {[1, 2, 3].map((i) => (
             <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
-              <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+              <Skeleton
+                variant="rectangular"
+                height={200}
+                sx={{ borderRadius: 2 }}
+              />
             </Grid>
           ))}
         </Grid>
@@ -409,16 +455,24 @@ const ContainerDashboard: React.FC = () => {
   return (
     <Box>
       {/* Header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
         <Box>
           <Typography variant="h4" fontWeight={700}>
             Execution Containers
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Isolated runtime environments with independent classloaders and game loops
+            Isolated runtime environments with independent classloaders and game
+            loops
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1 }}>
           <IconButton onClick={() => refetchContainers()} title="Refresh">
             <RefreshIcon />
           </IconButton>
@@ -434,12 +488,20 @@ const ContainerDashboard: React.FC = () => {
 
       {/* Alerts */}
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLocalError(null)}>
+        <Alert
+          severity="error"
+          sx={{ mb: 2 }}
+          onClose={() => setLocalError(null)}
+        >
           {error}
         </Alert>
       )}
       {success && (
-        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setSuccess(null)}
+        >
           {success}
         </Alert>
       )}
@@ -449,8 +511,10 @@ const ContainerDashboard: React.FC = () => {
         {containers.map(renderContainerCard)}
         {containers.length === 0 && (
           <Grid size={12}>
-            <Paper sx={{ p: 4, textAlign: 'center' }}>
-              <ContainerIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+            <Paper sx={{ p: 4, textAlign: "center" }}>
+              <ContainerIcon
+                sx={{ fontSize: 48, color: "text.secondary", mb: 2 }}
+              />
               <Typography variant="h6" color="text.secondary" gutterBottom>
                 No Containers
               </Typography>
@@ -472,9 +536,16 @@ const ContainerDashboard: React.FC = () => {
       {/* Selected Container Control Panel */}
       {selectedContainer && (
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar sx={{ bgcolor: 'primary.main' }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Avatar sx={{ bgcolor: "primary.main" }}>
                 <ContainerIcon />
               </Avatar>
               <Box>
@@ -486,29 +557,38 @@ const ContainerDashboard: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Chip
                 label={`Tick: ${tick}`}
                 color="primary"
-                sx={{ fontFamily: 'monospace', fontWeight: 600 }}
+                sx={{ fontFamily: "monospace", fontWeight: 600 }}
               />
               <Chip
                 label={selectedContainer.status}
-                color={getStatusColor(selectedContainer.status) as 'success' | 'warning' | 'error' | 'default'}
+                color={
+                  getStatusColor(selectedContainer.status) as
+                    | "success"
+                    | "warning"
+                    | "error"
+                    | "default"
+                }
               />
             </Box>
           </Box>
 
           <Divider sx={{ my: 2 }} />
 
-          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
             <Tooltip title="Advance one tick">
               <span>
                 <Button
                   variant="outlined"
                   startIcon={<TickIcon />}
                   onClick={handleAdvanceTick}
-                  disabled={selectedContainer.status !== 'RUNNING' || actionLoading !== null}
+                  disabled={
+                    selectedContainer.status !== "RUNNING" ||
+                    actionLoading !== null
+                  }
                 >
                   Step
                 </Button>
@@ -522,7 +602,10 @@ const ContainerDashboard: React.FC = () => {
                   color="success"
                   startIcon={<PlayIcon />}
                   onClick={() => handlePlay(16)}
-                  disabled={selectedContainer.status !== 'RUNNING' || actionLoading !== null}
+                  disabled={
+                    selectedContainer.status !== "RUNNING" ||
+                    actionLoading !== null
+                  }
                 >
                   Play (60 FPS)
                 </Button>
@@ -536,7 +619,10 @@ const ContainerDashboard: React.FC = () => {
                   color="success"
                   startIcon={<PlayIcon />}
                   onClick={() => handlePlay(33)}
-                  disabled={selectedContainer.status !== 'RUNNING' || actionLoading !== null}
+                  disabled={
+                    selectedContainer.status !== "RUNNING" ||
+                    actionLoading !== null
+                  }
                 >
                   Play (30 FPS)
                 </Button>
@@ -550,7 +636,10 @@ const ContainerDashboard: React.FC = () => {
                   color="warning"
                   startIcon={<PauseIcon />}
                   onClick={handleStopAuto}
-                  disabled={selectedContainer.status !== 'RUNNING' || actionLoading !== null}
+                  disabled={
+                    selectedContainer.status !== "RUNNING" ||
+                    actionLoading !== null
+                  }
                 >
                   Pause
                 </Button>
@@ -560,7 +649,11 @@ const ContainerDashboard: React.FC = () => {
 
           {/* Matches in this container */}
           <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography
+              variant="subtitle2"
+              color="text.secondary"
+              sx={{ mb: 1 }}
+            >
               Matches in this container ({matches.length})
             </Typography>
             {matches.length > 0 ? (
@@ -586,63 +679,94 @@ const ContainerDashboard: React.FC = () => {
           {containerStats && (
             <Box sx={{ mt: 3 }}>
               <Divider sx={{ mb: 2 }} />
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2 }}>
+              <Typography
+                variant="subtitle2"
+                color="text.secondary"
+                sx={{ mb: 2 }}
+              >
                 Container Statistics
               </Typography>
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                    <EntitiesIcon color="primary" sx={{ fontSize: 32, mb: 1 }} />
+                  <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
+                    <EntitiesIcon
+                      color="primary"
+                      sx={{ fontSize: 32, mb: 1 }}
+                    />
                     <Typography variant="h6" fontWeight={600}>
                       {containerStats.entityCount.toLocaleString()}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Entities ({containerStats.maxEntities.toLocaleString()} max)
+                      Entities ({containerStats.maxEntities.toLocaleString()}{" "}
+                      max)
                     </Typography>
                     <LinearProgress
                       variant="determinate"
-                      value={Math.min((containerStats.entityCount / containerStats.maxEntities) * 100, 100)}
+                      value={Math.min(
+                        (containerStats.entityCount /
+                          containerStats.maxEntities) *
+                          100,
+                        100,
+                      )}
                       sx={{ mt: 1 }}
                     />
                   </Paper>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-                    <MemoryIcon color="secondary" sx={{ fontSize: 32, mb: 1 }} />
+                  <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
+                    <MemoryIcon
+                      color="secondary"
+                      sx={{ fontSize: 32, mb: 1 }}
+                    />
                     <Typography variant="h6" fontWeight={600}>
                       {formatBytes(containerStats.usedMemoryBytes)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      ECS Memory ({containerStats.maxMemoryBytes > 0 ? formatBytes(containerStats.maxMemoryBytes) + ' limit' : 'unlimited'})
+                      ECS Memory (
+                      {containerStats.maxMemoryBytes > 0
+                        ? formatBytes(containerStats.maxMemoryBytes) + " limit"
+                        : "unlimited"}
+                      )
                     </Typography>
                     {containerStats.maxMemoryBytes > 0 && (
                       <LinearProgress
                         variant="determinate"
-                        value={Math.min((containerStats.usedMemoryBytes / containerStats.maxMemoryBytes) * 100, 100)}
+                        value={Math.min(
+                          (containerStats.usedMemoryBytes /
+                            containerStats.maxMemoryBytes) *
+                            100,
+                          100,
+                        )}
                         sx={{ mt: 1 }}
                       />
                     )}
                   </Paper>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
                     <StorageIcon color="info" sx={{ fontSize: 32, mb: 1 }} />
                     <Typography variant="h6" fontWeight={600}>
                       {formatBytes(containerStats.jvmUsedMemoryBytes)}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      JVM Heap ({formatBytes(containerStats.jvmMaxMemoryBytes)} max)
+                      JVM Heap ({formatBytes(containerStats.jvmMaxMemoryBytes)}{" "}
+                      max)
                     </Typography>
                     <LinearProgress
                       variant="determinate"
-                      value={Math.min((containerStats.jvmUsedMemoryBytes / containerStats.jvmMaxMemoryBytes) * 100, 100)}
+                      value={Math.min(
+                        (containerStats.jvmUsedMemoryBytes /
+                          containerStats.jvmMaxMemoryBytes) *
+                          100,
+                        100,
+                      )}
                       color="info"
                       sx={{ mt: 1 }}
                     />
                   </Paper>
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                  <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+                  <Paper variant="outlined" sx={{ p: 2, textAlign: "center" }}>
                     <ModulesIcon color="success" sx={{ fontSize: 32, mb: 1 }} />
                     <Typography variant="h6" fontWeight={600}>
                       {containerStats.moduleCount}
@@ -659,11 +783,17 @@ const ContainerDashboard: React.FC = () => {
       )}
 
       {/* Create Container Dialog */}
-      <Dialog open={createDialogOpen} onClose={() => setCreateDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={createDialogOpen}
+        onClose={() => setCreateDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Create New Container</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Each container has its own isolated classloader, entity store, and game loop.
+            Each container has its own isolated classloader, entity store, and
+            game loop.
           </Typography>
           <TextField
             autoFocus
@@ -680,7 +810,11 @@ const ContainerDashboard: React.FC = () => {
             label="Max Memory (MB)"
             type="number"
             value={newContainerMaxMemoryMb}
-            onChange={(e) => setNewContainerMaxMemoryMb(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+            onChange={(e) =>
+              setNewContainerMaxMemoryMb(
+                e.target.value === "" ? "" : parseInt(e.target.value, 10),
+              )
+            }
             placeholder="e.g., 512"
             helperText="Maximum memory allocation in MB (0 or empty = unlimited, bounded by JVM heap)"
             inputProps={{ min: 0 }}
@@ -694,10 +828,12 @@ const ContainerDashboard: React.FC = () => {
               labelId="modules-select-label"
               multiple
               value={selectedModuleNames}
-              onChange={(e) => setSelectedModuleNames(e.target.value as string[])}
+              onChange={(e) =>
+                setSelectedModuleNames(e.target.value as string[])
+              }
               input={<OutlinedInput label="Modules" />}
               renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                   {selected.map((value) => (
                     <Chip key={value} label={value} size="small" />
                   ))}
@@ -706,8 +842,13 @@ const ContainerDashboard: React.FC = () => {
             >
               {globalModules.map((module) => (
                 <MenuItem key={module.name} value={module.name}>
-                  <Checkbox checked={selectedModuleNames.indexOf(module.name) > -1} />
-                  <ListItemText primary={module.name} secondary={module.description} />
+                  <Checkbox
+                    checked={selectedModuleNames.indexOf(module.name) > -1}
+                  />
+                  <ListItemText
+                    primary={module.name}
+                    secondary={module.description}
+                  />
                 </MenuItem>
               ))}
             </Select>
@@ -723,7 +864,7 @@ const ContainerDashboard: React.FC = () => {
               onChange={(e) => setSelectedAINames(e.target.value as string[])}
               input={<OutlinedInput label="AI" />}
               renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                   {selected.map((value) => (
                     <Chip key={value} label={value} size="small" />
                   ))}
