@@ -227,6 +227,61 @@
 
     <build>
         <plugins>
+            <!-- Generate JWT RSA keys if they don't exist -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-jwt-keys</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>sh</executable>
+                            <arguments>
+                                <argument>-c</argument>
+                                <argument>
+                                    if [ ! -f src/main/resources/privateKey.pem ]; then
+                                        echo "Generating JWT RSA keys...";
+                                        openssl genpkey -algorithm RSA -out src/main/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null;
+                                        openssl rsa -pubout -in src/main/resources/privateKey.pem -out src/main/resources/publicKey.pem 2>/dev/null;
+                                        echo "JWT keys generated in src/main/resources/";
+                                    else
+                                        echo "JWT keys already exist, skipping generation";
+                                    fi
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-jwt-keys-test</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>sh</executable>
+                            <arguments>
+                                <argument>-c</argument>
+                                <argument>
+                                    mkdir -p src/test/resources;
+                                    if [ ! -f src/test/resources/privateKey.pem ]; then
+                                        echo "Generating JWT RSA keys for tests...";
+                                        openssl genpkey -algorithm RSA -out src/test/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null;
+                                        openssl rsa -pubout -in src/test/resources/privateKey.pem -out src/test/resources/publicKey.pem 2>/dev/null;
+                                        echo "JWT keys generated in src/test/resources/";
+                                    else
+                                        echo "Test JWT keys already exist, skipping generation";
+                                    fi
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>io.quarkus.platform</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
