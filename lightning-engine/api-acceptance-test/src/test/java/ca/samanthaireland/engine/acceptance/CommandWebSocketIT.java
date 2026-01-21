@@ -80,6 +80,9 @@ class CommandWebSocketIT {
     static GenericContainer<?> backendContainer = new GenericContainer<>(
             DockerImageName.parse("lightning-backend:latest"))
             .withExposedPorts(BACKEND_PORT)
+            // Security configuration for tests
+            .withEnv("ADMIN_INITIAL_PASSWORD", "admin")
+            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
             .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
                     .withStartupTimeout(Duration.ofMinutes(2)));
 

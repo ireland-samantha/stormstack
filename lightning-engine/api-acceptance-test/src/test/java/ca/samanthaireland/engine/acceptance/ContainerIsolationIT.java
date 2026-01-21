@@ -120,6 +120,9 @@ class ContainerIsolationIT {
             .withEnv("SNAPSHOT_PERSISTENCE_DATABASE", "lightningfirefly")
             .withEnv("SNAPSHOT_PERSISTENCE_COLLECTION", "snapshots")
             .withEnv("SNAPSHOT_PERSISTENCE_TICK_INTERVAL", "1")
+            // Security configuration for tests
+            .withEnv("ADMIN_INITIAL_PASSWORD", "admin")
+            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
             .dependsOn(mongoContainer)
             .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
                     .withStartupTimeout(Duration.ofMinutes(2)));

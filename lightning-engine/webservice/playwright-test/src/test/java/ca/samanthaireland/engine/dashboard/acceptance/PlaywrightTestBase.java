@@ -47,6 +47,9 @@ public abstract class PlaywrightTestBase {
     protected static GenericContainer<?> backend = new GenericContainer<>(
             DockerImageName.parse("lightning-backend:latest"))
             .withExposedPorts(8080)
+            // Security configuration for tests
+            .withEnv("ADMIN_INITIAL_PASSWORD", "admin")
+            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
             .waitingFor(Wait.forLogMessage(".*started in.*Listening on.*", 1))
             .withStartupTimeout(Duration.ofMinutes(2));
 

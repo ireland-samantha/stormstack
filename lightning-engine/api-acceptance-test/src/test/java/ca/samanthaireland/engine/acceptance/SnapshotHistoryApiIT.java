@@ -97,6 +97,8 @@ class SnapshotHistoryApiIT {
             .withNetwork(network)
             .withNetworkAliases("mongodb");
 
+    private static final String TEST_ADMIN_PASSWORD = "admin";
+
     @Container
     static GenericContainer<?> backendContainer = new GenericContainer<>(
             DockerImageName.parse("lightning-backend:latest"))
@@ -107,6 +109,9 @@ class SnapshotHistoryApiIT {
             .withEnv("SNAPSHOT_PERSISTENCE_DATABASE", "lightningfirefly")
             .withEnv("SNAPSHOT_PERSISTENCE_COLLECTION", "snapshots")
             .withEnv("SNAPSHOT_PERSISTENCE_TICK_INTERVAL", "1")
+            // Security configuration for tests
+            .withEnv("ADMIN_INITIAL_PASSWORD", TEST_ADMIN_PASSWORD)
+            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
             .dependsOn(mongoContainer)
             .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
                     .withStartupTimeout(Duration.ofMinutes(2)));
@@ -133,7 +138,7 @@ class SnapshotHistoryApiIT {
 
         // Authenticate to get JWT token using AuthAdapter
         AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
-        bearerToken = auth.login("admin", "admin").token();
+        bearerToken = auth.login("admin", TEST_ADMIN_PASSWORD).token();
 
         // Create client with authentication
         client = EngineClient.builder()
