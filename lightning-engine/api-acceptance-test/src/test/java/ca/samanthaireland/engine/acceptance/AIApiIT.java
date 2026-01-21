@@ -33,10 +33,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.io.IOException;
 import java.net.URI;
@@ -76,17 +74,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Testcontainers
 class AIApiIT {
 
-    private static final int BACKEND_PORT = 8080;
-
     @Container
-    static GenericContainer<?> backendContainer = new GenericContainer<>(
-            DockerImageName.parse("lightning-backend:latest"))
-            .withExposedPorts(BACKEND_PORT)
-            // Security configuration for tests
-            .withEnv("ADMIN_INITIAL_PASSWORD", "admin")
-            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
-            .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
-                    .withStartupTimeout(Duration.ofMinutes(2)));
+    static GenericContainer<?> backendContainer = TestContainers.backendContainer();
 
     private EngineClient client;
     private HttpClient httpClient;
@@ -98,9 +87,7 @@ class AIApiIT {
 
     @BeforeEach
     void setUp() throws Exception {
-        String host = backendContainer.getHost();
-        Integer port = backendContainer.getMappedPort(BACKEND_PORT);
-        baseUrl = String.format("http://%s:%d", host, port);
+        baseUrl = TestContainers.getBaseUrl(backendContainer);
         log.info("Backend URL from testcontainers: {}", baseUrl);
 
         httpClient = HttpClient.newBuilder()
@@ -110,7 +97,7 @@ class AIApiIT {
 
         // Authenticate to get JWT token using AuthAdapter
         AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
-        bearerToken = auth.login("admin", "admin").token();
+        bearerToken = auth.login("admin", TestContainers.TEST_ADMIN_PASSWORD).token();
 
         // Create client with authentication
         client = EngineClient.builder()

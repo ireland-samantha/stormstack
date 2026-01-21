@@ -44,10 +44,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Timeout;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import ca.samanthaireland.engine.acceptance.fixture.EntitySpawner;
 import ca.samanthaireland.engine.api.resource.adapter.AuthAdapter;
@@ -71,20 +69,12 @@ import lombok.extern.slf4j.Slf4j;
 @Timeout(value = 2, unit = TimeUnit.MINUTES)
 class CommandWebSocketIT {
 
-    private static final int BACKEND_PORT = 8080;
     private static final List<String> REQUIRED_MODULES = List.of(
             "EntityModule", "GridMapModule", "RigidBodyModule", "RenderModule"
     );
 
     @Container
-    static GenericContainer<?> backendContainer = new GenericContainer<>(
-            DockerImageName.parse("lightning-backend:latest"))
-            .withExposedPorts(BACKEND_PORT)
-            // Security configuration for tests
-            .withEnv("ADMIN_INITIAL_PASSWORD", "admin")
-            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
-            .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
-                    .withStartupTimeout(Duration.ofMinutes(2)));
+    static GenericContainer<?> backendContainer = TestContainers.backendContainer();
 
     private EngineClient client;
     private ContainerClient container;
@@ -95,13 +85,11 @@ class CommandWebSocketIT {
 
     @BeforeEach
     void setUp() throws Exception {
-        String host = backendContainer.getHost();
-        Integer port = backendContainer.getMappedPort(BACKEND_PORT);
-        baseUrl = String.format("http://%s:%d", host, port);
+        baseUrl = TestContainers.getBaseUrl(backendContainer);
         log.info("Backend URL: {}", baseUrl);
 
         AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
-        authToken = auth.login("admin", "admin").token();
+        authToken = auth.login("admin", TestContainers.TEST_ADMIN_PASSWORD).token();
         log.info("Authenticated successfully");
 
         client = EngineClient.builder()

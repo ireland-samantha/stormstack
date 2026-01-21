@@ -36,10 +36,8 @@ import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -87,34 +85,16 @@ class SnapshotHistoryApiIT {
 
     private static final String ENTITY_MODULE_NAME = "EntityModule";
     private static final String MOVE_MODULE_NAME = "RigidBodyModule";
-    private static final int BACKEND_PORT = 8080;
-    private static final int MONGO_PORT = 27017;
 
     static Network network = Network.newNetwork();
 
     @Container
-    static MongoDBContainer mongoContainer = new MongoDBContainer(DockerImageName.parse("mongo:7"))
-            .withNetwork(network)
-            .withNetworkAliases("mongodb");
-
-    private static final String TEST_ADMIN_PASSWORD = "admin";
+    static MongoDBContainer mongoContainer = TestContainers.mongoContainer(network, "mongodb");
 
     @Container
-    static GenericContainer<?> backendContainer = new GenericContainer<>(
-            DockerImageName.parse("lightning-backend:latest"))
-            .withExposedPorts(BACKEND_PORT)
-            .withNetwork(network)
-            .withEnv("QUARKUS_MONGODB_CONNECTION_STRING", "mongodb://mongodb:27017")
-            .withEnv("SNAPSHOT_PERSISTENCE_ENABLED", "true")
-            .withEnv("SNAPSHOT_PERSISTENCE_DATABASE", "lightningfirefly")
-            .withEnv("SNAPSHOT_PERSISTENCE_COLLECTION", "snapshots")
-            .withEnv("SNAPSHOT_PERSISTENCE_TICK_INTERVAL", "1")
-            // Security configuration for tests
-            .withEnv("ADMIN_INITIAL_PASSWORD", TEST_ADMIN_PASSWORD)
-            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
-            .dependsOn(mongoContainer)
-            .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
-                    .withStartupTimeout(Duration.ofMinutes(2)));
+    static GenericContainer<?> backendContainer = TestContainers
+            .backendContainerWithMongo(network, "mongodb")
+            .dependsOn(mongoContainer);
 
     private EngineClient client;
     private HttpClient httpClient;
@@ -126,9 +106,7 @@ class SnapshotHistoryApiIT {
 
     @BeforeEach
     void setUp() throws Exception {
-        String host = backendContainer.getHost();
-        Integer port = backendContainer.getMappedPort(BACKEND_PORT);
-        baseUrl = String.format("http://%s:%d", host, port);
+        baseUrl = TestContainers.getBaseUrl(backendContainer);
         log.info("Backend URL from testcontainers: " + baseUrl);
 
         httpClient = HttpClient.newBuilder()
@@ -138,7 +116,7 @@ class SnapshotHistoryApiIT {
 
         // Authenticate to get JWT token using AuthAdapter
         AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
-        bearerToken = auth.login("admin", TEST_ADMIN_PASSWORD).token();
+        bearerToken = auth.login("admin", TestContainers.TEST_ADMIN_PASSWORD).token();
 
         // Create client with authentication
         client = EngineClient.builder()

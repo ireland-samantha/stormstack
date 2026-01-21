@@ -11,10 +11,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
 
@@ -44,14 +42,7 @@ public abstract class PlaywrightTestBase {
 
     // Backend server container (using pre-built image)
     @Container
-    protected static GenericContainer<?> backend = new GenericContainer<>(
-            DockerImageName.parse("lightning-backend:latest"))
-            .withExposedPorts(8080)
-            // Security configuration for tests
-            .withEnv("ADMIN_INITIAL_PASSWORD", "admin")
-            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
-            .waitingFor(Wait.forLogMessage(".*started in.*Listening on.*", 1))
-            .withStartupTimeout(Duration.ofMinutes(2));
+    protected static GenericContainer<?> backend = TestContainers.backendContainer();
 
     @BeforeAll
     static void setupPlaywright() {
@@ -61,7 +52,7 @@ public abstract class PlaywrightTestBase {
             baseUrl = externalUrl;
         } else {
             // Use backend container URL accessible from host
-            baseUrl = "http://localhost:" + backend.getMappedPort(8080);
+            baseUrl = TestContainers.getBaseUrl(backend);
         }
 
         // Initialize Playwright

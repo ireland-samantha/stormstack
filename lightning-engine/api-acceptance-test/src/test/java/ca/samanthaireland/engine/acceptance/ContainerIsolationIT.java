@@ -51,10 +51,8 @@ import org.junit.jupiter.api.Timeout;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import ca.samanthaireland.engine.acceptance.fixture.SnapshotAssertions;
 import ca.samanthaireland.engine.acceptance.fixture.TestEngineContainer;
@@ -98,7 +96,6 @@ import lombok.extern.slf4j.Slf4j;
 @Timeout(value = 3, unit = TimeUnit.MINUTES)
 class ContainerIsolationIT {
 
-    private static final int BACKEND_PORT = 8080;
     private static final List<String> PHYSICS_MODULES = List.of(
             "EntityModule", "GridMapModule", "RigidBodyModule"
     );
@@ -106,26 +103,12 @@ class ContainerIsolationIT {
     static Network network = Network.newNetwork();
 
     @Container
-    static MongoDBContainer mongoContainer = new MongoDBContainer(DockerImageName.parse("mongo:7"))
-            .withNetwork(network)
-            .withNetworkAliases("mongodb");
+    static MongoDBContainer mongoContainer = TestContainers.mongoContainer(network, "mongodb");
 
     @Container
-    static GenericContainer<?> backendContainer = new GenericContainer<>(
-            DockerImageName.parse("lightning-backend:latest"))
-            .withExposedPorts(BACKEND_PORT)
-            .withNetwork(network)
-            .withEnv("QUARKUS_MONGODB_CONNECTION_STRING", "mongodb://mongodb:27017")
-            .withEnv("SNAPSHOT_PERSISTENCE_ENABLED", "true")
-            .withEnv("SNAPSHOT_PERSISTENCE_DATABASE", "lightningfirefly")
-            .withEnv("SNAPSHOT_PERSISTENCE_COLLECTION", "snapshots")
-            .withEnv("SNAPSHOT_PERSISTENCE_TICK_INTERVAL", "1")
-            // Security configuration for tests
-            .withEnv("ADMIN_INITIAL_PASSWORD", "admin")
-            .withEnv("AUTH_JWT_SECRET", "test-jwt-secret-for-integration-tests")
-            .dependsOn(mongoContainer)
-            .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
-                    .withStartupTimeout(Duration.ofMinutes(2)));
+    static GenericContainer<?> backendContainer = TestContainers
+            .backendContainerWithMongo(network, "mongodb")
+            .dependsOn(mongoContainer);
 
     private EngineClient client;
     private String baseUrl;
@@ -146,13 +129,11 @@ class ContainerIsolationIT {
 
     @BeforeEach
     void setUp() throws Exception {
-        String host = backendContainer.getHost();
-        Integer port = backendContainer.getMappedPort(BACKEND_PORT);
-        baseUrl = String.format("http://%s:%d", host, port);
+        baseUrl = TestContainers.getBaseUrl(backendContainer);
         log.info("Backend URL: {}", baseUrl);
 
         AuthAdapter auth = new AuthAdapter.HttpAuthAdapter(baseUrl);
-        String token = auth.login("admin", "admin").token();
+        String token = auth.login("admin", TestContainers.TEST_ADMIN_PASSWORD).token();
         log.info("Authenticated successfully");
 
         client = EngineClient.builder()
