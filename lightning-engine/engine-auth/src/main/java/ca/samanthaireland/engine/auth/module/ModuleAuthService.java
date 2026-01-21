@@ -125,14 +125,7 @@ public class ModuleAuthService {
                 .withExpiresAt(expiresAt)
                 .sign(algorithm);
 
-        ModuleAuthToken authToken = new ModuleAuthToken(moduleName, componentPermissions, superuser, token);
-
-        // Log JWT details for debugging
-        log.info("Issued JWT for module '{}' (superuser={}). Permissions:{}",
-                moduleName, superuser, authToken.formatPermissions());
-        log.debug("JWT token for {}: {}", moduleName, token);
-
-        return authToken;
+        return new ModuleAuthToken(moduleName, componentPermissions, superuser, token);
     }
 
     /**
