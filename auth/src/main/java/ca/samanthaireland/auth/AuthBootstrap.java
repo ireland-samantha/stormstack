@@ -2,6 +2,8 @@ package ca.samanthaireland.auth;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Set;
 
 /**
@@ -13,7 +15,6 @@ import java.util.Set;
 public class AuthBootstrap {
 
     private static final String DEFAULT_ADMIN_USERNAME = "admin";
-    private static final String DEFAULT_ADMIN_PASSWORD = "admin";
 
     private final UserService userService;
     private final RoleService roleService;
@@ -125,14 +126,15 @@ public class AuthBootstrap {
      */
     private void createAdminUserIfNotExists() {
         if (!userRepository.existsByUsername(DEFAULT_ADMIN_USERNAME)) {
+            // Resolve password at runtime to allow configuration via env vars or system properties
+            String adminPassword = resolveAdminPassword();
             userService.createUser(
                     DEFAULT_ADMIN_USERNAME,
-                    DEFAULT_ADMIN_PASSWORD,
+                    adminPassword,
                     Set.of("admin")
             );
-            log.info("Created default admin user '{}' with password '{}'",
-                    DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_PASSWORD);
-            log.warn("SECURITY WARNING: Change the default admin password in production!");
+            log.info("Created default admin user '{}'", DEFAULT_ADMIN_USERNAME);
+            log.warn("SECURITY WARNING: Default admin credentials are in use. Change the password immediately in production!");
         } else {
             log.debug("Admin user already exists");
         }
@@ -190,5 +192,44 @@ public class AuthBootstrap {
      */
     public AuthService getAuthService() {
         return authService;
+    }
+
+    /**
+     * Resolve the admin password from environment variable, system property, or generate a secure one.
+     * Priority: 1. ADMIN_INITIAL_PASSWORD env var, 2. admin.initial.password system property, 3. secure random
+     *
+     * @return the resolved admin password
+     */
+    private static String resolveAdminPassword() {
+        // Check environment variable first (production use)
+        String envPassword = System.getenv("ADMIN_INITIAL_PASSWORD");
+        if (envPassword != null && !envPassword.isBlank()) {
+            return envPassword;
+        }
+
+        // Check system property (useful for testing)
+        String propPassword = System.getProperty("admin.initial.password");
+        if (propPassword != null && !propPassword.isBlank()) {
+            return propPassword;
+        }
+
+        // Generate secure random password as fallback
+        return generateSecurePassword();
+    }
+
+    /**
+     * Generate a cryptographically secure random password.
+     * Used as fallback when no password is configured.
+     *
+     * @return a secure random password
+     */
+    private static String generateSecurePassword() {
+        byte[] bytes = new byte[24];
+        new SecureRandom().nextBytes(bytes);
+        String password = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        // Log that a random password was generated (but not the password itself)
+        System.err.println("WARNING: No ADMIN_INITIAL_PASSWORD environment variable set.");
+        System.err.println("Generated random admin password. Set ADMIN_INITIAL_PASSWORD env var for production.");
+        return password;
     }
 }

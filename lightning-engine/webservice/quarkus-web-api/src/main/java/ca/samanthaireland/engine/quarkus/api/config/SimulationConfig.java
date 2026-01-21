@@ -123,7 +123,7 @@ public class SimulationConfig {
     @ConfigProperty(name = "storage.resources-path", defaultValue = "resources")
     String resourcesPath;
 
-    @ConfigProperty(name = "auth.jwt.secret", defaultValue = "lightningfirefly-dev-secret-key-change-in-production")
+    @ConfigProperty(name = "auth.jwt.secret", defaultValue = "")
     String jwtSecret;
 
     // ---------- Core infrastructure ----------
@@ -353,8 +353,14 @@ public class SimulationConfig {
         // Use SmallRye JWT for RSA-based token signing (compatible with SmallRye JWT verification)
         var tokenIssuer = new ca.samanthaireland.engine.quarkus.api.auth.SmallRyeJwtTokenIssuer(24);
         // The secret is not used for signing when using RSA, but required by AuthService
-        // for its internal JWT verification (which we don't use in production)
-        return new AuthService(userRepository, passwordService, roleService, jwtSecret, 24, tokenIssuer);
+        // for its internal JWT verification. Generate a secure random secret if not configured.
+        String effectiveSecret = jwtSecret;
+        if (effectiveSecret == null || effectiveSecret.isBlank()) {
+            byte[] randomBytes = new byte[32];
+            new java.security.SecureRandom().nextBytes(randomBytes);
+            effectiveSecret = java.util.Base64.getEncoder().encodeToString(randomBytes);
+        }
+        return new AuthService(userRepository, passwordService, roleService, effectiveSecret, 24, tokenIssuer);
     }
 
     @Produces

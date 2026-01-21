@@ -83,19 +83,32 @@ Lightning Engine is an open source multiplayer server and backend game developme
 ### Prerequisites
 - Docker
 
-### Run
+### Run (Development)
 ```bash
+# Set initial admin password (or a random one will be generated)
+export ADMIN_INITIAL_PASSWORD=your-secure-password
+
 docker compose up -d
 ```
+
+### Run (Production)
+```bash
+# Required: Set security environment variables
+export ADMIN_INITIAL_PASSWORD=your-secure-password
+export CORS_ORIGINS=https://yourdomain.com
+
+docker compose up -d
+```
+
 Open the React admin dashboard at:
 
 ```
 http://localhost:8080/admin/dashboard
 ```
 ![demo.png](docs/demo.png)
-**Default credentials:**
+**Credentials:**
 - Username: `admin`
-- Password: `admin`
+- Password: The value you set in `ADMIN_INITIAL_PASSWORD` (or check logs for the generated password)
 ## Documentation
 
 | Documentation | Description |

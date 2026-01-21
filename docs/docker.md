@@ -81,6 +81,16 @@ docker compose down
 | `SNAPSHOT_PERSISTENCE_COLLECTION` | `snapshots` | MongoDB collection name |
 | `SNAPSHOT_PERSISTENCE_TICK_INTERVAL` | `1` | Persist every N ticks |
 
+**Security Environment Variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ADMIN_INITIAL_PASSWORD` | (random) | Initial admin user password. **Required in production.** If not set, a secure random password is generated and logged. |
+| `CORS_ORIGINS` | (none) | Allowed CORS origins. **Required in production.** Example: `https://yourdomain.com` |
+| `AUTH_JWT_SECRET` | (random) | JWT signing secret. If not set, a secure random secret is generated. |
+
+> ⚠️ **Security Warning:** In production, always set `ADMIN_INITIAL_PASSWORD` and `CORS_ORIGINS`. Never use wildcard (`*`) for CORS in production.
+
 ## MongoDB Persistence
 
 The docker-compose setup includes MongoDB for snapshot history:
@@ -111,3 +121,27 @@ To disable MongoDB persistence:
 ```bash
 SNAPSHOT_PERSISTENCE_ENABLED=false docker compose up -d
 ```
+
+## Production Deployment
+
+For production deployments, ensure you configure the required security environment variables:
+
+```bash
+# Required security configuration
+export ADMIN_INITIAL_PASSWORD="your-secure-admin-password"
+export CORS_ORIGINS="https://yourdomain.com"
+
+# Optional (generated automatically if not set)
+export AUTH_JWT_SECRET="your-jwt-secret-key"
+
+# Start with production profile
+QUARKUS_PROFILE=prod docker compose up -d
+```
+
+### Security Checklist
+
+- [ ] Set `ADMIN_INITIAL_PASSWORD` to a strong, unique password
+- [ ] Set `CORS_ORIGINS` to your specific domain(s) - never use `*`
+- [ ] Change the admin password after first login
+- [ ] Use HTTPS in production (configure a reverse proxy)
+- [ ] Review MongoDB access controls if exposed externally

@@ -35,6 +35,9 @@ services:
       - SNAPSHOT_PERSISTENCE_ENABLED=true
       - SNAPSHOT_PERSISTENCE_DATABASE=lightningfirefly
       - SNAPSHOT_PERSISTENCE_COLLECTION=snapshots
+      # Security: Set these in production! If not set, secure random values are generated.
+      # - ADMIN_INITIAL_PASSWORD=change-me-in-production
+      # - CORS_ORIGINS=https://yourdomain.com
     depends_on:
       mongodb:
         condition: service_healthy
