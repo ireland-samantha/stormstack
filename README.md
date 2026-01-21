@@ -109,6 +109,98 @@ http://localhost:8080/admin/dashboard
 **Credentials:**
 - Username: `admin`
 - Password: The value you set in `ADMIN_INITIAL_PASSWORD` (or check logs for the generated password)
+
+---
+
+## Local Development Setup
+
+For contributors who want to build and run from source.
+
+### Prerequisites
+
+- Java 25 (with preview features enabled)
+- Maven 3.9+
+- Node.js 18+ and npm (for frontend)
+- MongoDB 6.0+ (running locally or via Docker)
+- Docker (for running integration tests)
+
+### Build from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/lightning-engine.git
+cd lightning-engine
+
+# Build all modules (skip tests for faster initial build)
+mvn clean install -DskipTests
+
+# Or build with tests
+mvn clean install
+
+# Build Docker image
+mvn clean install -Pdocker -DskipTests
+```
+
+### Run MongoDB
+
+```bash
+# Using Docker
+docker run -d --name mongodb -p 27017:27017 mongo:6.0
+
+# Or use your local MongoDB installation
+```
+
+### Run the Backend
+
+```bash
+# Set required environment variables
+export ADMIN_INITIAL_PASSWORD=dev-password
+export QUARKUS_MONGODB_CONNECTION_STRING=mongodb://localhost:27017
+
+# Run in development mode (with hot reload)
+cd lightning-engine/webservice/quarkus-web-api
+mvn quarkus:dev
+```
+
+### Run the Frontend (Development)
+
+```bash
+cd lightning-engine/webservice/quarkus-web-api/src/main/frontend
+npm install
+npm run dev
+```
+
+The frontend dev server runs at `http://localhost:5173` and proxies API requests to the backend.
+
+### Running Tests
+
+```bash
+# Run unit tests
+mvn test
+
+# Run integration tests (requires Docker)
+mvn verify -Pintegration-tests
+
+# Run Playwright E2E tests
+cd lightning-engine/webservice/playwright-test
+mvn test
+```
+
+### IDE Setup
+
+**IntelliJ IDEA** (Recommended):
+1. Open the root `pom.xml` as a project
+2. Enable annotation processing for Lombok (Settings → Build → Compiler → Annotation Processors)
+3. Set Project SDK to Java 25
+4. Enable preview features in compiler settings
+
+**VS Code**:
+1. Install "Extension Pack for Java"
+2. Open the project folder
+3. The extensions will auto-detect the Maven project
+
+---
+
 ## Documentation
 
 | Documentation | Description |
