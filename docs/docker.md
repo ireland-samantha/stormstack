@@ -6,6 +6,7 @@ The easiest way to run Lightning Engine is using the published Docker image:
 
 ```bash
 export ADMIN_INITIAL_PASSWORD=your-secure-password
+export AUTH_JWT_SECRET=your-jwt-secret-at-least-32-chars
 docker compose up -d
 ```
 
@@ -95,10 +96,10 @@ docker compose down
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ADMIN_INITIAL_PASSWORD` | (random) | Initial admin user password. **Required in production.** If not set, a secure random password is generated and logged. |
+| `AUTH_JWT_SECRET` | (required) | JWT signing secret. **Required.** Use a long random string (32+ characters). |
 | `CORS_ORIGINS` | (none) | Allowed CORS origins. **Required in production.** Example: `https://yourdomain.com` |
-| `AUTH_JWT_SECRET` | (random) | JWT signing secret. If not set, a secure random secret is generated. |
 
-> ⚠️ **Security Warning:** In production, always set `ADMIN_INITIAL_PASSWORD` and `CORS_ORIGINS`. Never use wildcard (`*`) for CORS in production.
+> ⚠️ **Security Warning:** In production, always set `ADMIN_INITIAL_PASSWORD`, `AUTH_JWT_SECRET`, and `CORS_ORIGINS`. Never use wildcard (`*`) for CORS in production.
 
 ## MongoDB Persistence
 
@@ -138,10 +139,8 @@ For production deployments, ensure you configure the required security environme
 ```bash
 # Required security configuration
 export ADMIN_INITIAL_PASSWORD="your-secure-admin-password"
+export AUTH_JWT_SECRET="your-long-random-jwt-secret-32-chars-minimum"
 export CORS_ORIGINS="https://yourdomain.com"
-
-# Optional (generated automatically if not set)
-export AUTH_JWT_SECRET="your-jwt-secret-key"
 
 # Start with production profile
 QUARKUS_PROFILE=prod docker compose up -d
@@ -150,6 +149,7 @@ QUARKUS_PROFILE=prod docker compose up -d
 ### Security Checklist
 
 - [ ] Set `ADMIN_INITIAL_PASSWORD` to a strong, unique password
+- [ ] Set `AUTH_JWT_SECRET` to a long random string (32+ characters)
 - [ ] Set `CORS_ORIGINS` to your specific domain(s) - never use `*`
 - [ ] Change the admin password after first login
 - [ ] Use HTTPS in production (configure a reverse proxy)

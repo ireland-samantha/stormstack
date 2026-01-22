@@ -32,8 +32,10 @@ services:
       - SNAPSHOT_PERSISTENCE_ENABLED=true
       - SNAPSHOT_PERSISTENCE_DATABASE=lightningfirefly
       - SNAPSHOT_PERSISTENCE_COLLECTION=snapshots
-      # Security: Set these in production! If not set, secure random values are generated.
-      # - ADMIN_INITIAL_PASSWORD=change-me-in-production
+      # Security: Required for JWT authentication
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-change-me-in-production-use-long-random-string}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-admin}
+      # Production: Set CORS_ORIGINS to your domain
       # - CORS_ORIGINS=https://yourdomain.com
     depends_on:
       mongodb:
@@ -63,6 +65,8 @@ services:
     environment:
       - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms256m -Xmx512m
       - QUARKUS_LOG_LEVEL=INFO
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-change-me-in-production-use-long-random-string}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-admin}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
       interval: 30s

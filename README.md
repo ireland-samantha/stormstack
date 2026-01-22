@@ -92,6 +92,7 @@ docker run -d \
   --name lightning-engine \
   -p 8080:8080 \
   -e ADMIN_INITIAL_PASSWORD=your-secure-password \
+  -e AUTH_JWT_SECRET=your-jwt-secret-at-least-32-chars \
   samanthacireland/lightning-engine:0.0.1
 ```
 
@@ -128,6 +129,7 @@ docker compose up -d
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `ADMIN_INITIAL_PASSWORD` | Yes | Password for the admin user |
+| `AUTH_JWT_SECRET` | Yes | Secret for JWT signing (use a long random string, 32+ chars) |
 | `CORS_ORIGINS` | Production | Allowed CORS origins (e.g., `https://yourdomain.com`) |
 | `QUARKUS_MONGODB_CONNECTION_STRING` | No | MongoDB connection (default: `mongodb://mongodb:27017`) |
 | `SNAPSHOT_PERSISTENCE_ENABLED` | No | Enable snapshot history (default: `true` with MongoDB) |
