@@ -83,9 +83,18 @@ Lightning Engine is an open source multiplayer server and backend game developme
 ### Prerequisites
 - Docker
 
-### Run (Development)
+
+### Run from DockerHub image
 ```bash
-# Set initial admin password (or a random one will be generated)
+# Set initial admin password
+export ADMIN_INITIAL_PASSWORD=your-secure-password
+docker pull samanthacireland/lightning-engine:0.0.1
+docker compose up -d
+```
+
+### Run (Build container for development)
+```bash
+# Set initial admin password 
 export ADMIN_INITIAL_PASSWORD=your-secure-password
 
 docker compose up -d
