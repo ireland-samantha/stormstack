@@ -5,21 +5,7 @@ Modules are self-contained units defining:
 - **Systems** - Logic that runs every tick (e.g., movement, collision)
 - **Commands** - External API exposed via REST (e.g., `spawn`, `damage`)
 
-## Built-in Modules
-
-All modules are in separate Maven submodules under `lightning-engine-extensions/modules/`:
-
-| Module | Components | Systems | Commands | Description |
-|--------|------------|---------|----------|-------------|
-| `EntityModule` | 3 | 0 | 1 | Core entity management |
-| `GridMapModule` | 6 | 0 | 3 | Position management with map boundaries, exports `GridMapExports` |
-| `HealthModule` | 3 | 1 | 3 | HP tracking, damage/heal, death system |
-| `RenderingModule` | 6 | 0 | 1 | Sprite attachment (width, height, rotation, z-index) |
-| `RigidBodyModule` | 10 | 1 | 4 | Physics: velocity, force, mass, drag, inertia |
-| `BoxColliderModule` | 12 | 2 | 5 | AABB collision detection, handler registration |
-| `ProjectileModule` | 5 | 1 | 1 | Projectile spawning and lifetime management |
-| `ItemsModule` | 8 | 0 | 4 | Item/inventory: pickup, drop, use, stack |
-| `MoveModule` | 7 | 2 | 2 | Legacy movement (deprecated, use RigidBodyModule) |
+Typically, you put backend game logic in modules, and enable them in containers and matches to create instances of your game.
 
 ## Creating a Module
 
