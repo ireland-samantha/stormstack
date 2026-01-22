@@ -203,13 +203,10 @@ public class RigidBodyModule implements EngineModule {
 }
 ```
 
-### Export Security Note
+### Note
 
-Module exports bypass the ECS permission system. Any module can call any exported method. Design exports carefully:
+Module exports still need to respect ECS permissions. Exports are authenticated and ran under the calling module's classloader.
 
-- Only expose methods that should be publicly accessible
-- Don't expose internal state that should be protected by permissions
-- Use exports for service-level operations, not raw data access
 
 ## Module Permission Scoping
 
