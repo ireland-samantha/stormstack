@@ -54,20 +54,15 @@ class AuthBootstrapTest {
         @Test
         @DisplayName("admin should be able to login with configured password")
         void adminShouldBeAbleToLoginWithConfiguredPassword() {
-            // Set a known password via system property for testing
+            // Use explicit password to avoid env var interference
             String testPassword = "test-admin-password";
-            System.setProperty("admin.initial.password", testPassword);
-            try {
-                AuthBootstrap bootstrap = AuthBootstrap.createDefault();
+            AuthBootstrap bootstrap = AuthBootstrap.createWithAdminPassword(testPassword);
 
-                AuthToken token = bootstrap.getAuthService().login("admin", testPassword);
+            AuthToken token = bootstrap.getAuthService().login("admin", testPassword);
 
-                assertThat(token).isNotNull();
-                assertThat(token.username()).isEqualTo("admin");
-                assertThat(token.isAdmin()).isTrue();
-            } finally {
-                System.clearProperty("admin.initial.password");
-            }
+            assertThat(token).isNotNull();
+            assertThat(token.username()).isEqualTo("admin");
+            assertThat(token.isAdmin()).isTrue();
         }
     }
 

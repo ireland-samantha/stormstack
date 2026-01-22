@@ -57,6 +57,19 @@ public class AuthBootstrap {
      * @return the initialized AuthBootstrap
      */
     public static AuthBootstrap createDefault() {
+        return createWithAdminPassword(resolveAdminPassword());
+    }
+
+    /**
+     * Create a fully initialized auth system with a specific admin password.
+     *
+     * <p>This factory method is primarily for testing, allowing explicit control
+     * over the admin password without relying on environment variables.
+     *
+     * @param adminPassword the password to use for the admin user
+     * @return the initialized AuthBootstrap
+     */
+    public static AuthBootstrap createWithAdminPassword(String adminPassword) {
         PasswordService passwordService = new PasswordService();
         UserRepository userRepository = new InMemoryUserRepository();
         RoleRepository roleRepository = new InMemoryRoleRepository();
@@ -66,7 +79,7 @@ public class AuthBootstrap {
 
         AuthBootstrap bootstrap = new AuthBootstrap(
                 userService, roleService, passwordService, userRepository, roleRepository, authService);
-        bootstrap.initializeDefaults();
+        bootstrap.initializeDefaultsWithPassword(adminPassword);
 
         return bootstrap;
     }
@@ -76,7 +89,17 @@ public class AuthBootstrap {
      */
     public void initializeDefaults() {
         createDefaultRoles();
-        createAdminUserIfNotExists();
+        createAdminUserIfNotExists(resolveAdminPassword());
+    }
+
+    /**
+     * Initialize default roles and users with a specific admin password.
+     *
+     * @param adminPassword the password to use for the admin user
+     */
+    private void initializeDefaultsWithPassword(String adminPassword) {
+        createDefaultRoles();
+        createAdminUserIfNotExists(adminPassword);
     }
 
     /**
@@ -123,11 +146,11 @@ public class AuthBootstrap {
 
     /**
      * Create the default admin user if it doesn't exist.
+     *
+     * @param adminPassword the password to use for the admin user
      */
-    private void createAdminUserIfNotExists() {
+    private void createAdminUserIfNotExists(String adminPassword) {
         if (!userRepository.existsByUsername(DEFAULT_ADMIN_USERNAME)) {
-            // Resolve password at runtime to allow configuration via env vars or system properties
-            String adminPassword = resolveAdminPassword();
             userService.createUser(
                     DEFAULT_ADMIN_USERNAME,
                     adminPassword,
