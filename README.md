@@ -83,24 +83,38 @@ Lightning Engine is an open source multiplayer server and backend game developme
 ### Prerequisites
 - Docker
 
+### Option 1: Run Standalone (No Persistence)
 
-### Run from DockerHub image
+The simplest way to try Lightning Engine - runs the server without MongoDB:
+
 ```bash
-# Set initial admin password
+docker run -d \
+  --name lightning-engine \
+  -p 8080:8080 \
+  -e ADMIN_INITIAL_PASSWORD=your-secure-password \
+  samanthacireland/lightning-engine:0.0.1
+```
+
+### Option 2: Run with Docker Compose (Recommended)
+
+Includes MongoDB for snapshot persistence:
+
+```bash
+# Clone the repo for docker-compose.yml (or download just the file)
+git clone https://github.com/ireland-samantha/lightning-engine.git
+cd lightning-engine
+
+# Set admin password and start
 export ADMIN_INITIAL_PASSWORD=your-secure-password
-docker pull samanthacireland/lightning-engine:0.0.1
 docker compose up -d
 ```
 
-### Run (Build container for development)
-```bash
-# Set initial admin password 
-export ADMIN_INITIAL_PASSWORD=your-secure-password
+This starts:
+- **lightning-engine** - The game server on port 8080
+- **mongodb** - For snapshot history persistence
 
-docker compose up -d
-```
+### Option 3: Production Deployment
 
-### Run (Production)
 ```bash
 # Required: Set security environment variables
 export ADMIN_INITIAL_PASSWORD=your-secure-password
@@ -108,6 +122,15 @@ export CORS_ORIGINS=https://yourdomain.com
 
 docker compose up -d
 ```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ADMIN_INITIAL_PASSWORD` | Yes | Password for the admin user |
+| `CORS_ORIGINS` | Production | Allowed CORS origins (e.g., `https://yourdomain.com`) |
+| `QUARKUS_MONGODB_CONNECTION_STRING` | No | MongoDB connection (default: `mongodb://mongodb:27017`) |
+| `SNAPSHOT_PERSISTENCE_ENABLED` | No | Enable snapshot history (default: `true` with MongoDB) |
 
 Open the React admin dashboard at:
 
