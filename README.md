@@ -114,16 +114,6 @@ This starts:
 - **lightning-engine** - The game server on port 8080
 - **mongodb** - For snapshot history persistence
 
-### Option 3: Production Deployment
-
-```bash
-# Required: Set security environment variables
-export ADMIN_INITIAL_PASSWORD=your-secure-password
-export CORS_ORIGINS=https://yourdomain.com
-
-docker compose up -d
-```
-
 ### Environment Variables
 
 | Variable | Required | Description |
@@ -147,8 +137,6 @@ http://localhost:8080/admin/dashboard
 ---
 
 ## Local Development Setup
-
-For contributors who want to build and run from source.
 
 ### Prerequisites
 
