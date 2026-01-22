@@ -72,6 +72,7 @@ public class CommandWebSocketClient implements AutoCloseable {
     private final AtomicBoolean connected = new AtomicBoolean(false);
     private final AtomicReference<Throwable> lastError = new AtomicReference<>();
     private final CountDownLatch connectionLatch = new CountDownLatch(1);
+    private final Object sendLock = new Object();
 
     private CommandWebSocketClient(WebSocket webSocket) {
         this.webSocket = webSocket;
@@ -333,6 +334,88 @@ public class CommandWebSocketClient implements AutoCloseable {
         return webSocket.sendBinary(buffer, true).thenAccept(ws -> {});
     }
 
+    /**
+     * Send a spawn command without waiting for response (fire-and-forget).
+     *
+     * <p>Use this for bulk operations where waiting for each response is too slow.
+     * The caller is responsible for verifying commands succeeded via snapshots.
+     */
+    public void spawnFireAndForget(long matchId, long playerId, long entityType, long posX, long posY) {
+        CommandProtos.CommandRequest request = CommandProtos.CommandRequest.newBuilder()
+                .setCommandName("spawn")
+                .setMatchId(matchId)
+                .setPlayerId(playerId)
+                .setSpawn(CommandProtos.SpawnPayload.newBuilder()
+                        .setEntityType(entityType)
+                        .setPositionX(posX)
+                        .setPositionY(posY)
+                        .build())
+                .build();
+        sendFireAndForget(request);
+    }
+
+    /**
+     * Send a command without waiting for response (fire-and-forget).
+     *
+     * <p>Commands are serialized to avoid WebSocket "Send pending" errors.
+     * Use this for bulk operations where waiting for each response is too slow.
+     */
+    public void sendFireAndForget(CommandProtos.CommandRequest request) {
+        if (!connected.get()) {
+            throw new IllegalStateException("Not connected");
+        }
+
+        byte[] bytes = request.toByteArray();
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+
+        synchronized (sendLock) {
+            try {
+                webSocket.sendBinary(buffer, true).get(SEND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to send command", e);
+            }
+        }
+    }
+
+    /**
+     * Send an attachRigidBody command without waiting for response (fire-and-forget).
+     */
+    public void attachRigidBodyFireAndForget(RigidBodyParams params) {
+        CommandProtos.CommandRequest request = CommandProtos.CommandRequest.newBuilder()
+                .setCommandName("attachRigidBody")
+                .setMatchId(params.matchId())
+                .setPlayerId(params.playerId())
+                .setAttachRigidBody(CommandProtos.AttachRigidBodyPayload.newBuilder()
+                        .setEntityId(params.entityId())
+                        .setMass(params.mass())
+                        .setPositionX(params.positionX())
+                        .setPositionY(params.positionY())
+                        .setVelocityX(params.velocityX())
+                        .setVelocityY(params.velocityY())
+                        .build())
+                .build();
+        sendFireAndForget(request);
+    }
+
+    /**
+     * Send an attachSprite command without waiting for response (fire-and-forget).
+     */
+    public void attachSpriteFireAndForget(SpriteParams params) {
+        CommandProtos.CommandRequest request = CommandProtos.CommandRequest.newBuilder()
+                .setCommandName("attachSprite")
+                .setMatchId(params.matchId())
+                .setPlayerId(params.playerId())
+                .setAttachSprite(CommandProtos.AttachSpritePayload.newBuilder()
+                        .setEntityId(params.entityId())
+                        .setResourceId(params.resourceId())
+                        .setWidth(params.width())
+                        .setHeight(params.height())
+                        .setVisible(params.visible())
+                        .build())
+                .build();
+        sendFireAndForget(request);
+    }
+
     // ==================== Connection State ====================
 
     /**
@@ -360,16 +443,19 @@ public class CommandWebSocketClient implements AutoCloseable {
         byte[] bytes = request.toByteArray();
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
 
-        try {
-            webSocket.sendBinary(buffer, true).get(SEND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-            return pollForResponse();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IOException("Interrupted while sending command", e);
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IOException("Failed to send command", e);
+        // Synchronize sends to prevent "Send pending" errors from concurrent WebSocket usage
+        synchronized (sendLock) {
+            try {
+                webSocket.sendBinary(buffer, true).get(SEND_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                return pollForResponse();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while sending command", e);
+            } catch (IOException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new IOException("Failed to send command", e);
+            }
         }
     }
 
@@ -403,6 +489,27 @@ public class CommandWebSocketClient implements AutoCloseable {
         @Override
         public void onOpen(WebSocket ws) {
             ws.request(1);
+        }
+
+        @Override
+        public CompletionStage<?> onText(WebSocket ws, CharSequence data, boolean last) {
+            // Handle JSON text messages (connection response from server)
+            String message = data.toString();
+            if (message.contains("\"status\":\"ACCEPTED\"") || message.contains("\"ACCEPTED\"")) {
+                CommandWebSocketClient client = clientRef[0];
+                if (client != null && !client.connected.get()) {
+                    client.connected.set(true);
+                    client.connectionLatch.countDown();
+                }
+            } else if (message.contains("\"status\":\"ERROR\"") || message.contains("\"ERROR\"")) {
+                CommandWebSocketClient client = clientRef[0];
+                if (client != null) {
+                    client.lastError.set(new IOException("Server error: " + message));
+                    client.connectionLatch.countDown();
+                }
+            }
+            ws.request(1);
+            return null;
         }
 
         @Override

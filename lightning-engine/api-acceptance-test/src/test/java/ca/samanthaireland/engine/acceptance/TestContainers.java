@@ -60,6 +60,7 @@ public final class TestContainers {
                 .withExposedPorts(BACKEND_PORT)
                 .withEnv("ADMIN_INITIAL_PASSWORD", TEST_ADMIN_PASSWORD)
                 .withEnv("AUTH_JWT_SECRET", TEST_JWT_SECRET)
+                .withEnv("WEBSOCKET_RATELIMIT_MAX_COMMANDS_PER_SECOND", "50000") // High limit for performance tests
                 .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
                         .withStartupTimeout(DEFAULT_STARTUP_TIMEOUT));
     }
