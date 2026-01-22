@@ -93,7 +93,7 @@ docker run -d \
   -p 8080:8080 \
   -e ADMIN_INITIAL_PASSWORD=your-secure-password \
   -e AUTH_JWT_SECRET=your-jwt-secret-at-least-32-chars \
-  samanthacireland/lightning-engine:0.0.1
+  samanthacireland/lightning-engine:0.0.2
 ```
 
 ### Option 2: Run with Docker Compose (Recommended)

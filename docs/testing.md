@@ -99,7 +99,7 @@ The `e2e-live-rendering-and-backend-acceptance-test` module provides full-stack 
 @Testcontainers
 class PhysicsIT {
     @Container
-    static GenericContainer<?> backend = new GenericContainer<>("samanthacireland/lightning-engine:0.0.1")
+    static GenericContainer<?> backend = new GenericContainer<>("samanthacireland/lightning-engine:0.0.2")
         .withExposedPorts(8080);
 
     @Test

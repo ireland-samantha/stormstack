@@ -10,7 +10,7 @@ export AUTH_JWT_SECRET=your-jwt-secret-at-least-32-chars
 docker compose up -d
 ```
 
-This pulls `samanthacireland/lightning-engine:0.0.1` from Docker Hub.
+This pulls `samanthacireland/lightning-engine:0.0.2` from Docker Hub.
 
 ## Build from Source
 
@@ -30,11 +30,11 @@ Build the Docker image as part of the Maven build:
 
 ```bash
 # Full build (compiles from source inside container)
-docker build -t samanthacireland/lightning-engine:0.0.1 .
+docker build -t samanthacireland/lightning-engine:0.0.2 .
 
 # Or use pre-built JARs (faster, requires local mvn package first)
 ./mvnw package -DskipTests
-docker build -f Dockerfile.prebuilt -t samanthacireland/lightning-engine:0.0.1 .
+docker build -f Dockerfile.prebuilt -t samanthacireland/lightning-engine:0.0.2 .
 ```
 
 ### Running Playwright Tests
@@ -69,7 +69,7 @@ docker compose down
 
 | Image | Size | Contents |
 |-------|------|----------|
-| `samanthacireland/lightning-engine:0.0.1` | ~300MB | Quarkus app, modules JAR |
+| `samanthacireland/lightning-engine:0.0.2` | ~300MB | Quarkus app, modules JAR |
 | `eclipse-temurin:25-jre-alpine` | Base runtime |
 | `mongo:7` | MongoDB for snapshot persistence |
 

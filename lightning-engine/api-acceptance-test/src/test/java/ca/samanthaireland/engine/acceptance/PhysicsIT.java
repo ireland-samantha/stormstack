@@ -65,7 +65,7 @@ import lombok.extern.slf4j.Slf4j;
  * <p>Prerequisites:
  * <ul>
  *   <li>Docker must be running</li>
- *   <li>The backend image must be built: {@code docker pull samanthacireland/lightning-engine:0.0.1}</li>
+ *   <li>The backend image must be built: {@code docker pull samanthacireland/lightning-engine:0.0.2}</li>
  * </ul>
  *
  * <p>Run with:

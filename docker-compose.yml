@@ -21,7 +21,7 @@ services:
 
   # Main Quarkus API backend (pulls from Docker Hub)
   backend:
-    image: samanthacireland/lightning-engine:0.0.1
+    image: samanthacireland/lightning-engine:0.0.2
     container_name: lightning-engine
     ports:
       - "8080:8080"
@@ -56,7 +56,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prebuilt
-    image: samanthacireland/lightning-engine:0.0.1-prebuilt
+    image: samanthacireland/lightning-engine:0.0.2-prebuilt
     container_name: lightning-engine-prebuilt
     profiles:
       - prebuilt

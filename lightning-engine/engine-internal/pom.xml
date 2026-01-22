@@ -6,7 +6,7 @@
     <parent>
         <groupId>ca.samanthaireland</groupId>
         <artifactId>backend</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -59,25 +59,25 @@
         <dependency>
             <groupId>ca.samanthaireland</groupId>
             <artifactId>utils</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>0.0.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>ca.samanthaireland</groupId>
             <artifactId>engine</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>0.0.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>ca.samanthaireland</groupId>
             <artifactId>engine-auth</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>0.0.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>ca.samanthaireland</groupId>
             <artifactId>game-sdk</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>0.0.2</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

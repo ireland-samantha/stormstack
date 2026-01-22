@@ -522,7 +522,7 @@ class PhysicsIT {
 
     @Container
     static GenericContainer<?> backendContainer = new GenericContainer<>(
-            DockerImageName.parse("samanthacireland/lightning-engine:0.0.1"))
+            DockerImageName.parse("samanthacireland/lightning-engine:0.0.2"))
             .withExposedPorts(8080)
             .waitingFor(Wait.forLogMessage(".*started in.*\\n", 1)
                     .withStartupTimeout(Duration.ofMinutes(2)));
