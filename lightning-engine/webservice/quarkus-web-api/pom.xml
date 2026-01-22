@@ -469,7 +469,7 @@
                                         <argument>-f</argument>
                                         <argument>lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt</argument>
                                         <argument>-t</argument>
-                                        <argument>lightning-backend:latest</argument>
+                                        <argument>samanthacireland/lightning-engine:0.0.1</argument>
                                         <argument>.</argument>
                                     </arguments>
                                 </configuration>

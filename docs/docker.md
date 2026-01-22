@@ -1,6 +1,17 @@
 # Docker
 
-## Build the Image
+## Quick Start (Docker Hub)
+
+The easiest way to run Lightning Engine is using the published Docker image:
+
+```bash
+export ADMIN_INITIAL_PASSWORD=your-secure-password
+docker compose up -d
+```
+
+This pulls `samanthacireland/lightning-engine:0.0.1` from Docker Hub.
+
+## Build from Source
 
 ### Option 1: Maven Profile (Recommended)
 
@@ -14,17 +25,15 @@ Build the Docker image as part of the Maven build:
 ./mvnw install -Pdocker -pl lightning-engine/webservice/quarkus-web-api
 ```
 
-This creates `lightning-backend:latest` using `Dockerfile.prebuilt`.
-
 ### Option 2: Manual Docker Build
 
 ```bash
 # Full build (compiles from source inside container)
-docker build -t lightning-backend .
+docker build -t samanthacireland/lightning-engine:0.0.1 .
 
 # Or use pre-built JARs (faster, requires local mvn package first)
 ./mvnw package -DskipTests
-docker build -f Dockerfile.prebuilt -t lightning-backend .
+docker build -f Dockerfile.prebuilt -t samanthacireland/lightning-engine:0.0.1 .
 ```
 
 ### Running Playwright Tests
@@ -59,7 +68,7 @@ docker compose down
 
 | Image | Size | Contents |
 |-------|------|----------|
-| `lightning-backend` | ~300MB | Quarkus app, modules JAR |
+| `samanthacireland/lightning-engine:0.0.1` | ~300MB | Quarkus app, modules JAR |
 | `eclipse-temurin:25-jre-alpine` | Base runtime |
 | `mongo:7` | MongoDB for snapshot persistence |
 

@@ -1,6 +1,6 @@
 # Lightweight Dockerfile for pre-built application
 # Usage: First run `./mvnw package -DskipTests -pl lightning-engine/webservice/quarkus-web-api -am`
-#        Then build with: docker build -f Dockerfile.prebuilt -t lightning-backend .
+#        Then build with: docker build -f Dockerfile.prebuilt -t samanthacireland/lightning-engine:0.0.1 .
 
 FROM eclipse-temurin:25-jre-alpine
 

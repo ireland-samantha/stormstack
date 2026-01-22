@@ -97,7 +97,7 @@ jobs:
 #        run: mvn -B package -DskipTests -Dquarkus.container-image.build=true -pl lightning-engine/webservice/quarkus-web-api
 #
 #      - name: Tag Docker image for Playwright tests
-#        run: docker tag samantha/quarkus-web-api:0.0.1-SNAPSHOT lightning-backend:0.1.0
+#        run: docker tag samantha/quarkus-web-api:0.0.1-SNAPSHOT samanthacireland/lightning-engine:0.0.1
 #
 #      - name: Install Playwright browsers and system dependencies
 #        run: npx playwright install chromium --with-deps
@@ -156,7 +156,7 @@ jobs:
         run: mvn clean install -DskipTests
 
       - name: Build Docker image
-        run: docker build -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt -t lightning-backend:latest .
+        run: docker build -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt -t samanthacireland/lightning-engine:0.0.1 .
 
       - name: Run API integration tests
         run: mvn -B verify -Pacceptance-tests -pl lightning-engine/api-acceptance-test

@@ -38,7 +38,7 @@ import java.time.Duration;
  */
 public final class TestContainers {
 
-    public static final String BACKEND_IMAGE = "lightning-backend:latest";
+    public static final String BACKEND_IMAGE = "samanthacireland/lightning-engine:0.0.1";
     public static final int BACKEND_PORT = 8080;
     public static final String TEST_ADMIN_PASSWORD = "admin";
     public static final String TEST_JWT_SECRET = "test-jwt-secret-for-integration-tests";

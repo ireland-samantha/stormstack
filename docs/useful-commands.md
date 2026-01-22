@@ -60,16 +60,19 @@ DOCKER_HOST=unix:///var/run/docker.sock ./mvnw test \
 ## Docker
 
 ```bash
+# Pull from Docker Hub
+docker pull samanthacireland/lightning-engine:0.0.1
+
 # Build Docker image (full build)
-docker build -t lightning-backend:latest -f Dockerfile .
+docker build -t samanthacireland/lightning-engine:0.0.1 -f Dockerfile .
 
 # Build Docker image (prebuilt jar)
-docker build -t lightning-backend:latest \
+docker build -t samanthacireland/lightning-engine:0.0.1 \
     -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt \
     lightning-engine/webservice/quarkus-web-api
 
 # Run Docker container
-docker run -p 8080:8080 lightning-backend:latest
+docker run -p 8080:8080 -e ADMIN_INITIAL_PASSWORD=admin samanthacireland/lightning-engine:0.0.1
 
 # View container logs
 docker logs <container-id>
