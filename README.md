@@ -172,7 +172,7 @@ http://localhost:8080/admin/dashboard
 - Docker (for running integration tests)
 
 ### Build from Source
-First, take. deep breathe. 
+First, take a deep breathe. 
 
 ```bash
 # Clone the repository
