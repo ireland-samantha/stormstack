@@ -14,7 +14,7 @@ Deploying a backend for a game is as easy as:
 5. Hoping
 
 
-> ⚠️ > Warning
+> ⚠️ Warning
 >
 > Lightning Engine is an experimental hobby project, not production software.
 > It exists for fun, learning, and the pure joy of over-engineering.
