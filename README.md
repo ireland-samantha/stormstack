@@ -1,18 +1,14 @@
 # Lightning Engine  
 Lightning Engine is an open-source, unapologetically Java-brained multiplayer server and backend game development framework built in Java (chosen as it's arguably the best language for over-engineering).
 
-The core idea is simple (and slightly unhinged):  
-- run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules.
+The core idea is simple (and slightly unhinged): Run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules. 
 
-This way, when your WoW-killer MMO inevitably explodes, it doesn’t take down your checkers sim with it.
-
-Deploying a backend for a game is as easy as:
+Deploying a backend for a game becomes:
 1. Building a JAR with your game logic  
 2. Uploading it to a Lightning instance  
 3. Triggering hot reload  
 4. Spawning containers and matches  
 5. Hoping
-
 
 > ⚠️ Warning
 >
@@ -31,6 +27,8 @@ Deploying a backend for a game is as easy as:
 > who enjoy complexity, puzzles, and whacky ideas executed carefully.
 
 ---
+## Why?
+In all seriousness, please see: [why?](docs/why.md) 
 
 ## Key Capabilities
 
