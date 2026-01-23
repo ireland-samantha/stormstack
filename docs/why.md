@@ -46,15 +46,16 @@ Is this a normal way to build game servers? No. Is it interesting? Extremely.
 
 ## Why Java
 
-Java gets a lot of shit, but it's genuinely good at what this project needs:
+Java gets a lot of hate, but it's genuinely good for large, business-critical systems, such as a game backend at a game project. what this project needs:
 
 - ClassLoader isolation (the whole multi-game thing depends on this)
 - Runtime introspection
 - Mature tooling that doesn't fight you
 - Predictable performance
 - Threading that actually works
+- Business-appealing, domain-driven code
 
-If you're mad about Java, this probably isn't for you. That's fine.
+If you dislike Java, this probably isn't for you. That's fine.
 
 ---
 
@@ -65,6 +66,7 @@ Lightning works well when you care about:
 - Server authority
 - Changing rules on live games
 - Running multiple matches without container sprawl
+- Deploying small fixes to players, such as holiday events, without impacting others
 - Isolation that doesn't require spinning up new processes
 - Multiple teams shipping independently
 - Being able to see what's happening inside your game
@@ -83,7 +85,7 @@ Lightning is not:
 - Simple
 - Production-ready (yet)
 
-I'm not trying to make the next big indie tool here. This is an experiment that might become something real, or might just stay a reference implementation people steal ideas from. Both outcomes are fine with me.
+I'm not trying to make the next big engine here. This is an experiment that might become something real, or might just stay a reference implementation people take inspiration from. Or it's a weird project I worked on for fun. All outcomes are fine with me.
 
 ---
 
@@ -91,7 +93,7 @@ I'm not trying to make the next big indie tool here. This is an experiment that 
 
 A few things I care about:
 
-**Isolation over convenience** — Bugs should fail locally. One game crashing shouldn't take down the server. One team's bad deploy shouldn't break another team's game.
+**Isolation over convenience** — Bugs should fail locally. One game crashing shouldn't take down the server. One team's bad deploy shouldn't break another team's game. We should know about bugs before they become disasters.
 
 **Introspection over mystery** — You should be able to see what your game is doing while it's running. Not after. While.
 
@@ -119,4 +121,4 @@ This project is as much about learning as it is about shipping anything. If it t
 
 If you like systems design, enjoy complexity, are curious about JVM internals, or want to see what building something with LLMs actually looks like — welcome.
 
-If you wanted something simple and production-ready, sorry. This isn't that.
+If you wanted something simple and production-ready, sorry. This isn't that. But if you're a Java/game nerd, I hope you enjoy this as much as me.
