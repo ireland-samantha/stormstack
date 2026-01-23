@@ -40,7 +40,7 @@ Deploying a backend for a game is as easy as:
 - Multiple games running safely on the same server
 
 ### ECS (Entity Component System)
-- Array-based storage with **O(1) component access**
+- Array-based ECS storage with **O(1) component access** (because who needs simplicity when you could take your program down to the F1 track 🏎️)
 - Float-based values for cache efficiency
 - Per-tick query caching
 - Match-scoped entity filtering
