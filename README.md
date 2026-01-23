@@ -25,7 +25,7 @@ Deploying a backend for a game is as easy as:
 > - aggressively over-engineered
 > - powered by Java, hubris, and curiosity
 >
-> Built via pair programming with Claude Code.
+> Built via ~vibe coding~ pair programming (read: tokens go burr while I yell at it for making mistakes) with Claude Code.
 >
 > If any of this sounds appealing, we are currently looking for fellow travelers
 > who enjoy complexity, puzzles, and whacky ideas executed carefully.
