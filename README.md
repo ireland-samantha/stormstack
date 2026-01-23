@@ -9,6 +9,7 @@ With Lightning, deploying a backend for a game looks like:
 2. Uploading it to a Lightning instance  
 3. Triggering hot reload  
 4. Spawning containers and matches  
+5. Subscribing to state updates, and triggering commands, via Websocket.
 
 > ⚠️ Warning
 >
