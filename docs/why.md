@@ -18,9 +18,9 @@ Most multiplayer stacks make you pick your poison:
 - **Shared runtimes** are fast but one bad bug nukes everything
 - **Hot-reloading** server logic is either janky, fragile, or just not supported
 - **Debugging live state** usually means logs, guesswork, and hoping
-- **Multi-team development** requires either tight coordination or splitting into separate services with all the overhead that brings
+- **Multi-team development** requires either tight coordination or splitting into separate services with all the overhead that brings, usually ending up with developers blocked.
 
-Lightning is me exploring a different part of the design space.
+Lightning is me exploring a different part of the design space, taking patterns from Java microservice development.
 
 ---
 
