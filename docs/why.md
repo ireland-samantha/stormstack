@@ -46,7 +46,7 @@ Is this a normal way to build game servers? No. Is it interesting? Extremely.
 
 ## Why Java
 
-Java gets a lot of hate, but it's genuinely good for large, business-critical systems, such as a game backend at a game project. what this project needs:
+Java gets a lot of hate, but it's genuinely good for large, business-critical systems like game backends. It has what this project needs:
 
 - ClassLoader isolation (the whole multi-game thing depends on this)
 - Runtime introspection
