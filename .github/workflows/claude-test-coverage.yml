@@ -19,6 +19,7 @@ permissions:
   issues: write
   contents: write
   checks: write
+  id-token: write
 
 jobs:
   # Handle @claude mentions in PR comments
