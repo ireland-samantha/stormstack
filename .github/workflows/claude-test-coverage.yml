@@ -1,0 +1,180 @@
+# Claude Code Test Coverage Review
+# Reviews PRs for test coverage and can implement changes when requested.
+#
+# Usage:
+#   - Automatic review on PR open/sync
+#   - Comment "@claude implement" to have Claude make suggested changes
+#   - Comment "@claude [question]" to ask about test coverage
+#
+# Required secret: ANTHROPIC_API_KEY
+
+name: Claude Test Coverage Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: write
+  checks: write
+
+jobs:
+  # Automatic test coverage review when PR is opened or updated
+  review-coverage:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Review test coverage with Claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are a test coverage reviewer for a Java/Maven project. Analyze the PR changes and review test coverage.
+
+            ## Your Task
+            1. Identify all new or modified production code files (in src/main/java)
+            2. Check if corresponding test files exist (in src/test/java)
+            3. Analyze if the tests adequately cover the new/changed code
+            4. Look for edge cases, error handling, and boundary conditions that should be tested
+
+            ## Review Criteria
+            - Every new public class should have a corresponding test class
+            - Every new public method should have at least one test
+            - Error handling paths should be tested
+            - Edge cases and boundary conditions should be covered
+            - Mock dependencies appropriately using Mockito
+
+            ## Project Conventions
+            - JUnit 5 with @Nested and @DisplayName annotations
+            - AssertJ fluent assertions (assertThat)
+            - Mockito for mocking (@Mock, @ExtendWith(MockitoExtension.class))
+            - Test class naming: {ClassName}Test.java
+            - Test method naming: should{ExpectedBehavior}When{Condition}
+
+            ## Output Format
+            Provide your review as:
+            1. **Coverage Summary**: Brief overview of test coverage status
+            2. **Missing Tests**: List specific tests that should be added
+            3. **Suggested Improvements**: Concrete suggestions with code examples
+            4. **Implementation Ready**: If you recommend adding tests, provide complete test code that can be implemented
+
+            If the PR author replies with "@claude implement" or "implement", you should create the suggested test files.
+
+  # Handle @claude mentions in PR comments
+  handle-mention:
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '@claude')
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.issue.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Process Claude request
+        uses: anthropics/claude-code-action@v1
+        with:
+          api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            You are a test coverage assistant for a Java/Maven project.
+
+            The user commented: "${{ github.event.comment.body }}"
+
+            ## Instructions
+
+            ### If the comment contains "implement" (e.g., "@claude implement", "please implement", "implement the suggestions"):
+            1. Look at the previous review comments in this PR for test coverage suggestions
+            2. Create the suggested test files following project conventions
+            3. Ensure tests compile and follow the patterns:
+               - JUnit 5 with @Nested and @DisplayName
+               - AssertJ assertions (assertThat)
+               - Mockito for mocking
+            4. Commit the new test files with message: "Add tests as suggested by Claude Code review"
+            5. Push the changes to the PR branch
+
+            ### If the comment is a question about test coverage:
+            1. Analyze the PR changes
+            2. Provide specific, actionable advice
+            3. Include code examples where helpful
+
+            ### If asked to add specific tests:
+            1. Create the requested test files
+            2. Follow project conventions
+            3. Commit and push the changes
+
+            ## Project Structure
+            - Production code: src/main/java
+            - Test code: src/test/java
+            - Use the same package structure for tests as production code
+
+            ## Test Conventions
+            ```java
+            @ExtendWith(MockitoExtension.class)
+            @DisplayName("ClassName")
+            class ClassNameTest {
+
+                @Mock
+                private Dependency dependency;
+
+                private ClassUnderTest classUnderTest;
+
+                @BeforeEach
+                void setUp() {
+                    classUnderTest = new ClassUnderTest(dependency);
+                }
+
+                @Nested
+                @DisplayName("methodName")
+                class MethodName {
+
+                    @Test
+                    @DisplayName("should do something when condition")
+                    void shouldDoSomethingWhenCondition() {
+                        // Arrange
+                        when(dependency.method()).thenReturn(value);
+
+                        // Act
+                        var result = classUnderTest.methodName();
+
+                        // Assert
+                        assertThat(result).isEqualTo(expected);
+                        verify(dependency).method();
+                    }
+                }
+            }
+            ```
+
+            After making changes, verify they compile by running: mvn test-compile -q
