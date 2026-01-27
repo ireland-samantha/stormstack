@@ -24,7 +24,7 @@ Mostly for fun, but also [some other reasons](docs/why.md)
 Lightning Engine is an experimental hobby project, not production software. It exists for fun, learning, and the pure joy of over-engineering. 
 
 It is:
- - pre-alpha
+ - experimental
  - unstable
  - aggressively over-engineered
  - powered by Java, hubris, and curiosity
