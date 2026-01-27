@@ -1,12 +1,9 @@
 package ca.samanthaireland.engine.ext.modules;
 
 import ca.samanthaireland.engine.core.store.BaseComponent;
-import ca.samanthaireland.engine.core.store.PermissionComponent;
-import ca.samanthaireland.engine.core.store.PermissionLevel;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
-import ca.samanthaireland.engine.util.IdGeneratorV2;
 
 import java.util.List;
 
@@ -32,90 +29,34 @@ import java.util.List;
  * </ol>
  *
  * <p>Note: Position operations use GridMapExports (position components are in GridMapModule).
+ *
+ * @see RigidBodyComponents for component constants
  */
 public class RigidBodyModuleFactory implements ModuleFactory {
 
-    // Velocity components
-    public static final BaseComponent VELOCITY_X = new PermissionComponent(
-            IdGeneratorV2.newId(), "VELOCITY_X", PermissionLevel.READ);
-    public static final BaseComponent VELOCITY_Y = new PermissionComponent(
-            IdGeneratorV2.newId(), "VELOCITY_Y", PermissionLevel.READ);
-    public static final BaseComponent VELOCITY_Z = new PermissionComponent(
-            IdGeneratorV2.newId(), "VELOCITY_Z", PermissionLevel.READ);
-
-    // Acceleration components (accumulated from forces)
-    public static final BaseComponent ACCELERATION_X = new PermissionComponent(
-            IdGeneratorV2.newId(), "ACCELERATION_X", PermissionLevel.READ);
-    public static final BaseComponent ACCELERATION_Y = new PermissionComponent(
-            IdGeneratorV2.newId(), "ACCELERATION_Y", PermissionLevel.READ);
-    public static final BaseComponent ACCELERATION_Z = new PermissionComponent(
-            IdGeneratorV2.newId(), "ACCELERATION_Z", PermissionLevel.READ);
-
-    // Force accumulator (cleared each tick after applying)
-    public static final BaseComponent FORCE_X = new PermissionComponent(
-            IdGeneratorV2.newId(), "FORCE_X", PermissionLevel.READ);
-    public static final BaseComponent FORCE_Y = new PermissionComponent(
-            IdGeneratorV2.newId(), "FORCE_Y", PermissionLevel.READ);
-    public static final BaseComponent FORCE_Z = new PermissionComponent(
-            IdGeneratorV2.newId(), "FORCE_Z", PermissionLevel.READ);
-
-    // Mass (for F = ma calculations)
-    public static final BaseComponent MASS = new PermissionComponent(
-            IdGeneratorV2.newId(), "MASS", PermissionLevel.READ);
-
-    // Angular components (2D rotation around Z axis)
-    public static final BaseComponent ANGULAR_VELOCITY = new PermissionComponent(
-            IdGeneratorV2.newId(), "ANGULAR_VELOCITY", PermissionLevel.READ);
-    public static final BaseComponent ROTATION = new PermissionComponent(
-            IdGeneratorV2.newId(), "ROTATION", PermissionLevel.READ);
-    public static final BaseComponent TORQUE = new PermissionComponent(
-            IdGeneratorV2.newId(), "TORQUE", PermissionLevel.READ);
-    public static final BaseComponent INERTIA = new PermissionComponent(
-            IdGeneratorV2.newId(), "INERTIA", PermissionLevel.READ);
-
-    // Damping/drag coefficients
-    public static final BaseComponent LINEAR_DRAG = new PermissionComponent(
-            IdGeneratorV2.newId(), "LINEAR_DRAG", PermissionLevel.READ);
-    public static final BaseComponent ANGULAR_DRAG = new PermissionComponent(
-            IdGeneratorV2.newId(), "ANGULAR_DRAG", PermissionLevel.READ);
-
-    public static final BaseComponent FLAG = new PermissionComponent(
-            IdGeneratorV2.newId(), "rigidBody", PermissionLevel.READ);
-
-    // Component groups
-    public static final List<BaseComponent> VELOCITY_COMPONENTS =
-            List.of(VELOCITY_X, VELOCITY_Y, VELOCITY_Z);
-
-    public static final List<BaseComponent> ACCELERATION_COMPONENTS =
-            List.of(ACCELERATION_X, ACCELERATION_Y, ACCELERATION_Z);
-
-    public static final List<BaseComponent> FORCE_COMPONENTS =
-            List.of(FORCE_X, FORCE_Y, FORCE_Z);
-
-    /**
-     * RigidBody's own components (excluding positions which are shared).
-     */
-    public static final List<BaseComponent> CORE_COMPONENTS = List.of(
-            VELOCITY_X, VELOCITY_Y, VELOCITY_Z,
-            ACCELERATION_X, ACCELERATION_Y, ACCELERATION_Z,
-            FORCE_X, FORCE_Y, FORCE_Z,
-            MASS,
-            ANGULAR_VELOCITY, ROTATION, TORQUE, INERTIA,
-            LINEAR_DRAG, ANGULAR_DRAG
-    );
-
-    /**
-     * All components for snapshot export (excludes positions since they're in EntityModule).
-     */
-    public static final List<BaseComponent> ALL_COMPONENTS = List.of(
-            VELOCITY_X, VELOCITY_Y, VELOCITY_Z,
-            ACCELERATION_X, ACCELERATION_Y, ACCELERATION_Z,
-            FORCE_X, FORCE_Y, FORCE_Z,
-            MASS,
-            ANGULAR_VELOCITY, ROTATION, TORQUE, INERTIA,
-            LINEAR_DRAG, ANGULAR_DRAG,
-            FLAG
-    );
+    // Delegated constants for backwards compatibility
+    public static final BaseComponent VELOCITY_X = RigidBodyComponents.VELOCITY_X;
+    public static final BaseComponent VELOCITY_Y = RigidBodyComponents.VELOCITY_Y;
+    public static final BaseComponent VELOCITY_Z = RigidBodyComponents.VELOCITY_Z;
+    public static final BaseComponent ACCELERATION_X = RigidBodyComponents.ACCELERATION_X;
+    public static final BaseComponent ACCELERATION_Y = RigidBodyComponents.ACCELERATION_Y;
+    public static final BaseComponent ACCELERATION_Z = RigidBodyComponents.ACCELERATION_Z;
+    public static final BaseComponent FORCE_X = RigidBodyComponents.FORCE_X;
+    public static final BaseComponent FORCE_Y = RigidBodyComponents.FORCE_Y;
+    public static final BaseComponent FORCE_Z = RigidBodyComponents.FORCE_Z;
+    public static final BaseComponent MASS = RigidBodyComponents.MASS;
+    public static final BaseComponent ANGULAR_VELOCITY = RigidBodyComponents.ANGULAR_VELOCITY;
+    public static final BaseComponent ROTATION = RigidBodyComponents.ROTATION;
+    public static final BaseComponent TORQUE = RigidBodyComponents.TORQUE;
+    public static final BaseComponent INERTIA = RigidBodyComponents.INERTIA;
+    public static final BaseComponent LINEAR_DRAG = RigidBodyComponents.LINEAR_DRAG;
+    public static final BaseComponent ANGULAR_DRAG = RigidBodyComponents.ANGULAR_DRAG;
+    public static final BaseComponent FLAG = RigidBodyComponents.FLAG;
+    public static final List<BaseComponent> VELOCITY_COMPONENTS = RigidBodyComponents.VELOCITY_COMPONENTS;
+    public static final List<BaseComponent> ACCELERATION_COMPONENTS = RigidBodyComponents.ACCELERATION_COMPONENTS;
+    public static final List<BaseComponent> FORCE_COMPONENTS = RigidBodyComponents.FORCE_COMPONENTS;
+    public static final List<BaseComponent> CORE_COMPONENTS = RigidBodyComponents.CORE_COMPONENTS;
+    public static final List<BaseComponent> ALL_COMPONENTS = RigidBodyComponents.ALL_COMPONENTS;
 
     @Override
     public EngineModule create(ModuleContext context) {

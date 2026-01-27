@@ -24,6 +24,8 @@
 package ca.samanthaireland.engine.rendering.testing.headless;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import ca.samanthaireland.engine.rendering.render2d.TextField;
 import ca.samanthaireland.engine.rendering.testing.KeyCodes;
 
@@ -120,7 +122,7 @@ public class MockTextField extends AbstractWindowComponent implements TextField 
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         // No rendering in headless mode
     }
 
@@ -130,7 +132,7 @@ public class MockTextField extends AbstractWindowComponent implements TextField 
             return false;
         }
 
-        if (button == 0 && action == 1) {
+        if (InputConstants.isLeftButton(button) && InputConstants.isPress(action)) {
             boolean wasFocused = focused;
             focused = contains(mx, my);
 
@@ -150,7 +152,7 @@ public class MockTextField extends AbstractWindowComponent implements TextField 
 
     @Override
     public boolean onKeyPress(int key, int action, int mods) {
-        if (!focused || action == 0) {
+        if (!focused || InputConstants.isRelease(action)) {
             return false;
         }
 

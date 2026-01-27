@@ -24,14 +24,13 @@
 package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
 import ca.samanthaireland.engine.rendering.render2d.ListView;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import lombok.extern.slf4j.Slf4j;
-import org.lwjgl.nanovg.NVGColor;
 
 import java.util.*;
 import java.util.function.Consumer;
-
-import static org.lwjgl.nanovg.NanoVG.*;
 
 /**
  * A scrollable list view component.
@@ -275,88 +274,69 @@ public class GLListView extends AbstractWindowComponent implements ListView {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         if (!visible) {
             return;
         }
 
-        try (var color = NVGColor.malloc()) {
-            // Draw background
-            nvgBeginPath(nvg);
-            nvgRect(nvg, x, y, width, height);
-            nvgFillColor(nvg, GLColour.rgba(backgroundColor, color));
-            nvgFill(nvg);
+        // Draw background
+        renderer.fillRect(x, y, width, height, backgroundColor);
 
-            // Draw border
-            nvgStrokeColor(nvg, GLColour.rgba(borderColor, color));
-            nvgStrokeWidth(nvg, 1.0f);
-            nvgStroke(nvg);
+        // Draw border
+        renderer.strokeRect(x, y, width, height, borderColor, 1.0f);
 
-            // Calculate visible items
-            float totalHeight = items.size() * itemHeight;
-            float maxScroll = Math.max(0, totalHeight - height);
-            scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
+        // Calculate visible items
+        float totalHeight = items.size() * itemHeight;
+        float maxScroll = Math.max(0, totalHeight - height);
+        scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
 
-            int scrollbarWidth = needsScrollbar() ? 10 : 0;
-            int contentWidth = width - scrollbarWidth - 2;
+        int scrollbarWidth = needsScrollbar() ? 10 : 0;
+        int contentWidth = width - scrollbarWidth - 2;
 
-            // Clip content area
-            nvgSave(nvg);
-            nvgIntersectScissor(nvg, x + 1, y + 1, contentWidth, height - 2);
+        // Clip content area
+        renderer.save();
+        renderer.intersectClip(x + 1, y + 1, contentWidth, height - 2);
 
-            // Draw items
-            int firstVisibleIndex = (int) (scrollOffset / itemHeight);
-            int lastVisibleIndex = Math.min(items.size() - 1, (int) ((scrollOffset + height) / itemHeight));
+        // Setup font
+        renderer.setFont(fontId, fontSize);
 
-            for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
-                float itemY = y + (i * itemHeight) - scrollOffset;
+        // Draw items
+        int firstVisibleIndex = (int) (scrollOffset / itemHeight);
+        int lastVisibleIndex = Math.min(items.size() - 1, (int) ((scrollOffset + height) / itemHeight));
 
-                // Draw item background
-                float[] bgColor = itemBackgroundColor;
-                boolean isSelected = multiSelectEnabled ? selectedIndices.contains(i) : (i == selectedIndex);
-                if (isSelected) {
-                    bgColor = selectedBackgroundColor;
-                } else if (i == hoveredIndex) {
-                    bgColor = hoveredBackgroundColor;
-                }
+        for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
+            float itemY = y + (i * itemHeight) - scrollOffset;
 
-                nvgBeginPath(nvg);
-                nvgRect(nvg, x + 1, itemY, contentWidth, itemHeight);
-                nvgFillColor(nvg, GLColour.rgba(bgColor, color));
-                nvgFill(nvg);
-
-                // Draw item text
-                int effectiveFontId = fontId >= 0 ? fontId : GLContext.getDefaultFontId();
-                if (effectiveFontId >= 0) {
-                    nvgFontFaceId(nvg, effectiveFontId);
-                }
-                nvgFontSize(nvg, fontSize);
-                nvgTextAlign(nvg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-                nvgFillColor(nvg, GLColour.rgba(textColor, color));
-                nvgText(nvg, x + 8, itemY + itemHeight / 2, items.get(i));
+            // Draw item background
+            float[] bgColor = itemBackgroundColor;
+            boolean isSelected = multiSelectEnabled ? selectedIndices.contains(i) : (i == selectedIndex);
+            if (isSelected) {
+                bgColor = selectedBackgroundColor;
+            } else if (i == hoveredIndex) {
+                bgColor = hoveredBackgroundColor;
             }
 
-            nvgRestore(nvg);
+            renderer.fillRect(x + 1, itemY, contentWidth, itemHeight, bgColor);
 
-            // Draw scrollbar if needed
-            if (needsScrollbar()) {
-                float scrollbarX = x + width - scrollbarWidth - 1;
-                float scrollbarHeight = height - 2;
-                float thumbHeight = Math.max(20, (height / totalHeight) * scrollbarHeight);
-                float thumbY = y + 1 + (scrollOffset / maxScroll) * (scrollbarHeight - thumbHeight);
+            // Draw item text
+            renderer.drawText(x + 8, itemY + itemHeight / 2, items.get(i), textColor,
+                    Renderer.ALIGN_LEFT | Renderer.ALIGN_MIDDLE);
+        }
 
-                // Draw scrollbar track
-                nvgBeginPath(nvg);
-                nvgRect(nvg, scrollbarX, y + 1, scrollbarWidth, scrollbarHeight);
-                nvgFillColor(nvg, GLColour.rgba(scrollbarTrackColor, color));
-                nvgFill(nvg);
+        renderer.restore();
 
-                // Draw scrollbar thumb
-                nvgBeginPath(nvg);
-                nvgRoundedRect(nvg, scrollbarX + 2, thumbY, scrollbarWidth - 4, thumbHeight, 3);
-                nvgFillColor(nvg, GLColour.rgba(scrollbarColor, color));
-                nvgFill(nvg);
-            }
+        // Draw scrollbar if needed
+        if (needsScrollbar()) {
+            float scrollbarX = x + width - scrollbarWidth - 1;
+            float scrollbarHeight = height - 2;
+            float thumbHeight = Math.max(20, (height / totalHeight) * scrollbarHeight);
+            float thumbY = y + 1 + (scrollOffset / maxScroll) * (scrollbarHeight - thumbHeight);
+
+            // Draw scrollbar track
+            renderer.fillRect(scrollbarX, y + 1, scrollbarWidth, scrollbarHeight, scrollbarTrackColor);
+
+            // Draw scrollbar thumb
+            renderer.fillRoundedRect(scrollbarX + 2, thumbY, scrollbarWidth - 4, thumbHeight, 3, scrollbarColor);
         }
     }
 
@@ -370,7 +350,7 @@ public class GLListView extends AbstractWindowComponent implements ListView {
             return false;
         }
 
-        if (button == 0 && action == 1) { // Left click press
+        if (InputConstants.isLeftButton(button) && InputConstants.isPress(action)) {
             int scrollbarWidth = needsScrollbar() ? 10 : 0;
             if (mx < x + width - scrollbarWidth) {
                 // Click on item

@@ -54,6 +54,21 @@ public class NanoVGRenderer implements Renderer {
     }
 
     /**
+     * Create a NanoVG renderer with an existing NVG context.
+     * Used for testing or when sharing contexts.
+     *
+     * @param nvgContext the existing NanoVG context
+     * @param defaultFontId the default font ID, or -1 if none
+     */
+    public NanoVGRenderer(long nvgContext, int defaultFontId) {
+        this.nvg = nvgContext;
+        this.defaultFontId = defaultFontId;
+        this.fontLoader = null;
+        this.reusableColor = NVGColor.malloc();
+        this.initialized = true;
+    }
+
+    /**
      * Initialize the renderer.
      * Call this after OpenGL context is created.
      *

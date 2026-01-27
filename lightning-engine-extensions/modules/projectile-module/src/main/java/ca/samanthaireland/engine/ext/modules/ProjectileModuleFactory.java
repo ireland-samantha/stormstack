@@ -1,13 +1,9 @@
 package ca.samanthaireland.engine.ext.modules;
 
 import ca.samanthaireland.engine.core.store.BaseComponent;
-import ca.samanthaireland.engine.core.store.PermissionComponent;
-import ca.samanthaireland.engine.core.store.PermissionLevel;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
-import ca.samanthaireland.engine.ext.modules.ecs.component.ProjectileComponent;
-import ca.samanthaireland.engine.util.IdGeneratorV2;
 
 import java.util.List;
 
@@ -33,62 +29,26 @@ import java.util.List;
  * </ul>
  *
  * <p>Note: Uses EntityModule for positions, RigidBodyModule for velocity if available.
+ *
+ * @see ProjectileComponents for component constants
  */
 public class ProjectileModuleFactory implements ModuleFactory {
 
-    // Projectile metadata
-    public static final BaseComponent OWNER_ENTITY_ID = new ProjectileComponent(
-            IdGeneratorV2.newId(), "OWNER_ENTITY_ID");
-    public static final BaseComponent DAMAGE = new ProjectileComponent(
-            IdGeneratorV2.newId(), "DAMAGE");
-
-    // Movement
-    public static final BaseComponent SPEED = new ProjectileComponent(
-            IdGeneratorV2.newId(), "SPEED");
-    public static final BaseComponent DIRECTION_X = new ProjectileComponent(
-            IdGeneratorV2.newId(), "DIRECTION_X");
-    public static final BaseComponent DIRECTION_Y = new ProjectileComponent(
-            IdGeneratorV2.newId(), "DIRECTION_Y");
-
-    // Lifetime management
-    public static final BaseComponent LIFETIME = new ProjectileComponent(
-            IdGeneratorV2.newId(), "LIFETIME");
-    public static final BaseComponent TICKS_ALIVE = new ProjectileComponent(
-            IdGeneratorV2.newId(), "TICKS_ALIVE");
-
-    // Piercing
-    public static final BaseComponent PIERCE_COUNT = new ProjectileComponent(
-            IdGeneratorV2.newId(), "PIERCE_COUNT");
-    public static final BaseComponent HITS_REMAINING = new ProjectileComponent(
-            IdGeneratorV2.newId(), "HITS_REMAINING");
-
-    // Projectile type (for different projectile behaviors)
-    public static final BaseComponent PROJECTILE_TYPE = new ProjectileComponent(
-            IdGeneratorV2.newId(), "PROJECTILE_TYPE");
-
-    // Pending destroy flag
-    public static final BaseComponent PENDING_DESTROY = new ProjectileComponent(
-            IdGeneratorV2.newId(), "PENDING_DESTROY");
-
-    // Module flag (PRIVATE - only EntityModule with superuser can attach during spawn)
-    public static final BaseComponent FLAG = new PermissionComponent(
-            IdGeneratorV2.newId(), "projectile", PermissionLevel.PRIVATE);
-
-    /**
-     * Core components for projectile tracking.
-     */
-    public static final List<BaseComponent> CORE_COMPONENTS = List.of(
-            OWNER_ENTITY_ID, DAMAGE, SPEED,
-            DIRECTION_X, DIRECTION_Y,
-            LIFETIME, TICKS_ALIVE,
-            PIERCE_COUNT, HITS_REMAINING,
-            PROJECTILE_TYPE, PENDING_DESTROY
-    );
-
-    /**
-     * Components for snapshot export.
-     */
-    public static final List<BaseComponent> ALL_COMPONENTS = CORE_COMPONENTS;
+    // Delegated constants for backwards compatibility
+    public static final BaseComponent OWNER_ENTITY_ID = ProjectileComponents.OWNER_ENTITY_ID;
+    public static final BaseComponent DAMAGE = ProjectileComponents.DAMAGE;
+    public static final BaseComponent SPEED = ProjectileComponents.SPEED;
+    public static final BaseComponent DIRECTION_X = ProjectileComponents.DIRECTION_X;
+    public static final BaseComponent DIRECTION_Y = ProjectileComponents.DIRECTION_Y;
+    public static final BaseComponent LIFETIME = ProjectileComponents.LIFETIME;
+    public static final BaseComponent TICKS_ALIVE = ProjectileComponents.TICKS_ALIVE;
+    public static final BaseComponent PIERCE_COUNT = ProjectileComponents.PIERCE_COUNT;
+    public static final BaseComponent HITS_REMAINING = ProjectileComponents.HITS_REMAINING;
+    public static final BaseComponent PROJECTILE_TYPE = ProjectileComponents.PROJECTILE_TYPE;
+    public static final BaseComponent PENDING_DESTROY = ProjectileComponents.PENDING_DESTROY;
+    public static final BaseComponent FLAG = ProjectileComponents.FLAG;
+    public static final List<BaseComponent> CORE_COMPONENTS = ProjectileComponents.CORE_COMPONENTS;
+    public static final List<BaseComponent> ALL_COMPONENTS = ProjectileComponents.ALL_COMPONENTS;
 
     @Override
     public EngineModule create(ModuleContext context) {

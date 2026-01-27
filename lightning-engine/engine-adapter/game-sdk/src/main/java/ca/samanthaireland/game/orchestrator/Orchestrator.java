@@ -25,6 +25,9 @@ package ca.samanthaireland.game.orchestrator;
 
 import ca.samanthaireland.engine.api.resource.adapter.EngineClient;
 import ca.samanthaireland.game.renderering.GameRenderer;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.URI;
@@ -69,6 +72,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Slf4j
 public final class Orchestrator {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final EngineClient client;
     private final EngineClient.ContainerClient containerClient;
@@ -356,22 +361,14 @@ public final class Orchestrator {
 
         private void parseAndProcessSnapshot(String json) {
             try {
-                // Parse tick
-                long tick = 0;
-                int tickStart = json.indexOf("\"tick\":");
-                if (tickStart != -1) {
-                    int tickEnd = findValueEnd(json, tickStart + 7);
-                    tick = Long.parseLong(json.substring(tickStart + 7, tickEnd).trim());
-                }
+                JsonNode root = OBJECT_MAPPER.readTree(json);
 
-                // Parse data field
+                long tick = root.has("tick") ? root.get("tick").asLong(0) : 0;
+
                 Map<String, Map<String, List<Float>>> snapshotData = new LinkedHashMap<>();
-                int dataStart = json.indexOf("\"data\":");
-                if (dataStart != -1) {
-                    int objStart = json.indexOf("{", dataStart);
-                    if (objStart != -1) {
-                        snapshotData = parseModuleMap(json, objStart);
-                    }
+                JsonNode dataNode = root.get("data");
+                if (dataNode != null && dataNode.isObject()) {
+                    snapshotData = parseModuleMap(dataNode);
                 }
 
                 Snapshot snapshot = new Snapshot(tick, snapshotData);
@@ -382,95 +379,44 @@ public final class Orchestrator {
             }
         }
 
-        private int findValueEnd(String json, int start) {
-            int pos = start;
-            while (pos < json.length()) {
-                char c = json.charAt(pos);
-                if (c == ',' || c == '}' || c == ']') {
-                    return pos;
-                }
-                pos++;
-            }
-            return json.length();
-        }
-
-        private Map<String, Map<String, List<Float>>> parseModuleMap(String json, int objStart) {
+        private Map<String, Map<String, List<Float>>> parseModuleMap(JsonNode dataNode) {
             Map<String, Map<String, List<Float>>> modules = new LinkedHashMap<>();
-            int pos = objStart + 1;
 
-            while (pos < json.length()) {
-                // Skip whitespace
-                while (pos < json.length() && Character.isWhitespace(json.charAt(pos))) pos++;
-                if (pos >= json.length() || json.charAt(pos) == '}') break;
+            Iterator<Map.Entry<String, JsonNode>> fields = dataNode.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                String moduleName = entry.getKey();
+                JsonNode moduleNode = entry.getValue();
 
-                // Parse module name
-                int nameStart = json.indexOf("\"", pos);
-                if (nameStart == -1) break;
-                int nameEnd = json.indexOf("\"", nameStart + 1);
-                if (nameEnd == -1) break;
-                String moduleName = json.substring(nameStart + 1, nameEnd);
-
-                // Find module object
-                int colonPos = json.indexOf(":", nameEnd);
-                int moduleObjStart = json.indexOf("{", colonPos);
-                if (moduleObjStart == -1) break;
-
-                // Find matching closing brace
-                int braceCount = 1;
-                int moduleObjEnd = moduleObjStart + 1;
-                while (moduleObjEnd < json.length() && braceCount > 0) {
-                    if (json.charAt(moduleObjEnd) == '{') braceCount++;
-                    else if (json.charAt(moduleObjEnd) == '}') braceCount--;
-                    moduleObjEnd++;
+                if (moduleNode.isObject()) {
+                    Map<String, List<Float>> componentData = parseComponentMap(moduleNode);
+                    if (!componentData.isEmpty()) {
+                        modules.put(moduleName, componentData);
+                    }
                 }
-
-                String moduleJson = json.substring(moduleObjStart, moduleObjEnd);
-                Map<String, List<Float>> componentData = parseComponentMap(moduleJson);
-                if (!componentData.isEmpty()) {
-                    modules.put(moduleName, componentData);
-                }
-
-                pos = moduleObjEnd;
             }
 
             return modules;
         }
 
-        private Map<String, List<Float>> parseComponentMap(String json) {
+        private Map<String, List<Float>> parseComponentMap(JsonNode moduleNode) {
             Map<String, List<Float>> components = new LinkedHashMap<>();
-            int pos = 1;
 
-            while (pos < json.length()) {
-                // Find component name
-                int nameStart = json.indexOf("\"", pos);
-                if (nameStart == -1) break;
-                int nameEnd = json.indexOf("\"", nameStart + 1);
-                if (nameEnd == -1) break;
-                String componentName = json.substring(nameStart + 1, nameEnd);
+            Iterator<Map.Entry<String, JsonNode>> fields = moduleNode.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> entry = fields.next();
+                String componentName = entry.getKey();
+                JsonNode arrayNode = entry.getValue();
 
-                // Find array
-                int arrayStart = json.indexOf("[", nameEnd);
-                if (arrayStart == -1) break;
-                int arrayEnd = json.indexOf("]", arrayStart);
-                if (arrayEnd == -1) break;
-
-                String arrayStr = json.substring(arrayStart + 1, arrayEnd);
-                List<Float> values = new ArrayList<>();
-                if (!arrayStr.trim().isEmpty()) {
-                    for (String val : arrayStr.split(",")) {
-                        String trimmed = val.trim();
-                        if (!trimmed.isEmpty()) {
-                            try {
-                                values.add(Float.parseFloat(trimmed));
-                            } catch (NumberFormatException e) {
-                                // Skip non-numeric values
-                            }
+                if (arrayNode.isArray()) {
+                    List<Float> values = new ArrayList<>();
+                    for (JsonNode valueNode : arrayNode) {
+                        if (valueNode.isNumber()) {
+                            values.add(valueNode.floatValue());
                         }
                     }
+                    components.put(componentName, values);
                 }
-                components.put(componentName, values);
-
-                pos = arrayEnd + 1;
             }
 
             return components;

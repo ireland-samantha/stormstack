@@ -1,13 +1,9 @@
 package ca.samanthaireland.engine.ext.modules;
 
 import ca.samanthaireland.engine.core.store.BaseComponent;
-import ca.samanthaireland.engine.core.store.PermissionComponent;
-import ca.samanthaireland.engine.core.store.PermissionLevel;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
-import ca.samanthaireland.engine.ext.modules.ecs.component.GridMapComponent;
-import ca.samanthaireland.engine.util.IdGeneratorV2;
 
 import java.util.List;
 
@@ -22,64 +18,27 @@ import java.util.List;
  *
  * <p>This module enables creation of NxM (or NxMxD for 3D) grid maps
  * and allows entities to be positioned on discrete grid cells.
+ *
+ * @see GridMapComponents for component constants
  */
 public class GridMapModuleFactory implements ModuleFactory {
 
-    // Grid position components for entities
-    public static final BaseComponent GRID_POS_X = new PermissionComponent(
-            IdGeneratorV2.newId(), "GRID_POS_X", PermissionLevel.READ);
-    public static final BaseComponent GRID_POS_Y = new PermissionComponent(
-            IdGeneratorV2.newId(), "GRID_POS_Y", PermissionLevel.READ);
-    public static final BaseComponent GRID_POS_Z = new PermissionComponent(
-            IdGeneratorV2.newId(), "GRID_POS_Z", PermissionLevel.READ);
-
-    // Map dimension components (attached to the map entity itself)
-    public static final BaseComponent MAP_WIDTH = new PermissionComponent(
-            IdGeneratorV2.newId(), "MAP_WIDTH", PermissionLevel.READ);
-    public static final BaseComponent MAP_HEIGHT = new PermissionComponent(
-            IdGeneratorV2.newId(), "MAP_HEIGHT", PermissionLevel.READ);
-    public static final BaseComponent MAP_DEPTH = new PermissionComponent(
-            IdGeneratorV2.newId(), "MAP_DEPTH", PermissionLevel.READ);
-
-    // Map entity marker
-    public static final BaseComponent MAP_ENTITY = new PermissionComponent(
-            IdGeneratorV2.newId(), "MAP_ENTITY", PermissionLevel.READ);
-
-    public static final BaseComponent FLAG = new PermissionComponent(
-            IdGeneratorV2.newId(), "gridmap", PermissionLevel.READ);
-
-    public static final BaseComponent POSITION_X = new PermissionComponent(
-            IdGeneratorV2.newId(), "POSITION_X", PermissionLevel.WRITE);
-    public static final BaseComponent POSITION_Y = new PermissionComponent(
-            IdGeneratorV2.newId(), "POSITION_Y", PermissionLevel.WRITE);
-    public static final BaseComponent POSITION_Z = new PermissionComponent(
-            IdGeneratorV2.newId(), "POSITION_Z", PermissionLevel.WRITE);
-
-    /**
-     * Grid position components for entities (discrete/tile-based).
-     */
-    public static final List<BaseComponent> GRID_POSITION_COMPONENTS =
-            List.of(GRID_POS_X, GRID_POS_Y, GRID_POS_Z);
-
-    /**
-     * Continuous position components (for physics/rendering).
-     */
-    public static final List<BaseComponent> POSITION_COMPONENTS =
-            List.of(POSITION_X, POSITION_Y, POSITION_Z);
-
-    /**
-     * Map configuration components.
-     */
-    public static final List<BaseComponent> MAP_COMPONENTS =
-            List.of(MAP_WIDTH, MAP_HEIGHT, MAP_DEPTH, MAP_ENTITY);
-
-    /**
-     * All components provided by this module.
-     */
-    public static final List<BaseComponent> ALL_COMPONENTS =
-            List.of(GRID_POS_X, GRID_POS_Y, GRID_POS_Z,
-                    POSITION_X, POSITION_Y, POSITION_Z,
-                    MAP_WIDTH, MAP_HEIGHT, MAP_DEPTH, MAP_ENTITY);
+    // Delegated constants for backwards compatibility
+    public static final BaseComponent GRID_POS_X = GridMapComponents.GRID_POS_X;
+    public static final BaseComponent GRID_POS_Y = GridMapComponents.GRID_POS_Y;
+    public static final BaseComponent GRID_POS_Z = GridMapComponents.GRID_POS_Z;
+    public static final BaseComponent MAP_WIDTH = GridMapComponents.MAP_WIDTH;
+    public static final BaseComponent MAP_HEIGHT = GridMapComponents.MAP_HEIGHT;
+    public static final BaseComponent MAP_DEPTH = GridMapComponents.MAP_DEPTH;
+    public static final BaseComponent MAP_ENTITY = GridMapComponents.MAP_ENTITY;
+    public static final BaseComponent FLAG = GridMapComponents.FLAG;
+    public static final BaseComponent POSITION_X = GridMapComponents.POSITION_X;
+    public static final BaseComponent POSITION_Y = GridMapComponents.POSITION_Y;
+    public static final BaseComponent POSITION_Z = GridMapComponents.POSITION_Z;
+    public static final List<BaseComponent> GRID_POSITION_COMPONENTS = GridMapComponents.GRID_POSITION_COMPONENTS;
+    public static final List<BaseComponent> POSITION_COMPONENTS = GridMapComponents.POSITION_COMPONENTS;
+    public static final List<BaseComponent> MAP_COMPONENTS = GridMapComponents.MAP_COMPONENTS;
+    public static final List<BaseComponent> ALL_COMPONENTS = GridMapComponents.ALL_COMPONENTS;
 
     @Override
     public EngineModule create(ModuleContext context) {

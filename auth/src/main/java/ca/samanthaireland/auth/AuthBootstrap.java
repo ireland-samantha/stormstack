@@ -4,12 +4,22 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Objects;
 import java.util.Set;
 
 /**
  * Bootstrap utility for initializing the authentication system.
  *
  * <p>Creates default roles and users when the system starts.
+ *
+ * <p>Use the {@link Builder} to configure custom repository implementations:
+ * <pre>{@code
+ * AuthBootstrap bootstrap = AuthBootstrap.builder()
+ *     .withUserRepository(myUserRepo)
+ *     .withRoleRepository(myRoleRepo)
+ *     .withAdminPassword("secret")
+ *     .build();
+ * }</pre>
  */
 @Slf4j
 public class AuthBootstrap {
@@ -49,15 +59,26 @@ public class AuthBootstrap {
     }
 
     /**
+     * Create a new builder for configuring AuthBootstrap.
+     *
+     * @return a new builder instance
+     */
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
      * Create a fully initialized auth system with default configuration.
      *
      * <p>This factory method creates all auth components and initializes
-     * the default roles and admin user.
+     * the default roles and admin user. Uses in-memory repositories.
+     *
+     * <p>For custom repository implementations, use {@link #builder()} instead.
      *
      * @return the initialized AuthBootstrap
      */
     public static AuthBootstrap createDefault() {
-        return createWithAdminPassword(resolveAdminPassword());
+        return builder().build();
     }
 
     /**
@@ -66,22 +87,102 @@ public class AuthBootstrap {
      * <p>This factory method is primarily for testing, allowing explicit control
      * over the admin password without relying on environment variables.
      *
+     * <p>For custom repository implementations, use {@link #builder()} instead.
+     *
      * @param adminPassword the password to use for the admin user
      * @return the initialized AuthBootstrap
      */
     public static AuthBootstrap createWithAdminPassword(String adminPassword) {
-        PasswordService passwordService = new PasswordService();
-        UserRepository userRepository = new InMemoryUserRepository();
-        RoleRepository roleRepository = new InMemoryRoleRepository();
-        RoleService roleService = new RoleService(roleRepository);
-        UserService userService = new UserService(userRepository, passwordService, roleRepository);
-        AuthService authService = new AuthService(userRepository, passwordService, roleService);
+        return builder()
+                .withAdminPassword(adminPassword)
+                .build();
+    }
 
-        AuthBootstrap bootstrap = new AuthBootstrap(
-                userService, roleService, passwordService, userRepository, roleRepository, authService);
-        bootstrap.initializeDefaultsWithPassword(adminPassword);
+    /**
+     * Builder for constructing AuthBootstrap with custom dependencies.
+     * Follows the Dependency Inversion Principle by allowing injection of
+     * different repository implementations.
+     */
+    public static class Builder {
+        private UserRepository userRepository;
+        private RoleRepository roleRepository;
+        private PasswordService passwordService;
+        private String adminPassword;
 
-        return bootstrap;
+        /**
+         * Set a custom user repository implementation.
+         *
+         * @param userRepository the user repository to use
+         * @return this builder
+         */
+        public Builder withUserRepository(UserRepository userRepository) {
+            this.userRepository = Objects.requireNonNull(userRepository, "userRepository cannot be null");
+            return this;
+        }
+
+        /**
+         * Set a custom role repository implementation.
+         *
+         * @param roleRepository the role repository to use
+         * @return this builder
+         */
+        public Builder withRoleRepository(RoleRepository roleRepository) {
+            this.roleRepository = Objects.requireNonNull(roleRepository, "roleRepository cannot be null");
+            return this;
+        }
+
+        /**
+         * Set a custom password service implementation.
+         *
+         * @param passwordService the password service to use
+         * @return this builder
+         */
+        public Builder withPasswordService(PasswordService passwordService) {
+            this.passwordService = Objects.requireNonNull(passwordService, "passwordService cannot be null");
+            return this;
+        }
+
+        /**
+         * Set the admin password to use.
+         * If not set, password is resolved from environment variable or generated.
+         *
+         * @param adminPassword the admin password
+         * @return this builder
+         */
+        public Builder withAdminPassword(String adminPassword) {
+            this.adminPassword = adminPassword;
+            return this;
+        }
+
+        /**
+         * Build the AuthBootstrap instance.
+         *
+         * @return the configured and initialized AuthBootstrap
+         */
+        public AuthBootstrap build() {
+            // Use defaults for any unset dependencies
+            PasswordService effectivePasswordService = passwordService != null
+                    ? passwordService : new PasswordService();
+            UserRepository effectiveUserRepository = userRepository != null
+                    ? userRepository : new InMemoryUserRepository();
+            RoleRepository effectiveRoleRepository = roleRepository != null
+                    ? roleRepository : new InMemoryRoleRepository();
+
+            // Build services using the configured repositories
+            RoleService roleService = new RoleService(effectiveRoleRepository);
+            UserService userService = new UserService(effectiveUserRepository, effectivePasswordService, effectiveRoleRepository);
+            AuthService authService = new AuthService(effectiveUserRepository, effectivePasswordService, roleService);
+
+            AuthBootstrap bootstrap = new AuthBootstrap(
+                    userService, roleService, effectivePasswordService,
+                    effectiveUserRepository, effectiveRoleRepository, authService);
+
+            // Initialize with the configured or resolved password
+            String effectivePassword = adminPassword != null ? adminPassword : resolveAdminPassword();
+            bootstrap.initializeDefaultsWithPassword(effectivePassword);
+
+            return bootstrap;
+        }
     }
 
     /**

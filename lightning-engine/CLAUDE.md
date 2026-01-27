@@ -252,15 +252,34 @@ void snapshotPanel_displaysEntities() {
 
 ## Build & Run
 
+Use the `build.sh` script for all build operations:
+
 ```bash
-# Build all modules
-./mvnw clean install
+./build.sh clean            # Clean build artifacts and secrets
+./build.sh secrets          # Generate JWT keys (required before build)
+./build.sh build            # Build all modules (skip tests)
+./build.sh test             # Run unit tests
+./build.sh frontend         # Install deps and build frontend
+./build.sh frontend-test    # Run frontend tests with coverage
+./build.sh docker           # Build Docker image
+./build.sh integration-test # Build Docker + run integration tests
+./build.sh all              # Full pipeline: clean → secrets → frontend → build → test → integration-test
+```
 
-# Run tests for specific module
-./mvnw test -pl lightning-engine/gui
+**Before submitting changes, always verify:**
+```bash
+./build.sh all
+```
 
-# Run GUI application (requires display)
-./mvnw exec:java -pl lightning-engine/gui \
+Or use Maven directly:
+```bash
+mvn clean install           # Build with tests
+mvn test -pl lightning-engine/gui  # Run tests for specific module
+```
+
+Run GUI application (requires display):
+```bash
+mvn exec:java -pl lightning-engine/gui \
     -Dexec.mainClass=ca.samanthaireland.engine.gui.EngineGuiApplication \
     -Dexec.args="-s http://localhost:8080 -m 1"
 ```
@@ -346,7 +365,7 @@ public class MyClass {
 
 4. **No Unnecessary Getters or Setters**: Do not add getter and setter methods unless they are absolutely required. Prefer immutable data structures and records. If access is needed, use the fluent API operations (e.g., `container.ticks().current()` instead of `container.getCurrentTick()`).
 
-5. **Build Verification**: At the end of each prompt answer, run `mvn clean install`. If you added tests, ensure they run and pass. Do not leave the codebase in a broken state.
+5. **Build Verification**: Before completing any task, run `./build.sh all` to verify the full build pipeline passes. This includes secrets generation, frontend build, unit tests, Docker image build, and integration tests. Do not leave the codebase in a broken state. At minimum, `./build.sh test` must pass for any code changes.
 
 6. **Use web-api-adapter for API Calls**: In integration tests, always use the `web-api-adapter` classes (`EngineClient`, `ContainerAdapter`, etc.) instead of making direct HTTP calls. If a needed API method doesn't exist in the adapter, add it to the appropriate adapter class first.
 

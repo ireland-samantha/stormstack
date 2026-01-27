@@ -25,10 +25,8 @@ package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
 import ca.samanthaireland.engine.rendering.render2d.Label;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import lombok.extern.slf4j.Slf4j;
-import org.lwjgl.nanovg.NVGColor;
-
-import static org.lwjgl.nanovg.NanoVG.*;
 
 /**
  * A simple text label component with overflow handling.
@@ -73,7 +71,7 @@ public class GLLabel extends AbstractWindowComponent implements Label {
         this.fontSize = fontSize;
         this.textColor = GLColour.TEXT_PRIMARY;
         this.fontId = -1;
-        this.alignment = NVG_ALIGN_LEFT | NVG_ALIGN_TOP;
+        this.alignment = Renderer.ALIGN_LEFT | Renderer.ALIGN_TOP;
     }
 
     public String getText() {
@@ -123,74 +121,64 @@ public class GLLabel extends AbstractWindowComponent implements Label {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         if (!visible || text == null || text.isEmpty()) {
             return;
         }
 
-        try (var color = NVGColor.malloc()) {
-            // Use explicit font or fall back to context default
-            int effectiveFontId = fontId >= 0 ? fontId : GLContext.getDefaultFontId();
-            if (effectiveFontId >= 0) {
-                nvgFontFaceId(nvg, effectiveFontId);
-            }
-            nvgFontSize(nvg, fontSize);
-            nvgTextAlign(nvg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
-            nvgFillColor(nvg, GLColour.rgba(textColor, color));
+        // Set up font
+        renderer.setFont(fontId, fontSize);
 
-            float adjustedY = y + fontSize * 0.8f;
+        float adjustedY = y + fontSize * 0.8f;
 
-            // No overflow handling needed if maxWidth is 0
-            if (maxWidth <= 0 || overflowMode == OverflowMode.VISIBLE) {
-                nvgTextAlign(nvg, alignment);
-                nvgText(nvg, x, adjustedY, text);
-                return;
-            }
+        // No overflow handling needed if maxWidth is 0
+        if (maxWidth <= 0 || overflowMode == OverflowMode.VISIBLE) {
+            renderer.drawText(x, adjustedY, text, textColor, alignment);
+            return;
+        }
 
-            // Measure text width
-            float[] bounds = new float[4];
-            nvgTextBounds(nvg, 0, 0, text, bounds);
-            float textWidth = bounds[2] - bounds[0];
+        // Measure text width
+        float[] bounds = new float[4];
+        renderer.measureTextBounds(text, bounds);
+        float textWidth = bounds[2] - bounds[0];
 
-            // Text fits, no overflow handling needed
-            if (textWidth <= maxWidth) {
-                nvgText(nvg, x, adjustedY, text);
-                return;
-            }
+        // Text fits, no overflow handling needed
+        if (textWidth <= maxWidth) {
+            renderer.drawText(x, adjustedY, text, textColor, Renderer.ALIGN_LEFT | Renderer.ALIGN_TOP);
+            return;
+        }
 
-            // Handle overflow based on mode
-            switch (overflowMode) {
-                case CLIP:
-                    renderClipped(nvg, adjustedY, color);
-                    break;
-                case ELLIPSIS:
-                    renderEllipsis(nvg, adjustedY, textWidth, color);
-                    break;
-                case SCROLL:
-                    renderScrolling(nvg, adjustedY, textWidth, color);
-                    break;
-                default:
-                    nvgText(nvg, x, adjustedY, text);
-            }
+        // Handle overflow based on mode
+        switch (overflowMode) {
+            case CLIP:
+                renderClipped(renderer, adjustedY);
+                break;
+            case ELLIPSIS:
+                renderEllipsis(renderer, adjustedY, textWidth);
+                break;
+            case SCROLL:
+                renderScrolling(renderer, adjustedY, textWidth);
+                break;
+            default:
+                renderer.drawText(x, adjustedY, text, textColor, Renderer.ALIGN_LEFT | Renderer.ALIGN_TOP);
         }
     }
 
-    private void renderClipped(long nvg, float adjustedY, NVGColor color) {
-        nvgSave(nvg);
-        nvgIntersectScissor(nvg, x, y, maxWidth, height + 4);
-        nvgText(nvg, x, adjustedY, text);
-        nvgRestore(nvg);
+    private void renderClipped(Renderer renderer, float adjustedY) {
+        renderer.save();
+        renderer.intersectClip(x, y, maxWidth, height + 4);
+        renderer.drawText(x, adjustedY, text, textColor, Renderer.ALIGN_LEFT | Renderer.ALIGN_TOP);
+        renderer.restore();
     }
 
-    private void renderEllipsis(long nvg, float adjustedY, float textWidth, NVGColor color) {
+    private void renderEllipsis(Renderer renderer, float adjustedY, float textWidth) {
         // Find how much text fits with ellipsis
         String ellipsis = "...";
         float[] ellipsisBounds = new float[4];
-        nvgTextBounds(nvg, 0, 0, ellipsis, ellipsisBounds);
+        renderer.measureTextBounds(ellipsis, ellipsisBounds);
         float ellipsisWidth = ellipsisBounds[2] - ellipsisBounds[0];
 
         float availableWidth = maxWidth - ellipsisWidth;
-        String truncated = text;
 
         // Binary search for the right length
         int low = 0, high = text.length();
@@ -198,7 +186,7 @@ public class GLLabel extends AbstractWindowComponent implements Label {
             int mid = (low + high + 1) / 2;
             String testText = text.substring(0, mid);
             float[] testBounds = new float[4];
-            nvgTextBounds(nvg, 0, 0, testText, testBounds);
+            renderer.measureTextBounds(testText, testBounds);
             float testWidth = testBounds[2] - testBounds[0];
 
             if (testWidth <= availableWidth) {
@@ -208,15 +196,15 @@ public class GLLabel extends AbstractWindowComponent implements Label {
             }
         }
 
-        truncated = text.substring(0, low) + ellipsis;
+        String truncated = text.substring(0, low) + ellipsis;
 
-        nvgSave(nvg);
-        nvgIntersectScissor(nvg, x, y, maxWidth, height + 4);
-        nvgText(nvg, x, adjustedY, truncated);
-        nvgRestore(nvg);
+        renderer.save();
+        renderer.intersectClip(x, y, maxWidth, height + 4);
+        renderer.drawText(x, adjustedY, truncated, textColor, Renderer.ALIGN_LEFT | Renderer.ALIGN_TOP);
+        renderer.restore();
     }
 
-    private void renderScrolling(long nvg, float adjustedY, float textWidth, NVGColor color) {
+    private void renderScrolling(Renderer renderer, float adjustedY, float textWidth) {
         // Update scroll animation
         if (hovered) {
             long now = System.currentTimeMillis();
@@ -237,10 +225,10 @@ public class GLLabel extends AbstractWindowComponent implements Label {
             scrollOffset = Math.max(0, scrollOffset - SCROLL_SPEED * 0.016f);
         }
 
-        nvgSave(nvg);
-        nvgIntersectScissor(nvg, x, y, maxWidth, height + 4);
-        nvgText(nvg, x - scrollOffset, adjustedY, text);
-        nvgRestore(nvg);
+        renderer.save();
+        renderer.intersectClip(x, y, maxWidth, height + 4);
+        renderer.drawText(x - scrollOffset, adjustedY, text, textColor, Renderer.ALIGN_LEFT | Renderer.ALIGN_TOP);
+        renderer.restore();
     }
 
     @Override

@@ -23,6 +23,7 @@
 
 package ca.samanthaireland.engine.rendering.testing.headless;
 
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
 import ca.samanthaireland.engine.rendering.render2d.KeyInputHandler;
 import ca.samanthaireland.engine.rendering.render2d.Sprite;
 import ca.samanthaireland.engine.rendering.render2d.SpriteRenderer;
@@ -265,16 +266,16 @@ public class HeadlessWindow implements Window {
      * @param y the y coordinate
      */
     public void simulateClick(int x, int y) {
-        simulateMouseClick(x, y, 0, 1); // Press
-        simulateMouseClick(x, y, 0, 0); // Release
+        simulateMouseClick(x, y, InputConstants.BUTTON_LEFT, InputConstants.ACTION_PRESS);
+        simulateMouseClick(x, y, InputConstants.BUTTON_LEFT, InputConstants.ACTION_RELEASE);
     }
 
     /**
      * Simulate a mouse click event.
      * @param x the x coordinate
      * @param y the y coordinate
-     * @param button the mouse button (0=left, 1=right, 2=middle)
-     * @param action the action (1=press, 0=release)
+     * @param button the mouse button (use InputConstants.BUTTON_LEFT, BUTTON_RIGHT, BUTTON_MIDDLE)
+     * @param action the action (use InputConstants.ACTION_PRESS, ACTION_RELEASE)
      */
     public void simulateMouseClick(int x, int y, int button, int action) {
         for (int i = components.size() - 1; i >= 0; i--) {
@@ -315,14 +316,14 @@ public class HeadlessWindow implements Window {
      * @param keyCode the key code
      */
     public void simulateKeyPress(int keyCode) {
-        simulateKey(keyCode, 1); // Press
-        simulateKey(keyCode, 0); // Release
+        simulateKey(keyCode, InputConstants.ACTION_PRESS);
+        simulateKey(keyCode, InputConstants.ACTION_RELEASE);
     }
 
     /**
      * Simulate a key event.
      * @param keyCode the key code
-     * @param action the action (1=press, 0=release, 2=repeat)
+     * @param action the action (use InputConstants.ACTION_PRESS, ACTION_RELEASE, ACTION_REPEAT)
      */
     public void simulateKey(int keyCode, int action) {
         for (int i = components.size() - 1; i >= 0; i--) {
@@ -332,7 +333,7 @@ public class HeadlessWindow implements Window {
         }
 
         // Also notify key handlers for arrow keys
-        if (action == 1) { // Press only
+        if (InputConstants.isPress(action)) {
             KeyInputHandler.KeyType keyType = mapToKeyType(keyCode);
             if (keyType != null) {
                 for (KeyInputHandler handler : keyHandlers) {

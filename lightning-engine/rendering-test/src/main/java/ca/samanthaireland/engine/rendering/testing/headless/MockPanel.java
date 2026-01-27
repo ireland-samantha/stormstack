@@ -25,6 +25,7 @@ package ca.samanthaireland.engine.rendering.testing.headless;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
 import ca.samanthaireland.engine.rendering.render2d.Panel;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import ca.samanthaireland.engine.rendering.render2d.WindowComponent;
 
 import java.util.ArrayList;
@@ -119,10 +120,10 @@ public class MockPanel extends AbstractWindowComponent implements Panel {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         // No rendering in headless mode
         for (WindowComponent child : children) {
-            child.render(nvg);
+            child.render(renderer);
         }
     }
 

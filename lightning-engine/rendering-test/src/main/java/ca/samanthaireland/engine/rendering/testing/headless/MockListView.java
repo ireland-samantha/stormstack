@@ -24,7 +24,9 @@
 package ca.samanthaireland.engine.rendering.testing.headless;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
 import ca.samanthaireland.engine.rendering.render2d.ListView;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,7 +135,7 @@ public class MockListView extends AbstractWindowComponent implements ListView {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         // No rendering in headless mode
     }
 
@@ -143,7 +145,7 @@ public class MockListView extends AbstractWindowComponent implements ListView {
             return false;
         }
 
-        if (button == 0 && action == 1 && !items.isEmpty()) {
+        if (InputConstants.isLeftButton(button) && InputConstants.isPress(action) && !items.isEmpty()) {
             // Calculate which item was clicked
             int localY = my - y;
             int clickedIndex = (int) (localY / itemHeight);

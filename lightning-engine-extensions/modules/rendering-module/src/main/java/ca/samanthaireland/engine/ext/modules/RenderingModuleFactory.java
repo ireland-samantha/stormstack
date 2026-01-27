@@ -1,13 +1,9 @@
 package ca.samanthaireland.engine.ext.modules;
 
 import ca.samanthaireland.engine.core.store.BaseComponent;
-import ca.samanthaireland.engine.core.store.PermissionComponent;
-import ca.samanthaireland.engine.core.store.PermissionLevel;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
-import ca.samanthaireland.engine.ext.modules.ecs.component.RenderingComponent;
-import ca.samanthaireland.engine.util.IdGeneratorV2;
 
 import java.util.List;
 
@@ -26,42 +22,20 @@ import java.util.List;
  *   <li>SPRITE_Z_INDEX - Render order (higher values render on top)</li>
  *   <li>SPRITE_VISIBLE - Visibility flag (0 = hidden, non-zero = visible)</li>
  * </ul>
+ *
+ * @see RenderingComponents for component constants
  */
 public class RenderingModuleFactory implements ModuleFactory {
 
-    // Resource ID - links to texture/sprite binary resource
-    public static final BaseComponent RESOURCE_ID =
-            new RenderingComponent(IdGeneratorV2.newId(), "RESOURCE_ID");
-
-    // Sprite dimensions
-    public static final BaseComponent SPRITE_WIDTH =
-            new RenderingComponent(IdGeneratorV2.newId(), "SPRITE_WIDTH");
-    public static final BaseComponent SPRITE_HEIGHT =
-            new RenderingComponent(IdGeneratorV2.newId(), "SPRITE_HEIGHT");
-
-    // Sprite rotation in degrees
-    public static final BaseComponent SPRITE_ROTATION =
-            new RenderingComponent(IdGeneratorV2.newId(), "SPRITE_ROTATION");
-
-    // Render order (higher values render on top)
-    public static final BaseComponent SPRITE_Z_INDEX =
-            new RenderingComponent(IdGeneratorV2.newId(), "SPRITE_Z_INDEX");
-
-    // Visibility flag (0 = hidden, non-zero = visible)
-    public static final BaseComponent SPRITE_VISIBLE =
-            new RenderingComponent(IdGeneratorV2.newId(), "SPRITE_VISIBLE");
-
-    // Module flag (PRIVATE - only EntityModule with superuser can attach during spawn)
-    public static final BaseComponent FLAG = new PermissionComponent(
-            IdGeneratorV2.newId(), "rendering", PermissionLevel.PRIVATE);
-
-    /**
-     * All sprite components for easy iteration.
-     */
-    public static final List<BaseComponent> ALL_SPRITE_COMPONENTS = List.of(
-            RESOURCE_ID, SPRITE_WIDTH, SPRITE_HEIGHT,
-            SPRITE_ROTATION, SPRITE_Z_INDEX, SPRITE_VISIBLE
-    );
+    // Delegated constants for backwards compatibility
+    public static final BaseComponent RESOURCE_ID = RenderingComponents.RESOURCE_ID;
+    public static final BaseComponent SPRITE_WIDTH = RenderingComponents.SPRITE_WIDTH;
+    public static final BaseComponent SPRITE_HEIGHT = RenderingComponents.SPRITE_HEIGHT;
+    public static final BaseComponent SPRITE_ROTATION = RenderingComponents.SPRITE_ROTATION;
+    public static final BaseComponent SPRITE_Z_INDEX = RenderingComponents.SPRITE_Z_INDEX;
+    public static final BaseComponent SPRITE_VISIBLE = RenderingComponents.SPRITE_VISIBLE;
+    public static final BaseComponent FLAG = RenderingComponents.FLAG;
+    public static final List<BaseComponent> ALL_SPRITE_COMPONENTS = RenderingComponents.ALL_SPRITE_COMPONENTS;
 
     @Override
     public EngineModule create(ModuleContext context) {
