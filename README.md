@@ -1,5 +1,7 @@
 # Lightning Engine  
-Lightning Engine is an open-source, unapologetically Java-brained multiplayer server and backend game development framework.
+
+## What is this?
+Lightning Engine is an open-source, unapologetically Java multiplayer server and backend game development framework.
 
 The core idea: Run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules. 
 So, multi-game, muti-match development with isolation on the JVM level instead of process level.
@@ -11,25 +13,21 @@ With Lightning, deploying a backend for a game looks like:
 4. Spawning containers and matches  
 5. Subscribing to state updates, and triggering commands, via Websocket.
 
-> ⚠️ Warning
->
-> Lightning Engine is an experimental hobby project, not production software.
-> It exists for fun, learning, and the pure joy of over-engineering.
->
-> It is:
-> - pre-alpha
-> - unstable
-> - aggressively over-engineered
-> - powered by Java, hubris, and curiosity
->
-> Built via ~vibe coding~ pair programming (read: tokens go burr while I yell at it for making mistakes) with Claude Code.
->
-> If any of this sounds appealing, we are currently looking for fellow travelers
-> who enjoy complexity, puzzles, and whacky ideas executed thoughtfully.
-
----
 ## Why?
-In all seriousness, please see: [why?](docs/why.md) 
+Mostly for fun, but also [some other reasons](docs/why.md) 
+
+## Warning
+Lightning Engine is an experimental hobby project, not production software. It exists for fun, learning, and the pure joy of over-engineering. 
+
+It is:
+ - pre-alpha
+ - unstable
+ - aggressively over-engineered
+ - powered by Java, hubris, and curiosity
+ - built via ~vibe coding~ pair programming (read: tokens go burr while I yell at it for making mistakes) with Claude Code.
+
+If any of this sounds appealing, we are currently looking for fellow travelers
+who enjoy complexity, puzzles, and whacky ideas executed thoughtfully.
 
 ## Key Capabilities
 
@@ -298,4 +296,4 @@ mvn verify -Pacceptance-tests               # Integration tests
   
 ## License
 
-MIT
+MIT — Use this however you want (just not for evil tho)
