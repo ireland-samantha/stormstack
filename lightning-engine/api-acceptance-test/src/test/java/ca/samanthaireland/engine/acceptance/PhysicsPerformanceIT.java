@@ -326,6 +326,9 @@ class PhysicsPerformanceIT {
                                                 List<SpriteAttachment> sprites,
                                                 ContainerCommands.MatchCommands matchCommands,
                                                 ExecutorService executor) {
+        // Start auto-advance to process commands
+        container.client().play(60);
+
         // Attach rigid bodies using fire-and-forget (no wait for response)
         for (RigidBodyAttachment rb : rigidBodies) {
             wsClient.attachRigidBodyFireAndForget(new CommandWebSocketClient.RigidBodyParams(
@@ -345,6 +348,9 @@ class PhysicsPerformanceIT {
         waitForModuleEntityCount("RigidBodyModule", rigidBodies.size());
         waitForModuleComponentCount("GridMapModule", "POSITION_X", rigidBodies.size());
         waitForModuleEntityCount("RenderModule", sprites.size());
+
+        // Stop auto-advance after attachment is complete
+        container.client().stopAuto();
     }
 
     private void waitForModuleEntityCount(String moduleName, int expectedCount) {
