@@ -77,4 +77,25 @@ public interface EngineModule {
     default List<ModuleExports> getExports() {
         return List.of();
     }
+
+    /**
+     * Returns the version of this module.
+     *
+     * <p>The default implementation returns 1.0 for backwards compatibility
+     * with modules that don't specify a version.
+     *
+     * @return the module version
+     */
+    default ModuleVersion getVersion() {
+        return ModuleVersion.of(1, 0);
+    }
+
+    /**
+     * Returns the unique identifier for this module (name + version).
+     *
+     * @return the module identifier
+     */
+    default ModuleIdentifier getIdentifier() {
+        return ModuleIdentifier.of(getName(), getVersion());
+    }
 }

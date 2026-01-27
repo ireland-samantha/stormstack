@@ -15,7 +15,7 @@ Lightning Engine is a modular Entity-Component-System (ECS) game engine with:
 ```
 lightning-engine/
 ├── engine-core/          # Core abstractions (interfaces, domain models)
-├── engine-internal/      # Implementation details (stores, services)
+├── engine-internal/      # Implementation details (stores, services) - NO MODULE IMPLEMENTATIONS
 ├── engine-adapter/
 │   ├── game-sdk/         # Orchestrator, GameRenderer, SpriteMapper
 │   └── web-api-adapter/  # EngineClient, REST adapters, Jackson JSON
@@ -23,7 +23,25 @@ lightning-engine/
 ├── gui/                  # Desktop GUI application
 └── webservice/
     └── quarkus-web-api/  # Quarkus REST/WebSocket endpoints
+
+lightning-engine-extensions/
+└── modules/              # All module implementations go here
+    ├── entity-module/    # Entity spawning and lifecycle
+    ├── rendering-module/ # Sprite rendering
+    └── physics-module/   # Compound physics module (parent pom)
+        ├── grid-map-module/   # Grid-based positioning
+        └── rigid-body-module/ # Physics rigid body simulation
 ```
+
+### Module Location Guidelines
+
+**IMPORTANT:** Module implementations (like PhysicsModule, GridMapModule, etc.) must NEVER be placed in `engine-internal`. The `engine-internal` module is for engine infrastructure only (stores, services, container management).
+
+- **engine-core**: Interfaces, records, and abstractions (e.g., `EngineModule`, `CompoundModule`, `ModuleVersion`)
+- **engine-internal**: Engine infrastructure implementations (e.g., `AbstractCompoundModule`, `CompoundModuleBuilder`, `ModuleDependencyResolver`)
+- **lightning-engine-extensions/modules/**: All concrete module implementations
+
+Compound modules (modules composed of other modules) should be organized as parent poms containing their sub-modules.
 
 ### 4. Execution Containers
 
