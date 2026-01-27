@@ -23,6 +23,7 @@
 
 package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
 import ca.samanthaireland.engine.rendering.render2d.KeyInputHandler;
 import ca.samanthaireland.engine.rendering.render2d.Panel;
 import ca.samanthaireland.engine.rendering.render2d.Renderer;
@@ -318,12 +319,12 @@ public class GLWindow implements Window {
 
             if (debugMode) {
                 log.debug("Mouse click: x={}, y={}, button={}, action={}",
-                    mx, my, button, action == 1 ? "PRESS" : "RELEASE");
+                    mx, my, button, InputConstants.isPress(action) ? "PRESS" : "RELEASE");
             }
 
             // On mouse press, clear focus from all components first
             // This ensures text fields lose focus when clicking elsewhere
-            if (action == 1 && button == 0) {
+            if (InputConstants.isPress(action) && InputConstants.isLeftButton(button)) {
                 clearAllFocus();
             }
 
@@ -339,7 +340,7 @@ public class GLWindow implements Window {
             }
 
             // If clicking and there are overlays showing, hide them if click was outside
-            if (action == 1 && !overlays.isEmpty()) {
+            if (InputConstants.isPress(action) && !overlays.isEmpty()) {
                 hideAllOverlays();
             }
 
@@ -367,7 +368,7 @@ public class GLWindow implements Window {
             }
 
             // Update focused sprite
-            if (action == 1 && button == 0 && !handled) {
+            if (InputConstants.isPress(action) && InputConstants.isLeftButton(button) && !handled) {
                 // Click on empty area - clear sprite focus
                 focusedSprite = null;
             }
@@ -480,7 +481,7 @@ public class GLWindow implements Window {
                 SpriteInputHandler handler = sprite.getInputHandler();
                 if (handler.onMouseClick(sprite, button, action)) {
                     // Handle focus on click
-                    if (action == 1 && button == 0 && sprite.isFocusable()) {
+                    if (InputConstants.isPress(action) && InputConstants.isLeftButton(button) && sprite.isFocusable()) {
                         focusedSprite = sprite;
                     }
                     if (debugMode) {
@@ -634,21 +635,14 @@ public class GLWindow implements Window {
             nvgFontSize(nvgContext, 14.0f);
         }
 
-        // Render all components using both Renderer interface and legacy nvg
+        // Render all components using Renderer interface
         for (WindowComponent component : components) {
             // Reset font before each component in case it was changed
             if (defaultFontId >= 0) {
                 nvgFontFaceId(nvgContext, defaultFontId);
             }
 
-            // First call the new render(Renderer) method (for updated components)
-            if (renderer != null) {
-                component.render(renderer);
-            }
-
-            // Then call the legacy render(nvg) method (for backward compatibility)
-            // Components should only implement one or the other
-            component.render(nvgContext);
+            component.render(renderer);
         }
 
         // Render overlays last (on top of everything)
@@ -657,10 +651,7 @@ public class GLWindow implements Window {
                 nvgFontFaceId(nvgContext, defaultFontId);
             }
 
-            if (renderer != null) {
-                overlay.render(renderer);
-            }
-            overlay.render(nvgContext);
+            overlay.render(renderer);
         }
 
         // End GUI context

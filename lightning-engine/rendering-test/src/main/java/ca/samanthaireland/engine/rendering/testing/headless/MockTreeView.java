@@ -24,6 +24,8 @@
 package ca.samanthaireland.engine.rendering.testing.headless;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import ca.samanthaireland.engine.rendering.render2d.TreeNode;
 import ca.samanthaireland.engine.rendering.render2d.TreeView;
 
@@ -130,7 +132,7 @@ public class MockTreeView extends AbstractWindowComponent implements TreeView {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         // No rendering in headless mode
     }
 
@@ -140,7 +142,7 @@ public class MockTreeView extends AbstractWindowComponent implements TreeView {
             return false;
         }
 
-        if (button == 0 && action == 1) {
+        if (InputConstants.isLeftButton(button) && InputConstants.isPress(action)) {
             // Find clicked node based on position
             int localY = my - y;
             int clickedRow = localY / itemHeight;

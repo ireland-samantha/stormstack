@@ -24,15 +24,15 @@
 package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import ca.samanthaireland.engine.rendering.render2d.TextField;
 import lombok.extern.slf4j.Slf4j;
-import org.lwjgl.nanovg.NVGColor;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.function.Consumer;
 
 import static org.lwjgl.glfw.GLFW.*;
-import static org.lwjgl.nanovg.NanoVG.*;
 
 /**
  * A single-line text input field.
@@ -165,7 +165,7 @@ public class GLTextField extends AbstractWindowComponent implements TextField {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         if (!visible) {
             return;
         }
@@ -179,117 +179,91 @@ public class GLTextField extends AbstractWindowComponent implements TextField {
             }
         }
 
-        try (var color = NVGColor.malloc()) {
-            // Draw background
-            nvgBeginPath(nvg);
-            nvgRoundedRect(nvg, x, y, width, height, 4);
-            nvgFillColor(nvg, GLColour.rgba(focused ? focusedBackgroundColor : backgroundColor, color));
-            nvgFill(nvg);
+        // Draw background
+        renderer.fillRoundedRect(x, y, width, height, 4, focused ? focusedBackgroundColor : backgroundColor);
 
-            // Draw border
-            nvgStrokeColor(nvg, GLColour.rgba(focused ? focusedBorderColor : borderColor, color));
-            nvgStrokeWidth(nvg, focused ? 2.0f : 1.0f);
-            nvgStroke(nvg);
+        // Draw border
+        renderer.strokeRoundedRect(x, y, width, height, 4, focused ? focusedBorderColor : borderColor,
+                focused ? 2.0f : 1.0f);
 
-            // Setup text rendering
-            int effectiveFontId = fontId >= 0 ? fontId : GLContext.getDefaultFontId();
-            if (effectiveFontId >= 0) {
-                nvgFontFaceId(nvg, effectiveFontId);
-            }
-            nvgFontSize(nvg, fontSize);
-            nvgTextAlign(nvg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+        // Setup text rendering
+        renderer.setFont(fontId, fontSize);
 
-            float textY = y + height / 2.0f;
-            float contentWidth = width - TEXT_PADDING * 2;
+        float textY = y + height / 2.0f;
+        float contentWidth = width - TEXT_PADDING * 2;
 
-            // Calculate cursor position for scrolling
-            String displayText = text.toString();
-            String textBeforeCursor = displayText.substring(0, cursorPosition);
-            float[] cursorBounds = new float[4];
-            nvgTextBounds(nvg, 0, 0, textBeforeCursor.isEmpty() ? "M" : textBeforeCursor, cursorBounds);
-            float cursorX = textBeforeCursor.isEmpty() ? 0 : cursorBounds[2] - cursorBounds[0];
+        // Calculate cursor position for scrolling
+        String displayText = text.toString();
+        String textBeforeCursor = displayText.substring(0, cursorPosition);
+        float[] cursorBounds = new float[4];
+        renderer.measureTextBounds(textBeforeCursor.isEmpty() ? "M" : textBeforeCursor, cursorBounds);
+        float cursorX = textBeforeCursor.isEmpty() ? 0 : cursorBounds[2] - cursorBounds[0];
 
-            // Update scroll offset to keep cursor visible
-            if (focused) {
-                updateScrollOffset(cursorX, contentWidth);
-            }
+        // Update scroll offset to keep cursor visible
+        if (focused) {
+            updateScrollOffset(cursorX, contentWidth);
+        }
 
-            // Clip text to field bounds
-            nvgSave(nvg);
-            nvgIntersectScissor(nvg, x + TEXT_PADDING, y, contentWidth, height);
+        // Clip text to field bounds
+        renderer.save();
+        renderer.intersectClip(x + TEXT_PADDING, y, contentWidth, height);
 
-            float textX = x + TEXT_PADDING - scrollOffset;
+        float textX = x + TEXT_PADDING - scrollOffset;
 
-            // Draw selection highlight if there's a selection
-            if (hasSelection() && focused) {
-                int selStart = Math.min(selectionStart, selectionEnd);
-                int selEnd = Math.max(selectionStart, selectionEnd);
+        // Draw selection highlight if there's a selection
+        if (hasSelection() && focused) {
+            int selStart = Math.min(selectionStart, selectionEnd);
+            int selEnd = Math.max(selectionStart, selectionEnd);
 
-                // Calculate selection bounds
-                String beforeSel = displayText.substring(0, selStart);
-                String selectedText = displayText.substring(selStart, selEnd);
+            // Calculate selection bounds
+            String beforeSel = displayText.substring(0, selStart);
+            String selectedText = displayText.substring(selStart, selEnd);
 
-                float[] beforeBounds = new float[4];
-                float[] selBounds = new float[4];
-                nvgTextBounds(nvg, 0, 0, beforeSel.isEmpty() ? "" : beforeSel, beforeBounds);
-                nvgTextBounds(nvg, 0, 0, selectedText, selBounds);
+            float[] beforeBounds = new float[4];
+            float[] selBounds = new float[4];
+            renderer.measureTextBounds(beforeSel.isEmpty() ? "" : beforeSel, beforeBounds);
+            renderer.measureTextBounds(selectedText, selBounds);
 
-                float selStartX = textX + (beforeSel.isEmpty() ? 0 : beforeBounds[2] - beforeBounds[0]);
-                float selWidth = selBounds[2] - selBounds[0];
+            float selStartX = textX + (beforeSel.isEmpty() ? 0 : beforeBounds[2] - beforeBounds[0]);
+            float selWidth = selBounds[2] - selBounds[0];
 
-                // Draw selection rectangle
-                nvgBeginPath(nvg);
-                nvgRect(nvg, selStartX, y + 4, selWidth, height - 8);
-                nvgFillColor(nvg, GLColour.rgba(selectionColor, color));
-                nvgFill(nvg);
-            }
+            // Draw selection rectangle
+            renderer.fillRect(selStartX, y + 4, selWidth, height - 8, selectionColor);
+        }
 
-            // Draw text or placeholder
-            if (displayText.isEmpty() && !placeholder.isEmpty() && !focused) {
-                nvgFillColor(nvg, GLColour.rgba(placeholderColor, color));
-                nvgText(nvg, x + TEXT_PADDING, textY, placeholder);
-            } else {
-                nvgFillColor(nvg, GLColour.rgba(textColor, color));
-                nvgText(nvg, textX, textY, displayText);
-            }
+        // Draw text or placeholder
+        if (displayText.isEmpty() && !placeholder.isEmpty() && !focused) {
+            renderer.drawText(x + TEXT_PADDING, textY, placeholder, placeholderColor,
+                    Renderer.ALIGN_LEFT | Renderer.ALIGN_MIDDLE);
+        } else {
+            renderer.drawText(textX, textY, displayText, textColor,
+                    Renderer.ALIGN_LEFT | Renderer.ALIGN_MIDDLE);
+        }
 
-            // Draw cursor if focused (and no selection, or at cursor position)
-            if (focused && cursorVisible && !hasSelection()) {
-                float cursorScreenX = textX + cursorX;
+        // Draw cursor if focused (and no selection, or at cursor position)
+        if (focused && cursorVisible && !hasSelection()) {
+            float cursorScreenX = textX + cursorX;
+            renderer.drawLine(cursorScreenX, y + 4, cursorScreenX, y + height - 4, cursorColor, 1.5f);
+        }
 
-                nvgBeginPath(nvg);
-                nvgMoveTo(nvg, cursorScreenX, y + 4);
-                nvgLineTo(nvg, cursorScreenX, y + height - 4);
-                nvgStrokeColor(nvg, GLColour.rgba(cursorColor, color));
-                nvgStrokeWidth(nvg, 1.5f);
-                nvgStroke(nvg);
-            }
+        renderer.restore();
 
-            nvgRestore(nvg);
+        // Context menu is rendered as overlay by the window, not here
 
-            // Context menu is rendered as overlay by the window, not here
-
-            // Draw scroll indicators if text is clipped
+        // Draw scroll indicators if text is clipped
+        if (!displayText.isEmpty()) {
             float[] textBounds = new float[4];
-            if (!displayText.isEmpty()) {
-                nvgTextBounds(nvg, 0, 0, displayText, textBounds);
-                float textWidth = textBounds[2] - textBounds[0];
+            renderer.measureTextBounds(displayText, textBounds);
+            float textWidth = textBounds[2] - textBounds[0];
 
-                // Left fade indicator
-                if (scrollOffset > 0) {
-                    nvgBeginPath(nvg);
-                    nvgRect(nvg, x + 2, y + 2, 6, height - 4);
-                    nvgFillColor(nvg, GLColour.rgba(GLColour.withAlpha(borderColor, 0.5f), color));
-                    nvgFill(nvg);
-                }
+            // Left fade indicator
+            if (scrollOffset > 0) {
+                renderer.fillRect(x + 2, y + 2, 6, height - 4, GLColour.withAlpha(borderColor, 0.5f));
+            }
 
-                // Right fade indicator
-                if (textWidth - scrollOffset > contentWidth) {
-                    nvgBeginPath(nvg);
-                    nvgRect(nvg, x + width - 8, y + 2, 6, height - 4);
-                    nvgFillColor(nvg, GLColour.rgba(GLColour.withAlpha(borderColor, 0.5f), color));
-                    nvgFill(nvg);
-                }
+            // Right fade indicator
+            if (textWidth - scrollOffset > contentWidth) {
+                renderer.fillRect(x + width - 8, y + 2, 6, height - 4, GLColour.withAlpha(borderColor, 0.5f));
             }
         }
     }
@@ -327,13 +301,13 @@ public class GLTextField extends AbstractWindowComponent implements TextField {
                 return true;
             }
             // Click outside menu hides it
-            if (action == 1) {
+            if (InputConstants.isPress(action)) {
                 contextMenu.hide();
             }
         }
 
         // Right-click shows context menu
-        if (button == 1 && action == 1 && contains(mx, my)) {
+        if (InputConstants.isRightButton(button) && InputConstants.isPress(action) && contains(mx, my)) {
             focused = true;
             updateContextMenuState();
             contextMenu.show(mx, my);
@@ -342,7 +316,7 @@ public class GLTextField extends AbstractWindowComponent implements TextField {
         }
 
         // Left-click focuses and positions cursor
-        if (button == 0 && action == 1) {
+        if (InputConstants.isLeftButton(button) && InputConstants.isPress(action)) {
             boolean wasFocused = focused;
             boolean clickedInside = contains(mx, my);
             focused = clickedInside;
@@ -369,7 +343,7 @@ public class GLTextField extends AbstractWindowComponent implements TextField {
         }
 
         // Left-click release ends dragging
-        if (button == 0 && action == 0) {
+        if (InputConstants.isLeftButton(button) && InputConstants.isRelease(action)) {
             dragging = false;
             return focused;
         }
@@ -446,7 +420,7 @@ public class GLTextField extends AbstractWindowComponent implements TextField {
 
     @Override
     public boolean onKeyPress(int key, int action, int mods) {
-        if (!focused || action == 0) { // Only handle press and repeat
+        if (!focused || InputConstants.isRelease(action)) { // Only handle press and repeat
             return false;
         }
 

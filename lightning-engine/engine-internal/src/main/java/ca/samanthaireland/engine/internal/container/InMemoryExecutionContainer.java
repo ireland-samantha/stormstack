@@ -25,60 +25,36 @@ package ca.samanthaireland.engine.internal.container;
 
 import ca.samanthaireland.engine.core.command.CommandPayload;
 import ca.samanthaireland.engine.core.command.EngineCommand;
+import ca.samanthaireland.engine.core.container.ContainerAIOperations;
+import ca.samanthaireland.engine.core.container.ContainerCommandOperations;
+import ca.samanthaireland.engine.core.container.ContainerConfig;
+import ca.samanthaireland.engine.core.container.ContainerLifecycleOperations;
+import ca.samanthaireland.engine.core.container.ContainerMatchOperations;
+import ca.samanthaireland.engine.core.container.ContainerModuleOperations;
+import ca.samanthaireland.engine.core.container.ContainerPlayerOperations;
+import ca.samanthaireland.engine.core.container.ContainerResourceOperations;
+import ca.samanthaireland.engine.core.container.ContainerSessionOperations;
+import ca.samanthaireland.engine.core.container.ContainerSnapshotOperations;
+import ca.samanthaireland.engine.core.container.ContainerStatus;
+import ca.samanthaireland.engine.core.container.ContainerTickOperations;
+import ca.samanthaireland.engine.core.container.ExecutionContainer;
 import ca.samanthaireland.engine.core.exception.EntityNotFoundException;
 import ca.samanthaireland.engine.core.match.Match;
-import ca.samanthaireland.engine.core.container.ExecutionContainer;
-import ca.samanthaireland.engine.core.container.ContainerConfig;
-import ca.samanthaireland.engine.core.container.ContainerStatus;
-import ca.samanthaireland.engine.core.container.ContainerModuleOperations;
-import ca.samanthaireland.engine.core.container.ContainerAIOperations;
-import ca.samanthaireland.engine.core.container.ContainerResourceOperations;
-import ca.samanthaireland.engine.core.container.ContainerSnapshotOperations;
-import ca.samanthaireland.engine.core.container.ContainerLifecycleOperations;
-import ca.samanthaireland.engine.core.container.ContainerTickOperations;
-import ca.samanthaireland.engine.core.container.ContainerCommandOperations;
-import ca.samanthaireland.engine.core.container.ContainerMatchOperations;
-import ca.samanthaireland.engine.core.container.ContainerPlayerOperations;
-import ca.samanthaireland.engine.core.container.ContainerSessionOperations;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
-import ca.samanthaireland.engine.core.store.PermissionRegistry;
-import ca.samanthaireland.engine.ext.module.ModuleResolver;
 import ca.samanthaireland.engine.internal.GameLoop;
 import ca.samanthaireland.engine.internal.core.command.CommandResolver;
-import ca.samanthaireland.engine.internal.core.command.InMemoryCommandQueueManager;
-import ca.samanthaireland.engine.internal.core.command.ModuleCommandResolver;
-import ca.samanthaireland.engine.internal.core.match.InMemoryMatchRepository;
 import ca.samanthaireland.engine.internal.core.match.InMemoryMatchService;
-import ca.samanthaireland.engine.internal.core.store.ArrayEntityComponentStore;
-import ca.samanthaireland.engine.internal.core.store.EcsProperties;
-import ca.samanthaireland.engine.internal.core.store.LockingEntityComponentStore;
-import ca.samanthaireland.engine.internal.core.store.SimplePermissionRegistry;
+import ca.samanthaireland.engine.internal.core.snapshot.SnapshotProvider;
 import ca.samanthaireland.engine.internal.ext.module.DefaultInjector;
 import ca.samanthaireland.engine.internal.ext.module.ModuleManager;
-import ca.samanthaireland.engine.internal.ext.module.OnDiskModuleManager;
-import ca.samanthaireland.engine.internal.ext.ai.AIManager;
-import ca.samanthaireland.engine.internal.ext.ai.AIFactoryFileLoader;
-import ca.samanthaireland.engine.internal.ext.ai.OnDiskAIManager;
-import ca.samanthaireland.engine.internal.core.command.CommandExecutorFromResolver;
-import ca.samanthaireland.engine.internal.core.snapshot.SnapshotProvider;
-import ca.samanthaireland.engine.internal.core.snapshot.SnapshotProviderImpl;
-import ca.samanthaireland.engine.internal.core.resource.OnDiskResourceManager;
-import ca.samanthaireland.engine.core.command.CommandExecutor;
-import ca.samanthaireland.engine.core.resources.ResourceManager;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -98,25 +74,10 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     private final long id;
     private final ContainerConfig config;
     private final AtomicReference<ContainerStatus> status;
-    private final AtomicLong currentTick;
-    private final AtomicLong autoAdvanceInterval;
 
-    // Isolated components (created during start())
-    private ContainerClassLoader containerClassLoader;
-    
-    @Getter
-    private EntityComponentStore entityStore;
-    private PermissionRegistry permissionRegistry;
-    private ModuleManager moduleManager;
-    private AIManager aiManager;
-    private OnDiskResourceManager resourceManager;
-    private InMemoryMatchService matchService;
-    private InMemoryCommandQueueManager commandQueueManager;
-    private CommandResolver commandResolver;
-
-    @Getter
-    private GameLoop gameLoop;
-    private DefaultInjector injector;
+    // Collaborators (extracted for SRP)
+    private ContainerComponentInitializer componentInitializer;
+    private final ContainerTickExecutor tickExecutor;
 
     // Fluent API operations
     private ContainerModuleOperations moduleOperations;
@@ -130,10 +91,6 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     private ContainerPlayerOperations playerOperations;
     private ContainerSessionOperations sessionOperations;
 
-    // Tick execution
-    private final ScheduledExecutorService tickExecutor;
-    private volatile ScheduledFuture<?> autoAdvanceTask;
-
     /**
      * Creates a new execution container.
      *
@@ -144,17 +101,20 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
         this.id = id;
         this.config = Objects.requireNonNull(config, "config must not be null");
         this.status = new AtomicReference<>(ContainerStatus.CREATED);
-        this.currentTick = new AtomicLong(0);
-        this.autoAdvanceInterval = new AtomicLong(0);
 
-        // Create tick executor for this container
-        this.tickExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread t = new Thread(r, "container-" + id + "-tick");
-            t.setDaemon(true);
-            return t;
-        });
+        // Create tick executor collaborator
+        this.tickExecutor = new ContainerTickExecutor(id, config.name(), this::getStatus);
 
         log.info("Created container {} with name '{}'", id, config.name());
+    }
+
+    /**
+     * Get the game loop for this container.
+     *
+     * @return the game loop, or null if container not started
+     */
+    public GameLoop getGameLoop() {
+        return componentInitializer != null ? componentInitializer.getGameLoop() : null;
     }
 
     @Override
@@ -191,108 +151,15 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
 
         try {
             log.info("Starting container {} '{}'", id, config.name());
-            initializeComponents();
+            componentInitializer = new ContainerComponentInitializer(id, config);
+            componentInitializer.initialize();
+            tickExecutor.setGameLoop(componentInitializer.getGameLoop());
             status.set(ContainerStatus.RUNNING);
             log.info("Container {} '{}' started successfully", id, config.name());
         } catch (Exception e) {
             status.set(ContainerStatus.STOPPED);
             log.error("Failed to start container {} '{}': {}", id, config.name(), e.getMessage(), e);
             throw new RuntimeException("Failed to start container: " + e.getMessage(), e);
-        }
-    }
-
-    private void initializeComponents() {
-        initializeClassLoaderAndStore();
-        initializeInjector();
-        initializeModuleManager();
-        initializeCommandInfrastructure();
-        initializeResourceAndAIManagers();
-        initializeGameLoop();
-        loadModules();
-
-        log.debug("Container {} initialized: {} modules loaded", id, moduleManager.getAvailableModules().size());
-    }
-
-    private void initializeClassLoaderAndStore() {
-        containerClassLoader = new ContainerClassLoader(id, getClass().getClassLoader());
-
-        EcsProperties ecsProperties = new EcsProperties(config.maxEntities(), config.maxComponents());
-        ArrayEntityComponentStore rawStore = new ArrayEntityComponentStore(ecsProperties);
-        entityStore = LockingEntityComponentStore.wrap(rawStore);
-
-        permissionRegistry = new SimplePermissionRegistry();
-    }
-
-    private void initializeInjector() {
-        injector = new DefaultInjector();
-        injector.addClass(EntityComponentStore.class, entityStore);
-        injector.addClass(PermissionRegistry.class, permissionRegistry);
-
-        InMemoryMatchRepository matchRepository = new InMemoryMatchRepository();
-        matchService = new InMemoryMatchService(matchRepository, null);
-        injector.addClass(ca.samanthaireland.engine.core.match.MatchService.class, matchService);
-    }
-
-    private void initializeModuleManager() {
-        Path modulePath = config.moduleScanDirectory() != null
-                ? config.moduleScanDirectory()
-                : Path.of("modules");
-
-        moduleManager = new OnDiskModuleManager(
-                injector,
-                permissionRegistry,
-                modulePath.toString(),
-                containerClassLoader
-        );
-
-        matchService.setModuleResolver(moduleManager);
-        injector.addClass(ModuleManager.class, moduleManager);
-        injector.addClass(ModuleResolver.class, moduleManager);
-    }
-
-    private void initializeCommandInfrastructure() {
-        commandQueueManager = new InMemoryCommandQueueManager();
-        commandResolver = new ModuleCommandResolver(moduleManager);
-    }
-
-    private void initializeResourceAndAIManagers() {
-        Path resourcePath = Path.of("resources/container_" + id);
-        resourceManager = new OnDiskResourceManager(resourcePath);
-        injector.addClass(ResourceManager.class, resourceManager);
-
-        CommandExecutor commandExecutor = new CommandExecutorFromResolver(commandResolver);
-        injector.addClass(CommandExecutor.class, commandExecutor);
-
-        aiManager = new OnDiskAIManager(
-                Path.of("ai"),
-                new AIFactoryFileLoader(),
-                injector,
-                commandExecutor,
-                resourceManager
-        );
-        injector.addClass(AIManager.class, aiManager);
-
-        SnapshotProvider snapshotProvider = new SnapshotProviderImpl(entityStore, moduleManager);
-        injector.addClass(SnapshotProvider.class, snapshotProvider);
-    }
-
-    private void initializeGameLoop() {
-        gameLoop = new GameLoop(moduleManager, commandQueueManager, config.maxCommandsPerTick());
-    }
-
-    private void loadModules() {
-        for (String jarPath : config.moduleJarPaths()) {
-            try {
-                moduleManager.installModule(Path.of(jarPath));
-            } catch (IOException e) {
-                log.error("Failed to install module JAR {}: {}", jarPath, e.getMessage());
-            }
-        }
-
-        try {
-            moduleManager.reloadInstalled();
-        } catch (IOException e) {
-            log.error("Failed to reload modules: {}", e.getMessage());
         }
     }
 
@@ -312,18 +179,18 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
         log.info("Stopping container {} '{}'", id, config.name());
 
         try {
-            stopAutoAdvanceInternal();
-            tickExecutor.shutdown();
-            if (!tickExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
-                tickExecutor.shutdownNow();
-            }
+            tickExecutor.shutdown(5, TimeUnit.SECONDS);
 
-            if (gameLoop != null) {
-                gameLoop.shutdown();
-            }
+            if (componentInitializer != null) {
+                GameLoop gameLoop = componentInitializer.getGameLoop();
+                if (gameLoop != null) {
+                    gameLoop.shutdown();
+                }
 
-            if (containerClassLoader != null) {
-                containerClassLoader.close();
+                ContainerClassLoader classLoader = componentInitializer.getContainerClassLoader();
+                if (classLoader != null) {
+                    classLoader.close();
+                }
             }
 
             status.set(ContainerStatus.STOPPED);
@@ -341,7 +208,7 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
         if (!status.compareAndSet(ContainerStatus.RUNNING, ContainerStatus.PAUSED)) {
             throw new IllegalStateException("Container can only be paused from RUNNING state");
         }
-        stopAutoAdvanceInternal();
+        tickExecutor.stopAutoAdvance();
         log.info("Container {} '{}' paused", id, config.name());
     }
 
@@ -368,7 +235,7 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
      * Internal implementation of getCurrentTick. Use {@link #ticks()}.current() instead.
      */
     long getCurrentTickInternal() {
-        return currentTick.get();
+        return tickExecutor.getCurrentTick();
     }
 
     /**
@@ -376,9 +243,7 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
      */
     long advanceTickInternal() {
         checkRunning();
-        long tick = currentTick.incrementAndGet();
-        tickExecutor.execute(() -> gameLoop.advanceTick(tick));
-        return tick;
+        return tickExecutor.advanceTick();
     }
 
     /**
@@ -386,57 +251,28 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
      */
     void startAutoAdvanceInternal(long intervalMs) {
         checkRunning();
-        if (intervalMs <= 0) {
-            throw new IllegalArgumentException("intervalMs must be positive");
-        }
-
-        stopAutoAdvanceInternal(); // Stop any existing auto-advance
-
-        autoAdvanceInterval.set(intervalMs);
-        autoAdvanceTask = tickExecutor.scheduleAtFixedRate(
-                this::advanceTickSafe,
-                0,
-                intervalMs,
-                TimeUnit.MILLISECONDS
-        );
-
-        log.info("Container {} '{}' auto-advance started at {} ms interval", id, config.name(), intervalMs);
-    }
-
-    private void advanceTickSafe() {
-        try {
-            if (status.get() == ContainerStatus.RUNNING) {
-                advanceTickInternal();
-            }
-        } catch (Exception e) {
-            log.error("Error during auto-advance tick in container {}: {}", id, e.getMessage(), e);
-        }
+        tickExecutor.startAutoAdvance(intervalMs);
     }
 
     /**
      * Internal implementation of stopAutoAdvance. Use {@link #ticks()}.stop() instead.
      */
     void stopAutoAdvanceInternal() {
-        if (autoAdvanceTask != null) {
-            autoAdvanceTask.cancel(false);
-            autoAdvanceTask = null;
-            autoAdvanceInterval.set(0);
-            log.debug("Container {} auto-advance stopped", id);
-        }
+        tickExecutor.stopAutoAdvance();
     }
 
     /**
      * Internal implementation of isAutoAdvancing. Use {@link #ticks()}.isPlaying() instead.
      */
     boolean isAutoAdvancingInternal() {
-        return autoAdvanceTask != null && !autoAdvanceTask.isCancelled();
+        return tickExecutor.isAutoAdvancing();
     }
 
     /**
      * Internal implementation of getAutoAdvanceInterval. Use {@link #ticks()}.interval() instead.
      */
     long getAutoAdvanceIntervalInternal() {
-        return autoAdvanceInterval.get();
+        return tickExecutor.getAutoAdvanceInterval();
     }
 
     // =========================================================================
@@ -449,13 +285,14 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     Match createMatchInternal(Match match) {
         checkRunning();
         Match containerMatch = match.withContainerId(id);
-        return matchService.createMatch(containerMatch);
+        return componentInitializer.getMatchService().createMatch(containerMatch);
     }
 
     /**
      * Internal implementation of getMatch. Use {@link #matches()}.get() instead.
      */
     Optional<Match> getMatchInternal(long matchId) {
+        InMemoryMatchService matchService = componentInitializer != null ? componentInitializer.getMatchService() : null;
         return matchService != null ? matchService.getMatch(matchId) : Optional.empty();
     }
 
@@ -463,6 +300,7 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
      * Internal implementation of getAllMatches. Use {@link #matches()}.all() instead.
      */
     List<Match> getAllMatchesInternal() {
+        InMemoryMatchService matchService = componentInitializer != null ? componentInitializer.getMatchService() : null;
         return matchService != null ? matchService.getAllMatches() : List.of();
     }
 
@@ -470,11 +308,12 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
      * Internal implementation of deleteMatch. Use {@link #matches()}.delete() instead.
      */
     void deleteMatchInternal(long matchId) {
-        matchService.deleteMatch(matchId);
+        componentInitializer.getMatchService().deleteMatch(matchId);
     }
 
     @Override
     public List<ExecutionContainer.CommandInfo> getAvailableCommands() {
+        CommandResolver commandResolver = componentInitializer != null ? componentInitializer.getCommandResolver() : null;
         if (commandResolver == null) {
             return List.of();
         }
@@ -532,12 +371,13 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     void enqueueCommandInternal(String commandName, CommandPayload payload) {
         checkRunning();
 
+        CommandResolver commandResolver = componentInitializer.getCommandResolver();
         EngineCommand command = commandResolver.resolveByName(commandName);
         if (command == null) {
             throw new EntityNotFoundException("Command not found: " + commandName);
         }
 
-        commandQueueManager.enqueue(command, payload);
+        componentInitializer.getCommandQueueManager().enqueue(command, payload);
     }
 
     /**
@@ -552,6 +392,7 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     public ContainerStats getStats() {
         Runtime runtime = Runtime.getRuntime();
 
+        EntityComponentStore entityStore = componentInitializer != null ? componentInitializer.getEntityStore() : null;
         int entityCount = entityStore != null ? entityStore.getEntityCount() : 0;
         int maxEntities = config.maxEntities();
 
@@ -566,6 +407,9 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
         // JVM memory stats
         long jvmMaxMemoryBytes = runtime.maxMemory();
         long jvmUsedMemoryBytes = runtime.totalMemory() - runtime.freeMemory();
+
+        InMemoryMatchService matchService = componentInitializer != null ? componentInitializer.getMatchService() : null;
+        ModuleManager moduleManager = componentInitializer != null ? componentInitializer.getModuleManager() : null;
 
         int matchCount = matchService != null ? matchService.getAllMatches().size() : 0;
         int moduleCount = moduleManager != null ? moduleManager.getAvailableModules().size() : 0;
@@ -629,7 +473,9 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     @Override
     public ContainerModuleOperations modules() {
         if (moduleOperations == null) {
-            moduleOperations = new DefaultContainerModuleOperations(this, moduleManager);
+            // Create with null manager - will return empty lists before start
+            moduleOperations = new DefaultContainerModuleOperations(this,
+                    componentInitializer != null ? componentInitializer.getModuleManager() : null);
         }
         return moduleOperations;
     }
@@ -637,7 +483,9 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     @Override
     public ContainerAIOperations ai() {
         if (aiOperations == null) {
-            aiOperations = new DefaultContainerAIOperations(this, aiManager);
+            // Create with null manager - will return empty lists before start
+            aiOperations = new DefaultContainerAIOperations(this,
+                    componentInitializer != null ? componentInitializer.getAiManager() : null);
         }
         return aiOperations;
     }
@@ -645,14 +493,17 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
     @Override
     public ContainerResourceOperations resources() {
         if (resourceOperations == null) {
-            resourceOperations = new DefaultContainerResourceOperations(this, resourceManager);
+            // Create with null manager - will return empty lists before start
+            resourceOperations = new DefaultContainerResourceOperations(this,
+                    componentInitializer != null ? componentInitializer.getResourceManager() : null);
         }
         return resourceOperations;
     }
 
     @Override
     public ContainerSnapshotOperations snapshots() {
-        if (snapshotOperations == null && injector != null) {
+        if (snapshotOperations == null && componentInitializer != null) {
+            DefaultInjector injector = componentInitializer.getInjector();
             SnapshotProvider provider = injector.getClass(SnapshotProvider.class);
             if (provider != null) {
                 snapshotOperations = new DefaultContainerSnapshotOperations(provider);

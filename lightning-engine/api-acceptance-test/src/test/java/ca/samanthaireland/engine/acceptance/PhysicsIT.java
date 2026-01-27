@@ -386,12 +386,16 @@ class PhysicsIT {
     @DisplayName("Angular drag dampens rotation over time")
     void testAngularDragDampening() throws Exception {
         setupMatch();
-        long entityId = spawnEntityWithRigidBody(0, 0);
 
+        // Spawn entity without rigid body first
+        long entityId = spawnEntity();
+
+        // Attach rigid body with inertia and angular drag
         container.forMatch(matchId).custom("attachRigidBody")
                 .param("entityId", entityId)
                 .param("positionX", 0.0f)
                 .param("positionY", 0.0f)
+                .param("mass", 1.0f)
                 .param("inertia", 1.0f)
                 .param("angularDrag", 0.3f)
                 .execute();
@@ -399,16 +403,21 @@ class PhysicsIT {
         // Wait for attachRigidBody to complete
         EntitySpawner.waitForComponent(client, container, matchId, "RigidBodyModule", "INERTIA");
 
+        // Apply torque to start rotation
         container.forMatch(matchId).custom("applyTorque")
                 .param("entityId", entityId)
                 .param("torque", 100.0f)
                 .execute();
 
+        // Tick to process the torque
+        container.tick();
         container.tick();
 
         var snapshot1 = getSnapshot();
         float av1 = snapshot1.module("RigidBodyModule").first("ANGULAR_VELOCITY", 0);
+        log.info("Angular velocity after torque: {}", av1);
 
+        // Run more ticks to let angular drag dampen the rotation
         for (int i = 0; i < 20; i++) {
             container.tick();
         }
@@ -418,6 +427,7 @@ class PhysicsIT {
 
         log.info("Angular drag test: initial angularVelocity={}, final angularVelocity={}", av1, av2);
 
+        // After drag, angular velocity should be smaller
         assertThat(Math.abs(av2)).isLessThan(Math.abs(av1));
         log.info("Angular drag dampening test PASSED");
     }

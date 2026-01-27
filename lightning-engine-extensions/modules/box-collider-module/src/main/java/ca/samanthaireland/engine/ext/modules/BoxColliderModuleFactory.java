@@ -1,13 +1,9 @@
 package ca.samanthaireland.engine.ext.modules;
 
 import ca.samanthaireland.engine.core.store.BaseComponent;
-import ca.samanthaireland.engine.core.store.PermissionComponent;
-import ca.samanthaireland.engine.core.store.PermissionLevel;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
-import ca.samanthaireland.engine.ext.modules.ecs.component.ColliderComponent;
-import ca.samanthaireland.engine.util.IdGeneratorV2;
 
 import java.util.List;
 
@@ -28,96 +24,38 @@ import java.util.List;
  *
  * <p>Uses EntityModule's shared position components (POSITION_X/Y/Z) for
  * determining entity positions.
+ *
+ * @see BoxColliderComponents for component constants
  */
 public class BoxColliderModuleFactory implements ModuleFactory {
 
-    // Box dimensions
-    public static final BaseComponent BOX_WIDTH = new ColliderComponent(
-            IdGeneratorV2.newId(), "BOX_WIDTH");
-    public static final BaseComponent BOX_HEIGHT = new ColliderComponent(
-            IdGeneratorV2.newId(), "BOX_HEIGHT");
-    public static final BaseComponent BOX_DEPTH = new ColliderComponent(
-            IdGeneratorV2.newId(), "BOX_DEPTH");
-
-    // Offset from entity position (collider center = position + offset)
-    public static final BaseComponent OFFSET_X = new ColliderComponent(
-            IdGeneratorV2.newId(), "OFFSET_X");
-    public static final BaseComponent OFFSET_Y = new ColliderComponent(
-            IdGeneratorV2.newId(), "OFFSET_Y");
-    public static final BaseComponent OFFSET_Z = new ColliderComponent(
-            IdGeneratorV2.newId(), "OFFSET_Z");
-
-    // Collision filtering
-    public static final BaseComponent COLLISION_LAYER = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_LAYER");
-    public static final BaseComponent COLLISION_MASK = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_MASK");
-
-    // Trigger mode (1 = trigger, 0 = solid)
-    public static final BaseComponent IS_TRIGGER = new ColliderComponent(
-            IdGeneratorV2.newId(), "IS_TRIGGER");
-
-    // Collision state (updated each tick)
-    public static final BaseComponent IS_COLLIDING = new ColliderComponent(
-            IdGeneratorV2.newId(), "IS_COLLIDING");
-    public static final BaseComponent COLLISION_COUNT = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_COUNT");
-    public static final BaseComponent LAST_COLLISION_ENTITY = new ColliderComponent(
-            IdGeneratorV2.newId(), "LAST_COLLISION_ENTITY");
-
-    // Collision normal (direction to push out)
-    public static final BaseComponent COLLISION_NORMAL_X = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_NORMAL_X");
-    public static final BaseComponent COLLISION_NORMAL_Y = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_NORMAL_Y");
-
-    // Penetration depth
-    public static final BaseComponent PENETRATION_DEPTH = new ColliderComponent(
-            IdGeneratorV2.newId(), "PENETRATION_DEPTH");
-
-    // Collision handler components
-    public static final BaseComponent COLLISION_HANDLER_TYPE = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_HANDLER_TYPE");
-    public static final BaseComponent COLLISION_HANDLER_PARAM1 = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_HANDLER_PARAM1");
-    public static final BaseComponent COLLISION_HANDLER_PARAM2 = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_HANDLER_PARAM2");
-    public static final BaseComponent COLLISION_HANDLED_TICK = new ColliderComponent(
-            IdGeneratorV2.newId(), "COLLISION_HANDLED_TICK");
-
-    // Module flag (PRIVATE - only EntityModule with superuser can attach during spawn)
-    public static final BaseComponent FLAG = new PermissionComponent(
-            IdGeneratorV2.newId(), "boxCollider", PermissionLevel.PRIVATE);
-
-    // Collision handler type constant
-    public static final int HANDLER_NONE = 0;
-
-    // Component groups
-    public static final List<BaseComponent> DIMENSION_COMPONENTS =
-            List.of(BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH);
-
-    public static final List<BaseComponent> OFFSET_COMPONENTS =
-            List.of(OFFSET_X, OFFSET_Y, OFFSET_Z);
-
-    public static final List<BaseComponent> COLLISION_STATE_COMPONENTS =
-            List.of(IS_COLLIDING, COLLISION_COUNT, LAST_COLLISION_ENTITY,
-                    COLLISION_NORMAL_X, COLLISION_NORMAL_Y, PENETRATION_DEPTH);
-
-    public static final List<BaseComponent> HANDLER_COMPONENTS =
-            List.of(COLLISION_HANDLER_TYPE, COLLISION_HANDLER_PARAM1,
-                    COLLISION_HANDLER_PARAM2, COLLISION_HANDLED_TICK);
-
-    public static final List<BaseComponent> ALL_COMPONENTS = List.of(
-            BOX_WIDTH, BOX_HEIGHT, BOX_DEPTH,
-            OFFSET_X, OFFSET_Y, OFFSET_Z,
-            COLLISION_LAYER, COLLISION_MASK,
-            IS_TRIGGER,
-            IS_COLLIDING, COLLISION_COUNT, LAST_COLLISION_ENTITY,
-            COLLISION_NORMAL_X, COLLISION_NORMAL_Y, PENETRATION_DEPTH,
-            COLLISION_HANDLER_TYPE, COLLISION_HANDLER_PARAM1,
-            COLLISION_HANDLER_PARAM2, COLLISION_HANDLED_TICK,
-            FLAG
-    );
+    // Delegated constants for backwards compatibility
+    public static final BaseComponent BOX_WIDTH = BoxColliderComponents.BOX_WIDTH;
+    public static final BaseComponent BOX_HEIGHT = BoxColliderComponents.BOX_HEIGHT;
+    public static final BaseComponent BOX_DEPTH = BoxColliderComponents.BOX_DEPTH;
+    public static final BaseComponent OFFSET_X = BoxColliderComponents.OFFSET_X;
+    public static final BaseComponent OFFSET_Y = BoxColliderComponents.OFFSET_Y;
+    public static final BaseComponent OFFSET_Z = BoxColliderComponents.OFFSET_Z;
+    public static final BaseComponent COLLISION_LAYER = BoxColliderComponents.COLLISION_LAYER;
+    public static final BaseComponent COLLISION_MASK = BoxColliderComponents.COLLISION_MASK;
+    public static final BaseComponent IS_TRIGGER = BoxColliderComponents.IS_TRIGGER;
+    public static final BaseComponent IS_COLLIDING = BoxColliderComponents.IS_COLLIDING;
+    public static final BaseComponent COLLISION_COUNT = BoxColliderComponents.COLLISION_COUNT;
+    public static final BaseComponent LAST_COLLISION_ENTITY = BoxColliderComponents.LAST_COLLISION_ENTITY;
+    public static final BaseComponent COLLISION_NORMAL_X = BoxColliderComponents.COLLISION_NORMAL_X;
+    public static final BaseComponent COLLISION_NORMAL_Y = BoxColliderComponents.COLLISION_NORMAL_Y;
+    public static final BaseComponent PENETRATION_DEPTH = BoxColliderComponents.PENETRATION_DEPTH;
+    public static final BaseComponent COLLISION_HANDLER_TYPE = BoxColliderComponents.COLLISION_HANDLER_TYPE;
+    public static final BaseComponent COLLISION_HANDLER_PARAM1 = BoxColliderComponents.COLLISION_HANDLER_PARAM1;
+    public static final BaseComponent COLLISION_HANDLER_PARAM2 = BoxColliderComponents.COLLISION_HANDLER_PARAM2;
+    public static final BaseComponent COLLISION_HANDLED_TICK = BoxColliderComponents.COLLISION_HANDLED_TICK;
+    public static final BaseComponent FLAG = BoxColliderComponents.FLAG;
+    public static final int HANDLER_NONE = BoxColliderComponents.HANDLER_NONE;
+    public static final List<BaseComponent> DIMENSION_COMPONENTS = BoxColliderComponents.DIMENSION_COMPONENTS;
+    public static final List<BaseComponent> OFFSET_COMPONENTS = BoxColliderComponents.OFFSET_COMPONENTS;
+    public static final List<BaseComponent> COLLISION_STATE_COMPONENTS = BoxColliderComponents.COLLISION_STATE_COMPONENTS;
+    public static final List<BaseComponent> HANDLER_COMPONENTS = BoxColliderComponents.HANDLER_COMPONENTS;
+    public static final List<BaseComponent> ALL_COMPONENTS = BoxColliderComponents.ALL_COMPONENTS;
 
     @Override
     public EngineModule create(ModuleContext context) {

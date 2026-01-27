@@ -24,6 +24,7 @@
 package ca.samanthaireland.engine.rendering.gui;
 
 import ca.samanthaireland.engine.rendering.render2d.impl.opengl.GLColour;
+import ca.samanthaireland.engine.rendering.render2d.impl.opengl.NanoVGRenderer;
 import ca.samanthaireland.engine.rendering.render2d.WindowComponent;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -227,12 +228,15 @@ public class GUITestRenderer implements AutoCloseable {
             nvgFontSize(nvgContext, 14.0f);
         }
 
+        // Create renderer wrapper for components
+        NanoVGRenderer renderer = new NanoVGRenderer(nvgContext, defaultFontId);
+
         // Render components
         for (WindowComponent component : components) {
             if (defaultFontId >= 0) {
                 nvgFontFaceId(nvgContext, defaultFontId);
             }
-            component.render(nvgContext);
+            component.render(renderer);
         }
 
         // End NanoVG frame

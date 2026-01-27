@@ -25,13 +25,12 @@ package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
 import ca.samanthaireland.engine.rendering.render2d.ContextMenu;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import lombok.extern.slf4j.Slf4j;
-import org.lwjgl.nanovg.NVGColor;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.lwjgl.nanovg.NanoVG.*;
 
 /**
  * A right-click context menu component.
@@ -133,67 +132,46 @@ public class GLContextMenu extends AbstractWindowComponent implements ContextMen
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         if (!visible || !showing) {
             return;
         }
 
-        try (var color = NVGColor.malloc()) {
-            // Draw shadow
-            nvgBeginPath(nvg);
-            nvgRoundedRect(nvg, x + 2, y + 2, width, height, 4);
-            nvgFillColor(nvg, GLColour.rgba(GLColour.withAlpha(GLColour.BLACK, 0.3f), color));
-            nvgFill(nvg);
+        // Draw shadow
+        renderer.fillRoundedRect(x + 2, y + 2, width, height, 4, GLColour.withAlpha(GLColour.BLACK, 0.3f));
 
-            // Draw background
-            nvgBeginPath(nvg);
-            nvgRoundedRect(nvg, x, y, width, height, 4);
-            nvgFillColor(nvg, GLColour.rgba(backgroundColor, color));
-            nvgFill(nvg);
+        // Draw background
+        renderer.fillRoundedRect(x, y, width, height, 4, backgroundColor);
 
-            // Draw border
-            nvgStrokeColor(nvg, GLColour.rgba(borderColor, color));
-            nvgStrokeWidth(nvg, 1.0f);
-            nvgStroke(nvg);
+        // Draw border
+        renderer.strokeRoundedRect(x, y, width, height, 4, borderColor, 1.0f);
 
-            // Setup text rendering
-            int effectiveFontId = fontId >= 0 ? fontId : GLContext.getDefaultFontId();
-            if (effectiveFontId >= 0) {
-                nvgFontFaceId(nvg, effectiveFontId);
-            }
-            nvgFontSize(nvg, fontSize);
-            nvgTextAlign(nvg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+        // Setup text rendering
+        renderer.setFont(fontId, fontSize);
 
-            // Render items
-            int itemY = y + 4;
-            for (int i = 0; i < items.size(); i++) {
-                MenuItemImpl item = items.get(i);
+        // Render items
+        int itemY = y + 4;
+        for (int i = 0; i < items.size(); i++) {
+            MenuItemImpl item = items.get(i);
 
-                if (item.isSeparator) {
-                    // Draw separator line
-                    nvgBeginPath(nvg);
-                    nvgMoveTo(nvg, x + ITEM_PADDING, itemY + SEPARATOR_HEIGHT / 2.0f);
-                    nvgLineTo(nvg, x + width - ITEM_PADDING, itemY + SEPARATOR_HEIGHT / 2.0f);
-                    nvgStrokeColor(nvg, GLColour.rgba(borderColor, color));
-                    nvgStrokeWidth(nvg, 1.0f);
-                    nvgStroke(nvg);
-                    itemY += SEPARATOR_HEIGHT;
-                } else {
-                    // Draw hover highlight
-                    if (i == hoveredIndex && item.enabled) {
-                        nvgBeginPath(nvg);
-                        nvgRoundedRect(nvg, x + 2, itemY, width - 4, ITEM_HEIGHT, 2);
-                        nvgFillColor(nvg, GLColour.rgba(GLColour.withAlpha(hoverColor, 0.3f), color));
-                        nvgFill(nvg);
-                    }
-
-                    // Draw item text
-                    float[] itemTextColor = item.enabled ? textColor : disabledColor;
-                    nvgFillColor(nvg, GLColour.rgba(itemTextColor, color));
-                    nvgText(nvg, x + ITEM_PADDING, itemY + ITEM_HEIGHT / 2.0f, item.label);
-
-                    itemY += ITEM_HEIGHT;
+            if (item.isSeparator) {
+                // Draw separator line
+                renderer.drawLine(x + ITEM_PADDING, itemY + SEPARATOR_HEIGHT / 2.0f,
+                        x + width - ITEM_PADDING, itemY + SEPARATOR_HEIGHT / 2.0f, borderColor, 1.0f);
+                itemY += SEPARATOR_HEIGHT;
+            } else {
+                // Draw hover highlight
+                if (i == hoveredIndex && item.enabled) {
+                    renderer.fillRoundedRect(x + 2, itemY, width - 4, ITEM_HEIGHT, 2,
+                            GLColour.withAlpha(hoverColor, 0.3f));
                 }
+
+                // Draw item text
+                float[] itemTextColor = item.enabled ? textColor : disabledColor;
+                renderer.drawText(x + ITEM_PADDING, itemY + ITEM_HEIGHT / 2.0f, item.label, itemTextColor,
+                        Renderer.ALIGN_LEFT | Renderer.ALIGN_MIDDLE);
+
+                itemY += ITEM_HEIGHT;
             }
         }
     }
@@ -206,7 +184,7 @@ public class GLContextMenu extends AbstractWindowComponent implements ContextMen
 
         // Click outside menu hides it
         if (!contains(mx, my)) {
-            if (action == 1) { // Press
+            if (InputConstants.isPress(action)) {
                 hide();
                 return true;
             }
@@ -214,7 +192,7 @@ public class GLContextMenu extends AbstractWindowComponent implements ContextMen
         }
 
         // Left click release triggers action
-        if (button == 0 && action == 0) {
+        if (InputConstants.isLeftButton(button) && InputConstants.isRelease(action)) {
             int clickedIndex = getItemIndexAt(my);
             if (clickedIndex >= 0 && clickedIndex < items.size()) {
                 MenuItemImpl item = items.get(clickedIndex);

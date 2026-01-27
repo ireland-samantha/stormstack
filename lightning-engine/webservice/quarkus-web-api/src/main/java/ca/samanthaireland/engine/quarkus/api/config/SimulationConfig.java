@@ -126,6 +126,9 @@ public class SimulationConfig {
     @ConfigProperty(name = "auth.jwt.secret", defaultValue = "")
     String jwtSecret;
 
+    @ConfigProperty(name = "admin.initial.password", defaultValue = "")
+    String adminInitialPassword;
+
     // ---------- Core infrastructure ----------
 
     @Produces
@@ -371,6 +374,10 @@ public class SimulationConfig {
                                         UserRepository userRepository,
                                         RoleRepository roleRepository,
                                         AuthService authService) {
+        // Set system property from Quarkus config so AuthBootstrap.resolveAdminPassword() can find it
+        if (adminInitialPassword != null && !adminInitialPassword.isBlank()) {
+            System.setProperty("admin.initial.password", adminInitialPassword);
+        }
         AuthBootstrap bootstrap = new AuthBootstrap(
                 userService, roleService, passwordService,
                 userRepository, roleRepository, authService);

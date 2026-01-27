@@ -1,15 +1,20 @@
 package ca.samanthaireland.engine.ext.modules.domain.repository;
 
 import ca.samanthaireland.engine.ext.modules.domain.RigidBody;
-import ca.samanthaireland.engine.ext.modules.domain.Vector3;
 
 import java.util.Optional;
 import java.util.Set;
 
 /**
  * Repository interface for RigidBody entities.
+ *
+ * <p>This interface combines CRUD operations with physics update operations
+ * for backwards compatibility. For new code that only needs physics updates,
+ * prefer using {@link RigidBodyPhysicsUpdater}.
+ *
+ * @see RigidBodyPhysicsUpdater
  */
-public interface RigidBodyRepository {
+public interface RigidBodyRepository extends RigidBodyPhysicsUpdater {
 
     /**
      * Save a rigid body's state to the ECS store.
@@ -47,46 +52,4 @@ public interface RigidBodyRepository {
      * @param entityId the entity ID
      */
     void delete(long entityId);
-
-    /**
-     * Update the position of a rigid body.
-     *
-     * @param entityId the entity ID
-     * @param position the new position
-     */
-    void updatePosition(long entityId, Vector3 position);
-
-    /**
-     * Update the velocity of a rigid body.
-     *
-     * @param entityId the entity ID
-     * @param velocity the new velocity
-     */
-    void updateVelocity(long entityId, Vector3 velocity);
-
-    /**
-     * Update the force accumulator of a rigid body.
-     *
-     * @param entityId the entity ID
-     * @param force the new force
-     */
-    void updateForce(long entityId, Vector3 force);
-
-    /**
-     * Update the acceleration of a rigid body.
-     *
-     * @param entityId the entity ID
-     * @param acceleration the new acceleration
-     */
-    void updateAcceleration(long entityId, Vector3 acceleration);
-
-    /**
-     * Update angular properties of a rigid body.
-     *
-     * @param entityId the entity ID
-     * @param angularVelocity the new angular velocity
-     * @param rotation the new rotation
-     * @param torque the new torque
-     */
-    void updateAngular(long entityId, float angularVelocity, float rotation, float torque);
 }

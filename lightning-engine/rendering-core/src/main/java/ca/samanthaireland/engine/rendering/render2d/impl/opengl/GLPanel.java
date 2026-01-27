@@ -24,15 +24,14 @@
 package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
 import ca.samanthaireland.engine.rendering.render2d.Panel;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import ca.samanthaireland.engine.rendering.render2d.WindowComponent;
 import lombok.extern.slf4j.Slf4j;
-import org.lwjgl.nanovg.NVGColor;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.lwjgl.nanovg.NanoVG.*;
 
 /**
  * A container panel that can hold child components.
@@ -229,76 +228,59 @@ public class GLPanel extends AbstractWindowComponent implements Panel {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         if (!visible) {
             return;
         }
 
-        try (var color = NVGColor.malloc()) {
-            // Draw background
-            nvgBeginPath(nvg);
-            nvgRoundedRect(nvg, x, y, width, height, cornerRadius);
-            nvgFillColor(nvg, GLColour.rgba(backgroundColor, color));
-            nvgFill(nvg);
+        // Draw background
+        renderer.fillRoundedRect(x, y, width, height, cornerRadius, backgroundColor);
 
-            // Draw border
-            if (borderWidth > 0) {
-                nvgStrokeColor(nvg, GLColour.rgba(borderColor, color));
-                nvgStrokeWidth(nvg, borderWidth);
-                nvgStroke(nvg);
-            }
+        // Draw border
+        if (borderWidth > 0) {
+            renderer.strokeRoundedRect(x, y, width, height, cornerRadius, borderColor, borderWidth);
+        }
 
-            // Draw title if set
-            int contentOffsetY = 0;
-            if (title != null && !title.isEmpty()) {
-                int effectiveFontId = titleFontId >= 0 ? titleFontId : GLContext.getDefaultFontId();
-                if (effectiveFontId >= 0) {
-                    nvgFontFaceId(nvg, effectiveFontId);
-                }
-                nvgFontSize(nvg, titleFontSize);
-                nvgTextAlign(nvg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
-                nvgFillColor(nvg, GLColour.rgba(GLColour.TEXT_PRIMARY, color));
-                nvgText(nvg, x + 8, y + 6, title);
+        // Draw title if set
+        int contentOffsetY = 0;
+        if (title != null && !title.isEmpty()) {
+            renderer.setFont(titleFontId, titleFontSize);
+            renderer.drawText(x + 8, y + 6, title, GLColour.TEXT_PRIMARY,
+                    Renderer.ALIGN_LEFT | Renderer.ALIGN_TOP);
 
-                // Draw separator line
-                contentOffsetY = (int) (titleFontSize + 12);
-                nvgBeginPath(nvg);
-                nvgMoveTo(nvg, x + 1, y + contentOffsetY);
-                nvgLineTo(nvg, x + width - 1, y + contentOffsetY);
-                nvgStrokeColor(nvg, GLColour.rgba(borderColor, color));
-                nvgStrokeWidth(nvg, 1);
-                nvgStroke(nvg);
-            }
+            // Draw separator line
+            contentOffsetY = (int) (titleFontSize + 12);
+            renderer.drawLine(x + 1, y + contentOffsetY, x + width - 1, y + contentOffsetY, borderColor, 1);
+        }
 
-            // Calculate viewport dimensions (accounting for scrollbars)
-            int viewportWidth = width - 2 - (scrollableY ? SCROLLBAR_WIDTH : 0);
-            int viewportHeight = height - contentOffsetY - 2 - (scrollableX ? SCROLLBAR_WIDTH : 0);
+        // Calculate viewport dimensions (accounting for scrollbars)
+        int viewportWidth = width - 2 - (scrollableY ? SCROLLBAR_WIDTH : 0);
+        int viewportHeight = height - contentOffsetY - 2 - (scrollableX ? SCROLLBAR_WIDTH : 0);
 
-            // Render children with scroll offset
-            nvgSave(nvg);
-            nvgIntersectScissor(nvg, x + 1, y + contentOffsetY + 1, viewportWidth, viewportHeight);
-            nvgTranslate(nvg, -scrollX, -scrollY);
+        // Render children with scroll offset
+        renderer.save();
+        renderer.intersectClip(x + 1, y + contentOffsetY + 1, viewportWidth, viewportHeight);
+        renderer.translate(-scrollX, -scrollY);
 
-            for (WindowComponent child : children) {
-                child.render(nvg);
-            }
+        for (WindowComponent child : children) {
+            child.render(renderer);
+        }
 
-            nvgRestore(nvg);
+        renderer.restore();
 
-            // Render scrollbars if needed
-            if (scrollableY) {
-                renderVerticalScrollbar(nvg, contentOffsetY, viewportHeight, color);
-            }
-            if (scrollableX) {
-                renderHorizontalScrollbar(nvg, contentOffsetY, viewportWidth, color);
-            }
+        // Render scrollbars if needed
+        if (scrollableY) {
+            renderVerticalScrollbar(renderer, contentOffsetY, viewportHeight);
+        }
+        if (scrollableX) {
+            renderHorizontalScrollbar(renderer, contentOffsetY, viewportWidth);
         }
     }
 
     /**
      * Render vertical scrollbar.
      */
-    private void renderVerticalScrollbar(long nvg, int contentOffsetY, int viewportHeight, NVGColor color) {
+    private void renderVerticalScrollbar(Renderer renderer, int contentOffsetY, int viewportHeight) {
         int contentHeight = getContentHeight();
         if (contentHeight <= viewportHeight) {
             return; // No scrollbar needed
@@ -309,10 +291,8 @@ public class GLPanel extends AbstractWindowComponent implements Panel {
         int scrollbarHeight = viewportHeight;
 
         // Draw scrollbar track
-        nvgBeginPath(nvg);
-        nvgRoundedRect(nvg, scrollbarX, scrollbarY, SCROLLBAR_WIDTH, scrollbarHeight, 2);
-        nvgFillColor(nvg, GLColour.rgba(GLColour.withAlpha(GLColour.DARK_GRAY, 0.3f), color));
-        nvgFill(nvg);
+        renderer.fillRoundedRect(scrollbarX, scrollbarY, SCROLLBAR_WIDTH, scrollbarHeight, 2,
+                GLColour.withAlpha(GLColour.DARK_GRAY, 0.3f));
 
         // Calculate thumb size and position
         float ratio = (float) viewportHeight / contentHeight;
@@ -322,16 +302,14 @@ public class GLPanel extends AbstractWindowComponent implements Panel {
         int thumbY = scrollbarY + (int) ((scrollbarHeight - thumbHeight) * scrollRatio);
 
         // Draw scrollbar thumb
-        nvgBeginPath(nvg);
-        nvgRoundedRect(nvg, scrollbarX + 1, thumbY, SCROLLBAR_WIDTH - 2, thumbHeight, 2);
-        nvgFillColor(nvg, GLColour.rgba(GLColour.withAlpha(GLColour.TEXT_SECONDARY, 0.6f), color));
-        nvgFill(nvg);
+        renderer.fillRoundedRect(scrollbarX + 1, thumbY, SCROLLBAR_WIDTH - 2, thumbHeight, 2,
+                GLColour.withAlpha(GLColour.TEXT_SECONDARY, 0.6f));
     }
 
     /**
      * Render horizontal scrollbar.
      */
-    private void renderHorizontalScrollbar(long nvg, int contentOffsetY, int viewportWidth, NVGColor color) {
+    private void renderHorizontalScrollbar(Renderer renderer, int contentOffsetY, int viewportWidth) {
         int contentWidth = getContentWidth();
         if (contentWidth <= viewportWidth) {
             return; // No scrollbar needed
@@ -342,10 +320,8 @@ public class GLPanel extends AbstractWindowComponent implements Panel {
         int scrollbarWidth = viewportWidth;
 
         // Draw scrollbar track
-        nvgBeginPath(nvg);
-        nvgRoundedRect(nvg, scrollbarX, scrollbarY, scrollbarWidth, SCROLLBAR_WIDTH, 2);
-        nvgFillColor(nvg, GLColour.rgba(GLColour.withAlpha(GLColour.DARK_GRAY, 0.3f), color));
-        nvgFill(nvg);
+        renderer.fillRoundedRect(scrollbarX, scrollbarY, scrollbarWidth, SCROLLBAR_WIDTH, 2,
+                GLColour.withAlpha(GLColour.DARK_GRAY, 0.3f));
 
         // Calculate thumb size and position
         float ratio = (float) viewportWidth / contentWidth;
@@ -355,10 +331,8 @@ public class GLPanel extends AbstractWindowComponent implements Panel {
         int thumbX = scrollbarX + (int) ((scrollbarWidth - thumbWidth) * scrollRatio);
 
         // Draw scrollbar thumb
-        nvgBeginPath(nvg);
-        nvgRoundedRect(nvg, thumbX, scrollbarY + 1, thumbWidth, SCROLLBAR_WIDTH - 2, 2);
-        nvgFillColor(nvg, GLColour.rgba(GLColour.withAlpha(GLColour.TEXT_SECONDARY, 0.6f), color));
-        nvgFill(nvg);
+        renderer.fillRoundedRect(thumbX, scrollbarY + 1, thumbWidth, SCROLLBAR_WIDTH - 2, 2,
+                GLColour.withAlpha(GLColour.TEXT_SECONDARY, 0.6f));
     }
 
     @Override
@@ -373,7 +347,7 @@ public class GLPanel extends AbstractWindowComponent implements Panel {
 
         // On left-click press, clear focus from all text fields first
         // This ensures only the clicked text field gets focus
-        if (button == 0 && action == 1) {
+        if (InputConstants.isLeftButton(button) && InputConstants.isPress(action)) {
             clearTextFieldFocus();
         }
 

@@ -1038,4 +1038,421 @@ class ContainerResourceTest {
             } catch (Exception ignored) {}
         }
     }
+
+    // =========================================================================
+    // Snapshot Management (ContainerSnapshotResource)
+    // =========================================================================
+
+    @Test
+    @DisplayName("getMatchSnapshot returns snapshot data")
+    void getMatchSnapshot_returnsSnapshot() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/snapshot")
+                .then()
+                .statusCode(200)
+                .body("matchId", is(matchId))
+                .body("tick", notNullValue());
+    }
+
+    @Test
+    @DisplayName("getMatchSnapshot with playerId filter returns filtered snapshot")
+    void getMatchSnapshot_withPlayerFilter() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        // Create player
+        Response playerResponse = jsonRequest()
+                .body("{}")
+                .when().post("/api/containers/" + containerId + "/players")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        long playerId = playerResponse.jsonPath().getLong("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/snapshot?playerId=" + playerId)
+                .then()
+                .statusCode(200)
+                .body("matchId", is(matchId));
+    }
+
+    @Test
+    @DisplayName("getMatchSnapshot returns 404 for non-existent match")
+    void getMatchSnapshot_returns404_forNonExistentMatch() {
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/999999/snapshot")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("recordSnapshot records current state")
+    void recordSnapshot_recordsCurrentState() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        jsonRequest()
+                .when().post("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/record")
+                .then()
+                .statusCode(200)
+                .body("matchId", is(matchId))
+                .body("recorded", is(true))
+                .body("tick", notNullValue());
+    }
+
+    @Test
+    @DisplayName("getSnapshotHistoryInfo returns history info")
+    void getSnapshotHistoryInfo_returnsInfo() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        // Record a snapshot first
+        jsonRequest()
+                .when().post("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/record")
+                .then()
+                .statusCode(200);
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/history-info")
+                .then()
+                .statusCode(200)
+                .body("matchId", is(matchId))
+                .body("snapshotCount", greaterThanOrEqualTo(0))
+                .body("currentTick", notNullValue());
+    }
+
+    @Test
+    @DisplayName("getDeltaSnapshot requires fromTick parameter")
+    void getDeltaSnapshot_requiresFromTick() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/delta")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    @DisplayName("getDeltaSnapshot returns 404 when fromTick not in history")
+    void getDeltaSnapshot_returns404_whenFromTickNotInHistory() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/delta?fromTick=999")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("getDeltaSnapshot computes delta between recorded snapshots")
+    void getDeltaSnapshot_computesDelta() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        // Record snapshot at tick 0
+        jsonRequest()
+                .when().post("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/record")
+                .then()
+                .statusCode(200);
+
+        int recordedTick = given()
+                .when().get("/api/containers/" + containerId + "/tick")
+                .then()
+                .extract().path("tick");
+
+        // Advance tick and record again
+        jsonRequest()
+                .when().post("/api/containers/" + containerId + "/tick")
+                .then()
+                .statusCode(200);
+
+        // Get delta from recorded tick to current
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/delta?fromTick=" + recordedTick)
+                .then()
+                .statusCode(200)
+                .body("matchId", is(matchId))
+                .body("fromTick", is(recordedTick))
+                .body("toTick", notNullValue());
+    }
+
+    @Test
+    @DisplayName("clearSnapshotHistory clears history")
+    void clearSnapshotHistory_clearsHistory() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        // Record a snapshot
+        jsonRequest()
+                .when().post("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/record")
+                .then()
+                .statusCode(200);
+
+        // Clear history
+        jsonRequest()
+                .when().delete("/api/containers/" + containerId + "/matches/" + matchId + "/snapshots/history")
+                .then()
+                .statusCode(200)
+                .body("matchId", is(matchId))
+                .body("cleared", is(true));
+    }
+
+    // =========================================================================
+    // MongoDB History (ContainerHistoryResource) - Persistence Disabled
+    // =========================================================================
+
+    @Test
+    @DisplayName("getHistorySummary returns 503 when persistence disabled")
+    void getHistorySummary_returns503_whenPersistenceDisabled() {
+        given()
+                .when().get("/api/containers/" + containerId + "/history")
+                .then()
+                .statusCode(503);
+    }
+
+    @Test
+    @DisplayName("getMatchHistorySummary returns 503 when persistence disabled")
+    void getMatchHistorySummary_returns503_whenPersistenceDisabled() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/history")
+                .then()
+                .statusCode(503);
+    }
+
+    @Test
+    @DisplayName("getHistorySnapshots returns 503 when persistence disabled")
+    void getHistorySnapshots_returns503_whenPersistenceDisabled() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/history/snapshots")
+                .then()
+                .statusCode(503);
+    }
+
+    @Test
+    @DisplayName("getLatestHistorySnapshots returns 503 when persistence disabled")
+    void getLatestHistorySnapshots_returns503_whenPersistenceDisabled() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/history/snapshots/latest")
+                .then()
+                .statusCode(503);
+    }
+
+    @Test
+    @DisplayName("getHistorySnapshot returns 503 when persistence disabled")
+    void getHistorySnapshot_returns503_whenPersistenceDisabled() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/history/snapshots/0")
+                .then()
+                .statusCode(503);
+    }
+
+    @Test
+    @DisplayName("deleteMatchHistory returns 503 when persistence disabled")
+    void deleteMatchHistory_returns503_whenPersistenceDisabled() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        jsonRequest()
+                .when().delete("/api/containers/" + containerId + "/matches/" + matchId + "/history")
+                .then()
+                .statusCode(503);
+    }
+
+    @Test
+    @DisplayName("deleteOlderHistorySnapshots returns 503 when persistence disabled")
+    void deleteOlderHistorySnapshots_returns503_whenPersistenceDisabled() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        jsonRequest()
+                .when().delete("/api/containers/" + containerId + "/matches/" + matchId + "/history/older-than/100")
+                .then()
+                .statusCode(503);
+    }
+
+    // =========================================================================
+    // Restore (ContainerRestoreResource) - Persistence Disabled
+    // =========================================================================
+
+    @Test
+    @DisplayName("restoreMatch returns 503 when persistence disabled")
+    void restoreMatch_returns503_whenPersistenceDisabled() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        jsonRequest()
+                .when().post("/api/containers/" + containerId + "/matches/" + matchId + "/restore")
+                .then()
+                .statusCode(503);
+    }
+
+    @Test
+    @DisplayName("restoreAllMatches returns 503 when persistence disabled")
+    void restoreAllMatches_returns503_whenPersistenceDisabled() {
+        jsonRequest()
+                .when().post("/api/containers/" + containerId + "/restore/all")
+                .then()
+                .statusCode(503);
+    }
+
+    @Test
+    @DisplayName("canRestoreMatch returns canRestore=false when persistence disabled")
+    void canRestoreMatch_returnsFalse_whenPersistenceDisabled() {
+        // Create match
+        Response matchResponse = jsonRequest()
+                .body("{\"enabledModuleNames\": []}")
+                .when().post("/api/containers/" + containerId + "/matches")
+                .then()
+                .statusCode(201)
+                .extract().response();
+        int matchId = matchResponse.jsonPath().getInt("id");
+
+        given()
+                .when().get("/api/containers/" + containerId + "/matches/" + matchId + "/restore/available")
+                .then()
+                .statusCode(200)
+                .body("matchId", is(matchId))
+                .body("canRestore", is(false));
+    }
+
+    @Test
+    @DisplayName("getRestoreConfig returns persistence and restore status")
+    void getRestoreConfig_returnsConfig() {
+        given()
+                .when().get("/api/containers/" + containerId + "/restore/config")
+                .then()
+                .statusCode(200)
+                .body("persistenceEnabled", notNullValue())
+                .body("restoreEnabled", notNullValue())
+                .body("autoRestoreOnStartup", notNullValue());
+    }
+
+    // =========================================================================
+    // History/Restore 404 Scenarios for non-existent containers
+    // =========================================================================
+
+    @Test
+    @DisplayName("history endpoints return 404 for non-existent container")
+    void history_returns404_forNonExistentContainer() {
+        given()
+                .when().get("/api/containers/999999/history")
+                .then()
+                .statusCode(404);
+    }
+
+    @Test
+    @DisplayName("restore endpoints return 404 for non-existent container")
+    void restore_returns404_forNonExistentContainer() {
+        given()
+                .when().get("/api/containers/999999/restore/config")
+                .then()
+                .statusCode(404);
+    }
 }

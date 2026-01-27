@@ -7,7 +7,7 @@
     <parent>
         <groupId>ca.samanthaireland</groupId>
         <artifactId>backend</artifactId>
-        <version>0.0.2</version>
+        <version>0.0.2-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
@@ -469,7 +469,7 @@
                                         <argument>-f</argument>
                                         <argument>lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt</argument>
                                         <argument>-t</argument>
-                                        <argument>samanthacireland/lightning-engine:0.0.2</argument>
+                                        <argument>samanthacireland/lightning-engine:0.0.2-SNAPSHOT</argument>
                                         <argument>.</argument>
                                     </arguments>
                                 </configuration>

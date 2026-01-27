@@ -1,12 +1,9 @@
 package ca.samanthaireland.engine.ext.modules;
 
 import ca.samanthaireland.engine.core.store.BaseComponent;
-import ca.samanthaireland.engine.core.store.PermissionComponent;
-import ca.samanthaireland.engine.core.store.PermissionLevel;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
-import ca.samanthaireland.engine.util.IdGeneratorV2;
 
 import java.util.List;
 
@@ -29,36 +26,20 @@ import java.util.List;
  *   <li>heal - Restore health to an entity</li>
  *   <li>setInvulnerable - Toggle invulnerability</li>
  * </ul>
+ *
+ * @see HealthComponents for component constants
  */
 public class HealthModuleFactory implements ModuleFactory {
 
-    // Health components
-    public static final BaseComponent CURRENT_HP = new HealthComponent(
-            IdGeneratorV2.newId(), "CURRENT_HP");
-    public static final BaseComponent MAX_HP = new HealthComponent(
-            IdGeneratorV2.newId(), "MAX_HP");
-    public static final BaseComponent DAMAGE_TAKEN = new HealthComponent(
-            IdGeneratorV2.newId(), "DAMAGE_TAKEN");
-    public static final BaseComponent IS_DEAD = new HealthComponent(
-            IdGeneratorV2.newId(), "IS_DEAD");
-    public static final BaseComponent INVULNERABLE = new HealthComponent(
-            IdGeneratorV2.newId(), "INVULNERABLE");
-
-    // Module flag (PRIVATE - only EntityModule with superuser can attach during spawn)
-    public static final BaseComponent FLAG = new PermissionComponent(
-            IdGeneratorV2.newId(), "health", PermissionLevel.PRIVATE);
-
-    /**
-     * Core components for health tracking.
-     */
-    public static final List<BaseComponent> CORE_COMPONENTS = List.of(
-            CURRENT_HP, MAX_HP, DAMAGE_TAKEN, IS_DEAD, INVULNERABLE
-    );
-
-    /**
-     * Components for snapshot export.
-     */
-    public static final List<BaseComponent> ALL_COMPONENTS = CORE_COMPONENTS;
+    // Delegated constants for backwards compatibility
+    public static final BaseComponent CURRENT_HP = HealthComponents.CURRENT_HP;
+    public static final BaseComponent MAX_HP = HealthComponents.MAX_HP;
+    public static final BaseComponent DAMAGE_TAKEN = HealthComponents.DAMAGE_TAKEN;
+    public static final BaseComponent IS_DEAD = HealthComponents.IS_DEAD;
+    public static final BaseComponent INVULNERABLE = HealthComponents.INVULNERABLE;
+    public static final BaseComponent FLAG = HealthComponents.FLAG;
+    public static final List<BaseComponent> CORE_COMPONENTS = HealthComponents.CORE_COMPONENTS;
+    public static final List<BaseComponent> ALL_COMPONENTS = HealthComponents.ALL_COMPONENTS;
 
     @Override
     public EngineModule create(ModuleContext context) {

@@ -25,10 +25,9 @@ package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
 import ca.samanthaireland.engine.rendering.render2d.Button;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import lombok.extern.slf4j.Slf4j;
-import org.lwjgl.nanovg.NVGColor;
-
-import static org.lwjgl.nanovg.NanoVG.*;
 
 /**
  * A clickable button component.
@@ -111,24 +110,27 @@ public class GLButton extends AbstractWindowComponent implements Button {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         if (!visible) {
             return;
         }
 
-        try (var color = NVGColor.malloc()) {
-            // Determine background color based on state
-            float[] bgColor = pressed ? pressedColor : (hovered ? hoverColor : backgroundColor);
+        // Determine background color based on state
+        float[] bgColor = pressed ? pressedColor : (hovered ? hoverColor : backgroundColor);
 
-            // Draw background and border
-            NvgUtils.drawRoundedRect(nvg, x, y, width, height, cornerRadius,
-                    bgColor, borderColor, GuiConstants.BORDER_WIDTH, color);
+        // Draw background (filled rounded rect)
+        renderer.fillRoundedRect(x, y, width, height, cornerRadius, bgColor);
 
-            // Draw text centered
-            if (text != null && !text.isEmpty()) {
-                NvgUtils.drawText(nvg, x + width / 2.0f, y + height / 2.0f, text, textColor,
-                        fontId, fontSize, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE, color);
-            }
+        // Draw border
+        if (GuiConstants.BORDER_WIDTH > 0) {
+            renderer.strokeRoundedRect(x, y, width, height, cornerRadius, borderColor, GuiConstants.BORDER_WIDTH);
+        }
+
+        // Draw text centered
+        if (text != null && !text.isEmpty()) {
+            renderer.setFont(fontId, fontSize);
+            renderer.drawText(x + width / 2.0f, y + height / 2.0f, text, textColor,
+                    Renderer.ALIGN_CENTER | Renderer.ALIGN_MIDDLE);
         }
     }
 
@@ -141,11 +143,11 @@ public class GLButton extends AbstractWindowComponent implements Button {
         boolean wasPressed = pressed;
 
         if (contains(mx, my)) {
-            if (button == 0) { // Left mouse button
-                if (action == 1) { // Press
+            if (InputConstants.isLeftButton(button)) {
+                if (InputConstants.isPress(action)) {
                     pressed = true;
                     return true;
-                } else if (action == 0) { // Release
+                } else if (InputConstants.isRelease(action)) {
                     if (pressed && onClick != null) {
                         onClick.run();
                     }

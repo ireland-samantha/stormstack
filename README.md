@@ -102,14 +102,9 @@ In all seriousness, please see: [why?](docs/why.md)
 
 ---
 
-## 🏁 Quick Start (Docker)
+## 🏁 Quick Start
 
-### Prerequisites
-- Docker
-
-### Option 1: Run Standalone (No Persistence)
-
-The simplest way to try Lightning Engine - runs the server without MongoDB:
+### Option 1: Docker (Fastest)
 
 ```bash
 docker run -d \
@@ -117,21 +112,30 @@ docker run -d \
   -p 8080:8080 \
   -e ADMIN_INITIAL_PASSWORD=your-secure-password \
   -e AUTH_JWT_SECRET=your-jwt-secret-at-least-32-chars \
-  samanthacireland/lightning-engine:0.0.2
+  samanthacireland/lightning-engine:latest
 ```
 
-### Option 2: Run with Docker Compose (Recommended)
+### Option 2: Docker Compose (Recommended)
 
 Includes MongoDB for snapshot persistence:
 
 ```bash
-# Clone the repo for docker-compose.yml (or download just the file)
 git clone https://github.com/ireland-samantha/lightning-engine.git
 cd lightning-engine
 
-# Set admin password and start
 export ADMIN_INITIAL_PASSWORD=your-secure-password
 docker compose up -d
+```
+
+### Option 3: Build from Source
+
+```bash
+git clone https://github.com/ireland-samantha/lightning-engine.git
+cd lightning-engine
+
+./build.sh build            # Build all modules
+./build.sh docker           # Build Docker image
+./build.sh integration-test # Run integration tests
 ```
 
 This starts:
@@ -171,21 +175,33 @@ http://localhost:8080/admin/dashboard
 - Docker (for running integration tests)
 
 ### Build from Source
-First, take a deep breathe. 
+First, take a deep breath.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/lightning-engine.git
+git clone https://github.com/ireland-samantha/lightning-engine.git
 cd lightning-engine
+```
 
+Use the `build.sh` script for common tasks:
+
+```bash
+./build.sh clean            # Clean build artifacts
+./build.sh build            # Build all modules (skip tests)
+./build.sh test             # Run unit tests
+./build.sh docker           # Build Docker image
+./build.sh integration-test # Build Docker + run integration tests
+./build.sh all              # Full pipeline: clean → build → test → integration-test
+```
+
+Or use Maven directly:
+
+```bash
 # Build all modules (skip tests for faster initial build)
 mvn clean install -DskipTests
 
-# Or build with tests
+# Build with tests
 mvn clean install
-
-# Build Docker image
-mvn clean install -Pdocker -DskipTests
 ```
 
 ### Run MongoDB
@@ -223,14 +239,14 @@ The frontend dev server runs at `http://localhost:5173` and proxies API requests
 
 ```bash
 # Run unit tests
-mvn test
+./build.sh test
 
 # Run integration tests (requires Docker)
-mvn verify -Pintegration-tests
+./build.sh integration-test
 
-# Run Playwright E2E tests
-cd lightning-engine/webservice/playwright-test
-mvn test
+# Or use Maven directly
+mvn test                                    # Unit tests
+mvn verify -Pacceptance-tests               # Integration tests
 ```
 
 ### IDE Setup

@@ -25,6 +25,7 @@ package ca.samanthaireland.engine.rendering.testing.headless;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
 import ca.samanthaireland.engine.rendering.render2d.Label;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 
 /**
  * Mock Label implementation for headless testing.
@@ -88,7 +89,7 @@ public class MockLabel extends AbstractWindowComponent implements Label {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         // No rendering in headless mode
     }
 }

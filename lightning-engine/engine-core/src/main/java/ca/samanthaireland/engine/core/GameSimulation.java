@@ -32,34 +32,18 @@ import ca.samanthaireland.engine.ext.module.ModuleFactory;
 import java.util.List;
 import java.util.Optional;
 
-public interface GameSimulation {
-    long advanceTick();
-
-    long getCurrentTick();
-
-    /**
-     * Start auto-advancing ticks at the specified interval.
-     *
-     * @param intervalMs the interval between ticks in milliseconds
-     */
-    void startAutoAdvance(long intervalMs);
-
-    /**
-     * Stop auto-advancing ticks.
-     */
-    void stopAutoAdvance();
-
-    /**
-     * Check if auto-advance is currently running.
-     *
-     * @return true if auto-advancing, false otherwise
-     */
-    boolean isAutoAdvancing();
-    void installModule(String jarPath);
-    void installModule(Class<? extends ModuleFactory> factoryClass);
-
-    // Command operations
-    void enqueueCommand(String commandName, CommandPayload payload);
+/**
+ * Main simulation interface combining tick control, module installation,
+ * command dispatch, and match/player/session management.
+ *
+ * <p>Extends focused interfaces for clients that only need specific capabilities:
+ * <ul>
+ *   <li>{@link TickController} - tick advancement and auto-play</li>
+ *   <li>{@link ModuleInstaller} - module installation</li>
+ *   <li>{@link CommandDispatcher} - command enqueueing</li>
+ * </ul>
+ */
+public interface GameSimulation extends TickController, ModuleInstaller, CommandDispatcher {
 
     // Match operations
     Match createMatch(Match match);

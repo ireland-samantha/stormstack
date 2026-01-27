@@ -25,6 +25,7 @@ package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
 import ca.samanthaireland.engine.rendering.render2d.Image;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import lombok.extern.slf4j.Slf4j;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.nanovg.NVGPaint;
@@ -238,9 +239,26 @@ public class GLImage extends AbstractWindowComponent implements Image {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         if (!visible) {
             log.trace("GLImage.render() - not visible, skipping");
+            return;
+        }
+
+        // Image rendering requires NanoVG-specific features (image patterns)
+        // Get the NanoVG context from the renderer
+        long nvg = 0;
+        if (renderer instanceof NanoVGRenderer nanoVGRenderer) {
+            nvg = nanoVGRenderer.getNvg();
+        }
+
+        if (nvg == 0) {
+            // Fallback: draw placeholder using Renderer interface
+            renderer.strokeRoundedRect(x, y, width, height, 4, borderColor, 1.0f);
+            renderer.fillRoundedRect(x, y, width, height, 4, GLColour.DARK_GRAY);
+            renderer.setFont(-1, 12.0f);
+            renderer.drawText(x + width / 2.0f, y + height / 2.0f, "No Image",
+                    GLColour.TEXT_SECONDARY, Renderer.ALIGN_CENTER | Renderer.ALIGN_MIDDLE);
             return;
         }
 
@@ -266,12 +284,8 @@ public class GLImage extends AbstractWindowComponent implements Image {
             log.debug("GLImage.render() - drawing at ({}, {}) size {}x{}, imageHandle: {}",
                 x, y, width, height, imageHandle);
 
-            // Draw border/background
-            nvgBeginPath(nvg);
-            nvgRoundedRect(nvg, x, y, width, height, 4);
-            nvgStrokeColor(nvg, GLColour.rgba(borderColor, color));
-            nvgStrokeWidth(nvg, 1.0f);
-            nvgStroke(nvg);
+            // Draw border
+            renderer.strokeRoundedRect(x, y, width, height, 4, borderColor, 1.0f);
 
             if (imageHandle > 0) {
                 // Calculate rendering area maintaining aspect ratio if needed
@@ -295,28 +309,20 @@ public class GLImage extends AbstractWindowComponent implements Image {
                     }
                 }
 
-                // Create image pattern
+                // Create image pattern (NanoVG-specific)
                 nvgImagePattern(nvg, drawX, drawY, drawWidth, drawHeight, 0, imageHandle, 1.0f, paint);
 
-                // Draw image
+                // Draw image (NanoVG-specific)
                 nvgBeginPath(nvg);
                 nvgRoundedRect(nvg, drawX, drawY, drawWidth, drawHeight, 2);
                 nvgFillPaint(nvg, paint);
                 nvgFill(nvg);
             } else {
                 // No image - draw placeholder
-                nvgFillColor(nvg, GLColour.rgba(GLColour.DARK_GRAY, color));
-                nvgFill(nvg);
-
-                // Draw "No Image" text
-                int fontId = GLContext.getDefaultFontId();
-                if (fontId >= 0) {
-                    nvgFontFaceId(nvg, fontId);
-                    nvgFontSize(nvg, 12.0f);
-                    nvgTextAlign(nvg, NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE);
-                    nvgFillColor(nvg, GLColour.rgba(GLColour.TEXT_SECONDARY, color));
-                    nvgText(nvg, x + width / 2.0f, y + height / 2.0f, "No Image");
-                }
+                renderer.fillRoundedRect(x, y, width, height, 4, GLColour.DARK_GRAY);
+                renderer.setFont(-1, 12.0f);
+                renderer.drawText(x + width / 2.0f, y + height / 2.0f, "No Image",
+                        GLColour.TEXT_SECONDARY, Renderer.ALIGN_CENTER | Renderer.ALIGN_MIDDLE);
             }
         }
     }

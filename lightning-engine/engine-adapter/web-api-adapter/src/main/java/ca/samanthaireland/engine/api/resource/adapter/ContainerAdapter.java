@@ -45,8 +45,21 @@ import java.util.Optional;
  *
  * <p>Containers provide isolated execution environments for matches.
  * Each container has its own modules, AI, resources, and simulation tick.
+ *
+ * <p>This interface extends focused interfaces for backwards compatibility.
+ * New code can use the focused interfaces directly:
+ * <ul>
+ *   <li>{@link ContainerLifecycleAdapter} - container CRUD and lifecycle</li>
+ *   <li>{@link MatchAdapter} - match CRUD (via ContainerScope)</li>
+ *   <li>{@link SimulationAdapter} - tick control (via ContainerScope)</li>
+ *   <li>{@link SnapshotAdapter} - snapshot retrieval (via ContainerScope)</li>
+ *   <li>{@link ResourceAdapter} - resource management (via ContainerScope)</li>
+ *   <li>{@link PlayerAdapter} - player CRUD (via ContainerScope)</li>
+ *   <li>{@link SessionAdapter} - session management (via ContainerScope)</li>
+ *   <li>{@link HistoryAdapter} - history retrieval (via ContainerScope)</li>
+ * </ul>
  */
-public interface ContainerAdapter {
+public interface ContainerAdapter extends ContainerLifecycleAdapter {
 
     /**
      * Create a new container.
@@ -142,8 +155,11 @@ public interface ContainerAdapter {
 
     /**
      * Scoped operations for a specific container.
+     *
+     * <p>Extends focused interfaces for backwards compatibility.
      */
-    interface ContainerScope {
+    interface ContainerScope extends MatchAdapter, SimulationAdapter, SnapshotAdapter,
+            ResourceAdapter, PlayerAdapter, SessionAdapter, HistoryAdapter {
         /**
          * Create a match in this container.
          */

@@ -25,6 +25,8 @@ package ca.samanthaireland.engine.rendering.testing.headless;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
 import ca.samanthaireland.engine.rendering.render2d.Button;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 
 /**
  * Mock Button implementation for headless testing.
@@ -99,7 +101,7 @@ public class MockButton extends AbstractWindowComponent implements Button {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         // No rendering in headless mode
     }
 
@@ -112,11 +114,11 @@ public class MockButton extends AbstractWindowComponent implements Button {
         boolean wasPressed = pressed;
 
         if (contains(mx, my)) {
-            if (button == 0) { // Left mouse button
-                if (action == 1) { // Press
+            if (InputConstants.isLeftButton(button)) {
+                if (InputConstants.isPress(action)) {
                     pressed = true;
                     return true;
-                } else if (action == 0) { // Release
+                } else if (InputConstants.isRelease(action)) {
                     if (pressed && onClick != null) {
                         onClick.run();
                     }

@@ -24,16 +24,15 @@
 package ca.samanthaireland.engine.rendering.render2d.impl.opengl;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
+import ca.samanthaireland.engine.rendering.render2d.InputConstants;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 import ca.samanthaireland.engine.rendering.render2d.TreeNode;
 import ca.samanthaireland.engine.rendering.render2d.TreeView;
 import lombok.extern.slf4j.Slf4j;
-import org.lwjgl.nanovg.NVGColor;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-
-import static org.lwjgl.nanovg.NanoVG.*;
 
 /**
  * A tree view component for hierarchical data display.
@@ -176,7 +175,7 @@ public class GLTreeView extends AbstractWindowComponent implements TreeView {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         if (!visible) {
             return;
         }
@@ -184,67 +183,56 @@ public class GLTreeView extends AbstractWindowComponent implements TreeView {
         // Log tree structure once after rebuild
         if (!debugLogged && !rootNodes.isEmpty()) {
             debugLogged = true;
-            int effectiveFontId = fontId >= 0 ? fontId : GLContext.getDefaultFontId();
-            log.info("TreeView rendering: {} root nodes, fontId={}, effectiveFontId={}, fontSize={}",
-                rootNodes.size(), fontId, effectiveFontId, fontSize);
+            log.info("TreeView rendering: {} root nodes, fontId={}, fontSize={}",
+                rootNodes.size(), fontId, fontSize);
             logTreeStructure(rootNodes.get(0), 0);
         }
 
-        try (var color = NVGColor.malloc()) {
-            // Draw background
-            nvgBeginPath(nvg);
-            nvgRect(nvg, x, y, width, height);
-            nvgFillColor(nvg, GLColour.rgba(backgroundColor, color));
-            nvgFill(nvg);
+        // Draw background
+        renderer.fillRect(x, y, width, height, backgroundColor);
 
-            // Draw border
-            nvgStrokeColor(nvg, GLColour.rgba(borderColor, color));
-            nvgStrokeWidth(nvg, 1.0f);
-            nvgStroke(nvg);
+        // Draw border
+        renderer.strokeRect(x, y, width, height, borderColor, 1.0f);
 
-            // Calculate total height and visible area
-            float totalHeight = calculateTotalHeight();
-            float maxScroll = Math.max(0, totalHeight - height);
-            scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
+        // Calculate total height and visible area
+        float totalHeight = calculateTotalHeight();
+        float maxScroll = Math.max(0, totalHeight - height);
+        scrollOffset = Math.max(0, Math.min(scrollOffset, maxScroll));
 
-            int scrollbarWidth = needsScrollbar(totalHeight) ? 10 : 0;
-            int contentWidth = width - scrollbarWidth - 2;
+        int scrollbarWidth = needsScrollbar(totalHeight) ? 10 : 0;
+        int contentWidth = width - scrollbarWidth - 2;
 
-            // Clip content area
-            nvgSave(nvg);
-            nvgIntersectScissor(nvg, x + 1, y + 1, contentWidth, height - 2);
+        // Clip content area
+        renderer.save();
+        renderer.intersectClip(x + 1, y + 1, contentWidth, height - 2);
 
-            // Render nodes
-            float currentY = y - scrollOffset;
-            for (TreeNode node : rootNodes) {
-                currentY = renderNode(nvg, node, 0, currentY, contentWidth, color);
-            }
+        // Setup font for rendering
+        renderer.setFont(fontId, fontSize);
 
-            nvgRestore(nvg);
+        // Render nodes
+        float currentY = y - scrollOffset;
+        for (TreeNode node : rootNodes) {
+            currentY = renderNode(renderer, node, 0, currentY, contentWidth);
+        }
 
-            // Draw scrollbar if needed
-            if (needsScrollbar(totalHeight)) {
-                float scrollbarX = x + width - scrollbarWidth - 1;
-                float scrollbarHeight = height - 2;
-                float thumbHeight = Math.max(20, (height / totalHeight) * scrollbarHeight);
-                float thumbY = y + 1 + (scrollOffset / maxScroll) * (scrollbarHeight - thumbHeight);
+        renderer.restore();
 
-                // Draw scrollbar track
-                nvgBeginPath(nvg);
-                nvgRect(nvg, scrollbarX, y + 1, scrollbarWidth, scrollbarHeight);
-                nvgFillColor(nvg, GLColour.rgba(scrollbarTrackColor, color));
-                nvgFill(nvg);
+        // Draw scrollbar if needed
+        if (needsScrollbar(totalHeight)) {
+            float scrollbarX = x + width - scrollbarWidth - 1;
+            float scrollbarHeight = height - 2;
+            float thumbHeight = Math.max(20, (height / totalHeight) * scrollbarHeight);
+            float thumbY = y + 1 + (scrollOffset / maxScroll) * (scrollbarHeight - thumbHeight);
 
-                // Draw scrollbar thumb
-                nvgBeginPath(nvg);
-                nvgRoundedRect(nvg, scrollbarX + 2, thumbY, scrollbarWidth - 4, thumbHeight, 3);
-                nvgFillColor(nvg, GLColour.rgba(scrollbarColor, color));
-                nvgFill(nvg);
-            }
+            // Draw scrollbar track
+            renderer.fillRect(scrollbarX, y + 1, scrollbarWidth, scrollbarHeight, scrollbarTrackColor);
+
+            // Draw scrollbar thumb
+            renderer.fillRoundedRect(scrollbarX + 2, thumbY, scrollbarWidth - 4, thumbHeight, 3, scrollbarColor);
         }
     }
 
-    private float renderNode(long nvg, TreeNode node, int depth, float currentY, int contentWidth, NVGColor color) {
+    private float renderNode(Renderer renderer, TreeNode node, int depth, float currentY, int contentWidth) {
         if (currentY + itemHeight < y || currentY > y + height) {
             // Skip rendering nodes outside visible area
             currentY += itemHeight;
@@ -260,10 +248,7 @@ public class GLTreeView extends AbstractWindowComponent implements TreeView {
             }
 
             if (bgColor != null) {
-                nvgBeginPath(nvg);
-                nvgRect(nvg, x + 1, currentY, contentWidth, itemHeight);
-                nvgFillColor(nvg, GLColour.rgba(bgColor, color));
-                nvgFill(nvg);
+                renderer.fillRect(x + 1, currentY, contentWidth, itemHeight, bgColor);
             }
 
             // Draw expand/collapse icon if node has children
@@ -271,48 +256,21 @@ public class GLTreeView extends AbstractWindowComponent implements TreeView {
                 float iconX = x + indent;
                 float iconY = currentY + itemHeight / 2;
 
-                nvgBeginPath(nvg);
-                nvgFillColor(nvg, GLColour.rgba(expandIconColor, color));
-
                 if (node.isExpanded()) {
                     // Down arrow for expanded
-                    nvgMoveTo(nvg, iconX, iconY - 3);
-                    nvgLineTo(nvg, iconX + 8, iconY - 3);
-                    nvgLineTo(nvg, iconX + 4, iconY + 3);
+                    renderer.fillTriangle(iconX, iconY - 3, iconX + 8, iconY - 3, iconX + 4, iconY + 3, expandIconColor);
                 } else {
                     // Right arrow for collapsed
-                    nvgMoveTo(nvg, iconX, iconY - 4);
-                    nvgLineTo(nvg, iconX + 6, iconY);
-                    nvgLineTo(nvg, iconX, iconY + 4);
+                    renderer.fillTriangle(iconX, iconY - 4, iconX + 6, iconY, iconX, iconY + 4, expandIconColor);
                 }
-                nvgFill(nvg);
             }
 
             // Draw text - use getLabel() for interface compatibility
             String label = node.getLabel();
             float textX = x + indent + (node.getChildren().isEmpty() ? 4 : 14);
-            int effectiveFontId = fontId >= 0 ? fontId : GLContext.getDefaultFontId();
 
-            // Log font and label info for debugging (only for first few nodes)
-            if (!debugLogged && depth <= 2) {
-                log.debug("Rendering label '{}' at ({}, {}), fontId={}, fontSize={}, textColor=[{},{},{},{}]",
-                    label, textX, currentY + itemHeight / 2, effectiveFontId, fontSize,
-                    textColor[0], textColor[1], textColor[2], textColor[3]);
-            }
-
-            if (effectiveFontId >= 0) {
-                nvgFontFaceId(nvg, effectiveFontId);
-            } else {
-                // Warn if no font is available
-                if (!debugLogged) {
-                    log.warn("No font available for rendering! fontId={}, GLContext.getDefaultFontId()={}",
-                        fontId, GLContext.getDefaultFontId());
-                }
-            }
-            nvgFontSize(nvg, fontSize);
-            nvgTextAlign(nvg, NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-            nvgFillColor(nvg, GLColour.rgba(textColor, color));
-            nvgText(nvg, textX, currentY + itemHeight / 2, label != null ? label : "(null)");
+            renderer.drawText(textX, currentY + itemHeight / 2, label != null ? label : "(null)", textColor,
+                    Renderer.ALIGN_LEFT | Renderer.ALIGN_MIDDLE);
 
             currentY += itemHeight;
         }
@@ -320,7 +278,7 @@ public class GLTreeView extends AbstractWindowComponent implements TreeView {
         // Render children if expanded
         if (node.isExpanded()) {
             for (TreeNode child : node.getChildren()) {
-                currentY = renderNode(nvg, child, depth + 1, currentY, contentWidth, color);
+                currentY = renderNode(renderer, child, depth + 1, currentY, contentWidth);
             }
         }
 
@@ -355,7 +313,7 @@ public class GLTreeView extends AbstractWindowComponent implements TreeView {
             return false;
         }
 
-        if (button == 0 && action == 1) {
+        if (InputConstants.isLeftButton(button) && InputConstants.isPress(action)) {
             float totalHeight = calculateTotalHeight();
             int scrollbarWidth = needsScrollbar(totalHeight) ? 10 : 0;
 

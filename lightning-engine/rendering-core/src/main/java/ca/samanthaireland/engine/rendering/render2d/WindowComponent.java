@@ -82,24 +82,10 @@ public interface WindowComponent {
 
     /**
      * Render the component using the abstract Renderer interface.
-     * This is the preferred method for new components.
      *
      * @param renderer the renderer to use for drawing
      */
-    default void render(Renderer renderer) {
-        // Default implementation: no-op
-        // Subclasses should override this method
-    }
-
-    /**
-     * Render the component using NanoVG context.
-     *
-     * @param nvg the NanoVG context handle
-     * @deprecated Use {@link #render(Renderer)} instead for backend-agnostic rendering.
-     *             This method will be removed in a future release.
-     */
-    @Deprecated
-    void render(long nvg);
+    void render(Renderer renderer);
 
     /**
      * Check if a point is within this component's bounds.

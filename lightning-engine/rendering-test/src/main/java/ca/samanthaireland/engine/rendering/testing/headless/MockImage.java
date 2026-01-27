@@ -25,6 +25,7 @@ package ca.samanthaireland.engine.rendering.testing.headless;
 
 import ca.samanthaireland.engine.rendering.render2d.AbstractWindowComponent;
 import ca.samanthaireland.engine.rendering.render2d.Image;
+import ca.samanthaireland.engine.rendering.render2d.Renderer;
 
 /**
  * Mock Image implementation for headless testing.
@@ -92,7 +93,7 @@ public class MockImage extends AbstractWindowComponent implements Image {
     }
 
     @Override
-    public void render(long nvg) {
+    public void render(Renderer renderer) {
         // No rendering in headless mode
     }
 

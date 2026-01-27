@@ -26,7 +26,7 @@ jobs:
           python-version: '3.x'
 
       - name: Generate JWT keys
-        run: python gen_secrets.py
+        run: ./build.sh secrets
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -35,13 +35,8 @@ jobs:
           cache: 'npm'
           cache-dependency-path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/package-lock.json
 
-      - name: Install frontend dependencies
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        run: npm ci
-
       - name: Run frontend tests with coverage
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        run: npm run test:coverage
+        run: ./build.sh frontend-test
 
       - name: Upload frontend coverage report
         uses: actions/upload-artifact@v4
@@ -50,8 +45,8 @@ jobs:
           path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/coverage
           retention-days: 14
 
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml
+      - name: Build and test
+        run: ./build.sh test
 
 #  playwright-tests:
 #    runs-on: ubuntu-22.04
@@ -135,7 +130,7 @@ jobs:
           python-version: '3.x'
 
       - name: Generate JWT keys
-        run: python gen_secrets.py
+        run: ./build.sh secrets
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -144,22 +139,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: lightning-engine/webservice/quarkus-web-api/src/main/frontend/package-lock.json
 
-      - name: Install frontend dependencies
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        run: npm ci
-
       - name: Build frontend
-        working-directory: lightning-engine/webservice/quarkus-web-api/src/main/frontend
-        run: npm run build
+        run: ./build.sh frontend
 
       - name: Build and install all modules
-        run: mvn clean install -DskipTests
+        run: ./build.sh build
 
-      - name: Build Docker image
-        run: docker build -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt -t samanthacireland/lightning-engine:0.0.2 .
-
-      - name: Run API integration tests
-        run: mvn -B verify -Pacceptance-tests -pl lightning-engine/api-acceptance-test
+      - name: Build Docker image and run integration tests
+        run: ./build.sh integration-test
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
