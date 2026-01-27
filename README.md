@@ -2,6 +2,7 @@
 ![Status](https://img.shields.io/badge/status-pre--alpha-orange)
 ![Java](https://img.shields.io/badge/java-25-blue)
 ![License](https://img.shields.io/github/license/ireland-samantha/lightning-engine)
+![Build](https://github.com/ireland-samantha/lightning-engine/actions/workflows/maven.yml/badge.svg)
 
 ## What is this?
 Lightning Engine is an open-source, unapologetically Java multiplayer server and backend game development framework.
