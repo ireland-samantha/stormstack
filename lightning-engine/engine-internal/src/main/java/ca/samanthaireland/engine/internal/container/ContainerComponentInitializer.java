@@ -36,9 +36,12 @@ import ca.samanthaireland.engine.internal.core.command.CommandExecutorFromResolv
 import ca.samanthaireland.engine.internal.core.match.InMemoryMatchRepository;
 import ca.samanthaireland.engine.internal.core.match.InMemoryMatchService;
 import ca.samanthaireland.engine.internal.core.resource.OnDiskResourceManager;
+import ca.samanthaireland.engine.internal.core.snapshot.CachingSnapshotProvider;
+import ca.samanthaireland.engine.internal.core.snapshot.DeltaSnapshotProvider;
 import ca.samanthaireland.engine.internal.core.snapshot.SnapshotProvider;
 import ca.samanthaireland.engine.internal.core.snapshot.SnapshotProviderImpl;
 import ca.samanthaireland.engine.internal.core.store.ArrayEntityComponentStore;
+import ca.samanthaireland.engine.internal.core.store.DirtyTrackingEntityComponentStore;
 import ca.samanthaireland.engine.internal.core.store.EcsProperties;
 import ca.samanthaireland.engine.internal.core.store.LockingEntityComponentStore;
 import ca.samanthaireland.engine.internal.core.store.SimplePermissionRegistry;
@@ -53,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.function.Supplier;
 
 /**
  * Handles initialization of all container components.
@@ -67,10 +71,12 @@ public class ContainerComponentInitializer {
 
     private final long containerId;
     private final ContainerConfig config;
+    private final Supplier<Long> tickSupplier;
 
     // Initialized components
     private ContainerClassLoader containerClassLoader;
     private EntityComponentStore entityStore;
+    private DirtyTrackingEntityComponentStore dirtyTrackingStore;
     private PermissionRegistry permissionRegistry;
     private ModuleManager moduleManager;
     private AIManager aiManager;
@@ -80,16 +86,20 @@ public class ContainerComponentInitializer {
     private CommandResolver commandResolver;
     private GameLoop gameLoop;
     private DefaultInjector injector;
+    private CachingSnapshotProvider cachingSnapshotProvider;
+    private DeltaSnapshotProvider deltaSnapshotProvider;
 
     /**
      * Creates a new initializer for the specified container.
      *
      * @param containerId the container ID
      * @param config the container configuration
+     * @param tickSupplier supplier for current tick (from ContainerTickExecutor)
      */
-    public ContainerComponentInitializer(long containerId, ContainerConfig config) {
+    public ContainerComponentInitializer(long containerId, ContainerConfig config, Supplier<Long> tickSupplier) {
         this.containerId = containerId;
         this.config = config;
+        this.tickSupplier = tickSupplier;
     }
 
     /**
@@ -106,6 +116,7 @@ public class ContainerComponentInitializer {
         initializeCommandInfrastructure();
         initializeResourceAndAIManagers();
         initializeGameLoop();
+        initializeSnapshotProviders();
         loadModules();
 
         log.debug("Container {} initialized: {} modules loaded", containerId, moduleManager.getAvailableModules().size());
@@ -116,7 +127,11 @@ public class ContainerComponentInitializer {
 
         EcsProperties ecsProperties = new EcsProperties(config.maxEntities(), config.maxComponents());
         ArrayEntityComponentStore rawStore = new ArrayEntityComponentStore(ecsProperties);
-        entityStore = LockingEntityComponentStore.wrap(rawStore);
+        EntityComponentStore lockingStore = LockingEntityComponentStore.wrap(rawStore);
+
+        // Wrap with dirty tracking for incremental snapshot optimization
+        dirtyTrackingStore = new DirtyTrackingEntityComponentStore(lockingStore);
+        entityStore = dirtyTrackingStore;
 
         permissionRegistry = new SimplePermissionRegistry();
     }
@@ -169,9 +184,26 @@ public class ContainerComponentInitializer {
                 resourceManager
         );
         injector.addClass(AIManager.class, aiManager);
+    }
 
-        SnapshotProvider snapshotProvider = new SnapshotProviderImpl(entityStore, moduleManager);
-        injector.addClass(SnapshotProvider.class, snapshotProvider);
+    private void initializeSnapshotProviders() {
+        // Create caching snapshot provider with dirty tracking support
+        cachingSnapshotProvider = new CachingSnapshotProvider(
+                dirtyTrackingStore,
+                moduleManager,
+                tickSupplier
+        );
+
+        // Create delta snapshot provider for efficient WebSocket broadcasting
+        deltaSnapshotProvider = new DeltaSnapshotProvider(
+                cachingSnapshotProvider,
+                tickSupplier
+        );
+
+        // Register the caching provider as the main snapshot provider
+        injector.addClass(SnapshotProvider.class, cachingSnapshotProvider);
+        injector.addClass(CachingSnapshotProvider.class, cachingSnapshotProvider);
+        injector.addClass(DeltaSnapshotProvider.class, deltaSnapshotProvider);
     }
 
     private void initializeGameLoop() {

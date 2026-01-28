@@ -376,4 +376,9 @@ public class PermissionedEntityComponentStore implements PermissionedStore {
     public int getMaxEntities() {
         return delegate.getMaxEntities();
     }
+
+    @Override
+    public int getComponentTypeCount() {
+        return delegate.getComponentTypeCount();
+    }
 }

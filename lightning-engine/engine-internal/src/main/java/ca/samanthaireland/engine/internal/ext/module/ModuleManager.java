@@ -23,13 +23,16 @@
 
 package ca.samanthaireland.engine.internal.ext.module;
 
+import ca.samanthaireland.engine.ext.module.CompoundModule;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
+import ca.samanthaireland.engine.ext.module.ModuleIdentifier;
 import ca.samanthaireland.engine.ext.module.ModuleResolver;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Manages modules from external sources (e.g., JAR files).
@@ -129,4 +132,24 @@ public interface ModuleManager extends ModuleResolver {
      * @return the module factory, or null if not found
      */
     ModuleFactory getFactory(String moduleName);
+
+    /**
+     * Register a compound module.
+     *
+     * <p>This method registers a compound module that aggregates other modules.
+     * The compound module's component modules must already be registered.
+     *
+     * @param module the compound module to register
+     */
+    void registerCompoundModule(CompoundModule module);
+
+    /**
+     * Resolve a module by identifier (name + version requirement).
+     *
+     * <p>Returns the module only if its version is compatible with the required version.
+     *
+     * @param identifier the module identifier with version requirement
+     * @return the resolved module if found and compatible, empty otherwise
+     */
+    Optional<EngineModule> getModule(ModuleIdentifier identifier);
 }

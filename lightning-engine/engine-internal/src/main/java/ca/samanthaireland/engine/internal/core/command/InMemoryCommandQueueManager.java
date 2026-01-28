@@ -27,9 +27,11 @@ import ca.samanthaireland.engine.core.command.CommandExecutionException;
 import ca.samanthaireland.engine.core.command.CommandPayload;
 import ca.samanthaireland.engine.core.command.CommandQueue;
 import ca.samanthaireland.engine.core.command.EngineCommand;
+import ca.samanthaireland.engine.internal.CommandExecutionMetrics;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -45,6 +47,9 @@ public class InMemoryCommandQueueManager implements CommandQueue, CommandQueueEx
     private final ConcurrentLinkedQueue<ScheduledCommand> commandQueue = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<CommandExecutionException> errorQueue = new ConcurrentLinkedQueue<>();
 
+    // Per-command execution metrics for the last tick
+    private volatile List<CommandExecutionMetrics> lastTickCommandMetrics = Collections.emptyList();
+
     @Override
     public void enqueue(EngineCommand command, CommandPayload payload) {
         if (command == null) {
@@ -59,9 +64,11 @@ public class InMemoryCommandQueueManager implements CommandQueue, CommandQueueEx
     public void executeCommands(int amount) {
         log.trace("Execute {} commands.", amount);
         if (amount <= 0) {
+            lastTickCommandMetrics = Collections.emptyList();
             return;
         }
 
+        List<CommandExecutionMetrics> metrics = new ArrayList<>();
         int executed = 0;
         while (executed < amount) {
             ScheduledCommand scheduled = commandQueue.poll();
@@ -69,9 +76,12 @@ public class InMemoryCommandQueueManager implements CommandQueue, CommandQueueEx
                 break;
             }
 
+            long startTime = System.nanoTime();
+            boolean success = false;
             try {
                 scheduled.command().executeCommand(scheduled.payload());
                 log.debug("Executed command: {}", scheduled.command().getName());
+                success = true;
                 executed++;
             } catch (Exception e) {
                 log.error("Failed to execute command: {}", scheduled.command().getName(), e);
@@ -81,8 +91,11 @@ public class InMemoryCommandQueueManager implements CommandQueue, CommandQueueEx
                         e
                 ));
             }
+            long duration = System.nanoTime() - startTime;
+            metrics.add(new CommandExecutionMetrics(scheduled.command().getName(), duration, success));
         }
 
+        lastTickCommandMetrics = metrics;
         log.debug("Executed {} commands", executed);
     }
 
@@ -128,6 +141,15 @@ public class InMemoryCommandQueueManager implements CommandQueue, CommandQueueEx
     public void clearErrors() {
         errorQueue.clear();
         log.debug("Error queue cleared");
+    }
+
+    /**
+     * Get the command execution metrics from the last tick.
+     *
+     * @return list of command execution metrics
+     */
+    public List<CommandExecutionMetrics> getLastTickCommandMetrics() {
+        return lastTickCommandMetrics;
     }
 
     /**

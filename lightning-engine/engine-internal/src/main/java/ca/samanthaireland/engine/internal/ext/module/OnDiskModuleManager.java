@@ -27,10 +27,12 @@ import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
 import ca.samanthaireland.engine.core.store.PermissionComponent;
 import ca.samanthaireland.engine.core.store.PermissionRegistry;
+import ca.samanthaireland.engine.ext.module.CompoundModule;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.module.ModuleExports;
 import ca.samanthaireland.engine.ext.module.ModuleFactory;
+import ca.samanthaireland.engine.ext.module.ModuleIdentifier;
 import ca.samanthaireland.engine.auth.module.ModuleAuthService;
 import ca.samanthaireland.engine.auth.module.ModuleAuthToken;
 import ca.samanthaireland.engine.auth.module.ModulePermissionClaimBuilder;
@@ -49,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
@@ -548,5 +551,40 @@ public class OnDiskModuleManager implements ModuleManager {
     public ModuleFactory getFactory(String moduleName) {
         ensureScanned();
         return factoryCache.get(moduleName);
+    }
+
+    @Override
+    public void registerCompoundModule(CompoundModule module) {
+        if (module == null) {
+            throw new IllegalArgumentException("Compound module cannot be null");
+        }
+
+        String moduleName = module.getName();
+
+        // Verify all component modules are available
+        for (var componentId : module.getComponentModules()) {
+            if (!hasModule(componentId.name())) {
+                throw new IllegalStateException(
+                        "Component module not found: " + componentId.name() +
+                                " (required by compound module " + moduleName + ")");
+            }
+            EngineModule component = resolveModule(componentId.name());
+            if (!component.getVersion().isCompatibleWith(componentId.version())) {
+                throw new IllegalStateException(
+                        "Version mismatch for component " + componentId.name() +
+                                ": required " + componentId.version() +
+                                " but found " + component.getVersion());
+            }
+        }
+
+        moduleCache.put(moduleName, module);
+        log.info("Registered compound module: {} with {} components",
+                moduleName, module.getComponentModules().size());
+    }
+
+    @Override
+    public Optional<EngineModule> getModule(ModuleIdentifier identifier) {
+        ensureScanned();
+        return resolveModule(identifier);
     }
 }

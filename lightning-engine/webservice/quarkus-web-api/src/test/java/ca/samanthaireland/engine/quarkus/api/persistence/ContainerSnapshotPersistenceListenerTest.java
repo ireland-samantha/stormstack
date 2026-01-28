@@ -102,10 +102,10 @@ class ContainerSnapshotPersistenceListenerTest {
             when(match2.id()).thenReturn(2L);
             when(matchOperations.all()).thenReturn(List.of(match1, match2));
 
-            Snapshot snapshot1 = new Snapshot(Map.of(
+            Snapshot snapshot1 = Snapshot.fromLegacyFormat(Map.of(
                     "EntityModule", Map.of("ENTITY_ID", List.of(1.0f, 2.0f))
             ));
-            Snapshot snapshot2 = new Snapshot(Map.of(
+            Snapshot snapshot2 = Snapshot.fromLegacyFormat(Map.of(
                     "EntityModule", Map.of("ENTITY_ID", List.of(3.0f))
             ));
             when(snapshotOperations.forMatch(1L)).thenReturn(snapshot1);
@@ -190,7 +190,7 @@ class ContainerSnapshotPersistenceListenerTest {
             when(matchOperations.all()).thenReturn(List.of(match));
 
             // Empty snapshot
-            Snapshot emptySnapshot = new Snapshot(Map.of());
+            Snapshot emptySnapshot = Snapshot.fromLegacyFormat(Map.of());
             when(snapshotOperations.forMatch(1L)).thenReturn(emptySnapshot);
 
             listener.onTickComplete(1L);
@@ -229,7 +229,7 @@ class ContainerSnapshotPersistenceListenerTest {
             // First match throws exception
             when(snapshotOperations.forMatch(1L)).thenThrow(new RuntimeException("Test error"));
             // Second match succeeds
-            Snapshot snapshot = new Snapshot(Map.of(
+            Snapshot snapshot = Snapshot.fromLegacyFormat(Map.of(
                     "EntityModule", Map.of("ENTITY_ID", List.of(1.0f))
             ));
             when(snapshotOperations.forMatch(2L)).thenReturn(snapshot);
@@ -260,7 +260,7 @@ class ContainerSnapshotPersistenceListenerTest {
             when(match.id()).thenReturn(42L);
             when(matchOperations.all()).thenReturn(List.of(match));
 
-            Snapshot snapshot = new Snapshot(Map.of(
+            Snapshot snapshot = Snapshot.fromLegacyFormat(Map.of(
                     "TestModule", Map.of(
                             "COMPONENT_A", List.of(1.0f, 2.0f),
                             "COMPONENT_B", List.of(3.0f)

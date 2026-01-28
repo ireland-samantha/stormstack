@@ -24,6 +24,7 @@
 package ca.samanthaireland.engine.ext.module;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ModuleResolver {
     /**
@@ -55,4 +56,44 @@ public interface ModuleResolver {
      * @return true if the module is available
      */
     boolean hasModule(String moduleName);
+
+    /**
+     * Resolve a module by identifier (name + version requirement).
+     *
+     * <p>Returns the module only if its version is compatible with the required version.
+     * Compatibility means: major versions match and actual minor version >= required minor version.
+     *
+     * @param identifier the module identifier with version requirement
+     * @return the resolved module if found and compatible, empty otherwise
+     */
+    default Optional<EngineModule> resolveModule(ModuleIdentifier identifier) {
+        if (identifier == null) {
+            return Optional.empty();
+        }
+        EngineModule module = resolveModule(identifier.name());
+        if (module == null) {
+            return Optional.empty();
+        }
+        if (!module.getVersion().isCompatibleWith(identifier.version())) {
+            return Optional.empty();
+        }
+        return Optional.of(module);
+    }
+
+    /**
+     * Get all available versions for a module.
+     *
+     * <p>Default implementation returns a single-element list with the current version
+     * if the module exists, or an empty list otherwise.
+     *
+     * @param moduleName the module name
+     * @return list of available versions for the module
+     */
+    default List<ModuleVersion> getAvailableVersions(String moduleName) {
+        EngineModule module = resolveModule(moduleName);
+        if (module == null) {
+            return List.of();
+        }
+        return List.of(module.getVersion());
+    }
 }

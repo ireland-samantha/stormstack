@@ -52,8 +52,8 @@ class DeltaCompressionServiceImplTest {
                         "POSITION_X", List.of(100.0f, 200.0f)
                 )
         );
-        Snapshot from = new Snapshot(data);
-        Snapshot to = new Snapshot(data);
+        Snapshot from = Snapshot.fromLegacyFormat(data);
+        Snapshot to = Snapshot.fromLegacyFormat(data);
 
         // When
         DeltaSnapshot delta = service.computeDelta(1L, 0L, from, 1L, to);
@@ -71,14 +71,14 @@ class DeltaCompressionServiceImplTest {
     @Test
     void computeDelta_withChangedValues_detectsChanges() {
         // Given
-        Snapshot from = new Snapshot(Map.of(
+        Snapshot from = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(100.0f, 200.0f),
                         "POSITION_Y", List.of(50.0f, 60.0f)
                 )
         ));
-        Snapshot to = new Snapshot(Map.of(
+        Snapshot to = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(150.0f, 200.0f), // Entity 1 changed
@@ -102,13 +102,13 @@ class DeltaCompressionServiceImplTest {
     @Test
     void computeDelta_withAddedEntity_detectsAddition() {
         // Given
-        Snapshot from = new Snapshot(Map.of(
+        Snapshot from = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f),
                         "POSITION_X", List.of(100.0f)
                 )
         ));
-        Snapshot to = new Snapshot(Map.of(
+        Snapshot to = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(100.0f, 200.0f)
@@ -128,13 +128,13 @@ class DeltaCompressionServiceImplTest {
     @Test
     void computeDelta_withRemovedEntity_detectsRemoval() {
         // Given
-        Snapshot from = new Snapshot(Map.of(
+        Snapshot from = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(100.0f, 200.0f)
                 )
         ));
-        Snapshot to = new Snapshot(Map.of(
+        Snapshot to = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f),
                         "POSITION_X", List.of(100.0f)
@@ -152,8 +152,8 @@ class DeltaCompressionServiceImplTest {
     @Test
     void computeDelta_withEmptyFrom_detectsAllAsAdded() {
         // Given
-        Snapshot from = new Snapshot(Map.of());
-        Snapshot to = new Snapshot(Map.of(
+        Snapshot from = Snapshot.fromLegacyFormat(Map.of());
+        Snapshot to = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(100.0f, 200.0f)
@@ -171,13 +171,13 @@ class DeltaCompressionServiceImplTest {
     @Test
     void computeDelta_withEmptyTo_detectsAllAsRemoved() {
         // Given
-        Snapshot from = new Snapshot(Map.of(
+        Snapshot from = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(100.0f, 200.0f)
                 )
         ));
-        Snapshot to = new Snapshot(Map.of());
+        Snapshot to = Snapshot.fromLegacyFormat(Map.of());
 
         // When
         DeltaSnapshot delta = service.computeDelta(1L, 0L, from, 1L, to);
@@ -190,7 +190,7 @@ class DeltaCompressionServiceImplTest {
     @Test
     void computeDelta_withMultipleModules_handlesAllModules() {
         // Given
-        Snapshot from = new Snapshot(Map.of(
+        Snapshot from = Snapshot.fromLegacyFormat(Map.of(
                 "ModuleA", Map.of(
                         "ENTITY_ID", List.of(1.0f),
                         "VALUE_A", List.of(10.0f)
@@ -200,7 +200,7 @@ class DeltaCompressionServiceImplTest {
                         "VALUE_B", List.of(20.0f)
                 )
         ));
-        Snapshot to = new Snapshot(Map.of(
+        Snapshot to = Snapshot.fromLegacyFormat(Map.of(
                 "ModuleA", Map.of(
                         "ENTITY_ID", List.of(1.0f),
                         "VALUE_A", List.of(15.0f)  // Changed
@@ -223,17 +223,17 @@ class DeltaCompressionServiceImplTest {
 
     @Test
     void computeDelta_withNullSnapshots_throwsException() {
-        assertThatThrownBy(() -> service.computeDelta(1L, 0L, null, 1L, new Snapshot(Map.of())))
+        assertThatThrownBy(() -> service.computeDelta(1L, 0L, null, 1L, Snapshot.fromLegacyFormat(Map.of())))
                 .isInstanceOf(IllegalArgumentException.class);
 
-        assertThatThrownBy(() -> service.computeDelta(1L, 0L, new Snapshot(Map.of()), 1L, null))
+        assertThatThrownBy(() -> service.computeDelta(1L, 0L, Snapshot.fromLegacyFormat(Map.of()), 1L, null))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void applyDelta_withChangedValues_appliesCorrectly() {
         // Given
-        Snapshot base = new Snapshot(Map.of(
+        Snapshot base = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(100.0f, 200.0f)
@@ -251,21 +251,21 @@ class DeltaCompressionServiceImplTest {
         Snapshot result = service.applyDelta(base, delta);
 
         // Then
-        assertThat(result.snapshot().get("TestModule").get("POSITION_X"))
+        assertThat(result.toLegacyFormat().get("TestModule").get("POSITION_X"))
                 .containsExactly(150.0f, 200.0f);
     }
 
     @Test
     void applyDelta_roundTrip_producesOriginal() {
         // Given
-        Snapshot from = new Snapshot(Map.of(
+        Snapshot from = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(100.0f, 200.0f),
                         "POSITION_Y", List.of(50.0f, 60.0f)
                 )
         ));
-        Snapshot to = new Snapshot(Map.of(
+        Snapshot to = Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of(1.0f, 2.0f),
                         "POSITION_X", List.of(150.0f, 250.0f),
@@ -278,9 +278,9 @@ class DeltaCompressionServiceImplTest {
         Snapshot result = service.applyDelta(from, delta);
 
         // Then
-        assertThat(result.snapshot().get("TestModule").get("POSITION_X"))
+        assertThat(result.toLegacyFormat().get("TestModule").get("POSITION_X"))
                 .containsExactly(150.0f, 250.0f);
-        assertThat(result.snapshot().get("TestModule").get("POSITION_Y"))
+        assertThat(result.toLegacyFormat().get("TestModule").get("POSITION_Y"))
                 .containsExactly(55.0f, 65.0f);
     }
 }

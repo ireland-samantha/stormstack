@@ -67,6 +67,6 @@ public interface SnapshotPersistenceConfig {
      *
      * @return the persistence interval in ticks
      */
-    @WithDefault("1")
+    @WithDefault("60")
     int tickInterval();
 }

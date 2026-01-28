@@ -27,15 +27,18 @@ import ca.samanthaireland.engine.core.system.EngineSystem;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleResolver;
 import ca.samanthaireland.engine.internal.core.command.CommandQueueExecutor;
+import ca.samanthaireland.engine.internal.core.command.InMemoryCommandQueueManager;
 import ca.samanthaireland.engine.internal.ext.ai.AITickService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Main game loop that processes simulation ticks.
@@ -77,6 +80,16 @@ public class GameLoop {
         t.setDaemon(true);
         return t;
     });
+
+    // Tick timing metrics (all times in nanoseconds)
+    private volatile long lastTickDurationNanos;
+    private final AtomicLong totalTickDurationNanos = new AtomicLong(0);
+    private final AtomicLong tickCount = new AtomicLong(0);
+    private volatile long minTickDurationNanos = Long.MAX_VALUE;
+    private volatile long maxTickDurationNanos = 0;
+
+    // Per-system execution metrics for the last tick
+    private volatile List<SystemExecutionMetrics> lastTickSystemMetrics = Collections.emptyList();
 
     /**
      * Create a new game loop with command execution support.
@@ -148,6 +161,7 @@ public class GameLoop {
      * @param tick the current tick number
      */
     public void advanceTick(long tick) {
+        long startTime = System.nanoTime();
         log.trace("Advancing tick: {}", tick);
 
         // Execute commands scheduled for this tick
@@ -157,15 +171,25 @@ public class GameLoop {
         List<EngineSystem> systems = getOrBuildSystems();
         int systemsRun = runSystems(systems);
 
-
         // Run AI
         executeAIs(tick);
-
 
         // Notify tick listeners
         notifyTickListeners(tick);
 
-        log.trace("Tick {} complete, {} systems executed", tick, systemsRun);
+        // Record tick timing metrics
+        long duration = System.nanoTime() - startTime;
+        lastTickDurationNanos = duration;
+        totalTickDurationNanos.addAndGet(duration);
+        tickCount.incrementAndGet();
+        if (duration < minTickDurationNanos) {
+            minTickDurationNanos = duration;
+        }
+        if (duration > maxTickDurationNanos) {
+            maxTickDurationNanos = duration;
+        }
+
+        log.trace("Tick {} complete, {} systems executed, duration {}ns", tick, systemsRun, duration);
     }
 
     /**
@@ -193,15 +217,22 @@ public class GameLoop {
      * @return the number of systems that ran successfully
      */
     private int runSystems(List<EngineSystem> systems) {
+        List<SystemExecutionMetrics> metrics = new ArrayList<>();
         int successCount = 0;
         for (EngineSystem system : systems) {
+            long startTime = System.nanoTime();
+            boolean success = false;
             try {
                 system.updateEntities();
+                success = true;
                 successCount++;
             } catch (Exception e) {
                 log.error("Error executing system: {}", system.getClass().getSimpleName(), e);
             }
+            long duration = System.nanoTime() - startTime;
+            metrics.add(new SystemExecutionMetrics(system.getClass().getSimpleName(), duration, success));
         }
+        lastTickSystemMetrics = metrics;
         return successCount;
     }
 
@@ -305,5 +336,101 @@ public class GameLoop {
     public void shutdown() {
         tickListenerExecutor.shutdown();
         log.info("GameLoop tick listener executor shutdown initiated");
+    }
+
+    /**
+     * Get tick timing metrics.
+     *
+     * @return the current tick metrics
+     */
+    public TickMetrics getTickMetrics() {
+        long count = tickCount.get();
+        long avgNanos = count > 0 ? totalTickDurationNanos.get() / count : 0;
+        long minNanos = minTickDurationNanos == Long.MAX_VALUE ? 0 : minTickDurationNanos;
+        return new TickMetrics(
+                lastTickDurationNanos,
+                avgNanos,
+                minNanos,
+                maxTickDurationNanos,
+                count
+        );
+    }
+
+    /**
+     * Get system execution metrics from the last tick.
+     *
+     * @return list of system execution metrics
+     */
+    public List<SystemExecutionMetrics> getLastTickSystemMetrics() {
+        return lastTickSystemMetrics;
+    }
+
+    /**
+     * Get command execution metrics from the last tick.
+     *
+     * @return list of command execution metrics, or empty list if command executor doesn't support metrics
+     */
+    public List<CommandExecutionMetrics> getLastTickCommandMetrics() {
+        if (commandQueueExecutor instanceof InMemoryCommandQueueManager manager) {
+            return manager.getLastTickCommandMetrics();
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Reset tick timing metrics.
+     */
+    public void resetTickMetrics() {
+        lastTickDurationNanos = 0;
+        totalTickDurationNanos.set(0);
+        tickCount.set(0);
+        minTickDurationNanos = Long.MAX_VALUE;
+        maxTickDurationNanos = 0;
+        log.debug("Tick metrics reset");
+    }
+
+    /**
+     * Tick timing metrics record.
+     *
+     * @param lastTickNanos duration of the last tick in nanoseconds
+     * @param avgTickNanos average tick duration in nanoseconds
+     * @param minTickNanos minimum tick duration in nanoseconds
+     * @param maxTickNanos maximum tick duration in nanoseconds
+     * @param totalTicks total number of ticks processed
+     */
+    public record TickMetrics(
+            long lastTickNanos,
+            long avgTickNanos,
+            long minTickNanos,
+            long maxTickNanos,
+            long totalTicks
+    ) {
+        /**
+         * Get last tick duration in milliseconds.
+         */
+        public double lastTickMs() {
+            return lastTickNanos / 1_000_000.0;
+        }
+
+        /**
+         * Get average tick duration in milliseconds.
+         */
+        public double avgTickMs() {
+            return avgTickNanos / 1_000_000.0;
+        }
+
+        /**
+         * Get minimum tick duration in milliseconds.
+         */
+        public double minTickMs() {
+            return minTickNanos / 1_000_000.0;
+        }
+
+        /**
+         * Get maximum tick duration in milliseconds.
+         */
+        public double maxTickMs() {
+            return maxTickNanos / 1_000_000.0;
+        }
     }
 }

@@ -97,10 +97,10 @@ public class ContainerSnapshotResource {
                 ? container.snapshots().forMatchAndPlayer(matchId, playerId)
                 : container.snapshots().forMatch(matchId);
 
-        return Response.ok(new SnapshotResponse(
+        return Response.ok(SnapshotResponse.from(
                 matchId,
                 container.ticks().current(),
-                snapshot.snapshot()
+                snapshot
         )).build();
     }
 
@@ -283,12 +283,12 @@ public class ContainerSnapshotResource {
     }
 
     private int countValues(Snapshot snapshot) {
-        if (snapshot == null || snapshot.snapshot() == null) {
+        if (snapshot == null || snapshot.isEmpty()) {
             return 0;
         }
-        return snapshot.snapshot().values().stream()
-                .flatMap(moduleData -> moduleData.values().stream())
-                .mapToInt(List::size)
+        return snapshot.modules().stream()
+                .flatMap(moduleData -> moduleData.components().stream())
+                .mapToInt(component -> component.values().size())
                 .sum();
     }
 }

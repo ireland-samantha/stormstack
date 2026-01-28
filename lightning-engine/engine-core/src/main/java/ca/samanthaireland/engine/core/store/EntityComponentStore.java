@@ -252,4 +252,11 @@ public interface EntityComponentStore {
      * @return the maximum entity capacity
      */
     int getMaxEntities();
+
+    /**
+     * Returns the number of distinct component types registered in the store.
+     *
+     * @return the number of component types
+     */
+    int getComponentTypeCount();
 }

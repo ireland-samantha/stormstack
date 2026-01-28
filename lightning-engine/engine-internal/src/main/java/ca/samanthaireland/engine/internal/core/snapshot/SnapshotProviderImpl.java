@@ -24,11 +24,14 @@
 package ca.samanthaireland.engine.internal.core.snapshot;
 
 import ca.samanthaireland.engine.core.entity.CoreComponents;
+import ca.samanthaireland.engine.core.snapshot.ComponentData;
+import ca.samanthaireland.engine.core.snapshot.ModuleData;
 import ca.samanthaireland.engine.core.snapshot.Snapshot;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleResolver;
+import ca.samanthaireland.engine.ext.module.ModuleVersion;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -105,14 +108,14 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             return Snapshot.empty();
         }
 
-        Map<String, Map<String, List<Float>>> snapshotData = buildSnapshotData(
+        List<ModuleData> moduleDataList = buildSnapshotData(
                 mappings, matchingEntities, filter.matchId()
         );
 
         log.debug("Created snapshot with {} modules, {} entities for filter: {}",
-                snapshotData.size(), matchingEntities.size(), filter);
+                moduleDataList.size(), matchingEntities.size(), filter);
 
-        return new Snapshot(snapshotData);
+        return new Snapshot(moduleDataList);
     }
 
     /**
@@ -135,13 +138,17 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
     /**
      * Builds a predicate that filters entities based on the snapshot filter criteria.
+     *
+     * <p>Optimized to use single getComponent() call instead of hasComponent() + getComponent().
      */
     private Predicate<Long> buildEntityFilter(SnapshotFilter filter) {
         float matchIdFloat = (float) filter.matchId();
 
-        Predicate<Long> matchFilter = entityId ->
-                entityStore.hasComponent(entityId, CoreComponents.MATCH_ID) &&
-                entityStore.getComponent(entityId, CoreComponents.MATCH_ID) == matchIdFloat;
+        // Optimized: single getComponent call, NaN check handles missing component
+        Predicate<Long> matchFilter = entityId -> {
+            float storedMatchId = entityStore.getComponent(entityId, CoreComponents.MATCH_ID);
+            return storedMatchId == matchIdFloat; // NaN != any value, so this handles missing
+        };
 
         if (filter.playerId().isEmpty()) {
             return matchFilter;
@@ -150,19 +157,19 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         float playerIdFloat = filter.playerId().get().floatValue();
 
         return matchFilter.and(entityId -> {
-            if (!entityStore.hasComponent(entityId, CoreComponents.OWNER_ID)) {
-                return false;
-            }
             float ownerId = entityStore.getComponent(entityId, CoreComponents.OWNER_ID);
-            return !Float.isNaN(ownerId) && ownerId == playerIdFloat;
+            return ownerId == playerIdFloat; // NaN != any value
         });
     }
 
     /**
      * Filters entities using the provided predicate.
+     *
+     * <p>Pre-allocates result set with estimated capacity to reduce rehashing.
      */
     private Set<Long> filterEntities(Set<Long> entities, Predicate<Long> filter) {
-        Set<Long> result = new HashSet<>();
+        // Pre-allocate with reasonable capacity (assume ~25% match rate)
+        Set<Long> result = new HashSet<>(Math.max(16, entities.size() / 4));
         for (Long entityId : entities) {
             if (filter.test(entityId)) {
                 result.add(entityId);
@@ -173,97 +180,98 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
     /**
      * Builds the columnar snapshot data structure for matching entities.
+     *
+     * <p>Optimized to iterate entities once per module using batch component retrieval,
+     * avoiding redundant MATCH_ID checks (entities are already pre-filtered).
      */
-    private Map<String, Map<String, List<Float>>> buildSnapshotData(
+    private List<ModuleData> buildSnapshotData(
             List<ModuleComponentMapping> mappings,
             Set<Long> entities,
             long matchId) {
 
-        Map<String, Map<String, List<Float>>> snapshotData = new LinkedHashMap<>();
-        float matchIdFloat = (float) matchId;
+        List<ModuleData> moduleDataList = new ArrayList<>();
 
-        for (ModuleComponentMapping mapping : mappings) {
-            Map<String, List<Float>> moduleData = buildModuleData(mapping, entities, matchIdFloat);
-
-            if (!moduleData.isEmpty()) {
-                snapshotData.put(mapping.moduleName(), moduleData);
-            }
-        }
-
-        return snapshotData;
-    }
-
-    /**
-     * Builds the component data for a single module.
-     */
-    private Map<String, List<Float>> buildModuleData(
-            ModuleComponentMapping mapping,
-            Set<Long> entities,
-            float matchIdFloat) {
-
-        Map<String, List<Float>> moduleData = new LinkedHashMap<>();
-
-        // Collect ENTITY_IDs first (ensures consistent entity ordering)
-        List<Long> orderedEntityIds = collectOrderedEntityIds(entities, matchIdFloat);
+        // Convert to ordered list once - entities are already filtered by matchId
+        List<Long> orderedEntityIds = new ArrayList<>(entities);
 
         if (orderedEntityIds.isEmpty()) {
-            return moduleData;
+            return moduleDataList;
         }
 
-        // Add ENTITY_ID column
-        List<Float> entityIdValues = new ArrayList<>(orderedEntityIds.size());
-        for (Long entityId : orderedEntityIds) {
-            entityIdValues.add(entityStore.getComponent(entityId, CoreComponents.ENTITY_ID));
-        }
-        moduleData.put(CoreComponents.ENTITY_ID.getName(), entityIdValues);
+        for (ModuleComponentMapping mapping : mappings) {
+            List<ComponentData> components = buildModuleDataOptimized(mapping, orderedEntityIds);
 
-        // Add component columns
-        for (BaseComponent component : mapping.components()) {
-            List<Float> values = collectComponentValues(component, orderedEntityIds, matchIdFloat);
-            if (!values.isEmpty()) {
-                moduleData.put(component.getName(), values);
+            if (!components.isEmpty()) {
+                moduleDataList.add(ModuleData.of(
+                        mapping.moduleName(),
+                        mapping.moduleVersion(),
+                        components
+                ));
             }
         }
 
-        return moduleData;
+        return moduleDataList;
     }
 
     /**
-     * Collects entity IDs in a consistent order for columnar alignment.
+     * Builds the component data for a single module using batch retrieval.
+     *
+     * <p>Optimizations:
+     * <ul>
+     *   <li>Uses batch getComponents() to fetch all values per entity in one call</li>
+     *   <li>Pre-allocates lists with known capacity</li>
+     *   <li>No redundant MATCH_ID filtering (entities are pre-filtered)</li>
+     * </ul>
      */
-    private List<Long> collectOrderedEntityIds(Set<Long> entities, float matchIdFloat) {
-        List<Long> ordered = new ArrayList<>();
+    private List<ComponentData> buildModuleDataOptimized(
+            ModuleComponentMapping mapping,
+            List<Long> entityIds) {
 
-        for (Long entityId : entities) {
-            if (entityStore.hasComponent(entityId, CoreComponents.MATCH_ID) &&
-                entityStore.getComponent(entityId, CoreComponents.MATCH_ID) == matchIdFloat &&
-                entityStore.hasComponent(entityId, CoreComponents.ENTITY_ID)) {
-                ordered.add(entityId);
-            }
+        List<BaseComponent> components = mapping.components();
+        int entityCount = entityIds.size();
+        int componentCount = components.size();
+
+        if (componentCount == 0) {
+            return Collections.emptyList();
         }
 
-        return ordered;
-    }
+        // Build component list including ENTITY_ID for batch retrieval
+        List<BaseComponent> allComponents = new ArrayList<>(componentCount + 1);
+        allComponents.add(CoreComponents.ENTITY_ID);
+        allComponents.addAll(components);
 
-    /**
-     * Collects component values for all matching entities.
-     */
-    private List<Float> collectComponentValues(
-            BaseComponent component,
-            List<Long> entityIds,
-            float matchIdFloat) {
+        int totalComponents = allComponents.size();
+        float[] buffer = new float[totalComponents];
 
-        List<Float> values = new ArrayList<>(entityIds.size());
+        // Pre-allocate all column lists
+        List<List<Float>> columnLists = new ArrayList<>(totalComponents);
+        for (int i = 0; i < totalComponents; i++) {
+            columnLists.add(new ArrayList<>(entityCount));
+        }
 
+        // Single pass: fetch all components per entity using batch retrieval
         for (Long entityId : entityIds) {
-            if (entityStore.hasComponent(entityId, component) &&
-                entityStore.hasComponent(entityId, CoreComponents.MATCH_ID) &&
-                entityStore.getComponent(entityId, CoreComponents.MATCH_ID) == matchIdFloat) {
-                values.add(entityStore.getComponent(entityId, component));
+            entityStore.getComponents(entityId, allComponents, buffer);
+
+            for (int i = 0; i < totalComponents; i++) {
+                float value = buffer[i];
+                // Only add non-null values to maintain sparse representation
+                if (!Float.isNaN(value)) {
+                    columnLists.get(i).add(value);
+                }
             }
         }
 
-        return values;
+        // Build ComponentData list
+        List<ComponentData> result = new ArrayList<>();
+        for (int i = 0; i < totalComponents; i++) {
+            List<Float> values = columnLists.get(i);
+            if (!values.isEmpty()) {
+                result.add(ComponentData.of(allComponents.get(i).getName(), values));
+            }
+        }
+
+        return result;
     }
 
     private List<ModuleComponentMapping> getOrBuildMappings() {
@@ -296,7 +304,11 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         for (EngineModule module : modules) {
             List<BaseComponent> components = module.createComponents();
             if (components != null && !components.isEmpty()) {
-                mappings.add(new ModuleComponentMapping(module.getName(), components));
+                mappings.add(new ModuleComponentMapping(
+                        module.getName(),
+                        module.getVersion(),
+                        components
+                ));
             }
         }
 
@@ -326,8 +338,12 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * Mapping of module name to its snapshot components.
+     * Mapping of module name, version, and snapshot components.
      */
-    private record ModuleComponentMapping(String moduleName, List<BaseComponent> components) {
+    private record ModuleComponentMapping(
+            String moduleName,
+            ModuleVersion moduleVersion,
+            List<BaseComponent> components
+    ) {
     }
 }

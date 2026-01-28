@@ -47,7 +47,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should store container ID")
         void shouldStoreContainerId() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(42L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(42L, config, () -> 0L);
 
             assertThat(initializer.getContainerId()).isEqualTo(42L);
         }
@@ -56,7 +56,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should store config")
         void shouldStoreConfig() {
             ContainerConfig config = ContainerConfig.withDefaults("test-container");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getConfig()).isEqualTo(config);
             assertThat(initializer.getConfig().name()).isEqualTo("test-container");
@@ -71,7 +71,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should have null entity store before initialize")
         void shouldHaveNullEntityStoreBeforeInitialize() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getEntityStore()).isNull();
         }
@@ -80,7 +80,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should have null permission registry before initialize")
         void shouldHaveNullPermissionRegistryBeforeInitialize() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getPermissionRegistry()).isNull();
         }
@@ -89,7 +89,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should have null module manager before initialize")
         void shouldHaveNullModuleManagerBeforeInitialize() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getModuleManager()).isNull();
         }
@@ -98,7 +98,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should have null game loop before initialize")
         void shouldHaveNullGameLoopBeforeInitialize() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getGameLoop()).isNull();
         }
@@ -107,7 +107,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should have null class loader before initialize")
         void shouldHaveNullClassLoaderBeforeInitialize() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getContainerClassLoader()).isNull();
         }
@@ -116,7 +116,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should have null match service before initialize")
         void shouldHaveNullMatchServiceBeforeInitialize() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getMatchService()).isNull();
         }
@@ -125,7 +125,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should have null command queue manager before initialize")
         void shouldHaveNullCommandQueueManagerBeforeInitialize() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getCommandQueueManager()).isNull();
         }
@@ -134,7 +134,7 @@ class ContainerComponentInitializerTest {
         @DisplayName("should have null injector before initialize")
         void shouldHaveNullInjectorBeforeInitialize() {
             ContainerConfig config = ContainerConfig.withDefaults("test");
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             assertThat(initializer.getInjector()).isNull();
         }
@@ -154,7 +154,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -168,7 +168,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -182,7 +182,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -196,7 +196,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -210,7 +210,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -224,7 +224,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -238,7 +238,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -252,7 +252,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -266,7 +266,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -280,7 +280,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -294,7 +294,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -317,7 +317,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(tempDir)
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 
@@ -332,7 +332,7 @@ class ContainerComponentInitializerTest {
                     .moduleScanDirectory(null) // Not specified
                     .moduleJarPaths(List.of())
                     .build();
-            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config);
+            ContainerComponentInitializer initializer = new ContainerComponentInitializer(1L, config, () -> 0L);
 
             initializer.initialize();
 

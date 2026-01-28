@@ -234,15 +234,17 @@ class SnapshotWebSocketIT {
             String snapshotJson = snapshotFuture.get(10, TimeUnit.SECONDS);
             log.info("WebSocket snapshot JSON: {}", snapshotJson);
 
-            // Parse and validate the snapshot
-            assertThat(snapshotJson).contains("\"data\":");
+            // Parse and validate the new snapshot structure with modules
+            assertThat(snapshotJson).contains("\"modules\":");
             assertThat(snapshotJson).contains("RigidBodyModule");
             assertThat(snapshotJson).contains("VELOCITY_X");
+            // Verify version information is present in the new format
+            assertThat(snapshotJson).contains("\"version\":");
 
             // Verify the data is not empty
             assertThat(snapshotJson)
                     .as("WebSocket snapshot should contain actual component values, not empty arrays")
-                    .doesNotContain("\"VELOCITY_X\":[]");
+                    .doesNotContain("\"values\":[]");
 
             log.info("WebSocket snapshot test PASSED");
         } finally {
