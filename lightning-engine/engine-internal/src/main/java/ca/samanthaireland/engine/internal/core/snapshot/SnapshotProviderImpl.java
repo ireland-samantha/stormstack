@@ -24,11 +24,14 @@
 package ca.samanthaireland.engine.internal.core.snapshot;
 
 import ca.samanthaireland.engine.core.entity.CoreComponents;
+import ca.samanthaireland.engine.core.snapshot.ComponentData;
+import ca.samanthaireland.engine.core.snapshot.ModuleData;
 import ca.samanthaireland.engine.core.snapshot.Snapshot;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
 import ca.samanthaireland.engine.ext.module.EngineModule;
 import ca.samanthaireland.engine.ext.module.ModuleResolver;
+import ca.samanthaireland.engine.ext.module.ModuleVersion;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -105,14 +108,14 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             return Snapshot.empty();
         }
 
-        Map<String, Map<String, List<Float>>> snapshotData = buildSnapshotData(
+        List<ModuleData> moduleDataList = buildSnapshotData(
                 mappings, matchingEntities, filter.matchId()
         );
 
         log.debug("Created snapshot with {} modules, {} entities for filter: {}",
-                snapshotData.size(), matchingEntities.size(), filter);
+                moduleDataList.size(), matchingEntities.size(), filter);
 
-        return new Snapshot(snapshotData);
+        return new Snapshot(moduleDataList);
     }
 
     /**
@@ -174,40 +177,44 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * Builds the columnar snapshot data structure for matching entities.
      */
-    private Map<String, Map<String, List<Float>>> buildSnapshotData(
+    private List<ModuleData> buildSnapshotData(
             List<ModuleComponentMapping> mappings,
             Set<Long> entities,
             long matchId) {
 
-        Map<String, Map<String, List<Float>>> snapshotData = new LinkedHashMap<>();
+        List<ModuleData> moduleDataList = new ArrayList<>();
         float matchIdFloat = (float) matchId;
 
         for (ModuleComponentMapping mapping : mappings) {
-            Map<String, List<Float>> moduleData = buildModuleData(mapping, entities, matchIdFloat);
+            List<ComponentData> components = buildModuleComponents(mapping, entities, matchIdFloat);
 
-            if (!moduleData.isEmpty()) {
-                snapshotData.put(mapping.moduleName(), moduleData);
+            if (!components.isEmpty()) {
+                moduleDataList.add(ModuleData.of(
+                        mapping.moduleName(),
+                        mapping.moduleVersion(),
+                        components
+                ));
             }
         }
 
-        return snapshotData;
+        return moduleDataList;
     }
 
     /**
      * Builds the component data for a single module.
      */
-    private Map<String, List<Float>> buildModuleData(
+    private List<ComponentData> buildModuleComponents(
             ModuleComponentMapping mapping,
             Set<Long> entities,
             float matchIdFloat) {
 
-        Map<String, List<Float>> moduleData = new LinkedHashMap<>();
+        List<ComponentData> components = new ArrayList<>();
 
         // Collect ENTITY_IDs first (ensures consistent entity ordering)
         List<Long> orderedEntityIds = collectOrderedEntityIds(entities, matchIdFloat);
 
         if (orderedEntityIds.isEmpty()) {
-            return moduleData;
+            return components;
         }
 
         // Add ENTITY_ID column
@@ -215,17 +222,17 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         for (Long entityId : orderedEntityIds) {
             entityIdValues.add(entityStore.getComponent(entityId, CoreComponents.ENTITY_ID));
         }
-        moduleData.put(CoreComponents.ENTITY_ID.getName(), entityIdValues);
+        components.add(ComponentData.of(CoreComponents.ENTITY_ID.getName(), entityIdValues));
 
         // Add component columns
         for (BaseComponent component : mapping.components()) {
             List<Float> values = collectComponentValues(component, orderedEntityIds, matchIdFloat);
             if (!values.isEmpty()) {
-                moduleData.put(component.getName(), values);
+                components.add(ComponentData.of(component.getName(), values));
             }
         }
 
-        return moduleData;
+        return components;
     }
 
     /**
@@ -296,7 +303,11 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         for (EngineModule module : modules) {
             List<BaseComponent> components = module.createComponents();
             if (components != null && !components.isEmpty()) {
-                mappings.add(new ModuleComponentMapping(module.getName(), components));
+                mappings.add(new ModuleComponentMapping(
+                        module.getName(),
+                        module.getVersion(),
+                        components
+                ));
             }
         }
 
@@ -326,8 +337,12 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * Mapping of module name to its snapshot components.
+     * Mapping of module name, version, and snapshot components.
      */
-    private record ModuleComponentMapping(String moduleName, List<BaseComponent> components) {
+    private record ModuleComponentMapping(
+            String moduleName,
+            ModuleVersion moduleVersion,
+            List<BaseComponent> components
+    ) {
     }
 }

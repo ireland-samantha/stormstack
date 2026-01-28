@@ -54,8 +54,8 @@ public class DeltaCompressionServiceImpl implements DeltaCompressionService {
             throw new IllegalArgumentException("Snapshots cannot be null");
         }
 
-        Map<String, Map<String, List<Float>>> fromData = from.snapshot();
-        Map<String, Map<String, List<Float>>> toData = to.snapshot();
+        Map<String, Map<String, List<Float>>> fromData = from.toLegacyFormat();
+        Map<String, Map<String, List<Float>>> toData = to.toLegacyFormat();
 
         // Extract entity IDs from both snapshots
         Set<Long> fromEntities = extractEntityIds(fromData);
@@ -93,7 +93,7 @@ public class DeltaCompressionServiceImpl implements DeltaCompressionService {
             throw new IllegalArgumentException("Base snapshot and delta cannot be null");
         }
 
-        Map<String, Map<String, List<Float>>> baseData = base.snapshot();
+        Map<String, Map<String, List<Float>>> baseData = base.toLegacyFormat();
         Map<String, Map<String, List<Float>>> resultData = new LinkedHashMap<>();
 
         // Build entity ID to index mappings for the base snapshot
@@ -163,7 +163,7 @@ public class DeltaCompressionServiceImpl implements DeltaCompressionService {
             resultData = filterRemovedEntities(resultData, delta.removedEntities());
         }
 
-        return new Snapshot(resultData);
+        return Snapshot.fromLegacyFormat(resultData);
     }
 
     /**

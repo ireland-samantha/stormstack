@@ -803,6 +803,7 @@ public interface ContainerAdapter extends ContainerLifecycleAdapter {
             }
 
             @Override
+            @SuppressWarnings("unchecked")
             public Optional<SnapshotResponse> getSnapshot(long matchId) throws IOException {
                 HttpRequest request = requestBuilder("/matches/" + matchId + "/snapshot")
                         .GET()
@@ -814,8 +815,34 @@ public interface ContainerAdapter extends ContainerLifecycleAdapter {
                         Map<String, Object> map = JsonMapper.fromJson(response.body(), Map.class);
                         long mId = ((Number) map.get("matchId")).longValue();
                         long tick = ((Number) map.get("tick")).longValue();
-                        Object data = map.get("data");
-                        String dataStr = data != null ? JsonMapper.toJson(data) : "{}";
+                        // Convert new modules format to legacy data format for backwards compatibility
+                        Object modules = map.get("modules");
+                        String dataStr;
+                        if (modules instanceof List<?> moduleList) {
+                            Map<String, Map<String, List<Number>>> legacyData = new java.util.LinkedHashMap<>();
+                            for (Object moduleObj : moduleList) {
+                                if (moduleObj instanceof Map<?, ?> moduleMap) {
+                                    String moduleName = (String) ((Map<String, Object>) moduleMap).get("name");
+                                    List<?> components = (List<?>) ((Map<String, Object>) moduleMap).get("components");
+                                    Map<String, List<Number>> componentData = new java.util.LinkedHashMap<>();
+                                    if (components != null) {
+                                        for (Object compObj : components) {
+                                            if (compObj instanceof Map<?, ?> compMap) {
+                                                String compName = (String) ((Map<String, Object>) compMap).get("name");
+                                                List<Number> values = (List<Number>) ((Map<String, Object>) compMap).get("values");
+                                                componentData.put(compName, values != null ? values : List.of());
+                                            }
+                                        }
+                                    }
+                                    legacyData.put(moduleName, componentData);
+                                }
+                            }
+                            dataStr = JsonMapper.toJson(legacyData);
+                        } else {
+                            // Fallback to direct data field for backwards compatibility
+                            Object data = map.get("data");
+                            dataStr = data != null ? JsonMapper.toJson(data) : "{}";
+                        }
                         return Optional.of(new SnapshotResponse(mId, tick, dataStr));
                     } else if (response.statusCode() == 404) {
                         return Optional.empty();

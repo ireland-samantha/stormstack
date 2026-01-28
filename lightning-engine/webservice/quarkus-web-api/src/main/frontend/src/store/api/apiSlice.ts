@@ -5,7 +5,7 @@
 
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type {
-    AIData, CommandData, ContainerData, ContainerStatsData, CreateContainerRequest, CreateRoleRequest, CreateUserRequest, DeltaSnapshotData, HistorySummary, LoginResponse, MatchData, MatchHistorySummary, ModuleData, PlayerData,
+    AIData, CommandData, ComponentDataResponse, ContainerData, ContainerStatsData, CreateContainerRequest, CreateRoleRequest, CreateUserRequest, DeltaSnapshotData, HistorySummary, LoginResponse, MatchData, MatchHistorySummary, ModuleData, ModuleDataResponse, PlayerData,
     PlayerMatchData, ResourceData, RoleData, SessionData, SnapshotData, UserData
 } from "../../services/api";
 
@@ -27,6 +27,8 @@ export type {
     AIData,
     ResourceData,
     SnapshotData,
+    ComponentDataResponse,
+    ModuleDataResponse,
 };
 
 interface CreateMatchRequest {

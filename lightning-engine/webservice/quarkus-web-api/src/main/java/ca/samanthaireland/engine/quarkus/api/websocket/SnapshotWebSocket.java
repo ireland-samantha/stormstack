@@ -23,7 +23,7 @@
 package ca.samanthaireland.engine.quarkus.api.websocket;
 
 import java.time.Duration;
-import java.util.Map;
+import java.util.List;
 
 import jakarta.inject.Inject;
 
@@ -118,12 +118,12 @@ public class SnapshotWebSocket {
                 .filter(container -> container.snapshots() != null)
                 .map(container -> {
                     Snapshot snapshot = container.snapshots().forMatch(matchId);
-                    return new SnapshotResponse(
+                    return SnapshotResponse.from(
                             matchId,
                             container.ticks().current(),
-                            snapshot.snapshot()
+                            snapshot
                     );
                 })
-                .orElse(new SnapshotResponse(matchId, 0, Map.of()));
+                .orElse(new SnapshotResponse(matchId, 0, List.of()));
     }
 }

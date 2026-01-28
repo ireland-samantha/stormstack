@@ -104,20 +104,39 @@ curl -X POST http://localhost:8080/api/containers/1/stop-auto
 
 ### 5. ECS Snapshot Format
 
-Snapshots are organized by module, with columnar component storage:
+Snapshots are organized by module, with columnar component storage. Each module includes version information:
 
 ```json
 {
   "matchId": 1,
   "tick": 42,
-  "data": {
-    "ModuleName": {
-      "COMPONENT_NAME": [value1, value2, ...],  // One value per entity
-      "OTHER_COMPONENT": [value1, value2, ...]
+  "modules": [
+    {
+      "name": "EntityModule",
+      "version": "1.0",
+      "components": [
+        {"name": "ENTITY_ID", "values": [1.0, 2.0, 3.0]},
+        {"name": "ENTITY_TYPE", "values": [100.0, 100.0, 200.0]}
+      ]
+    },
+    {
+      "name": "RigidBodyModule",
+      "version": "1.0",
+      "components": [
+        {"name": "POSITION_X", "values": [10.0, 20.0, 30.0]},
+        {"name": "POSITION_Y", "values": [50.0, 60.0, 70.0]}
+      ]
     }
-  }
+  ],
+  "error": null
 }
 ```
+
+**Key domain classes:**
+- `Snapshot` - Root container for module data with fluent builder API
+- `ModuleData` - Module name, version, and components
+- `ComponentData` - Component name and columnar values
+- `ModuleVersion` - Semantic versioning for modules
 
 ## Common Tasks
 
