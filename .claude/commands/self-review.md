@@ -4,50 +4,115 @@ Perform a comprehensive self-review of the current commit against CLAUDE.md guid
 
 ## Instructions
 
-1. **Read CLAUDE.md** to understand all code quality guidelines (especially guidelines 1-13)
+1. **Read CLAUDE.md** to understand all project guidelines
 
 2. **Get commit details** using `git show --stat HEAD`
 
-3. **Review key changed files** against each guideline:
-   - Guideline 1: No @Deprecated annotations
-   - Guideline 2: Fluent API preference
-   - Guideline 3: No production changes for testing
-   - Guideline 4: No unnecessary getters/setters
-   - Guideline 5: Build verification
-   - Guideline 6: Use web-api-adapter for API calls
-   - Guideline 7: DTOs for >3 parameters
-   - Guideline 8: Test fixtures for business objects
-   - Guideline 9: Always run tests
-   - Guideline 10: Never manually parse JSON
-   - Guideline 11: Follow SOLID principles
-   - Guideline 12: No magic numbers
-   - Guideline 13: Self-review practice (performance test tags, leaky abstractions, constructor params, test coverage)
+3. **Review changed files** against each section of CLAUDE.md:
+
+### Core Principles
+- **Separation of Concerns**: Each module has one clear responsibility
+- **Single Responsibility Principle**: A module should have only one reason to change
+- **Dependency Injection**: All dependencies injected, not instantiated internally
+- **Depend on Abstractions**: Depend on interfaces, not implementations
+- **Clean Architecture Layers**: Core (no framework deps) → Implementation → Adapters → Providers
+
+### Architecture Patterns
+- **Fluent API Pattern**: Use `container.lifecycle().start()` style, not direct methods
+- **Module System**: Modules implement `ModuleFactory` interface
+- **ECS Pattern**: Array-based columnar storage for O(1) component access
+
+### Java Conventions
+- Java 25 with preview features (virtual threads, pattern matching, records)
+- Prefer immutability (`final` fields, unmodifiable collections)
+- Use `Optional` for nullable returns, never for parameters
+- Use records for DTOs with validation annotations
+
+### Quarkus Specifics
+- Interfaces in `engine-core` with no framework annotations
+- Quarkus annotations only on implementation classes
+- Repository pattern with MongoDB
+
+### Naming Conventions
+- Domain model: `Match`, `ExecutionContainer`
+- Strongly-typed ID: `MatchId`, `ContainerId`
+- Service interface: `MatchService` / impl: `MatchServiceImpl`
+- Request DTO: `CreateMatchRequest` / Response: `MatchResponse`
+
+### Quality Gates
+- [ ] Interface has complete Javadoc
+- [ ] DTOs use Java records with validation annotations
+- [ ] Custom exceptions for all failure cases
+- [ ] Unit tests for all classes (>80% coverage)
+- [ ] `./build.sh all` passes
+
+### Code Quality Philosophy
+- **No deprecation**: Never use `@Deprecated`, apply full migration
+- **Complete refactoring**: Update all affected code across layers
+- **YAGNI**: Don't build features you don't need yet
 
 4. **Evaluate test coverage** by checking which new production files have corresponding test files
 
-5. **Create self-review.json** in the project root with the exact format from CLAUDE.md guideline 13:
-   ```json
-   {
-     "review": { "commit": "...", "date": "..." },
-     "findings": [{ "severity": "low|medium|high", "guideline": "...", "file": "...", "line": N, "description": "...", "recommendation": "..." }],
-     "testCoverage": { "summary": "...", "estimatedCoverage": "..." },
-     "grade": { "overall": "A-F", "breakdown": { "codeQuality": "...", "testCoverage": "...", "guidelineAdherence": "..." } },
-     "recommendations": [{ "priority": "high|medium|low", "action": "...", "reason": "..." }]
-   }
-   ```
+5. **Create self-review.json** in the project root:
+```json
+{
+  "review": { "commit": "...", "date": "..." },
+  "findings": [
+    {
+      "severity": "low|medium|high",
+      "section": "Core Principles|Architecture|Java Conventions|Quarkus|Quality Gates|Code Quality",
+      "file": "...",
+      "line": N,
+      "description": "...",
+      "recommendation": "..."
+    }
+  ],
+  "testCoverage": {
+    "summary": "...",
+    "estimatedCoverage": "..."
+  },
+  "grade": {
+    "overall": "A-F",
+    "breakdown": {
+      "codeQuality": "...",
+      "testCoverage": "...",
+      "guidelineAdherence": "..."
+    }
+  },
+  "recommendations": [
+    {
+      "priority": "high|medium|low",
+      "action": "...",
+      "reason": "..."
+    }
+  ]
+}
+```
 
-6. **Address high-priority feedback** from the recommendations immediately
+6. **Address high-priority feedback** immediately
 
-7. **Report summary** to the user including:
+7. **Report summary** to user including:
    - Overall grade
    - Number of findings by severity
-   - High-priority items that were fixed
-   - Remaining medium/low items for consideration
+   - High-priority items fixed
+   - Remaining items for consideration
 
 ## Key Checks
 
-- `@Tag("performance")` on all performance test classes
-- Named constants for all magic numbers (both Java and TypeScript/JavaScript)
-- No `getDelegate()` or `getInternal*()` methods exposing implementation details
-- Constructor parameter count <= 3, or use config DTOs
-- All new production code has corresponding tests
+### Must Pass
+- No `@Deprecated` annotations in new code
+- Interfaces in `engine-core` have no Quarkus annotations
+- All DTOs are Java records
+- `./build.sh all` passes
+
+### Should Check
+- Fluent API patterns used for container operations
+- Strongly-typed IDs for all entities
+- Custom exceptions extend `EngineException`
+- Repository interfaces in `engine-core`, implementations in `persistence/`
+
+### Code Smells
+- Framework annotations on interfaces
+- `new` keyword for dependencies (should be injected)
+- Nullable parameters (should use `Optional` or overloads)
+- Missing Javadoc on public interfaces
