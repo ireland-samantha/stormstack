@@ -398,4 +398,9 @@ public class ArrayEntityComponentStore implements EntityComponentStore {
     public int getMaxEntities() {
         return maxEntities;
     }
+
+    @Override
+    public int getComponentTypeCount() {
+        return numberOfComponents;
+    }
 }

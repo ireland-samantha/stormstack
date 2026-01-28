@@ -172,8 +172,8 @@ class InMemorySnapshotHistoryTest {
         Snapshot match2Snapshot = history.getSnapshot(2L, 10L).orElseThrow();
 
         // Then - verify they are different snapshots
-        float match1Value = match1Snapshot.snapshot().get("TestModule").get("POSITION_X").get(0);
-        float match2Value = match2Snapshot.snapshot().get("TestModule").get("POSITION_X").get(0);
+        float match1Value = match1Snapshot.toLegacyFormat().get("TestModule").get("POSITION_X").get(0);
+        float match2Value = match2Snapshot.toLegacyFormat().get("TestModule").get("POSITION_X").get(0);
 
         assertThat(match1Value).isEqualTo(100.0f);
         assertThat(match2Value).isEqualTo(200.0f);
@@ -186,7 +186,7 @@ class InMemorySnapshotHistoryTest {
     }
 
     private Snapshot createSnapshot(long entityId, float positionX) {
-        return new Snapshot(Map.of(
+        return Snapshot.fromLegacyFormat(Map.of(
                 "TestModule", Map.of(
                         "ENTITY_ID", List.of((float) entityId),
                         "POSITION_X", List.of(positionX)

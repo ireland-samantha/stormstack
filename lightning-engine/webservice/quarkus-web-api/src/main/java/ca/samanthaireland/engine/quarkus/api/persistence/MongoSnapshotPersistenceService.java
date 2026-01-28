@@ -125,7 +125,7 @@ public class MongoSnapshotPersistenceService implements TickListener {
         for (Match match : matches) {
             try {
                 Snapshot snapshot = snapshotProvider.createForMatch(match.id());
-                if (snapshot != null && !snapshot.snapshot().isEmpty()) {
+                if (snapshot != null && !snapshot.isEmpty()) {
                     Document doc = toDocument(match.id(), tick, now, snapshot);
                     documents.add(doc);
                 }
@@ -142,6 +142,9 @@ public class MongoSnapshotPersistenceService implements TickListener {
 
     /**
      * Convert a snapshot to a MongoDB document.
+     *
+     * <p>Stores data in legacy format (without version strings) for MongoDB
+     * POJO codec compatibility. Version information is not stored in MongoDB.
      */
     private Document toDocument(long matchId, long tick, Instant timestamp, Snapshot snapshot) {
         Document doc = new Document();
@@ -149,14 +152,14 @@ public class MongoSnapshotPersistenceService implements TickListener {
         doc.append("tick", tick);
         doc.append("timestamp", timestamp);
 
-        // Convert the nested map structure to a Document
+        // Convert module data to a Document in legacy format for POJO compatibility
         Document dataDoc = new Document();
-        for (Map.Entry<String, Map<String, List<Float>>> moduleEntry : snapshot.snapshot().entrySet()) {
+        for (var module : snapshot.modules()) {
             Document moduleDoc = new Document();
-            for (Map.Entry<String, List<Float>> componentEntry : moduleEntry.getValue().entrySet()) {
-                moduleDoc.append(componentEntry.getKey(), componentEntry.getValue());
+            for (var component : module.components()) {
+                moduleDoc.append(component.name(), component.values());
             }
-            dataDoc.append(moduleEntry.getKey(), moduleDoc);
+            dataDoc.append(module.name(), moduleDoc);
         }
         doc.append("data", dataDoc);
 

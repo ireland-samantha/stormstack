@@ -377,4 +377,9 @@ public class ModuleScopedStore implements EntityComponentStore {
     public int getMaxEntities() {
         return delegate.getMaxEntities();
     }
+
+    @Override
+    public int getComponentTypeCount() {
+        return delegate.getComponentTypeCount();
+    }
 }

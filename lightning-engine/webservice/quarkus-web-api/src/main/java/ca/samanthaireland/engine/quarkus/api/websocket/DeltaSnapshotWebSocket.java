@@ -169,7 +169,7 @@ public class DeltaSnapshotWebSocket {
         if (state.lastSnapshot == null) {
             // First message - send delta from empty state (effectively full snapshot)
             fromTick = 0;
-            Snapshot emptySnapshot = new Snapshot(Map.of());
+            Snapshot emptySnapshot = Snapshot.empty();
             delta = deltaCompressionService.computeDelta(matchId, fromTick, emptySnapshot, currentTick, currentSnapshot);
         } else if (state.lastTick == currentTick) {
             // No change since last update
@@ -197,13 +197,13 @@ public class DeltaSnapshotWebSocket {
     }
 
     private double calculateCompressionRatio(Snapshot from, Snapshot to, DeltaSnapshot delta) {
-        if (to == null || to.snapshot() == null) {
+        if (to == null || to.isEmpty()) {
             return 1.0;
         }
 
-        int fullSnapshotSize = to.snapshot().values().stream()
-                .flatMap(moduleData -> moduleData.values().stream())
-                .mapToInt(java.util.List::size)
+        int fullSnapshotSize = to.modules().stream()
+                .flatMap(moduleData -> moduleData.components().stream())
+                .mapToInt(component -> component.values().size())
                 .sum();
 
         if (fullSnapshotSize == 0) {

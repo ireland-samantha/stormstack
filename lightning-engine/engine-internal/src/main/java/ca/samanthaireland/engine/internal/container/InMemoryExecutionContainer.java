@@ -117,6 +117,33 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
         return componentInitializer != null ? componentInitializer.getGameLoop() : null;
     }
 
+    /**
+     * Get the caching snapshot provider for this container.
+     *
+     * @return the caching snapshot provider, or null if container not started
+     */
+    public ca.samanthaireland.engine.internal.core.snapshot.CachingSnapshotProvider getCachingSnapshotProvider() {
+        return componentInitializer != null ? componentInitializer.getCachingSnapshotProvider() : null;
+    }
+
+    /**
+     * Get the entity component store for this container.
+     *
+     * @return the entity store, or null if container not started
+     */
+    public ca.samanthaireland.engine.core.store.EntityComponentStore getEntityStore() {
+        return componentInitializer != null ? componentInitializer.getEntityStore() : null;
+    }
+
+    /**
+     * Get the command queue manager for this container.
+     *
+     * @return the command queue manager, or null if container not started
+     */
+    public ca.samanthaireland.engine.internal.core.command.InMemoryCommandQueueManager getCommandQueueManager() {
+        return componentInitializer != null ? componentInitializer.getCommandQueueManager() : null;
+    }
+
     @Override
     public long getId() {
         return id;
@@ -151,7 +178,7 @@ public class InMemoryExecutionContainer implements ExecutionContainer, Closeable
 
         try {
             log.info("Starting container {} '{}'", id, config.name());
-            componentInitializer = new ContainerComponentInitializer(id, config);
+            componentInitializer = new ContainerComponentInitializer(id, config, tickExecutor::getCurrentTick);
             componentInitializer.initialize();
             tickExecutor.setGameLoop(componentInitializer.getGameLoop());
             status.set(ContainerStatus.RUNNING);

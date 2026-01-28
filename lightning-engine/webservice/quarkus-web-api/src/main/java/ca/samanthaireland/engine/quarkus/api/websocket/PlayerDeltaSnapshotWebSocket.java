@@ -220,9 +220,9 @@ public class PlayerDeltaSnapshotWebSocket {
             return 1.0;
         }
 
-        int fullSnapshotSize = to.snapshot().values().stream()
-                .flatMap(moduleData -> moduleData.values().stream())
-                .mapToInt(List::size)
+        int fullSnapshotSize = to.modules().stream()
+                .flatMap(moduleData -> moduleData.components().stream())
+                .mapToInt(component -> component.values().size())
                 .sum();
 
         if (fullSnapshotSize == 0) {

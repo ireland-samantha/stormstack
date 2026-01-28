@@ -15,7 +15,7 @@ Lightning Engine is a modular Entity-Component-System (ECS) game engine with:
 ```
 lightning-engine/
 ├── engine-core/          # Core abstractions (interfaces, domain models)
-├── engine-internal/      # Implementation details (stores, services)
+├── engine-internal/      # Implementation details (stores, services) - NO MODULE IMPLEMENTATIONS
 ├── engine-adapter/
 │   ├── game-sdk/         # Orchestrator, GameRenderer, SpriteMapper
 │   └── web-api-adapter/  # EngineClient, REST adapters, Jackson JSON
@@ -23,7 +23,25 @@ lightning-engine/
 ├── gui/                  # Desktop GUI application
 └── webservice/
     └── quarkus-web-api/  # Quarkus REST/WebSocket endpoints
+
+lightning-engine-extensions/
+└── modules/              # All module implementations go here
+    ├── entity-module/    # Entity spawning and lifecycle
+    ├── rendering-module/ # Sprite rendering
+    └── physics-module/   # Compound physics module (parent pom)
+        ├── grid-map-module/   # Grid-based positioning
+        └── rigid-body-module/ # Physics rigid body simulation
 ```
+
+### Module Location Guidelines
+
+**IMPORTANT:** Module implementations (like PhysicsModule, GridMapModule, etc.) must NEVER be placed in `engine-internal`. The `engine-internal` module is for engine infrastructure only (stores, services, container management).
+
+- **engine-core**: Interfaces, records, and abstractions (e.g., `EngineModule`, `CompoundModule`, `ModuleVersion`)
+- **engine-internal**: Engine infrastructure implementations (e.g., `AbstractCompoundModule`, `CompoundModuleBuilder`, `ModuleDependencyResolver`)
+- **lightning-engine-extensions/modules/**: All concrete module implementations
+
+Compound modules (modules composed of other modules) should be organized as parent poms containing their sub-modules.
 
 ### 4. Execution Containers
 
@@ -86,20 +104,39 @@ curl -X POST http://localhost:8080/api/containers/1/stop-auto
 
 ### 5. ECS Snapshot Format
 
-Snapshots are organized by module, with columnar component storage:
+Snapshots are organized by module, with columnar component storage. Each module includes version information:
 
 ```json
 {
   "matchId": 1,
   "tick": 42,
-  "data": {
-    "ModuleName": {
-      "COMPONENT_NAME": [value1, value2, ...],  // One value per entity
-      "OTHER_COMPONENT": [value1, value2, ...]
+  "modules": [
+    {
+      "name": "EntityModule",
+      "version": "1.0",
+      "components": [
+        {"name": "ENTITY_ID", "values": [1.0, 2.0, 3.0]},
+        {"name": "ENTITY_TYPE", "values": [100.0, 100.0, 200.0]}
+      ]
+    },
+    {
+      "name": "RigidBodyModule",
+      "version": "1.0",
+      "components": [
+        {"name": "POSITION_X", "values": [10.0, 20.0, 30.0]},
+        {"name": "POSITION_Y", "values": [50.0, 60.0, 70.0]}
+      ]
     }
-  }
+  ],
+  "error": null
 }
 ```
+
+**Key domain classes:**
+- `Snapshot` - Root container for module data with fluent builder API
+- `ModuleData` - Module name, version, and components
+- `ComponentData` - Component name and columnar values
+- `ModuleVersion` - Semantic versioning for modules
 
 ## Common Tasks
 

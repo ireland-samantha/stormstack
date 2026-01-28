@@ -119,39 +119,64 @@ public class RigidBodyModule implements EngineModule {
 
     // ========== Systems ==========
 
+    // Pre-computed component ID arrays for batch operations (avoid allocation during tick)
+    // Force integration read: mass, forceX, forceY, forceZ, torque, inertia, angularVel
+    private static final long[] FORCE_READ_IDS = {
+            MASS.getId(), FORCE_X.getId(), FORCE_Y.getId(), FORCE_Z.getId(),
+            TORQUE.getId(), INERTIA.getId(), ANGULAR_VELOCITY.getId()
+    };
+
+    // Force integration write: accelX, accelY, accelZ, angularVel
+    private static final long[] FORCE_WRITE_IDS = {
+            ACCELERATION_X.getId(), ACCELERATION_Y.getId(), ACCELERATION_Z.getId(), ANGULAR_VELOCITY.getId()
+    };
+
     /**
      * Force integration system: converts forces to acceleration (a = F/m).
+     *
+     * <p>Optimized with batch component reads/writes using pre-computed component ID arrays.
      */
     private EngineSystem createForceIntegrationSystem() {
+        // Pre-allocate buffers for batch operations (reused each tick)
+        final float[] readBuf = new float[FORCE_READ_IDS.length];
+        final float[] writeBuf = new float[FORCE_WRITE_IDS.length];
+
         return () -> {
             EntityComponentStore store = context.getEntityComponentStore();
             Set<Long> entities = store.getEntitiesWithComponents(List.of(FLAG, MASS, FORCE_X));
 
             for (long entity : entities) {
-                float mass = store.getComponent(entity, MASS);
-                if (mass <= 0) mass = 1.0f; // Prevent division by zero
+                // Batch read all force components using pre-computed IDs
+                store.getComponents(entity, FORCE_READ_IDS, readBuf);
 
-                float forceX = store.getComponent(entity, FORCE_X);
-                float forceY = store.getComponent(entity, FORCE_Y);
-                float forceZ = store.getComponent(entity, FORCE_Z);
+                float mass = readBuf[0];
+                float forceX = readBuf[1];
+                float forceY = readBuf[2];
+                float forceZ = readBuf[3];
+                float torque = readBuf[4];
+                float inertia = readBuf[5];
+                float angularVel = readBuf[6];
+
+                // Prevent division by zero
+                if (mass <= 0) mass = 1.0f;
+                if (inertia <= 0) inertia = 1.0f;
 
                 // a = F / m
                 float accelX = forceX / mass;
                 float accelY = forceY / mass;
                 float accelZ = forceZ / mass;
 
-                store.attachComponents(entity, ACCELERATION_COMPONENTS,
-                        new float[]{accelX, accelY, accelZ});
-
                 // Handle angular: torque / inertia = angular acceleration
-                float torque = store.getComponent(entity, TORQUE);
-                float inertia = store.getComponent(entity, INERTIA);
-                if (inertia <= 0) inertia = 1.0f;
-
                 float angularAccel = torque / inertia;
-                float angularVel = store.getComponent(entity, ANGULAR_VELOCITY);
                 angularVel += angularAccel * DT;
-                store.attachComponent(entity, ANGULAR_VELOCITY, angularVel);
+
+                // Batch write acceleration and angular velocity
+                writeBuf[0] = accelX;
+                writeBuf[1] = accelY;
+                writeBuf[2] = accelZ;
+                writeBuf[3] = angularVel;
+
+                store.attachComponents(entity, FORCE_WRITE_IDS, writeBuf);
 
                 log.trace("Entity {} force=({},{},{}) -> accel=({},{},{})",
                         entity, forceX, forceY, forceZ, accelX, accelY, accelZ);
@@ -159,33 +184,58 @@ public class RigidBodyModule implements EngineModule {
         };
     }
 
+    // Physics read: velX, velY, velZ, accelX, accelY, accelZ, linearDrag, angularDrag, rotation, angularVel
+    private static final long[] PHYSICS_READ_IDS = {
+            VELOCITY_X.getId(), VELOCITY_Y.getId(), VELOCITY_Z.getId(),
+            ACCELERATION_X.getId(), ACCELERATION_Y.getId(), ACCELERATION_Z.getId(),
+            LINEAR_DRAG.getId(), ANGULAR_DRAG.getId(),
+            ROTATION.getId(), ANGULAR_VELOCITY.getId()
+    };
+
+    // Physics write: velX, velY, velZ, rotation, angularVel, forceX, forceY, forceZ, torque
+    private static final long[] PHYSICS_WRITE_IDS = {
+            VELOCITY_X.getId(), VELOCITY_Y.getId(), VELOCITY_Z.getId(),
+            ROTATION.getId(), ANGULAR_VELOCITY.getId(),
+            FORCE_X.getId(), FORCE_Y.getId(), FORCE_Z.getId(),
+            TORQUE.getId()
+    };
+
     /**
      * Physics integration system: velocity += acceleration, position += velocity.
      * Uses GridMapExports to update positions through the proper module boundary.
+     *
+     * <p>Optimized with batch component reads/writes using pre-computed component ID arrays.
      */
     private EngineSystem createPhysicsSystem() {
+        // Pre-allocate buffers for batch operations (reused each tick)
+        final float[] readBuf = new float[PHYSICS_READ_IDS.length];
+        final float[] writeBuf = new float[PHYSICS_WRITE_IDS.length];
+
         return () -> {
             EntityComponentStore store = context.getEntityComponentStore();
             GridMapExports exports = getGridMapExports();
             Set<Long> entities = store.getEntitiesWithComponents(List.of(FLAG));
 
             for (long entity : entities) {
+                // Batch read all physics components using pre-computed IDs
+                store.getComponents(entity, PHYSICS_READ_IDS, readBuf);
+
+                float velX = readBuf[0];
+                float velY = readBuf[1];
+                float velZ = readBuf[2];
+                float accelX = readBuf[3];
+                float accelY = readBuf[4];
+                float accelZ = readBuf[5];
+                float linearDrag = readBuf[6];
+                float angularDrag = readBuf[7];
+                float rotation = readBuf[8];
+                float angularVel = readBuf[9];
+
                 // Get current position from GridMap exports
                 Position currentPos = exports.getPosition(entity).orElse(Position.origin());
                 float posX = currentPos.x();
                 float posY = currentPos.y();
                 float posZ = currentPos.z();
-
-                float velX = store.getComponent(entity, VELOCITY_X);
-                float velY = store.getComponent(entity, VELOCITY_Y);
-                float velZ = store.getComponent(entity, VELOCITY_Z);
-
-                float accelX = store.getComponent(entity, ACCELERATION_X);
-                float accelY = store.getComponent(entity, ACCELERATION_Y);
-                float accelZ = store.getComponent(entity, ACCELERATION_Z);
-
-                float linearDrag = store.getComponent(entity, LINEAR_DRAG);
-                float angularDrag = store.getComponent(entity, ANGULAR_DRAG);
 
                 // Integrate velocity: v += a * dt
                 velX += accelX * DT;
@@ -208,26 +258,27 @@ public class RigidBodyModule implements EngineModule {
                 // Update position through GridMapModule exports
                 exports.setPosition(entity, posX, posY, posZ);
 
-                // Update velocity (RigidBodyModule's own components)
-                store.attachComponents(entity, VELOCITY_COMPONENTS,
-                        new float[]{velX, velY, velZ});
-
-                // Handle rotation
-                float rotation = store.getComponent(entity, ROTATION);
-                float angularVel = store.getComponent(entity, ANGULAR_VELOCITY);
-
                 // Apply angular drag
                 if (angularDrag > 0 && angularDrag < 1) {
                     angularVel *= (1.0f - angularDrag);
-                    store.attachComponent(entity, ANGULAR_VELOCITY, angularVel);
                 }
 
+                // Integrate rotation
                 rotation += angularVel * DT;
-                store.attachComponent(entity, ROTATION, rotation);
 
-                // Clear forces (they're consumed each tick)
-                store.attachComponents(entity, FORCE_COMPONENTS, new float[]{0, 0, 0});
-                store.attachComponent(entity, TORQUE, 0);
+                // Batch write all output components
+                // Order: velX, velY, velZ, rotation, angularVel, forceX, forceY, forceZ, torque
+                writeBuf[0] = velX;
+                writeBuf[1] = velY;
+                writeBuf[2] = velZ;
+                writeBuf[3] = rotation;
+                writeBuf[4] = angularVel;
+                writeBuf[5] = 0; // Clear force X
+                writeBuf[6] = 0; // Clear force Y
+                writeBuf[7] = 0; // Clear force Z
+                writeBuf[8] = 0; // Clear torque
+
+                store.attachComponents(entity, PHYSICS_WRITE_IDS, writeBuf);
 
                 log.trace("Entity {} pos=({},{},{}) vel=({},{},{})",
                         entity, posX, posY, posZ, velX, velY, velZ);

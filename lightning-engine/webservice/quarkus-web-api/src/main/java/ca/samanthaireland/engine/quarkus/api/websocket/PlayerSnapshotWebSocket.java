@@ -35,7 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.Map;
+import java.util.List;
 
 /**
  * WebSocket endpoint for streaming container-scoped player-filtered snapshots.
@@ -118,13 +118,13 @@ public class PlayerSnapshotWebSocket {
                 .filter(container -> container.snapshots() != null)
                 .map(container -> {
                     Snapshot snapshot = container.snapshots().forMatchAndPlayer(matchId, playerId);
-                    return new SnapshotResponse(
+                    return SnapshotResponse.from(
                             matchId,
                             container.ticks().current(),
-                            snapshot.snapshot()
+                            snapshot
                     );
                 })
-                .orElse(new SnapshotResponse(matchId, 0, Map.of()));
+                .orElse(new SnapshotResponse(matchId, 0, List.of()));
     }
 
     private long parseLong(String value, String fieldName) {
