@@ -32,6 +32,7 @@ import ca.samanthaireland.engine.internal.core.store.EcsProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   <li>10000 entities: < 100ms per snapshot</li>
  * </ul>
  */
+@Tag("performance")
 @DisplayName("SnapshotProviderImpl Performance Tests")
 class SnapshotProviderPerformanceTest {
 

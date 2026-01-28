@@ -49,6 +49,9 @@ import {
 import { useAppSelector } from "../store/hooks";
 import { selectSelectedContainerId } from "../store/slices/uiSlice";
 
+// Threshold for warning color on command queue size
+const COMMAND_QUEUE_WARNING_THRESHOLD = 100;
+
 interface MetricCardProps {
   title: string;
   value: string | number;
@@ -261,7 +264,7 @@ const MetricsPanel: React.FC = () => {
                 title="Command Queue"
                 value={metrics.commandQueueSize.toLocaleString()}
                 icon={<QueueIcon />}
-                color={metrics.commandQueueSize > 100 ? "warning" : "success"}
+                color={metrics.commandQueueSize > COMMAND_QUEUE_WARNING_THRESHOLD ? "warning" : "success"}
                 subtitle={metrics.commandQueueSize > 0 ? "pending commands" : "empty"}
               />
             </Grid>
