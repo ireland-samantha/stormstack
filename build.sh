@@ -18,6 +18,17 @@ set -e
 DOCKER_IMAGE="samanthacireland/lightning-engine"
 DOCKER_TAG="latest"
 FRONTEND_DIR="lightning-engine/webservice/quarkus-web-api/src/main/frontend"
+# Tailscale IP - set via environment variable or detect automatically
+if [ -z "$TAILSCALE_IP" ]; then
+    TAILSCALE_IP=$(/Applications/Tailscale.app/Contents/MacOS/Tailscale ip -4 2>/dev/null || echo "")
+fi
+if [ -z "$TAILSCALE_IP" ]; then
+    echo "Warning: TAILSCALE_IP not set and unable to detect. Set with: export TAILSCALE_IP=\$(tailscale ip -4)"
+fi
+
+LOCAL_REGISTRY_HOST="${TAILSCALE_IP:-$TAILSCALE_IP}"
+LOCAL_REGISTRY_PORT="${LOCAL_REGISTRY_PORT:-5001}"
+LOCAL_REGISTRY="${LOCAL_REGISTRY_HOST}:${LOCAL_REGISTRY_PORT}"
 START_TIME=$(date +%s)
 
 banner() {
@@ -56,6 +67,12 @@ print_usage() {
     echo "  integration-test - Build Docker image and run integration tests"
     echo "  docker           - Build Docker image only"
     echo "  all              - Full pipeline: secrets, frontend, build, test, integration-test"
+    echo ""
+    echo "Local Registry (Tailscale):"
+    echo "  registry-start   - Start local Docker registry on ${LOCAL_REGISTRY}"
+    echo "  registry-stop    - Stop local Docker registry"
+    echo "  registry-status  - Check registry status and list images"
+    echo "  docker-local     - Build and push to local registry"
     echo ""
 }
 
@@ -111,6 +128,51 @@ do_integration_test() {
     mvn verify -Pacceptance-tests -pl lightning-engine/api-acceptance-test
 }
 
+do_registry_start() {
+    banner "START LOCAL REGISTRY"
+    docker compose -f docker-compose.registry.yml up -d
+    echo ""
+    echo "Registry started at ${LOCAL_REGISTRY}"
+    echo "From AWS (via Tailscale): docker pull ${LOCAL_REGISTRY}/lightning-engine:0.0.2-SNAPSHOT"
+    echo ""
+    echo "IMPORTANT: On remote machines, add to /etc/docker/daemon.json:"
+    echo "  { \"insecure-registries\": [\"${LOCAL_REGISTRY}\"] }"
+    echo "Then: sudo systemctl restart docker"
+}
+
+do_registry_stop() {
+    banner "STOP LOCAL REGISTRY"
+    docker compose -f docker-compose.registry.yml down
+}
+
+do_registry_status() {
+    banner "REGISTRY STATUS"
+    if docker ps --format '{{.Names}}' | grep -q local-docker-registry; then
+        echo "Registry is RUNNING at ${LOCAL_REGISTRY}"
+        echo ""
+        echo "Images in registry:"
+        curl -s "http://${LOCAL_REGISTRY}/v2/_catalog" 2>/dev/null | python3 -m json.tool 2>/dev/null || echo "  (empty or unable to query)"
+    else
+        echo "Registry is NOT RUNNING"
+        echo "Start with: ./build.sh registry-start"
+    fi
+}
+
+do_docker_local() {
+    banner "BUILD & PUSH TO LOCAL REGISTRY"
+    # Check if registry is running
+    if ! docker ps --format '{{.Names}}' | grep -q local-docker-registry; then
+        echo "Error: Local registry is not running"
+        echo "Start with: ./build.sh registry-start"
+        exit 1
+    fi
+    # Build and push via Maven profile
+    mvn install -PlocalDockerRegistry -pl lightning-engine/webservice/quarkus-web-api -DskipTests
+    echo ""
+    echo "Image pushed to: ${LOCAL_REGISTRY}/lightning-engine:0.0.2-SNAPSHOT"
+    echo "Pull from AWS: docker pull ${LOCAL_REGISTRY}/lightning-engine:0.0.2-SNAPSHOT"
+}
+
 do_all() {
     do_clean
     do_secrets
@@ -153,6 +215,19 @@ case "${1:-}" in
         ;;
     docker)
         do_docker
+        print_duration
+        ;;
+    registry-start)
+        do_registry_start
+        ;;
+    registry-stop)
+        do_registry_stop
+        ;;
+    registry-status)
+        do_registry_status
+        ;;
+    docker-local)
+        do_docker_local
         print_duration
         ;;
     all)

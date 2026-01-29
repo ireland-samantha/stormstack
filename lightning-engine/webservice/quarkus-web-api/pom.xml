@@ -485,5 +485,54 @@
                 </plugins>
             </build>
         </profile>
+
+        <!-- Local Docker Registry profile for Tailscale-based deployment -->
+        <!-- Usage: mvn install -PlocalDockerRegistry -->
+        <!-- Requires: docker compose -f docker-compose.registry.yml up -d -->
+        <!-- Set TAILSCALE_IP environment variable to your Tailscale IP -->
+        <profile>
+            <id>localDockerRegistry</id>
+            <properties>
+                <local.registry.host>${env.TAILSCALE_IP}</local.registry.host>
+                <local.registry.port>5001</local.registry.port>
+                <local.registry.image>${local.registry.host}:${local.registry.port}/lightning-engine:${project.version}</local.registry.image>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <!-- Build multi-platform image and push to local registry -->
+                            <!-- Uses docker buildx for linux/amd64 and linux/arm64 support -->
+                            <execution>
+                                <id>build-push-multiplatform-image</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}/../../..</workingDirectory>
+                                    <arguments>
+                                        <argument>buildx</argument>
+                                        <argument>build</argument>
+                                        <argument>--platform</argument>
+                                        <argument>linux/amd64,linux/arm64</argument>
+                                        <argument>-f</argument>
+                                        <argument>lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt</argument>
+                                        <argument>-t</argument>
+                                        <argument>${local.registry.image}</argument>
+                                        <argument>--push</argument>
+                                        <argument>.</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

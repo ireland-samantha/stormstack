@@ -1,0 +1,30 @@
+# Local Docker Registry for cross-machine deployment via Tailscale
+# Usage:
+#   Start registry: docker compose -f docker-compose.registry.yml up -d
+#   Stop registry:  docker compose -f docker-compose.registry.yml down
+#
+# Your Tailscale IP: $TAILSCALE_IP
+# Registry URL: $TAILSCALE_IP:5001
+#
+# To pull from another machine (e.g., AWS via Tailscale):
+#   docker pull $TAILSCALE_IP:5001/lightning-engine:latest
+#
+# IMPORTANT: Configure Docker on remote machines to allow insecure registry:
+#   Add to /etc/docker/daemon.json:
+#   { "insecure-registries": ["$TAILSCALE_IP:5001"] }
+#   Then: sudo systemctl restart docker
+
+services:
+  registry:
+    image: registry:2
+    container_name: local-docker-registry
+    ports:
+      - "5001:5000"
+    volumes:
+      - registry-data:/var/lib/registry
+    environment:
+      - REGISTRY_STORAGE_DELETE_ENABLED=true
+    restart: unless-stopped
+
+volumes:
+  registry-data:

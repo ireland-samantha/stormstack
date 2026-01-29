@@ -19,9 +19,11 @@ services:
     networks:
       - lightning-network
 
-  # Main Quarkus API backend (pulls from Docker Hub)
+  # Main Quarkus API backend
+  # Set LIGHTNING_IMAGE to use local registry:
+  #   LIGHTNING_IMAGE=$TAILSCALE_IP:5001/lightning-engine:0.0.2-SNAPSHOT docker compose up
   backend:
-    image: samanthacireland/lightning-engine:0.0.2
+    image: ${LIGHTNING_IMAGE:-samanthacireland/lightning-engine:0.0.2}
     container_name: lightning-engine
     ports:
       - "8080:8080"
