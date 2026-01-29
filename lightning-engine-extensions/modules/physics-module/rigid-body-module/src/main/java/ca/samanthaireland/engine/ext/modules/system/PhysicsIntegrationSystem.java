@@ -63,85 +63,87 @@ public class PhysicsIntegrationSystem implements EngineSystem {
 
     @Override
     public void updateEntities() {
-        try (var scope = benchmark.scope("velocity-position-integration")) {
+        try (var scope = benchmark.scope("physics-integration-whole-system")) {
             EntityComponentStore store = context.getEntityComponentStore();
             GridMapExports exports = getGridMapExports();
             Set<Long> entities = store.getEntitiesWithComponents(List.of(FLAG));
 
-            for (long entity : entities) {
-                // Batch read all physics components using pre-computed IDs
-                try (var scope2 = benchmark.scope("read-ids")) {
-                    store.getComponents(entity, PHYSICS_READ_IDS, readBuf);
+                for (long entity : entities) {
+                    try (var scope1 = benchmark.scope("physics-integration-entity-update")) {
+
+                        try (var scope2 = benchmark.scope("physics-integration-read-ids")) {
+                            store.getComponents(entity, PHYSICS_READ_IDS, readBuf);
+                        }
+
+                        float velX = readBuf[0];
+                        float velY = readBuf[1];
+                        float velZ = readBuf[2];
+                        float accelX = readBuf[3];
+                        float accelY = readBuf[4];
+                        float accelZ = readBuf[5];
+                        float linearDrag = readBuf[6];
+                        float angularDrag = readBuf[7];
+                        float rotation = readBuf[8];
+                        float angularVel = readBuf[9];
+
+                        // Get current position from GridMap exports
+                        Position currentPos;
+                        try (var scope2 = benchmark.scope("get export")) {
+                            currentPos = exports.getPosition(entity).orElse(Position.origin());
+                        }
+
+                        float posX = currentPos.x();
+                        float posY = currentPos.y();
+                        float posZ = currentPos.z();
+
+                        // Integrate velocity: v += a * dt
+                        velX += accelX * DT;
+                        velY += accelY * DT;
+                        velZ += accelZ * DT;
+
+                        // Apply linear drag: v *= (1 - drag)
+                        if (linearDrag > 0 && linearDrag < 1) {
+                            float dragFactor = 1.0f - linearDrag;
+                            velX *= dragFactor;
+                            velY *= dragFactor;
+                            velZ *= dragFactor;
+                        }
+
+                        // Integrate position: p += v * dt
+                        posX += velX * DT;
+                        posY += velY * DT;
+                        posZ += velZ * DT;
+
+                        // Update position through GridMapModule exports
+                        exports.setPosition(entity, posX, posY, posZ);
+
+                        // Apply angular drag
+                        if (angularDrag > 0 && angularDrag < 1) {
+                            angularVel *= (1.0f - angularDrag);
+                        }
+
+                        // Integrate rotation
+                        rotation += angularVel * DT;
+
+                        // Batch write all output components
+                        // Order: velX, velY, velZ, rotation, angularVel, forceX, forceY, forceZ, torque
+                        writeBuf[0] = velX;
+                        writeBuf[1] = velY;
+                        writeBuf[2] = velZ;
+                        writeBuf[3] = rotation;
+                        writeBuf[4] = angularVel;
+                        writeBuf[5] = 0; // Clear force X
+                        writeBuf[6] = 0; // Clear force Y
+                        writeBuf[7] = 0; // Clear force Z
+                        writeBuf[8] = 0; // Clear torque
+
+                        try (var scope2 = benchmark.scope("physics-integration-write physics integration")) {
+                            store.attachComponents(entity, PHYSICS_WRITE_IDS, writeBuf);
+                        }
+
+                        log.trace("Entity {} pos=({},{},{}) vel=({},{},{})",
+                                entity, posX, posY, posZ, velX, velY, velZ);
                 }
-
-                float velX = readBuf[0];
-                float velY = readBuf[1];
-                float velZ = readBuf[2];
-                float accelX = readBuf[3];
-                float accelY = readBuf[4];
-                float accelZ = readBuf[5];
-                float linearDrag = readBuf[6];
-                float angularDrag = readBuf[7];
-                float rotation = readBuf[8];
-                float angularVel = readBuf[9];
-
-                // Get current position from GridMap exports
-                Position currentPos;
-                try (var scope2 = benchmark.scope("get export")) {
-                    currentPos = exports.getPosition(entity).orElse(Position.origin());
-                }
-
-                float posX = currentPos.x();
-                float posY = currentPos.y();
-                float posZ = currentPos.z();
-
-                // Integrate velocity: v += a * dt
-                velX += accelX * DT;
-                velY += accelY * DT;
-                velZ += accelZ * DT;
-
-                // Apply linear drag: v *= (1 - drag)
-                if (linearDrag > 0 && linearDrag < 1) {
-                    float dragFactor = 1.0f - linearDrag;
-                    velX *= dragFactor;
-                    velY *= dragFactor;
-                    velZ *= dragFactor;
-                }
-
-                // Integrate position: p += v * dt
-                posX += velX * DT;
-                posY += velY * DT;
-                posZ += velZ * DT;
-
-                // Update position through GridMapModule exports
-                exports.setPosition(entity, posX, posY, posZ);
-
-                // Apply angular drag
-                if (angularDrag > 0 && angularDrag < 1) {
-                    angularVel *= (1.0f - angularDrag);
-                }
-
-                // Integrate rotation
-                rotation += angularVel * DT;
-
-                // Batch write all output components
-                // Order: velX, velY, velZ, rotation, angularVel, forceX, forceY, forceZ, torque
-                writeBuf[0] = velX;
-                writeBuf[1] = velY;
-                writeBuf[2] = velZ;
-                writeBuf[3] = rotation;
-                writeBuf[4] = angularVel;
-                writeBuf[5] = 0; // Clear force X
-                writeBuf[6] = 0; // Clear force Y
-                writeBuf[7] = 0; // Clear force Z
-                writeBuf[8] = 0; // Clear torque
-
-                try (var scope4 = benchmark.scope("write physics integration")) {
-                    store.attachComponents(entity, PHYSICS_WRITE_IDS, writeBuf);
-                }
-
-                log.trace("Entity {} pos=({},{},{}) vel=({},{},{})",
-                        entity, posX, posY, posZ, velX, velY, velZ);
             }
         }
     }

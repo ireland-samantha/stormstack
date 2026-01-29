@@ -5,9 +5,7 @@ import ca.samanthaireland.engine.ext.module.ModuleContext;
 import ca.samanthaireland.engine.ext.modules.domain.Position;
 import ca.samanthaireland.engine.ext.modules.domain.repository.PositionRepository;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static ca.samanthaireland.engine.ext.modules.GridMapModuleFactory.*;
 
@@ -43,10 +41,11 @@ public class EcsPositionRepository implements PositionRepository {
     @Override
     public Optional<Position> findByEntityId(long entityId) {
         EntityComponentStore store = getStore();
-        Set<Long> entitiesWithPosition = store.getEntitiesWithComponents(
-                List.of(POSITION_X, POSITION_Y, POSITION_Z));
 
-        if (!entitiesWithPosition.contains(entityId)) {
+        // O(1) direct lookup instead of O(n) full entity scan
+        if (!store.hasComponent(entityId, POSITION_X) ||
+            !store.hasComponent(entityId, POSITION_Y) ||
+            !store.hasComponent(entityId, POSITION_Z)) {
             return Optional.empty();
         }
 

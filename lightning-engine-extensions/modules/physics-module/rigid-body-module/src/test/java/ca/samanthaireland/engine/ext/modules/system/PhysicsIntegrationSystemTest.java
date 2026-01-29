@@ -38,7 +38,7 @@ class PhysicsIntegrationSystemTest {
     @BeforeEach
     void setUp() {
         when(context.getBenchmark()).thenReturn(benchmark);
-        when(benchmark.scope("velocity-position-integration")).thenReturn(benchmarkScope);
+        when(benchmark.scope(anyString())).thenReturn(benchmarkScope);
     }
 
     @Test

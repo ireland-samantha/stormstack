@@ -25,6 +25,7 @@ fi
 if [ -z "$TAILSCALE_IP" ]; then
     echo "Warning: TAILSCALE_IP not set and unable to detect. Set with: export TAILSCALE_IP=\$(tailscale ip -4)"
 fi
+export TAILSCALE_IP
 
 LOCAL_REGISTRY_HOST="${TAILSCALE_IP:-$TAILSCALE_IP}"
 LOCAL_REGISTRY_PORT="${LOCAL_REGISTRY_PORT:-5001}"

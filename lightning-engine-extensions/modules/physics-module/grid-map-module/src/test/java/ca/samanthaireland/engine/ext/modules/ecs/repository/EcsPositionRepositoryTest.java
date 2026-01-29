@@ -11,9 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static ca.samanthaireland.engine.ext.modules.GridMapModuleFactory.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,8 +78,9 @@ class EcsPositionRepositoryTest {
         @DisplayName("should return position when entity has position components")
         void shouldReturnPositionWhenEntityHasPositionComponents() {
             long entityId = 42L;
-            when(store.getEntitiesWithComponents(List.of(POSITION_X, POSITION_Y, POSITION_Z)))
-                    .thenReturn(Set.of(entityId));
+            when(store.hasComponent(entityId, POSITION_X)).thenReturn(true);
+            when(store.hasComponent(entityId, POSITION_Y)).thenReturn(true);
+            when(store.hasComponent(entityId, POSITION_Z)).thenReturn(true);
             when(store.getComponent(entityId, POSITION_X)).thenReturn(5f);
             when(store.getComponent(entityId, POSITION_Y)).thenReturn(10f);
             when(store.getComponent(entityId, POSITION_Z)).thenReturn(2f);
@@ -98,8 +97,7 @@ class EcsPositionRepositoryTest {
         @DisplayName("should return empty when entity has no position components")
         void shouldReturnEmptyWhenEntityHasNoPositionComponents() {
             long entityId = 42L;
-            when(store.getEntitiesWithComponents(List.of(POSITION_X, POSITION_Y, POSITION_Z)))
-                    .thenReturn(Set.of(100L, 200L));
+            when(store.hasComponent(entityId, POSITION_X)).thenReturn(false);
 
             Optional<Position> result = repository.findByEntityId(entityId);
 
@@ -107,11 +105,11 @@ class EcsPositionRepositoryTest {
         }
 
         @Test
-        @DisplayName("should return empty when no entities have position components")
-        void shouldReturnEmptyWhenNoEntitiesHavePositionComponents() {
+        @DisplayName("should return empty when entity is missing Y component")
+        void shouldReturnEmptyWhenEntityIsMissingYComponent() {
             long entityId = 42L;
-            when(store.getEntitiesWithComponents(List.of(POSITION_X, POSITION_Y, POSITION_Z)))
-                    .thenReturn(Set.of());
+            when(store.hasComponent(entityId, POSITION_X)).thenReturn(true);
+            when(store.hasComponent(entityId, POSITION_Y)).thenReturn(false);
 
             Optional<Position> result = repository.findByEntityId(entityId);
 
@@ -122,8 +120,9 @@ class EcsPositionRepositoryTest {
         @DisplayName("should handle position at origin")
         void shouldHandlePositionAtOrigin() {
             long entityId = 42L;
-            when(store.getEntitiesWithComponents(List.of(POSITION_X, POSITION_Y, POSITION_Z)))
-                    .thenReturn(Set.of(entityId));
+            when(store.hasComponent(entityId, POSITION_X)).thenReturn(true);
+            when(store.hasComponent(entityId, POSITION_Y)).thenReturn(true);
+            when(store.hasComponent(entityId, POSITION_Z)).thenReturn(true);
             when(store.getComponent(entityId, POSITION_X)).thenReturn(0f);
             when(store.getComponent(entityId, POSITION_Y)).thenReturn(0f);
             when(store.getComponent(entityId, POSITION_Z)).thenReturn(0f);
