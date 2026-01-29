@@ -23,6 +23,7 @@
 
 package ca.samanthaireland.engine.internal.ext.module;
 
+import ca.samanthaireland.engine.core.benchmark.Benchmark;
 import ca.samanthaireland.engine.core.match.MatchService;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
@@ -104,6 +105,11 @@ public class ModuleScopedContext implements ModuleContext {
     @Override
     public Object getModuleManager() {
         return delegate.getModuleManager();
+    }
+
+    @Override
+    public Benchmark getBenchmark() {
+        return delegate.getBenchmark();
     }
 
     @Override

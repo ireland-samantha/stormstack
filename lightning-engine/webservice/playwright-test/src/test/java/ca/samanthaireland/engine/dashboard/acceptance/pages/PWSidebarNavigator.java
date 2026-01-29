@@ -141,6 +141,13 @@ public class PWSidebarNavigator {
         return new PWResourcesPage(page);
     }
 
+    public PWMetricsPage goToMetrics() {
+        expandContainerMenu();
+        getMenuButton("Metrics").click();
+        page.waitForLoadState();
+        return new PWMetricsPage(page);
+    }
+
     public PWUsersPage goToUsers() {
         expandIamMenu();
         getMenuButton("Users").click();

@@ -23,6 +23,7 @@
 
 package ca.samanthaireland.engine.internal.ext.module;
 
+import ca.samanthaireland.engine.core.benchmark.Benchmark;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
 import ca.samanthaireland.engine.core.store.PermissionComponent;
@@ -36,6 +37,8 @@ import ca.samanthaireland.engine.ext.module.ModuleIdentifier;
 import ca.samanthaireland.engine.auth.module.ModuleAuthService;
 import ca.samanthaireland.engine.auth.module.ModuleAuthToken;
 import ca.samanthaireland.engine.auth.module.ModulePermissionClaimBuilder;
+import ca.samanthaireland.engine.internal.BenchmarkCollector;
+import ca.samanthaireland.engine.internal.DefaultBenchmark;
 import ca.samanthaireland.engine.internal.core.store.ModuleScopedStore;
 import ca.samanthaireland.engine.internal.ext.jar.FactoryClassloader;
 import lombok.extern.slf4j.Slf4j;
@@ -72,6 +75,7 @@ public class OnDiskModuleManager implements ModuleManager {
     private final Map<String, ModuleFactory> factoryCache = new ConcurrentHashMap<>();
     private final Map<String, EngineModule> moduleCache = new ConcurrentHashMap<>();
     private final Map<String, ModuleScopedContext> moduleContextCache = new ConcurrentHashMap<>();
+    private final Map<String, DefaultBenchmark> moduleBenchmarks = new ConcurrentHashMap<>();
 
     private boolean scanned = false;
 
@@ -298,6 +302,12 @@ public class OnDiskModuleManager implements ModuleManager {
                     sharedStore, permissionRegistry, authToken);
             moduleScopedContext.setModuleScopedStore(finalStore);
 
+            // Create and register benchmark for this module
+            DefaultBenchmark moduleBenchmark = new DefaultBenchmark(moduleName);
+            moduleBenchmarks.put(moduleName, moduleBenchmark);
+            moduleContext.addClass(Benchmark.class, moduleBenchmark);
+            log.debug("Created benchmark for module {}", moduleName);
+
             // Register module exports in the shared context
             List<ModuleExports> exports = module.getExports();
             if (exports != null) {
@@ -396,6 +406,21 @@ public class OnDiskModuleManager implements ModuleManager {
         } catch (Exception e) {
             log.error("Failed to instantiate module factory: {}", moduleFactoryClass.getName(), e);
         }
+    }
+
+    /**
+     * Register all module benchmarks with the GameLoop's benchmark collector.
+     *
+     * <p>This method should be called after the GameLoop is created to connect
+     * module benchmarks with the GameLoop's collection mechanism.
+     *
+     * @param benchmarkCollector the GameLoop's benchmark collector
+     */
+    public void registerBenchmarksWithGameLoop(BenchmarkCollector benchmarkCollector) {
+        moduleBenchmarks.forEach((moduleName, benchmark) -> {
+            benchmarkCollector.registerModuleBenchmark(moduleName, benchmark);
+            log.debug("Registered benchmark for module {} with GameLoop", moduleName);
+        });
     }
 
     /**

@@ -281,6 +281,49 @@ export const handlers = [
     return HttpResponse.json({ ...container, autoAdvancing: false });
   }),
 
+  // Container Metrics
+  http.get("/api/containers/:id/metrics", async ({ params }) => {
+    await delay(50);
+    const container = mockContainers.find((c) => c.id === Number(params.id));
+    if (!container) {
+      return HttpResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    return HttpResponse.json({
+      containerId: container.id,
+      currentTick: container.currentTick,
+      lastTickMs: 1.5,
+      avgTickMs: 1.2,
+      minTickMs: 0.8,
+      maxTickMs: 2.5,
+      totalTicks: container.currentTick,
+      lastTickNanos: 1_500_000,
+      avgTickNanos: 1_200_000,
+      minTickNanos: 800_000,
+      maxTickNanos: 2_500_000,
+      totalEntities: 50,
+      totalComponentTypes: 10,
+      commandQueueSize: 5,
+      lastTickSystems: [],
+      lastTickCommands: [],
+      lastTickBenchmarks: [
+        {
+          moduleName: "PhysicsModule",
+          scopeName: "collision-detection",
+          fullName: "PhysicsModule:collision-detection",
+          executionTimeMs: 0.5,
+          executionTimeNanos: 500_000,
+        },
+        {
+          moduleName: "PhysicsModule",
+          scopeName: "position-integration",
+          fullName: "PhysicsModule:position-integration",
+          executionTimeMs: 0.3,
+          executionTimeNanos: 300_000,
+        },
+      ],
+    });
+  }),
+
   // Container Matches
   http.get("/api/containers/:id/matches", async () => {
     await delay(100);

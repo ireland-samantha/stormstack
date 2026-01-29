@@ -7,6 +7,7 @@ package ca.samanthaireland.engine.quarkus.api.rest;
 import ca.samanthaireland.engine.core.container.ContainerManager;
 import ca.samanthaireland.engine.core.container.ExecutionContainer;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
+import ca.samanthaireland.engine.internal.BenchmarkMetrics;
 import ca.samanthaireland.engine.internal.CommandExecutionMetrics;
 import ca.samanthaireland.engine.internal.GameLoop;
 import ca.samanthaireland.engine.internal.SystemExecutionMetrics;
@@ -87,6 +88,16 @@ public class ContainerMetricsResource {
                 .map(m -> new CommandMetricsResponse(m.commandName(), m.executionTimeMs(), m.executionTimeNanos(), m.success()))
                 .toList();
 
+        // Get per-benchmark metrics from last tick
+        List<BenchmarkMetricsResponse> benchmarkMetrics = gameLoop.getLastTickBenchmarkMetrics().stream()
+                .map(m -> new BenchmarkMetricsResponse(
+                        m.moduleName(),
+                        m.scopeName(),
+                        m.fullName(),
+                        m.executionTimeMs(),
+                        m.executionTimeNanos()))
+                .toList();
+
         // Get entity and component counts
         EntityComponentStore entityStore = inMemoryContainer.getEntityStore();
         int totalEntities = entityStore != null ? entityStore.getEntityCount() : 0;
@@ -113,7 +124,8 @@ public class ContainerMetricsResource {
                 commandQueueSize,
                 snapshotMetricsResponse,
                 systemMetrics,
-                commandMetrics
+                commandMetrics,
+                benchmarkMetrics
         )).build();
     }
 
@@ -170,7 +182,8 @@ public class ContainerMetricsResource {
             int commandQueueSize,
             SnapshotMetricsResponse snapshotMetrics,
             List<SystemMetricsResponse> lastTickSystems,
-            List<CommandMetricsResponse> lastTickCommands
+            List<CommandMetricsResponse> lastTickCommands,
+            List<BenchmarkMetricsResponse> lastTickBenchmarks
     ) {}
 
     /**
@@ -207,6 +220,17 @@ public class ContainerMetricsResource {
             double executionTimeMs,
             long executionTimeNanos,
             boolean success
+    ) {}
+
+    /**
+     * Benchmark metrics response DTO.
+     */
+    public record BenchmarkMetricsResponse(
+            String moduleName,
+            String scopeName,
+            String fullName,
+            double executionTimeMs,
+            long executionTimeNanos
     ) {}
 
     /**

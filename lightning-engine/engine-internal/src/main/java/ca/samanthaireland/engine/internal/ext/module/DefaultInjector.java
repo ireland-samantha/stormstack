@@ -23,6 +23,7 @@
 
 package ca.samanthaireland.engine.internal.ext.module;
 
+import ca.samanthaireland.engine.core.benchmark.Benchmark;
 import ca.samanthaireland.engine.core.match.MatchService;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
@@ -64,6 +65,7 @@ public class DefaultInjector implements ModuleContext {
     private MatchService matchService;
     private ModuleResolver moduleResolver;
     private Object moduleManager;
+    private Benchmark benchmark;
 
     @Override
     public EntityComponentStore getEntityComponentStore() {
@@ -96,6 +98,14 @@ public class DefaultInjector implements ModuleContext {
             moduleManager = beans.get(loadModuleManagerClass());
         }
         return moduleManager;
+    }
+
+    @Override
+    public Benchmark getBenchmark() {
+        if (benchmark == null) {
+            benchmark = findBean(Benchmark.class);
+        }
+        return benchmark;
     }
 
     @Override
@@ -176,6 +186,7 @@ public class DefaultInjector implements ModuleContext {
         matchService = null;
         moduleResolver = null;
         moduleManager = null;
+        benchmark = null;
     }
 
     /**

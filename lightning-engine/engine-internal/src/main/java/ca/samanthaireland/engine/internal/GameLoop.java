@@ -91,6 +91,9 @@ public class GameLoop {
     // Per-system execution metrics for the last tick
     private volatile List<SystemExecutionMetrics> lastTickSystemMetrics = Collections.emptyList();
 
+    // Benchmark collector for module-level performance metrics
+    private final BenchmarkCollector benchmarkCollector = new BenchmarkCollector();
+
     /**
      * Create a new game loop with command execution support.
      *
@@ -164,12 +167,18 @@ public class GameLoop {
         long startTime = System.nanoTime();
         log.trace("Advancing tick: {}", tick);
 
+        // Clear benchmarks from previous tick
+        benchmarkCollector.clearTickBenchmarks();
+
         // Execute commands scheduled for this tick
         executeCommands();
 
         // Run all systems
         List<EngineSystem> systems = getOrBuildSystems();
         int systemsRun = runSystems(systems);
+
+        // Collect benchmarks after systems complete
+        benchmarkCollector.collectTickBenchmarks();
 
         // Run AI
         executeAIs(tick);
@@ -375,6 +384,31 @@ public class GameLoop {
             return manager.getLastTickCommandMetrics();
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * Get benchmark metrics from the last tick.
+     *
+     * <p>Returns module-level benchmarks that were recorded during system execution.
+     * This data complements the automatic system execution metrics by providing
+     * fine-grained performance visibility into specific operations within systems.
+     *
+     * @return list of benchmark metrics from the last tick
+     */
+    public List<BenchmarkMetrics> getLastTickBenchmarkMetrics() {
+        return benchmarkCollector.getLastTickBenchmarks();
+    }
+
+    /**
+     * Get the benchmark collector for module registration.
+     *
+     * <p>Used during container initialization to register each module's
+     * benchmark instance with the GameLoop.
+     *
+     * @return the benchmark collector
+     */
+    public BenchmarkCollector getBenchmarkCollector() {
+        return benchmarkCollector;
     }
 
     /**

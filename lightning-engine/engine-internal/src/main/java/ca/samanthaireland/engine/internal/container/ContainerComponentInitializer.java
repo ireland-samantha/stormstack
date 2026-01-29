@@ -118,6 +118,7 @@ public class ContainerComponentInitializer {
         initializeGameLoop();
         initializeSnapshotProviders();
         loadModules();
+        registerModuleBenchmarks();
 
         log.debug("Container {} initialized: {} modules loaded", containerId, moduleManager.getAvailableModules().size());
     }
@@ -223,6 +224,14 @@ public class ContainerComponentInitializer {
             moduleManager.reloadInstalled();
         } catch (IOException e) {
             log.error("Failed to reload modules: {}", e.getMessage());
+        }
+    }
+
+    private void registerModuleBenchmarks() {
+        // Cast to OnDiskModuleManager to access benchmark registration
+        if (moduleManager instanceof OnDiskModuleManager onDiskModuleManager) {
+            onDiskModuleManager.registerBenchmarksWithGameLoop(gameLoop.getBenchmarkCollector());
+            log.debug("Registered module benchmarks with GameLoop");
         }
     }
 }

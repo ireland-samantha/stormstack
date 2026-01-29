@@ -306,6 +306,14 @@ export interface CommandMetricsData {
   success: boolean;
 }
 
+export interface BenchmarkMetricsData {
+  moduleName: string;
+  scopeName: string;
+  fullName: string;
+  executionTimeMs: number;
+  executionTimeNanos: number;
+}
+
 export interface SnapshotMetricsData {
   totalGenerations: number;
   cacheHits: number;
@@ -337,6 +345,7 @@ export interface ContainerMetricsData {
   snapshotMetrics?: SnapshotMetricsData;
   lastTickSystems?: SystemMetricsData[];
   lastTickCommands?: CommandMetricsData[];
+  lastTickBenchmarks?: BenchmarkMetricsData[];
 }
 
 // Legacy aliases for backward compatibility

@@ -23,6 +23,7 @@
 
 package ca.samanthaireland.engine.ext.module;
 
+import ca.samanthaireland.engine.core.benchmark.Benchmark;
 import ca.samanthaireland.engine.core.match.MatchService;
 import ca.samanthaireland.engine.core.store.BaseComponent;
 import ca.samanthaireland.engine.core.store.EntityComponentStore;
@@ -105,6 +106,30 @@ public interface ModuleContext {
      * @return the module manager, or null if not available
      */
     Object getModuleManager();
+
+    /**
+     * Get the benchmark interface for tracking custom performance metrics.
+     *
+     * <p>Modules can use this to instrument specific operations and measure
+     * their execution time. Benchmark data is collected per-tick and exposed
+     * via the metrics API alongside automatic system execution metrics.
+     *
+     * <p>Usage example:
+     * <pre>{@code
+     * // In a system's updateEntities() method
+     * try (var scope = context.getBenchmark().scope("pathfinding")) {
+     *     // ... expensive pathfinding logic ...
+     * }
+     *
+     * try (var scope = context.getBenchmark().scope("collision-detection")) {
+     *     // ... collision detection logic ...
+     * }
+     * }</pre>
+     *
+     * @return the benchmark interface for this module
+     * @throws IllegalStateException if benchmark is not available
+     */
+    Benchmark getBenchmark();
 
     /**
      * Retrieve a module's exported API by type.

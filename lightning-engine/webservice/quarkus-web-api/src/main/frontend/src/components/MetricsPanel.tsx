@@ -482,6 +482,72 @@ const MetricsPanel: React.FC = () => {
             </>
           )}
 
+          {/* Module Benchmark Metrics */}
+          {metrics.lastTickBenchmarks && metrics.lastTickBenchmarks.length > 0 && (
+            <>
+              <Typography variant="h6" sx={{ mt: 4, mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                <SpeedIcon /> Module Benchmarks ({metrics.lastTickBenchmarks.length})
+              </Typography>
+              <TableContainer component={Paper}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Module</TableCell>
+                      <TableCell>Scope</TableCell>
+                      <TableCell align="right">Time (ms)</TableCell>
+                      <TableCell align="right">Time (ns)</TableCell>
+                      <TableCell>% of Tick</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {metrics.lastTickBenchmarks.map((benchmark, index) => {
+                      const percentOfTick = metrics.lastTickNanos > 0
+                        ? (benchmark.executionTimeNanos / metrics.lastTickNanos) * 100
+                        : 0;
+                      return (
+                        <TableRow key={index} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontFamily: "monospace", fontWeight: "bold" }}>
+                              {benchmark.moduleName}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
+                              {benchmark.scopeName}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
+                              {benchmark.executionTimeMs.toFixed(3)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell align="right">
+                            <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
+                              {benchmark.executionTimeNanos.toLocaleString()}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ width: 150 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={Math.min(percentOfTick, 100)}
+                                sx={{ flexGrow: 1, height: 8, borderRadius: 1 }}
+                                color={percentOfTick > 50 ? "warning" : percentOfTick > 20 ? "info" : "primary"}
+                              />
+                              <Typography variant="caption" sx={{ minWidth: 40 }}>
+                                {percentOfTick.toFixed(1)}%
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+
           {/* Performance Insights */}
           <Paper sx={{ p: 2, mt: 4 }}>
             <Typography variant="subtitle1" gutterBottom>
@@ -535,6 +601,14 @@ const MetricsPanel: React.FC = () => {
                   variant="outlined"
                   size="small"
                   icon={<CommandIcon />}
+                />
+              )}
+              {metrics.lastTickBenchmarks && metrics.lastTickBenchmarks.length > 0 && (
+                <Chip
+                  label={`${metrics.lastTickBenchmarks.length} module benchmarks`}
+                  variant="outlined"
+                  size="small"
+                  icon={<SpeedIcon />}
                 />
               )}
             </Box>
