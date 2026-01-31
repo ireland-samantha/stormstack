@@ -211,9 +211,7 @@ Clearly separated from "what exists."
 - Honest status section
 - Link to detailed docs
 
-Generate a diagram of the whole system architecture, and add it to the architecture docs page. 
-Excalidraw exported to png preferred, ascii also okay.
-
+Generate a diagram of the whole system architecture, and add it to the architecture docs page, ascii okay.
 ### Phase 5: Final Verification
 
 Before delivering:
