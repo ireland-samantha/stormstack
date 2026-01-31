@@ -7,6 +7,10 @@ description: "Comprehensive documentation rewrite for software projects with rig
 
 Generate honest, accurate documentation by understanding the codebase deeply and verifying every claim against reality.
 
+## Project Context (for writing accurate docs)
+
+Stormstack is a cloud-native multiplayer game server framework. The core thesis: game servers have historically been bespoke, monolithic infrastructure—but they're fundamentally just stateful services with real-time requirements. Modern distributed systems patterns (service meshes, declarative configuration, horizontal scaling, proper observability) translate well to game workloads when adapted thoughtfully.
+
 ## Core Principle: Don't Lie to the Reader
 
 Documentation that describes features that don't exist is worse than no documentation. Users will find out. It wastes their time and erodes trust. Every statement gets verified against actual code.
@@ -202,10 +206,13 @@ Clearly separated from "what exists."
 
 **README.md specifically:**
 
-- Open with what the project IS today, not the vision
+- Briefly describe the vision, then describe what the project IS today
 - Quick start that actually works (you ran it)
 - Honest status section
 - Link to detailed docs
+
+Generate a diagram of the whole system architecture, and add it to the architecture docs page. 
+Excalidraw exported to png preferred, ascii also okay.
 
 ### Phase 5: Final Verification
 
