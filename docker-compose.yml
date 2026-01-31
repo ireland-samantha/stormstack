@@ -1,11 +1,11 @@
-# Lightning Engine - Full Stack Docker Compose
+# Thunder Engine - Full Stack Docker Compose
 #
 # Services:
 #   - mongodb:         Shared MongoDB for all services (port 27017)
 #   - redis:           Redis for control plane node registry (port 6379)
-#   - auth:            Lightning Auth service (port 8082)
-#   - control-plane:   Lightning Control Plane (port 8081)
-#   - backend:         Lightning Engine API (port 8080)
+#   - auth:            Thunder Auth service (port 8082)
+#   - control-plane:   Thunder Control Plane (port 8081)
+#   - backend:         Thunder Engine API (port 8080)
 #
 # Usage:
 #   docker compose up                    # Start all services
@@ -26,11 +26,11 @@ services:
   # MongoDB - Shared database for all services
   mongodb:
     image: mongo:7
-    container_name: lightning-mongodb
+    container_name: thunder-mongodb
     ports:
       - "27017:27017"
     environment:
-      - MONGO_INITDB_DATABASE=lightningfirefly
+      - MONGO_INITDB_DATABASE=stormstack
     volumes:
       - mongodb-data:/data/db
     healthcheck:
@@ -41,12 +41,12 @@ services:
       start_period: 10s
     restart: unless-stopped
     networks:
-      - lightning-network
+      - thunder-network
 
   # Redis - Control plane node registry and caching
   redis:
     image: redis:7-alpine
-    container_name: lightning-redis
+    container_name: thunder-redis
     ports:
       - "6379:6379"
     volumes:
@@ -59,23 +59,23 @@ services:
       start_period: 5s
     restart: unless-stopped
     networks:
-      - lightning-network
+      - thunder-network
 
   # =============================================================================
   # Application Services
   # =============================================================================
 
-  # Lightning Auth - Authentication service (port 8082)
+  # Thunder Auth - Authentication service (port 8082)
   auth:
-    image: ${AUTH_IMAGE:-samanthacireland/lightning-auth:0.0.3-SNAPSHOT}
-    container_name: lightning-auth
+    image: ${AUTH_IMAGE:-samanthacireland/thunder-auth:0.0.3-SNAPSHOT}
+    container_name: thunder-auth
     ports:
       - "8082:8082"
     environment:
       - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms128m -Xmx256m
       - QUARKUS_LOG_LEVEL=INFO
       - MONGODB_URI=mongodb://mongodb:27017
-      - JWT_ISSUER=https://lightningfirefly.com
+      - JWT_ISSUER=https://stormstack.io
       - JWT_SECRET=${AUTH_JWT_SECRET:-change-me-in-production-use-long-random-string}
       - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-admin}
       - SESSION_EXPIRY_HOURS=24
@@ -91,12 +91,12 @@ services:
       start_period: 15s
     restart: unless-stopped
     networks:
-      - lightning-network
+      - thunder-network
 
-  # Lightning Control Plane - Cluster management (port 8081)
+  # Thunder Control Plane - Cluster management (port 8081)
   control-plane:
-    image: ${CONTROL_PLANE_IMAGE:-samanthacireland/lightning-control-plane:0.0.3-SNAPSHOT}
-    container_name: lightning-control-plane
+    image: ${CONTROL_PLANE_IMAGE:-samanthacireland/thunder-control-plane:0.0.3-SNAPSHOT}
+    container_name: thunder-control-plane
     ports:
       - "8081:8081"
     environment:
@@ -109,7 +109,7 @@ services:
       # Auth service integration
       - JWT_AUTH_ENABLED=true
       - AUTH_SERVICE_URL=http://auth:8082
-      - JWT_ISSUER=https://lightningfirefly.com
+      - JWT_ISSUER=https://stormstack.io
       # OAuth2 Client Credentials for service-to-service auth
       - OAUTH2_CLIENT_ID=control-plane
       - OAUTH2_CLIENT_SECRET=${OAUTH2_CONTROL_PLANE_SECRET:-control-plane-secret}
@@ -126,12 +126,12 @@ services:
       start_period: 15s
     restart: unless-stopped
     networks:
-      - lightning-network
+      - thunder-network
 
-  # Lightning Engine - Main game server API (port 8080)
+  # Thunder Engine - Main game server API (port 8080)
   backend:
-    image: ${ENGINE_IMAGE:-samanthacireland/lightning-engine:0.0.3-SNAPSHOT}
-    container_name: lightning-engine
+    image: ${ENGINE_IMAGE:-samanthacireland/thunder-engine:0.0.3-SNAPSHOT}
+    container_name: thunder-engine
     ports:
       - "8080:8080"
     deploy:
@@ -144,7 +144,7 @@ services:
       - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
       # Snapshot persistence
       - SNAPSHOT_PERSISTENCE_ENABLED=true
-      - SNAPSHOT_PERSISTENCE_DATABASE=lightningfirefly
+      - SNAPSHOT_PERSISTENCE_DATABASE=stormstack
       - SNAPSHOT_PERSISTENCE_COLLECTION=snapshots
       - SNAPSHOT_PERSISTENCE_TICK_INTERVAL=60
       # Auth service integration
@@ -174,7 +174,7 @@ services:
       start_period: 15s
     restart: unless-stopped
     networks:
-      - lightning-network
+      - thunder-network
 
   # =============================================================================
   # Cluster Profile - Additional Backend Nodes
@@ -182,8 +182,8 @@ services:
   # =============================================================================
 
   backend-node-2:
-    image: ${ENGINE_IMAGE:-samanthacireland/lightning-engine:0.0.3-SNAPSHOT}
-    container_name: lightning-engine-node-2
+    image: ${ENGINE_IMAGE:-samanthacireland/thunder-engine:0.0.3-SNAPSHOT}
+    container_name: thunder-engine-node-2
     profiles:
       - cluster
     ports:
@@ -220,11 +220,11 @@ services:
       start_period: 15s
     restart: unless-stopped
     networks:
-      - lightning-network
+      - thunder-network
 
   backend-node-3:
-    image: ${ENGINE_IMAGE:-samanthacireland/lightning-engine:0.0.3-SNAPSHOT}
-    container_name: lightning-engine-node-3
+    image: ${ENGINE_IMAGE:-samanthacireland/thunder-engine:0.0.3-SNAPSHOT}
+    container_name: thunder-engine-node-3
     profiles:
       - cluster
     ports:
@@ -261,7 +261,7 @@ services:
       start_period: 15s
     restart: unless-stopped
     networks:
-      - lightning-network
+      - thunder-network
 
   # =============================================================================
   # Development Profiles
@@ -269,30 +269,31 @@ services:
 
   # GUI client (optional - requires X11 or headless mode)
   # Usage: docker compose --profile gui up gui
-  gui:
-    build:
-      context: .
-      dockerfile: lightning-engine/gui/Dockerfile
-    image: lightning-gui:latest
-    container_name: lightning-gui
-    profiles:
-      - gui
-    environment:
-      - BACKEND_URL=http://backend:8080
-      - HEADLESS=${HEADLESS:-true}
-      - DISPLAY=${DISPLAY:-:0}
-    volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix:ro
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - lightning-network
+  # NOTE: GUI Dockerfile not yet available in new structure
+  # gui:
+  #   build:
+  #     context: .
+  #     dockerfile: lightning/rendering/core/Dockerfile
+  #   image: lightning-gui:latest
+  #   container_name: lightning-gui
+  #   profiles:
+  #     - gui
+  #   environment:
+  #     - BACKEND_URL=http://backend:8080
+  #     - HEADLESS=${HEADLESS:-true}
+  #     - DISPLAY=${DISPLAY:-:0}
+  #   volumes:
+  #     - /tmp/.X11-unix:/tmp/.X11-unix:ro
+  #   depends_on:
+  #     backend:
+  #       condition: service_healthy
+  #   networks:
+  #     - thunder-network
 
 volumes:
   mongodb-data:
   redis-data:
 
 networks:
-  lightning-network:
+  thunder-network:
     driver: bridge

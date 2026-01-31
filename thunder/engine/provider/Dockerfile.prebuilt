@@ -1,0 +1,42 @@
+# Lightweight Dockerfile for pre-built Quarkus application with frontend
+# Usage: First run `mvn package -DskipTests` from the project root
+#        Then build with: docker build -f thunder/engine/provider/Dockerfile.prebuilt -t samanthacireland/thunder-engine:latest .
+
+FROM eclipse-temurin:25-jre-alpine
+
+WORKDIR /app
+
+# Create a non-root user for security
+RUN addgroup -S quarkus && adduser -S quarkus -G quarkus
+
+# Copy the built Quarkus artifacts from local build
+COPY thunder/engine/provider/target/quarkus-app/lib/ ./lib/
+COPY thunder/engine/provider/target/quarkus-app/*.jar ./
+COPY thunder/engine/provider/target/quarkus-app/app/ ./app/
+COPY thunder/engine/provider/target/quarkus-app/quarkus/ ./quarkus/
+
+# Copy frontend static files directly into generated-resources
+# Vite outputs to src/main/resources/META-INF/resources/admin/dashboard/
+RUN mkdir -p ./quarkus/generated-resources/META-INF/resources/admin/dashboard/
+COPY thunder/engine/provider/src/main/resources/META-INF/resources/admin/ ./quarkus/generated-resources/META-INF/resources/admin/
+
+# Copy module JARs for runtime loading
+RUN mkdir -p /app/modules
+COPY thunder/engine/extensions/modules/entity-module/target/*.jar ./modules/
+COPY thunder/engine/extensions/modules/physics-module/grid-map-module/target/*.jar ./modules/
+COPY thunder/engine/extensions/modules/physics-module/rigid-body-module/target/*.jar ./modules/
+COPY thunder/engine/extensions/modules/rendering-module/target/*.jar ./modules/
+
+# Set proper permissions
+RUN chown -R quarkus:quarkus /app
+
+USER quarkus
+
+# Expose the default Quarkus port
+EXPOSE 8080
+
+# Set environment variables for Java 25 and Quarkus
+ENV JAVA_OPTS="-Dquarkus.http.host=0.0.0.0 --enable-preview"
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "quarkus-run.jar"]

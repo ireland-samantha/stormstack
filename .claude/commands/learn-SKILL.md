@@ -65,7 +65,7 @@ Write like notes to a coworker:
 
 ```markdown
 # Good
-- `lightning-auth` silently fails if REDIS_URL unset. No error, just no session cache.
+- `thunder-auth` silently fails if REDIS_URL unset. No error, just no session cache.
 
 # Bad  
 - Be careful with auth module configuration.

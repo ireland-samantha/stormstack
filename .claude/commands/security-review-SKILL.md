@@ -15,6 +15,45 @@ Deep security analysis with code exploration, vulnerability detection, and proje
 - `--fetch-reports` - Fetch recent CVE/security advisories
 - `--deep` - Enable exhaustive analysis (slower, more thorough)
 
+## Autonomous Operation Mode
+
+This skill operates **autonomously by default** with a focus on:
+1. **Finding issues** - Comprehensive detection across all OWASP categories
+2. **Auto-fixing safe issues** - Apply fixes that don't change behavior
+3. **Prioritizing findings** - Critical/High get immediate attention
+4. **Collaborating** - Share findings with other skills for holistic review
+
+**Philosophy**: Security issues shouldn't wait for human review when fixes are obvious. Fix what's safe, flag what needs human judgment.
+
+## Auto-Fix Policy
+
+**Apply automatically WITHOUT asking:**
+| Issue | Auto-Fix Action |
+|-------|-----------------|
+| Hardcoded test secrets in non-prod | Move to test resources |
+| Missing `@Valid` on request DTOs | Add validation annotation |
+| `printStackTrace()` in handlers | Replace with proper logging |
+| Missing `final` on security-sensitive fields | Add final modifier |
+| CORS `*` in dev config only | Add comment noting dev-only |
+| Debug logging of request bodies | Mask sensitive fields |
+
+**Apply automatically THEN report:**
+| Issue | Auto-Fix Action |
+|-------|-----------------|
+| Missing rate limiting annotation | Add `@RateLimited` with sensible default |
+| Exposed stack traces in error responses | Wrap with generic message |
+| Missing auth annotation on endpoint | Add `@Authenticated` (report to verify intent) |
+| Weak BCrypt cost factor (<10) | Upgrade to cost 12 |
+
+**Require human decision:**
+| Issue | Why |
+|-------|-----|
+| Hardcoded secrets in prod config | Need to set up proper secret management |
+| Missing authorization logic | Business rules needed |
+| Potential injection vulnerabilities | Context-dependent fix |
+| Crypto algorithm choices | Security/performance trade-off |
+| WebSocket authentication design | Architectural decision |
+
 ## Quick Flow
 
 1. **Load Scope** - Determine which files/commits to analyze
@@ -27,8 +66,10 @@ Deep security analysis with code exploration, vulnerability detection, and proje
 8. **Input Validation** - Check request validation (scoped)
 9. **Dependency Security** - Audit third-party libraries
 10. **Crypto Usage** - Review cryptographic implementations (scoped)
-11. **Generate Report** - Create `security-review.json` with findings
-12. **Present Summary** - Actionable security recommendations
+11. **Auto-Fix Safe Issues** - Apply fixes without changing behavior
+12. **Generate Report** - Create `security-review.json` with findings and fixes
+13. **Collaborate** - Share critical findings with other skills
+14. **Present Summary** - Actionable security recommendations
 
 ---
 
@@ -836,9 +877,91 @@ Based on Lightning Engine architecture, additional checks:
 
 ---
 
-## Integration with full-review
+## Collaboration with Other Skills
 
-This skill is automatically invoked by `full-review` and contributes:
+This skill actively collaborates with other review skills:
+
+### Receiving Collaboration Requests
+
+When `self-review` or `solid-review` flags security-sensitive changes:
+```json
+{
+  "collaborationNeeded": [
+    {
+      "skill": "security-review",
+      "reason": "New auth filter added",
+      "files": ["JwtAuthFilter.java"],
+      "priority": "critical"
+    }
+  ]
+}
+```
+
+**Response**: Perform deep-dive on flagged files, even if outside normal scope.
+
+### Sending Collaboration Requests
+
+When security issues require other skills:
+
+| Finding | Target Skill | Request |
+|---------|--------------|---------|
+| Auth endpoint undocumented | `write-docs` | Document security requirements |
+| Insecure pattern in new code | `self-review` | Block merge until fixed |
+| Missing validation tests | `test-coverage` | Prioritize security test coverage |
+| SOLID violation creates attack surface | `solid-review` | Recommend refactoring |
+
+### Collaboration Output Format
+
+```json
+{
+  "collaborationRequests": [
+    {
+      "targetSkill": "write-docs",
+      "reason": "New auth endpoints need security documentation",
+      "files": ["TokenEndpoint.java", "JwksEndpoint.java"],
+      "suggestedContent": {
+        "section": "API Authentication",
+        "topics": ["JWT validation", "Token refresh", "Rate limits"]
+      }
+    },
+    {
+      "targetSkill": "self-review",
+      "reason": "Critical: SQL injection vulnerability",
+      "files": ["UserRepository.java"],
+      "action": "BLOCK_MERGE",
+      "autoFixAvailable": false
+    }
+  ]
+}
+```
+
+### Cross-Skill Auto-Fix Coordination
+
+When multiple skills can fix the same issue:
+1. Security-review has **priority** for security-related fixes
+2. Coordinate via `.review-output/fixes-applied.json`
+3. Other skills check before applying overlapping fixes
+
+```json
+// .review-output/fixes-applied.json
+{
+  "fixes": [
+    {
+      "skill": "security-review",
+      "file": "AuthConfig.java",
+      "line": 45,
+      "change": "Added @Valid annotation",
+      "timestamp": "2026-01-31T12:00:00Z"
+    }
+  ]
+}
+```
+
+## Integration with premerge
+
+This skill is automatically invoked by `premerge` and contributes:
 - Security findings to unified report
-- Security grade to overall grade (20% weight)
+- Security grade to overall grade (25% weight - highest priority)
 - Blocking critical vulnerabilities to deployment verdict
+- Collaboration requests for cross-skill issues
+- Auto-fixes applied during review

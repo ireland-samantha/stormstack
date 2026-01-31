@@ -1,0 +1,541 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>ca.samanthaireland.stormstack</groupId>
+        <artifactId>stormstack</artifactId>
+        <version>0.0.3-SNAPSHOT</version>
+        <relativePath>../../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>thunder-engine-provider</artifactId>
+
+    <properties>
+        <quarkus.platform.version>3.30.3</quarkus.platform.version>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-bom</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- https://mvnrepository.com/artifact/io.quarkus/quarkus-junit5-mockito -->
+            <dependency>
+                <groupId>io.quarkus</groupId>
+                <artifactId>quarkus-junit5-mockito</artifactId>
+                <version>3.30.3</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Project dependencies -->
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>thunder-engine-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>thunder-engine-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/io.quarkus/quarkus-junit5-mockito -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5-mockito</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Module submodules -->
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>entity-module</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>grid-gridMap-module</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--            <artifactId>health-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>rendering-module</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>rigid-body-module</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--            <artifactId>box-collider-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--            <artifactId>projectile-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--            <artifactId>items-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--            <artifactId>move-module</artifactId>-->
+<!--            <version>${project.version}</version>-->
+<!--        </dependency>-->
+        <!-- Quarkus core -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-arc</artifactId>
+        </dependency>
+
+        <!-- Container image for Docker builds -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-container-image-docker</artifactId>
+        </dependency>
+
+        <!-- REST -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest</artifactId>
+        </dependency>
+
+        <!-- Reactive routes for SPA fallback filter -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-reactive-routes</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-jackson</artifactId>
+        </dependency>
+
+        <!-- WebSocket -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-websockets-next</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Security - JWT authentication -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-jwt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-jwt-build</artifactId>
+        </dependency>
+
+        <!-- Auth client adapter for calling thunder-auth service -->
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>web-api-adapter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Auth core for match token models -->
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>thunder-auth-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Auth adapter for scope-based authorization -->
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>thunder-auth-adapter-quarkus</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Shared Protocol Buffers -->
+        <dependency>
+            <groupId>ca.samanthaireland.stormstack</groupId>
+            <artifactId>api-proto</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- MongoDB for snapshot persistence -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-mongodb-client</artifactId>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-security</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-vertx</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers for Docker-based integration tests -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <!-- version from parent BOM -->
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <!-- version from parent BOM -->
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Generate JWT RSA keys if they don't exist -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-jwt-keys</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>sh</executable>
+                            <arguments>
+                                <argument>-c</argument>
+                                <argument>
+                                    if [ ! -f src/main/resources/privateKey.pem ]; then
+                                        echo "Generating JWT RSA keys...";
+                                        openssl genpkey -algorithm RSA -out src/main/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null;
+                                        openssl rsa -pubout -in src/main/resources/privateKey.pem -out src/main/resources/publicKey.pem 2>/dev/null;
+                                        echo "JWT keys generated in src/main/resources/";
+                                    else
+                                        echo "JWT keys already exist, skipping generation";
+                                    fi
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-jwt-keys-test</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>sh</executable>
+                            <arguments>
+                                <argument>-c</argument>
+                                <argument>
+                                    mkdir -p src/test/resources;
+                                    if [ ! -f src/test/resources/privateKey.pem ]; then
+                                        echo "Generating JWT RSA keys for tests...";
+                                        openssl genpkey -algorithm RSA -out src/test/resources/privateKey.pem -pkeyopt rsa_keygen_bits:2048 2>/dev/null;
+                                        openssl rsa -pubout -in src/test/resources/privateKey.pem -out src/test/resources/publicKey.pem 2>/dev/null;
+                                        echo "JWT keys generated in src/test/resources/";
+                                    else
+                                        echo "Test JWT keys already exist, skipping generation";
+                                    fi
+                                </argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-maven-plugin</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>generate-code</goal>
+                            <goal>generate-code-tests</goal>
+                            <goal>native-image-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>25</release>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>1.18.42</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Required for Java 24+ module access with Quarkus/Vert.x -->
+                    <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+                    <systemPropertyVariables>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <!-- Integration tests with Failsafe -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.5.2</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- Required for Java 24+ module access with Quarkus/Vert.x -->
+                    <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+                    <systemPropertyVariables>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <!-- Copy module JARs to modules directory for runtime loading -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.6.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-modules</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>ca.samanthaireland.stormstack</groupId>
+                                    <artifactId>entity-module</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/modules</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>ca.samanthaireland.stormstack</groupId>
+                                    <artifactId>grid-gridMap-module</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/modules</outputDirectory>
+                                </artifactItem>
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--                                    <artifactId>health-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
+                                <artifactItem>
+                                    <groupId>ca.samanthaireland.stormstack</groupId>
+                                    <artifactId>rendering-module</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/modules</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>ca.samanthaireland.stormstack</groupId>
+                                    <artifactId>rigid-body-module</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.basedir}/modules</outputDirectory>
+                                </artifactItem>
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--                                    <artifactId>box-collider-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--                                    <artifactId>projectile-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--                                    <artifactId>items-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
+<!--                                <artifactItem>-->
+<!--                                    <groupId>ca.samanthaireland.stormstack</groupId>-->
+<!--                                    <artifactId>move-module</artifactId>-->
+<!--                                    <version>${project.version}</version>-->
+<!--                                    <type>jar</type>-->
+<!--                                    <overWrite>true</overWrite>-->
+<!--                                    <outputDirectory>${project.basedir}/modules</outputDirectory>-->
+<!--                                </artifactItem>-->
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.7.1</version>
+            </extension>
+        </extensions>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <execution>
+                                <id>build-docker-image</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}/../../..</workingDirectory>
+                                    <arguments>
+                                        <argument>build</argument>
+                                        <argument>-f</argument>
+                                        <argument>thunder/engine/provider/Dockerfile.prebuilt</argument>
+                                        <argument>-t</argument>
+                                        <argument>samanthacireland/thunder-engine:${project.version}</argument>
+                                        <argument>.</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- Local Docker Registry profile for Tailscale-based deployment -->
+        <!-- Usage: mvn install -PlocalDockerRegistry -->
+        <!-- Requires: docker compose -f docker-compose.registry.yml up -d -->
+        <!-- Set TAILSCALE_IP environment variable to your Tailscale IP -->
+        <profile>
+            <id>localDockerRegistry</id>
+            <properties>
+                <local.registry.host>${env.TAILSCALE_IP}</local.registry.host>
+                <local.registry.port>5001</local.registry.port>
+                <local.registry.image>${local.registry.host}:${local.registry.port}/thunder-engine:${project.version}</local.registry.image>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.5.0</version>
+                        <executions>
+                            <!-- Build multi-platform image and push to local registry -->
+                            <!-- Uses docker buildx for linux/amd64 and linux/arm64 support -->
+                            <execution>
+                                <id>build-push-multiplatform-image</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>docker</executable>
+                                    <workingDirectory>${project.basedir}/../../..</workingDirectory>
+                                    <arguments>
+                                        <argument>buildx</argument>
+                                        <argument>build</argument>
+                                        <argument>--platform</argument>
+                                        <argument>linux/amd64,linux/arm64</argument>
+                                        <argument>-f</argument>
+                                        <argument>thunder/engine/provider/Dockerfile.prebuilt</argument>
+                                        <argument>-t</argument>
+                                        <argument>${local.registry.image}</argument>
+                                        <argument>--push</argument>
+                                        <argument>.</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

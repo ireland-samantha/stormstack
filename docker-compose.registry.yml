@@ -7,7 +7,7 @@
 # Registry URL: $TAILSCALE_IP:5001
 #
 # To pull from another machine (e.g., AWS via Tailscale):
-#   docker pull $TAILSCALE_IP:5001/lightning-engine:latest
+#   docker pull $TAILSCALE_IP:5001/thunder-engine:latest
 #
 # IMPORTANT: Configure Docker on remote machines to allow insecure registry:
 #   Add to /etc/docker/daemon.json:

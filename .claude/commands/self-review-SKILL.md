@@ -7,18 +7,28 @@ description: "Review git commits against project guidelines. Checks build, archi
 
 Review commits against CLAUDE.md guidelines. Fast feedback before push.
 
+## Autonomous Operation Mode
+
+This skill operates **autonomously by default**. It will:
+1. Detect and fix issues automatically where safe to do so
+2. Only prompt the user for decisions that truly require human judgment
+3. Apply fixes in batches rather than one at a time
+4. Continue working through the review even if minor issues are found
+
+**Philosophy**: A good review assistant doesn't ask permission for every small fix. It fixes what's obviously fixable and reports back what it did.
+
 ## Quick Flow
 
 1. **Load scope** (from `.review-output/scope.json` if exists, else default to HEAD)
 2. Load CLAUDE.md for project-specific rules
 3. Gather commit/file info based on scope
-4. Run build (stop if fails)
-5. Check architecture boundaries
-6. Detect anti-patterns
+4. Run build (if fails → **attempt auto-fix**, then re-run)
+5. Check architecture boundaries → **auto-fix where possible**
+6. Detect anti-patterns → **auto-fix safe patterns**
 7. Verify test coverage (delegate to test-coverage)
-8. Check documentation needs
-9. Generate `self-review.json`
-10. Present summary with verdict
+8. Check documentation needs → **flag for write-docs collaboration**
+9. Generate `self-review.json` with fixes applied
+10. Present summary with changes made and remaining issues
 
 ## Arguments
 
@@ -94,7 +104,31 @@ Format: `type(scope): subject`
 ./build.sh all 2>&1 | tee /tmp/build.log
 ```
 
-**If build fails**: Stop. Present errors. Offer to diagnose.
+**If build fails**:
+1. **Analyze the error** - Parse compiler output to identify the issue
+2. **Auto-fix if possible**:
+   - Missing imports → Add them automatically
+   - Syntax errors in modified files → Fix if straightforward
+   - Type mismatches from refactoring → Propagate type changes
+   - Missing method implementations → Generate stubs if interface-driven
+3. **Re-run build** after fixes
+4. **Only stop and report** if fixes can't be automated
+
+**Auto-fixable build errors:**
+| Error Type | Auto-Fix Action |
+|------------|-----------------|
+| Cannot find symbol (import) | Add missing import |
+| Method does not override | Add/fix `@Override` annotation |
+| Incompatible types (primitive) | Add cast if safe |
+| Missing return statement | Add `return null/0/false` with TODO comment |
+| Unreported exception | Add try-catch or throws declaration |
+
+**Require manual intervention:**
+| Error Type | Action |
+|------------|--------|
+| Architectural issues | Flag for human review |
+| Complex type errors | Report with context |
+| Test failures | Investigate root cause |
 
 ## Step 4: Architecture Boundaries
 
@@ -197,14 +231,66 @@ Generate `self-review.json`:
 | D | Build passes, significant issues |
 | F | Build fails OR critical findings |
 
-## Auto-Fixable
+## Auto-Fix Policy
 
-Offer to fix:
-- Missing `final` on `@Inject`
-- Missing `@Override`
-- Import organization
+**Apply automatically WITHOUT asking** (these are safe, mechanical fixes):
+- Missing `final` on `@Inject` fields
+- Missing `@Override` annotations
+- Import organization and unused imports
+- Trailing whitespace and formatting
+- Missing newline at end of file
+- Simple null checks where obvious
 
-Require manual:
-- Architecture violations
-- Missing tests
-- Missing docs
+**Apply automatically THEN report** (fix and inform user):
+- Concrete collection types → interface types (`ArrayList` → `List`)
+- Raw types → parameterized types
+- Missing `@Deprecated` javadoc reason
+- Public → package-private for non-API classes
+
+**Flag for write-docs skill** (cross-skill collaboration):
+- New public API without documentation
+- Changed endpoint signatures
+- New configuration options
+- Removed or renamed features
+
+**Require human decision** (ask only for these):
+- Architecture boundary violations (may be intentional)
+- Missing tests for complex logic
+- Design pattern choices
+- Breaking API changes
+
+## Collaboration with Other Skills
+
+This skill shares findings with `premerge` and collaborates with:
+
+| Finding Type | Collaborating Skill | Action |
+|--------------|---------------------|--------|
+| Missing docs for new API | `write-docs` | Auto-invoke to generate docs |
+| Security anti-pattern | `security-review` | Flag for deep analysis |
+| Missing tests | `test-coverage` | Get prioritization |
+| SOLID violation | `solid-review` | Get refactoring suggestions |
+
+**Collaboration Protocol:**
+1. Write findings to `.review-output/self-review.json`
+2. Include `collaborationNeeded` array for cross-skill issues
+3. Other skills can read and respond to collaboration requests
+4. `premerge` orchestrates the full collaboration flow
+
+```json
+{
+  "collaborationNeeded": [
+    {
+      "skill": "write-docs",
+      "reason": "New endpoint POST /api/matches needs documentation",
+      "files": ["MatchResource.java"],
+      "priority": "high"
+    },
+    {
+      "skill": "security-review",
+      "reason": "New auth filter added - needs security audit",
+      "files": ["JwtAuthFilter.java"],
+      "priority": "critical"
+    }
+  ]
+}
+```

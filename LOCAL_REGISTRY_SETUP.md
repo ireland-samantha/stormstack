@@ -96,7 +96,7 @@ sudo systemctl restart docker
 ### 2. Pull Image
 
 ```bash
-docker pull $TAILSCALE_IP:5001/lightning-engine:0.0.2-SNAPSHOT
+docker pull $TAILSCALE_IP:5001/thunder-engine:0.0.3-SNAPSHOT
 ```
 
 ### 3. Run with Docker Compose (Recommended)
@@ -104,18 +104,18 @@ docker pull $TAILSCALE_IP:5001/lightning-engine:0.0.2-SNAPSHOT
 Clone the repository and use docker-compose with the local registry image:
 
 ```bash
-cd lightning-engine
+cd stormstack
 
 # Option 1: Set environment variable
-export LIGHTNING_IMAGE=$TAILSCALE_IP:5001/lightning-engine:0.0.2-SNAPSHOT
+export THUNDER_ENGINE_IMAGE=$TAILSCALE_IP:5001/thunder-engine:0.0.3-SNAPSHOT
 docker compose up -d
 
 # Option 2: Inline environment variable
-LIGHTNING_IMAGE=$TAILSCALE_IP:5001/lightning-engine:0.0.2-SNAPSHOT docker compose up -d
+THUNDER_ENGINE_IMAGE=$TAILSCALE_IP:5001/thunder-engine:0.0.3-SNAPSHOT docker compose up -d
 
 # Option 3: Create .env file from example and edit
 cp .env.example .env
-# Edit .env and set: LIGHTNING_IMAGE=$TAILSCALE_IP:5001/lightning-engine:0.0.2-SNAPSHOT
+# Edit .env and set: THUNDER_ENGINE_IMAGE=$TAILSCALE_IP:5001/thunder-engine:0.0.3-SNAPSHOT
 docker compose up -d
 ```
 
@@ -123,10 +123,10 @@ docker compose up -d
 
 ```bash
 docker run -d \
-  --name lightning-engine \
+  --name thunder-engine \
   -p 8080:8080 \
   -e QUARKUS_MONGODB_CONNECTION_STRING=mongodb://localhost:27017 \
-  $TAILSCALE_IP:5001/lightning-engine:0.0.2-SNAPSHOT
+  $TAILSCALE_IP:5001/thunder-engine:0.0.3-SNAPSHOT
 ```
 
 ## Troubleshooting
@@ -165,10 +165,10 @@ curl http://$TAILSCALE_IP:5001/v2/_catalog
 ## Files Modified
 
 - `docker-compose.registry.yml` - Registry configuration
-- `docker-compose.yml` - Added `LIGHTNING_IMAGE` environment variable support
+- `docker-compose.yml` - Added `THUNDER_ENGINE_IMAGE` environment variable support
 - `.env.example` - Environment variable documentation
 - `.gitignore` - Added `.env` to prevent committing secrets
 - `build.sh` - Added registry commands
-- `lightning-engine/webservice/quarkus-web-api/pom.xml` - Added `localDockerRegistry` profile with multi-platform support
+- `thunder/engine/provider/pom.xml` - Added `localDockerRegistry` profile with multi-platform support
 - `~/.docker/daemon.json` - Added insecure registry
 - `~/.zshrc` - Added environment variables

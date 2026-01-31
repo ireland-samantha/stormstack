@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ca.samanthaireland.stormstack</groupId>
+        <artifactId>stormstack</artifactId>
+        <version>0.0.3-SNAPSHOT</version>
+        <relativePath>../../../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>engine-ext-modules</artifactId>
+    <packaging>pom</packaging>
+    <name>Engine Extension Modules Parent</name>
+
+    <modules>
+        <module>entity-module</module>
+<!--        <module>health-module</module>-->
+        <module>rendering-module</module>
+        <module>physics-module</module>
+<!--        <module>box-collider-module</module>-->
+<!--        <module>projectile-module</module>-->
+<!--        <module>items-module</module>-->
+<!--        <module>move-module</module>-->
+    </modules>
+
+    <properties>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!-- Common dependencies for all modules -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>ca.samanthaireland.stormstack</groupId>
+                <artifactId>thunder-engine-core</artifactId>
+                <version>0.0.3-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ca.samanthaireland.stormstack</groupId>
+                <artifactId>thunder-shared</artifactId>
+                <version>0.0.3-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>ca.samanthaireland.stormstack</groupId>
+                <artifactId>entity-module</artifactId>
+                <version>0.0.3-SNAPSHOT</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>

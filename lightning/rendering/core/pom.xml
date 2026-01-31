@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ca.samanthaireland.stormstack</groupId>
+        <artifactId>stormstack</artifactId>
+        <version>0.0.3-SNAPSHOT</version>
+        <relativePath>../../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>engine-rendering</artifactId>
+
+    <properties>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <lwjgl.version>3.3.3</lwjgl.version>
+        <joml.version>1.10.5</joml.version>
+
+    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.lwjgl</groupId>
+                <artifactId>lwjgl-bom</artifactId>
+                <version>${lwjgl.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- LWJGL Core -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl</artifactId>
+        </dependency>
+
+        <!-- OpenGL -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-opengl</artifactId>
+        </dependency>
+
+        <!-- GLFW -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-glfw</artifactId>
+        </dependency>
+
+        <!-- STB (textures and truetype fonts) -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-stb</artifactId>
+        </dependency>
+
+        <!-- NanoVG for vector graphics and text rendering -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-nanovg</artifactId>
+        </dependency>
+
+        <!-- TinyFileDialogs for native file dialogs -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-tinyfd</artifactId>
+        </dependency>
+
+        <!-- JOML (math) -->
+        <dependency>
+            <groupId>org.joml</groupId>
+            <artifactId>joml</artifactId>
+            <version>${joml.version}</version>
+        </dependency>
+
+        <!-- LWJGL Natives (REQUIRED) -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl</artifactId>
+            <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-opengl</artifactId>
+            <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-glfw</artifactId>
+            <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-stb</artifactId>
+            <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-nanovg</artifactId>
+            <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-tinyfd</artifactId>
+            <classifier>${lwjgl.natives}</classifier>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- SLF4J API for logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.16</version>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.27.3</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <reuseForks>false</reuseForks>
+                    <forkCount>1</forkCount>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Windows -->
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os><family>windows</family></os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-windows</lwjgl.natives>
+            </properties>
+        </profile>
+
+        <!-- Linux -->
+        <profile>
+            <id>linux</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                    <name>Linux</name>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-linux</lwjgl.natives>
+            </properties>
+        </profile>
+
+        <!-- macOS x86_64 -->
+        <profile>
+            <id>macos-x64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>x86_64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-macos</lwjgl.natives>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- Required for GLFW/LWJGL on macOS only -->
+                            <argLine>-XstartOnFirstThread</argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- macOS ARM64 -->
+        <profile>
+            <id>macos-arm64</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <lwjgl.natives>natives-macos-arm64</lwjgl.natives>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <!-- Required for GLFW/LWJGL on macOS only -->
+                            <argLine>-XstartOnFirstThread</argLine>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
+</project>

@@ -181,3 +181,78 @@ critical=$(cat /tmp/critical-missing.txt | wc -l)
 [[ $critical -gt 0 ]] && exit 1
 exit 0
 ```
+
+## Autonomous Operation
+
+This skill operates **autonomously** with the following behavior:
+
+**Auto-generate when possible:**
+| Scenario | Action |
+|----------|--------|
+| Missing test file for simple DTO | Generate basic test skeleton |
+| Test file exists but empty | Add TODO comments with suggested tests |
+| Test renamed but exists | Update mapping, no warning |
+
+**Cannot auto-fix (report only):**
+| Scenario | Why |
+|----------|-----|
+| Complex service missing tests | Needs understanding of business logic |
+| Integration tests missing | Architecture decision needed |
+| Security-critical tests | Requires security expertise |
+
+## Collaboration with Other Skills
+
+### Receiving Collaboration Requests
+
+When other skills flag testing needs:
+```json
+{
+  "collaborationNeeded": [
+    {
+      "skill": "test-coverage",
+      "reason": "Security vulnerability needs regression test",
+      "files": ["UserRepository.java"],
+      "testType": "security",
+      "priority": "critical"
+    }
+  ]
+}
+```
+
+**Response Actions:**
+| Request Source | Testing Action |
+|----------------|----------------|
+| security-review: vulnerability fix | Prioritize security test coverage |
+| self-review: new feature | Flag if tests missing |
+| solid-review: refactored class | Verify test mapping still works |
+
+### Sending Collaboration Requests
+
+When test analysis reveals broader issues:
+```json
+{
+  "collaborationRequests": [
+    {
+      "targetSkill": "write-docs",
+      "reason": "Test requirements should be documented",
+      "suggestedContent": {
+        "section": "testing.md",
+        "topics": ["Coverage requirements", "Test patterns"]
+      }
+    },
+    {
+      "targetSkill": "self-review",
+      "reason": "Untested critical service - block merge?",
+      "files": ["PaymentService.java"],
+      "action": "WARN_OR_BLOCK"
+    }
+  ]
+}
+```
+
+### Prioritization from Collaboration
+
+When security-review flags vulnerabilities, this skill:
+1. Elevates those files to CRITICAL priority
+2. Adds "security" tag to test recommendations
+3. Suggests specific test cases for vulnerability regression

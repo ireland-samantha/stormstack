@@ -14,8 +14,8 @@ Options:
     --force    Overwrite existing key files
 
 Key locations:
-    - lightning-engine/webservice/quarkus-web-api/src/main/resources/
-    - lightning-engine/webservice/quarkus-web-api/src/test/resources/
+    - thunder/engine/provider/src/main/resources/
+    - thunder/engine/provider/src/test/resources/
 """
 
 import os
@@ -26,8 +26,8 @@ from pathlib import Path
 
 # Key locations relative to project root
 KEY_LOCATIONS = [
-    "lightning-engine/webservice/quarkus-web-api/src/main/resources",
-    "lightning-engine/webservice/quarkus-web-api/src/test/resources",
+    "thunder/engine/provider/src/main/resources",
+    "thunder/engine/provider/src/test/resources",
 ]
 
 PRIVATE_KEY_NAME = "privateKey.pem"
@@ -112,7 +112,7 @@ def main():
     """Main entry point."""
     force = "--force" in sys.argv
 
-    print("JWT Key Generator for Lightning Engine")
+    print("JWT Key Generator for Thunder Engine")
     print("=" * 40)
 
     project_root = find_project_root()

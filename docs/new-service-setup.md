@@ -1,20 +1,20 @@
-# Adding a New Service to Lightning Engine
+# Adding a New Service to StormStack Thunder
 
-This guide documents how to add a new Quarkus-based microservice to the Lightning Engine project, following the established patterns from `lightning-auth` and `lightning-control-plane`.
+This guide documents how to add a new Quarkus-based microservice to the StormStack Thunder project, following the established patterns from `thunder-auth` and `thunder-control-plane`.
 
 ## Architecture Overview
 
-Lightning Engine follows a **two-module pattern** for services:
+StormStack Thunder follows a **two-module pattern** for services:
 
 ```
-lightning-<service>-core/      # Pure domain (NO framework dependencies)
+thunder-<service>-core/      # Pure domain (NO framework dependencies)
 ├── model/                     # Domain models, value objects
 ├── repository/                # Repository interfaces
 ├── service/                   # Service interfaces + implementations
 ├── config/                    # Configuration interfaces
 └── exception/                 # Domain exceptions
 
-lightning-<service>/           # Quarkus provider (framework integration)
+thunder-<service>/           # Quarkus provider (framework integration)
 └── provider/
     ├── config/                # QuarkusConfig classes + ServiceProducer
     ├── http/                  # REST resources
@@ -37,7 +37,7 @@ This separation ensures:
 
 #### 1.1 Create Maven Module
 
-Create `lightning-<service>-core/pom.xml`:
+Create `thunder-<service>-core/pom.xml`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -53,7 +53,7 @@ Create `lightning-<service>-core/pom.xml`:
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>lightning-<service>-core</artifactId>
+    <artifactId>thunder-<service>-core</artifactId>
     <name>Lightning <Service> Core</name>
     <description>Core domain for Lightning <Service> - NO framework dependencies</description>
 
@@ -97,7 +97,7 @@ Create `lightning-<service>-core/pom.xml`:
 #### 1.2 Create Core Package Structure
 
 ```
-lightning-<service>-core/src/main/java/ca/samanthaireland/lightning/<service>/
+thunder-<service>-core/src/main/java/ca/samanthaireland/lightning/<service>/
 ├── config/
 │   └── <Service>Configuration.java       # Configuration interface
 ├── model/
@@ -116,7 +116,7 @@ lightning-<service>-core/src/main/java/ca/samanthaireland/lightning/<service>/
 
 ```java
 // config/<Service>Configuration.java
-package ca.samanthaireland.lightning.<service>.config;
+package ca.samanthaireland.stormstack.thunder.<service>.config;
 
 /**
  * Configuration interface for <Service>.
@@ -132,7 +132,7 @@ public interface <Service>Configuration {
 
 ```java
 // repository/<Entity>Repository.java
-package ca.samanthaireland.lightning.<service>.repository;
+package ca.samanthaireland.stormstack.thunder.<service>.repository;
 
 import java.util.Optional;
 
@@ -151,7 +151,7 @@ public interface <Entity>Repository {
 
 ```java
 // service/<Entity>ServiceImpl.java
-package ca.samanthaireland.lightning.<service>.service;
+package ca.samanthaireland.stormstack.thunder.<service>.service;
 
 // NO jakarta.inject.*, NO io.quarkus.* imports!
 
@@ -184,7 +184,7 @@ public class <Entity>ServiceImpl implements <Entity>Service {
 
 #### 2.1 Create Maven Module
 
-Create `lightning-<service>/pom.xml`:
+Create `thunder-<service>/pom.xml`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -200,7 +200,7 @@ Create `lightning-<service>/pom.xml`:
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>lightning-<service></artifactId>
+    <artifactId>thunder-<service></artifactId>
     <name>Lightning <Service></name>
     <description><Service> microservice - Quarkus-based REST API</description>
 
@@ -227,7 +227,7 @@ Create `lightning-<service>/pom.xml`:
         <!-- Core module -->
         <dependency>
             <groupId>ca.samanthaireland</groupId>
-            <artifactId>lightning-<service>-core</artifactId>
+            <artifactId>thunder-<service>-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -284,7 +284,7 @@ Create `lightning-<service>/pom.xml`:
         <!-- Auth integration (if needed) -->
         <dependency>
             <groupId>ca.samanthaireland</groupId>
-            <artifactId>lightning-auth-adapter-quarkus-provider</artifactId>
+            <artifactId>thunder-auth-adapter-quarkus-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -368,11 +368,11 @@ Create `lightning-<service>/pom.xml`:
                                     <arguments>
                                         <argument>build</argument>
                                         <argument>-f</argument>
-                                        <argument>lightning-<service>/Dockerfile.prebuilt</argument>
+                                        <argument>thunder-<service>/Dockerfile.prebuilt</argument>
                                         <argument>-t</argument>
-                                        <argument>samanthacireland/lightning-<service>:${project.version}</argument>
+                                        <argument>samanthacireland/thunder-<service>:${project.version}</argument>
                                         <argument>-t</argument>
-                                        <argument>samanthacireland/lightning-<service>:latest</argument>
+                                        <argument>samanthacireland/thunder-<service>:latest</argument>
                                         <argument>.</argument>
                                     </arguments>
                                 </configuration>
@@ -389,7 +389,7 @@ Create `lightning-<service>/pom.xml`:
             <properties>
                 <local.registry.host>${env.TAILSCALE_IP}</local.registry.host>
                 <local.registry.port>5001</local.registry.port>
-                <local.registry.image>${local.registry.host}:${local.registry.port}/lightning-<service>:${project.version}</local.registry.image>
+                <local.registry.image>${local.registry.host}:${local.registry.port}/thunder-<service>:${project.version}</local.registry.image>
             </properties>
             <build>
                 <plugins>
@@ -413,7 +413,7 @@ Create `lightning-<service>/pom.xml`:
                                         <argument>--platform</argument>
                                         <argument>linux/amd64,linux/arm64</argument>
                                         <argument>-f</argument>
-                                        <argument>lightning-<service>/Dockerfile.prebuilt</argument>
+                                        <argument>thunder-<service>/Dockerfile.prebuilt</argument>
                                         <argument>-t</argument>
                                         <argument>${local.registry.image}</argument>
                                         <argument>--push</argument>
@@ -433,7 +433,7 @@ Create `lightning-<service>/pom.xml`:
 #### 2.2 Create Provider Package Structure
 
 ```
-lightning-<service>/src/main/java/ca/samanthaireland/lightning/<service>/provider/
+thunder-<service>/src/main/java/ca/samanthaireland/lightning/<service>/provider/
 ├── config/
 │   ├── Quarkus<Service>Config.java    # @ConfigMapping implementation
 │   └── ServiceProducer.java           # CDI producers for core services
@@ -453,9 +453,9 @@ lightning-<service>/src/main/java/ca/samanthaireland/lightning/<service>/provide
 
 ```java
 // config/Quarkus<Service>Config.java
-package ca.samanthaireland.lightning.<service>.provider.config;
+package ca.samanthaireland.stormstack.thunder.<service>.provider.config;
 
-import ca.samanthaireland.lightning.<service>.config.<Service>Configuration;
+import ca.samanthaireland.stormstack.thunder.<service>.config.<Service>Configuration;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
@@ -476,12 +476,12 @@ public interface Quarkus<Service>Config extends <Service>Configuration {
 
 ```java
 // config/ServiceProducer.java
-package ca.samanthaireland.lightning.<service>.provider.config;
+package ca.samanthaireland.stormstack.thunder.<service>.provider.config;
 
-import ca.samanthaireland.lightning.<service>.config.<Service>Configuration;
-import ca.samanthaireland.lightning.<service>.repository.<Entity>Repository;
-import ca.samanthaireland.lightning.<service>.service.<Entity>Service;
-import ca.samanthaireland.lightning.<service>.service.<Entity>ServiceImpl;
+import ca.samanthaireland.stormstack.thunder.<service>.config.<Service>Configuration;
+import ca.samanthaireland.stormstack.thunder.<service>.repository.<Entity>Repository;
+import ca.samanthaireland.stormstack.thunder.<service>.service.<Entity>Service;
+import ca.samanthaireland.stormstack.thunder.<service>.service.<Entity>ServiceImpl;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
@@ -514,10 +514,10 @@ public class ServiceProducer {
 
 ```java
 // http/<Entity>Resource.java
-package ca.samanthaireland.lightning.<service>.provider.http;
+package ca.samanthaireland.stormstack.thunder.<service>.provider.http;
 
-import ca.samanthaireland.lightning.<service>.service.<Entity>Service;
-import ca.samanthaireland.lightning.<service>.provider.dto.*;
+import ca.samanthaireland.stormstack.thunder.<service>.service.<Entity>Service;
+import ca.samanthaireland.stormstack.thunder.<service>.provider.dto.*;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
@@ -559,11 +559,11 @@ public class <Entity>Resource {
 
 ### 3. Create Dockerfile
 
-Create `lightning-<service>/Dockerfile.prebuilt`:
+Create `thunder-<service>/Dockerfile.prebuilt`:
 
 ```dockerfile
 # Lightning <Service> - Prebuilt Dockerfile
-# Expects JAR to be pre-built via: mvn package -DskipTests -pl lightning-<service>
+# Expects JAR to be pre-built via: mvn package -DskipTests -pl thunder-<service>
 FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
@@ -572,10 +572,10 @@ WORKDIR /app
 RUN addgroup -S lightning && adduser -S lightning -G lightning
 
 # Copy the Quarkus fast-jar structure
-COPY lightning-<service>/target/quarkus-app/lib/ /app/lib/
-COPY lightning-<service>/target/quarkus-app/*.jar /app/
-COPY lightning-<service>/target/quarkus-app/app/ /app/app/
-COPY lightning-<service>/target/quarkus-app/quarkus/ /app/quarkus/
+COPY thunder-<service>/target/quarkus-app/lib/ /app/lib/
+COPY thunder-<service>/target/quarkus-app/*.jar /app/
+COPY thunder-<service>/target/quarkus-app/app/ /app/app/
+COPY thunder-<service>/target/quarkus-app/quarkus/ /app/quarkus/
 
 # Set ownership
 RUN chown -R lightning:lightning /app
@@ -597,7 +597,7 @@ ENTRYPOINT ["java", "-jar", "/app/quarkus-run.jar"]
 
 ### 4. Create Application Configuration
 
-Create `lightning-<service>/src/main/resources/application.yml`:
+Create `thunder-<service>/src/main/resources/application.yml`:
 
 ```yaml
 quarkus:
@@ -607,7 +607,7 @@ quarkus:
   # MongoDB (if using)
   mongodb:
     connection-string: ${MONGODB_URI:mongodb://localhost:27017}
-    database: lightning-<service>
+    database: thunder-<service>
 
   # Redis (if using)
   redis:
@@ -636,8 +636,8 @@ Add modules to the root `pom.xml`:
 ```xml
 <modules>
     <!-- Existing modules -->
-    <module>lightning-<service>-core</module>
-    <module>lightning-<service></module>
+    <module>thunder-<service>-core</module>
+    <module>thunder-<service></module>
 </modules>
 ```
 
@@ -652,8 +652,8 @@ services:
   # ... existing services ...
 
   <service>:
-    image: ${<SERVICE>_IMAGE:-samanthacireland/lightning-<service>:0.0.3-SNAPSHOT}
-    container_name: lightning-<service>
+    image: ${<SERVICE>_IMAGE:-samanthacireland/thunder-<service>:0.0.3-SNAPSHOT}
+    container_name: thunder-<service>
     ports:
       - "808X:808X"
     environment:
@@ -686,14 +686,14 @@ services:
 Add to `build.sh`:
 
 ```bash
-DOCKER_IMAGE_<SERVICE>="samanthacireland/lightning-<service>"
+DOCKER_IMAGE_<SERVICE>="samanthacireland/thunder-<service>"
 
 do_docker() {
     # ... existing builds ...
 
     # Build Lightning <Service>
-    echo "Building lightning-<service>..."
-    docker build -f lightning-<service>/Dockerfile.prebuilt \
+    echo "Building thunder-<service>..."
+    docker build -f thunder-<service>/Dockerfile.prebuilt \
         -t "${DOCKER_IMAGE_<SERVICE>}:${DOCKER_TAG}" \
         -t "${DOCKER_IMAGE_<SERVICE>}:${VERSION}" \
         .
@@ -703,8 +703,8 @@ do_docker() {
 do_docker_local() {
     # ... existing pushes ...
 
-    echo "Building and pushing lightning-<service>..."
-    mvn install -PlocalDockerRegistry -pl lightning-<service> -DskipTests
+    echo "Building and pushing thunder-<service>..."
+    mvn install -PlocalDockerRegistry -pl thunder-<service> -DskipTests
 }
 ```
 
@@ -719,7 +719,7 @@ Add to `.env.example`:
 # <Service> Configuration
 # =============================================================================
 
-# <SERVICE>_IMAGE=samanthacireland/lightning-<service>:0.0.3-SNAPSHOT
+# <SERVICE>_IMAGE=samanthacireland/thunder-<service>:0.0.3-SNAPSHOT
 # <SERVICE>_SOME_PROPERTY=value
 ```
 
@@ -749,12 +749,12 @@ Before declaring the service complete:
 
 For reference implementations, see:
 
-- **lightning-auth**: JWT authentication, user management, role-based access
-  - Core: `lightning-auth-core/`
-  - Provider: `lightning-auth/`
+- **thunder-auth**: JWT authentication, user management, role-based access
+  - Core: `thunder-auth-core/`
+  - Provider: `thunder-auth/`
   - Port: 8082
 
-- **lightning-control-plane**: Cluster management, node registry, autoscaling
-  - Core: `lightning-control-plane-core/`
-  - Provider: `lightning-control-plane/`
+- **thunder-control-plane**: Cluster management, node registry, autoscaling
+  - Core: `thunder-control-plane-core/`
+  - Provider: `thunder-control-plane/`
   - Port: 8081

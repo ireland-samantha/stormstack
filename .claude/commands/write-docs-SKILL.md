@@ -40,6 +40,118 @@ Avoid:
 - `--scope-file <path>` - Path to scope.json (from premerge) - limits doc updates to changed areas
 - `--full` - Rewrite all documentation (default if no scope)
 
+## Expected Documentation Structure
+
+The docs folder should contain these files covering these topics:
+
+### Required Documentation Files
+
+| File | Topic | Description |
+|------|-------|-------------|
+| `docs/architecture.md` | System Architecture | High-level overview, service boundaries, data flow diagrams, design decisions |
+| `docs/api-reference.md` | REST API Reference | All endpoints, request/response formats, auth requirements, examples |
+| `docs/module-system.md` | Module Hot-Reload | Module lifecycle, installation, ClassLoader isolation, security model |
+| `docs/classloaders.md` | ClassLoader Isolation | Container isolation, module sandboxing, security boundaries |
+| `docs/control-plane.md` | Control Plane Service | Node registry, match routing, autoscaling, cluster management |
+| `docs/game-sdk.md` | Game SDK | ECS patterns, component creation, system implementation, module development |
+| `docs/testing.md` | Testing Guide | Unit tests, integration tests, Testcontainers, test patterns |
+| `docs/docker.md` | Docker & Deployment | Container builds, docker-compose, production deployment |
+| `docs/frontend.md` | Web Panel | React admin panel, components, state management |
+| `docs/rendering-library.md` | Rendering Engine | NanoVG framework, GUI components, test framework |
+| `docs/performance.md` | Performance Tuning | JVM flags, connection pools, tick optimization |
+| `docs/new-service-setup.md` | Adding Services | Step-by-step guide for new service modules |
+| `docs/useful-commands.md` | CLI Commands | Build commands, dev scripts, debugging |
+| `docs/why.md` | Project Philosophy | Design rationale, trade-offs, goals |
+| `docs/ai.md` | AI Integration | LLM patterns, AI game masters, prompt engineering |
+
+### Topics Each Doc Must Cover
+
+**architecture.md**:
+- Service boundaries (Thunder Engine, Auth, Control Plane)
+- ECS architecture overview
+- Container isolation model
+- WebSocket streaming architecture
+- ASCII/Mermaid system diagram
+
+**api-reference.md**:
+- All REST endpoints with methods, paths, descriptions
+- Request/response body schemas
+- Authentication requirements per endpoint
+- Error response formats
+- WebSocket endpoint documentation
+
+**module-system.md**:
+- Module lifecycle (load, install, unload)
+- ModuleFactory pattern
+- ECS integration (components, systems)
+- Hot-reload mechanism
+- Security restrictions
+
+**classloaders.md**:
+- ContainerClassLoader design
+- Parent delegation model
+- Module isolation guarantees
+- Thread safety considerations
+
+**control-plane.md**:
+- Node registration and heartbeat
+- Match routing algorithm
+- Autoscaler configuration
+- Module distribution
+- Dashboard API
+
+**game-sdk.md**:
+- Component definition patterns
+- System implementation
+- Command handling
+- Event publishing
+- Example game module
+
+**testing.md**:
+- Test structure (unit vs integration)
+- Testcontainers for MongoDB
+- API acceptance tests
+- WebSocket testing patterns
+- Test coverage expectations
+
+**docker.md**:
+- Multi-stage build process
+- docker-compose.yml explanation
+- Environment variables
+- Production deployment checklist
+
+### Documentation Verification Checklist
+
+When writing/updating docs, verify:
+- [ ] Every endpoint documented exists (`grep -r "@Path"`)
+- [ ] Every config option traced to usage (`grep -r "@ConfigProperty"`)
+- [ ] Every service documented has implementation (`find . -name "*ServiceImpl.java"`)
+- [ ] Code examples compile or are syntax-verified
+- [ ] File paths in docs exist (`ls -la path/from/doc`)
+- [ ] Docker commands actually work
+- [ ] Build commands match `build.sh`
+
+## Autonomous Operation
+
+When invoked, this skill should:
+1. **Analyze first** - Read code before writing docs
+2. **Verify everything** - Don't document features that don't exist
+3. **Auto-fix when possible** - Update outdated info automatically
+4. **Report issues** - Flag docs that need human review
+5. **Minimize prompts** - Only ask user when truly ambiguous
+
+**Auto-fix scenarios** (do these without asking):
+- Update endpoint paths that changed
+- Fix configuration option names
+- Update version numbers
+- Correct file paths
+- Update ASCII diagrams to match current structure
+
+**Require confirmation for**:
+- Removing documentation for deleted features
+- Major architectural rewrites
+- Adding new documentation files
+
 ## Workflow
 
 ### Phase 0: Load Scope (if from premerge)
@@ -249,6 +361,77 @@ When something works well, say so confidently:
 - "Battle-tested in [context]."
 - "The happy path is smooth. See Gotchas for edge cases."
 
+## Collaboration with Other Skills
+
+This skill actively collaborates with the review system:
+
+### Receiving Collaboration Requests
+
+When other skills flag documentation needs:
+```json
+{
+  "collaborationNeeded": [
+    {
+      "skill": "write-docs",
+      "reason": "New endpoint POST /api/matches needs documentation",
+      "files": ["MatchResource.java"],
+      "suggestedContent": {
+        "section": "API Reference",
+        "topics": ["Match creation", "Request format", "Response codes"]
+      }
+    }
+  ]
+}
+```
+
+**Response Actions:**
+| Request Source | Documentation Action |
+|----------------|---------------------|
+| self-review: new endpoint | Add to api-reference.md |
+| self-review: new config | Add to relevant service doc |
+| security-review: auth changes | Update security sections |
+| solid-review: architecture change | Update architecture.md |
+
+### Sending Collaboration Requests
+
+When documentation reveals code issues:
+```json
+{
+  "collaborationRequests": [
+    {
+      "targetSkill": "self-review",
+      "reason": "Documented endpoint /api/old doesn't exist in code",
+      "action": "VERIFY_OR_REMOVE"
+    },
+    {
+      "targetSkill": "test-coverage",
+      "reason": "New feature documented but no tests found",
+      "files": ["NewFeatureService.java"]
+    }
+  ]
+}
+```
+
+### Documentation Auto-Updates
+
+When invoked via collaboration, this skill:
+1. Reads the collaboration request context
+2. Analyzes the specified files
+3. Generates appropriate documentation
+4. Writes updates to the correct doc files
+5. Reports what was added/changed
+
+**No user prompts for:**
+- Adding new endpoint to existing API docs
+- Updating configuration option descriptions
+- Fixing file paths or class names
+- Adding missing sections to existing docs
+
+**Prompt user for:**
+- Creating entirely new documentation files
+- Major restructuring of documentation
+- Removing documentation for deleted features
+
 ## Final Checklist
 
 - [ ] Every feature documented exists in code (grep verified)
@@ -260,3 +443,4 @@ When something works well, say so confidently:
 - [ ] Limitations section exists and is truthful
 - [ ] All file paths verified to exist
 - [ ] Tone is helpful, not defensive or salesy
+- [ ] Collaboration requests from other skills addressed

@@ -5,7 +5,26 @@ description: "Analyze codebase for SOLID principle violations. Triggers: 'SOLID 
 
 # SOLID Review Skill
 
-Find SOLID violations. Produce actionable report.
+Find SOLID violations. Produce actionable report with autonomous fixes where possible.
+
+## Autonomous Operation Mode
+
+This skill operates **autonomously** with the following behavior:
+
+**Apply automatically WITHOUT asking:**
+| Issue | Auto-Fix |
+|-------|----------|
+| Concrete collection types (`ArrayList` → `List`) | Change field type |
+| Public → package-private for internal classes | Reduce visibility |
+| Missing interface for service dependency | Extract interface |
+| Raw generic types | Add type parameters |
+
+**Flag for human decision:**
+| Issue | Why |
+|-------|-----|
+| Large class needs splitting | Multiple valid approaches |
+| Complex instanceof chains | Strategy pattern design needed |
+| Fat interface splitting | API design decision |
 
 ## Arguments
 
@@ -202,3 +221,60 @@ Generate `solid-review.json`:
 | C | ≤2 high, ≤15 medium |
 | D | ≤5 high |
 | F | >5 high |
+
+## Collaboration with Other Skills
+
+### Sending Collaboration Requests
+
+When SOLID violations have broader implications:
+
+| Finding | Target Skill | Request |
+|---------|--------------|---------|
+| SRP violation creates security risk | security-review | Deep scan of large class |
+| Architecture change from refactoring | write-docs | Update architecture docs |
+| New interface extracted | write-docs | Document new API contract |
+| Missing tests for refactored code | test-coverage | Prioritize coverage |
+
+### Receiving Collaboration Requests
+
+When other skills flag architecture concerns:
+```json
+{
+  "collaborationNeeded": [
+    {
+      "skill": "solid-review",
+      "reason": "Complex class flagged by security-review",
+      "files": ["PaymentProcessor.java"],
+      "analysis": "Large attack surface due to SRP violation"
+    }
+  ]
+}
+```
+
+**Response**: Provide specific refactoring recommendations to reduce complexity.
+
+### Output with Collaboration
+
+```json
+{
+  "findings": [...],
+  "collaborationRequests": [
+    {
+      "targetSkill": "write-docs",
+      "reason": "Architecture changed - extracted UserAuthService",
+      "suggestedContent": {
+        "section": "architecture.md",
+        "change": "Document new service boundary"
+      }
+    }
+  ],
+  "fixesApplied": [
+    {
+      "file": "UserService.java",
+      "line": 15,
+      "change": "ArrayList → List (DIP fix)",
+      "autoFixed": true
+    }
+  ]
+}
+```

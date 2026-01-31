@@ -1,6 +1,6 @@
 # Useful Commands
 
-Common commands for developing and testing the Lightning Engine.
+Common commands for developing and testing the Thunder Engine.
 
 ## Building
 
@@ -12,10 +12,10 @@ Common commands for developing and testing the Lightning Engine.
 ./mvnw clean install -DskipTests
 
 # Build specific module
-./mvnw compile -pl lightning-engine/gui
+./mvnw compile -pl lightning/rendering/core
 
 # Package webservice for Docker
-./mvnw package -pl lightning-engine/webservice/quarkus-web-api -DskipTests
+./mvnw package -pl thunder/engine/provider -DskipTests
 ```
 
 ## Testing
@@ -25,13 +25,13 @@ Common commands for developing and testing the Lightning Engine.
 ./mvnw test
 
 # Run tests for specific module
-./mvnw test -pl lightning-engine/gui
+./mvnw test -pl lightning/rendering/core
 
 # Run specific test class
-./mvnw test -pl lightning-engine/gui -Dtest=MatchPanelTest
+./mvnw test -pl lightning/rendering/core -Dtest=MatchPanelTest
 
 # Run specific test method
-./mvnw test -pl lightning-engine/gui -Dtest=MatchPanelTest#testMethodName
+./mvnw test -pl lightning/rendering/core -Dtest=MatchPanelTest#testMethodName
 ```
 
 ## GUI Acceptance Tests (macOS)
@@ -41,18 +41,18 @@ GUI tests require special JVM flags on macOS for GLFW/OpenGL support.
 ```bash
 # Run all GUI acceptance tests
 DOCKER_HOST=unix:///var/run/docker.sock ./mvnw test \
-    -pl lightning-engine/gui-acceptance-test \
+    -pl lightning/rendering/core-acceptance-test \
     -DskipTests=false
 
 # Run specific acceptance test
 DOCKER_HOST=unix:///var/run/docker.sock ./mvnw test \
-    -pl lightning-engine/gui-acceptance-test \
+    -pl lightning/rendering/core-acceptance-test \
     -Dtest=RenderingResourceGuiIT \
     -DskipTests=false
 
 # Run single test method
 DOCKER_HOST=unix:///var/run/docker.sock ./mvnw test \
-    -pl lightning-engine/gui-acceptance-test \
+    -pl lightning/rendering/core-acceptance-test \
     -Dtest=RenderingResourceGuiIT#completeWorkflow_uploadSpawnAttachVerify \
     -DskipTests=false
 ```
@@ -61,18 +61,18 @@ DOCKER_HOST=unix:///var/run/docker.sock ./mvnw test \
 
 ```bash
 # Pull from Docker Hub
-docker pull samanthacireland/lightning-engine:0.0.2
+docker pull samanthacireland/thunder-engine:0.0.2
 
 # Build Docker image (full build)
-docker build -t samanthacireland/lightning-engine:0.0.2 -f Dockerfile .
+docker build -t samanthacireland/thunder-engine:0.0.2 -f Dockerfile .
 
 # Build Docker image (prebuilt jar)
-docker build -t samanthacireland/lightning-engine:0.0.2 \
-    -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt \
-    lightning-engine/webservice/quarkus-web-api
+docker build -t samanthacireland/thunder-engine:0.0.2 \
+    -f thunder/engine/provider/Dockerfile.prebuilt \
+    thunder/engine/provider
 
 # Run Docker container
-docker run -p 8080:8080 -e ADMIN_INITIAL_PASSWORD=admin samanthacireland/lightning-engine:0.0.2
+docker run -p 8080:8080 -e ADMIN_INITIAL_PASSWORD=admin samanthacireland/thunder-engine:0.0.2
 
 # View container logs
 docker logs <container-id>
@@ -85,12 +85,12 @@ docker stop <container-id> && docker rm <container-id>
 
 ```bash
 # Run GUI with Maven (requires display)
-./mvnw exec:java -pl lightning-engine/gui \
+./mvnw exec:java -pl lightning/rendering/core \
     -Dexec.mainClass=com.lightningfirefly.engine.gui.EngineGuiApplication \
     -Dexec.args="-s http://localhost:8080 -m 1"
 
 # macOS requires additional JVM flag
-JAVA_TOOL_OPTIONS="-XstartOnFirstThread" ./mvnw exec:java -pl lightning-engine/gui \
+JAVA_TOOL_OPTIONS="-XstartOnFirstThread" ./mvnw exec:java -pl lightning/rendering/core \
     -Dexec.mainClass=com.lightningfirefly.engine.gui.EngineGuiApplication \
     -Dexec.args="-s http://localhost:8080"
 ```
@@ -99,7 +99,7 @@ JAVA_TOOL_OPTIONS="-XstartOnFirstThread" ./mvnw exec:java -pl lightning-engine/g
 
 ```bash
 # Run Quarkus in dev mode (hot reload)
-./mvnw quarkus:dev -pl lightning-engine/webservice/quarkus-web-api
+./mvnw quarkus:dev -pl thunder/engine/provider
 ```
 
 ## REST API Testing
@@ -158,13 +158,13 @@ curl http://localhost:8080/api/resources/1/download -o resource.png
 
 ```bash
 # View Maven dependency tree
-./mvnw dependency:tree -pl lightning-engine/gui
+./mvnw dependency:tree -pl lightning/rendering/core
 
 # Check effective POM
-./mvnw help:effective-pom -pl lightning-engine/gui
+./mvnw help:effective-pom -pl lightning/rendering/core
 
 # Run with debug output
-./mvnw test -X -pl lightning-engine/gui -Dtest=SomeTest
+./mvnw test -X -pl lightning/rendering/core -Dtest=SomeTest
 ```
 
 ## Git

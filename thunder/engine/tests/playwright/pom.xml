@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>ca.samanthaireland.stormstack</groupId>
+        <artifactId>stormstack</artifactId>
+        <version>0.0.3-SNAPSHOT</version>
+        <relativePath>../../../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>playwright-test</artifactId>
+    <name>Playwright Dashboard Acceptance Tests</name>
+    <description>Playwright browser acceptance tests for the React dashboard frontend</description>
+
+    <properties>
+        <maven.compiler.source>25</maven.compiler.source>
+        <maven.compiler.target>25</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Skip tests by default since they require Docker -->
+        <skipTests>true</skipTests>
+        <playwright.version>1.49.0</playwright.version>
+    </properties>
+
+    <dependencies>
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.27.3</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Testcontainers (for backend container only) -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Playwright -->
+        <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+            <version>${playwright.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Awaitility for async test assertions -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.2.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- SLF4J for logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.16</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <!-- Failsafe for integration tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <forkedProcessExitTimeoutInSeconds>180</forkedProcessExitTimeoutInSeconds>
+                    <forkedProcessTimeoutInSeconds>300</forkedProcessTimeoutInSeconds>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <!-- Profile to run dashboard acceptance tests -->
+        <profile>
+            <id>acceptance-tests</id>
+            <properties>
+                <skipTests>false</skipTests>
+            </properties>
+        </profile>
+    </profiles>
+</project>

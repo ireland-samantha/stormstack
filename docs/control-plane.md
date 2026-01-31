@@ -1,10 +1,10 @@
-# Lightning Control Plane
+# Thunder Control Plane
 
-The Lightning Control Plane is a cluster orchestration layer for managing multiple Lightning Engine nodes. It provides centralized node registration, intelligent match scheduling, module distribution, and autoscaling recommendations.
+The Thunder Control Plane is a cluster orchestration layer for managing multiple Thunder Engine nodes. It provides centralized node registration, intelligent match scheduling, module distribution, and autoscaling recommendations.
 
 ## Overview
 
-The Control Plane enables horizontal scaling of Lightning Engine by coordinating a cluster of Lightning Engine nodes. Instead of clients connecting directly to individual game server nodes, they interact with the Control Plane which:
+The Control Plane enables horizontal scaling of Thunder Engine by coordinating a cluster of Thunder Engine nodes. Instead of clients connecting directly to individual game server nodes, they interact with the Control Plane which:
 
 - **Tracks all cluster nodes** via heartbeat-based registration
 - **Routes match creation requests** to the optimal node
@@ -22,7 +22,7 @@ The Control Plane enables horizontal scaling of Lightning Engine by coordinating
 
 ## Architecture
 
-The Control Plane follows a clean architecture with pure domain logic in `lightning-control-plane-core` and Quarkus-specific providers in `lightning-control-plane`.
+The Control Plane follows a clean architecture with pure domain logic in `thunder/control-plane/core` and Quarkus-specific providers in `thunder/control-plane/provider`.
 
 ```
                           +----------------------+
@@ -43,9 +43,9 @@ The Control Plane follows a clean architecture with pure domain logic in `lightn
 
 #### 1. Node Registry (`NodeRegistryService`)
 
-Tracks all Lightning Engine nodes in the cluster.
+Tracks all Thunder Engine nodes in the cluster.
 
-**Location**: `lightning-control-plane-core/src/main/java/ca/samanthaireland/lightning/controlplane/node/service/`
+**Location**: `thunder/control-plane/core/src/main/java/ca/samanthaireland/stormstack/thunder/controlplane/node/service/`
 
 **Responsibilities**:
 - Register new nodes with capacity information
@@ -71,7 +71,7 @@ public record Node(
 
 Selects the optimal node for hosting new matches.
 
-**Location**: `lightning-control-plane-core/src/main/java/ca/samanthaireland/lightning/controlplane/scheduler/service/`
+**Location**: `thunder/control-plane/core/src/main/java/ca/samanthaireland/stormstack/thunder/controlplane/scheduler/service/`
 
 **Selection Algorithm**:
 1. Filter to only HEALTHY nodes
@@ -92,7 +92,7 @@ saturation = activeContainers / maxContainers
 
 Coordinates match creation across the cluster.
 
-**Location**: `lightning-control-plane-core/src/main/java/ca/samanthaireland/lightning/controlplane/match/service/`
+**Location**: `thunder/control-plane/core/src/main/java/ca/samanthaireland/stormstack/thunder/controlplane/match/service/`
 
 **Match Creation Flow**:
 1. Scheduler selects a node
@@ -121,7 +121,7 @@ public record MatchRegistryEntry(
 
 Centralized storage and distribution of game modules.
 
-**Location**: `lightning-control-plane-core/src/main/java/ca/samanthaireland/lightning/controlplane/module/service/`
+**Location**: `thunder/control-plane/core/src/main/java/ca/samanthaireland/stormstack/thunder/controlplane/module/service/`
 
 **Responsibilities**:
 - Store module JAR files with metadata
@@ -147,7 +147,7 @@ public record ModuleMetadata(
 
 Analyzes cluster state and recommends scaling actions.
 
-**Location**: `lightning-control-plane-core/src/main/java/ca/samanthaireland/lightning/controlplane/autoscaler/service/`
+**Location**: `thunder/control-plane/core/src/main/java/ca/samanthaireland/stormstack/thunder/controlplane/autoscaler/service/`
 
 **Scaling Logic**:
 - **Scale Up**: When cluster saturation exceeds `scaleUpThreshold` (default: 80%)
@@ -172,7 +172,7 @@ public record ScalingRecommendation(
 
 Provides cluster-wide status and node listing.
 
-**Location**: `lightning-control-plane-core/src/main/java/ca/samanthaireland/lightning/controlplane/cluster/service/`
+**Location**: `thunder/control-plane/core/src/main/java/ca/samanthaireland/stormstack/thunder/controlplane/cluster/service/`
 
 **Key Model**: `ClusterStatus`
 ```java
@@ -189,7 +189,7 @@ public record ClusterStatus(
 
 ## Node Registration Flow
 
-Lightning Engine nodes register with the Control Plane on startup and maintain their registration via periodic heartbeats.
+Thunder Engine nodes register with the Control Plane on startup and maintain their registration via periodic heartbeats.
 
 ### Sequence Diagram
 
@@ -217,7 +217,7 @@ Node                          Control Plane
   |<-------- 204 No Content ---------|
 ```
 
-### Node Configuration (Lightning Engine side)
+### Node Configuration (Thunder Engine side)
 
 Configure nodes to register with the Control Plane via `application.properties`:
 
@@ -461,7 +461,7 @@ Content-Type: application/json
 The Control Plane runs as a separate Quarkus application:
 
 ```bash
-cd lightning-control-plane
+cd thunder/control-plane/provider
 mvn quarkus:dev
 ```
 
@@ -473,16 +473,16 @@ Default port: `8081`
 
 ```bash
 # Control Plane (port 8081)
-cd lightning-control-plane
+cd thunder/control-plane/provider
 export CONTROL_PLANE_AUTH_TOKEN=my-secret-token
 mvn quarkus:dev -Dquarkus.http.port=8081
 ```
 
-#### 2. Start Lightning Engine Nodes
+#### 2. Start Thunder Engine Nodes
 
 ```bash
 # Node 1 (port 8080)
-cd lightning-engine/webservice/quarkus-web-api
+cd thunder/engine/provider
 export CONTROL_PLANE_URL=http://localhost:8081
 export CONTROL_PLANE_TOKEN=my-secret-token
 export CONTROL_PLANE_ADVERTISE_ADDRESS=http://localhost:8080
@@ -491,7 +491,7 @@ mvn quarkus:dev -Dquarkus.http.port=8080
 
 # Node 2 (port 8082)
 # In a new terminal:
-cd lightning-engine/webservice/quarkus-web-api
+cd thunder/engine/provider
 export CONTROL_PLANE_URL=http://localhost:8081
 export CONTROL_PLANE_TOKEN=my-secret-token
 export CONTROL_PLANE_ADVERTISE_ADDRESS=http://localhost:8082
@@ -505,7 +505,7 @@ mvn quarkus:dev -Dquarkus.http.port=8082
 version: '3.8'
 services:
   control-plane:
-    image: lightning-control-plane:latest
+    image: thunder/control-plane/provider:latest
     ports:
       - "8081:8081"
     environment:
@@ -519,7 +519,7 @@ services:
       - "6379:6379"
 
   node-1:
-    image: lightning-engine:latest
+    image: thunder-engine:latest
     ports:
       - "8080:8080"
     environment:
@@ -531,7 +531,7 @@ services:
       - control-plane
 
   node-2:
-    image: lightning-engine:latest
+    image: thunder-engine:latest
     ports:
       - "8082:8080"
     environment:
@@ -565,7 +565,7 @@ services:
 | `autoscaler.max-nodes` | `100` | Maximum node count |
 | `autoscaler.cooldown-seconds` | `300` | Cooldown between scaling actions |
 
-#### Node Client Configuration (Lightning Engine side)
+#### Node Client Configuration (Thunder Engine side)
 
 | Property | Default | Description |
 |----------|---------|-------------|

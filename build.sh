@@ -15,15 +15,15 @@ set -e
 #   docker           - Build Docker image only
 #   compose-up       - Start docker-compose services
 #   compose-down     - Stop docker-compose services
-#   e2e-test         - Run thunder-cli e2e tests
+#   e2e-test         - Run lightning-cli e2e tests
 #   all              - Full pipeline: secrets, frontend, build, test, integration-test
 
-DOCKER_IMAGE_ENGINE="samanthacireland/lightning-engine"
-DOCKER_IMAGE_AUTH="samanthacireland/lightning-auth"
-DOCKER_IMAGE_CONTROL_PLANE="samanthacireland/lightning-control-plane"
+DOCKER_IMAGE_ENGINE="samanthacireland/thunder-engine"
+DOCKER_IMAGE_AUTH="samanthacireland/thunder-auth"
+DOCKER_IMAGE_CONTROL_PLANE="samanthacireland/thunder-control-plane"
 DOCKER_TAG="latest"
 VERSION="0.0.3-SNAPSHOT"
-FRONTEND_DIR="lightning-engine/webservice/quarkus-web-api/src/main/frontend"
+FRONTEND_DIR="lightning/webpanel"
 # Tailscale IP - set via environment variable or detect automatically
 if [ -z "$TAILSCALE_IP" ]; then
     TAILSCALE_IP=$(/Applications/Tailscale.app/Contents/MacOS/Tailscale ip -4 2>/dev/null || echo "")
@@ -79,7 +79,7 @@ print_usage() {
     echo "  compose-down     - Stop all docker-compose services"
     echo ""
     echo "E2E Testing:"
-    echo "  e2e-test         - Run thunder-cli e2e tests (starts/stops docker-compose)"
+    echo "  e2e-test         - Run lightning-cli e2e tests (starts/stops docker-compose)"
     echo ""
     echo "Local Registry (Tailscale):"
     echo "  registry-start   - Start local Docker registry on ${LOCAL_REGISTRY}"
@@ -93,10 +93,10 @@ do_clean() {
     banner "CLEAN"
     mvn clean -q
     # Remove generated JWT keys
-    rm -f lightning-engine/webservice/quarkus-web-api/src/main/resources/privateKey.pem
-    rm -f lightning-engine/webservice/quarkus-web-api/src/main/resources/publicKey.pem
-    rm -f lightning-engine/webservice/quarkus-web-api/src/test/resources/privateKey.pem
-    rm -f lightning-engine/webservice/quarkus-web-api/src/test/resources/publicKey.pem
+    rm -f thunder/engine/provider/src/main/resources/privateKey.pem
+    rm -f thunder/engine/provider/src/main/resources/publicKey.pem
+    rm -f thunder/engine/provider/src/test/resources/privateKey.pem
+    rm -f thunder/engine/provider/src/test/resources/publicKey.pem
 }
 
 do_secrets() {
@@ -116,38 +116,38 @@ do_test() {
 
 do_frontend() {
     banner "FRONTEND BUILD"
-    (cd "${FRONTEND_DIR}" && npm ci)
+    (cd "${FRONTEND_DIR}" && npm install)
     (cd "${FRONTEND_DIR}" && npm run build)
 }
 
 do_frontend_test() {
     banner "FRONTEND TEST"
-    (cd "${FRONTEND_DIR}" && npm ci)
+    (cd "${FRONTEND_DIR}" && npm install)
     (cd "${FRONTEND_DIR}" && npm run test:coverage)
 }
 
 do_docker() {
     banner "DOCKER BUILD"
 
-    # Build Lightning Engine (main API)
-    echo "Building lightning-engine..."
-    docker build -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt \
+    # Build Thunder Engine (main API)
+    echo "Building thunder-engine..."
+    docker build -f thunder/engine/provider/Dockerfile.prebuilt \
         -t "${DOCKER_IMAGE_ENGINE}:${DOCKER_TAG}" \
         -t "${DOCKER_IMAGE_ENGINE}:${VERSION}" \
         .
     echo "  Built: ${DOCKER_IMAGE_ENGINE}:${DOCKER_TAG}"
 
-    # Build Lightning Auth
-    echo "Building lightning-auth..."
-    docker build -f lightning-auth/Dockerfile.prebuilt \
+    # Build Thunder Auth
+    echo "Building thunder-auth..."
+    docker build -f thunder/auth/provider/Dockerfile.prebuilt \
         -t "${DOCKER_IMAGE_AUTH}:${DOCKER_TAG}" \
         -t "${DOCKER_IMAGE_AUTH}:${VERSION}" \
         .
     echo "  Built: ${DOCKER_IMAGE_AUTH}:${DOCKER_TAG}"
 
-    # Build Lightning Control Plane
-    echo "Building lightning-control-plane..."
-    docker build -f lightning-control-plane/Dockerfile.prebuilt \
+    # Build Thunder Control Plane
+    echo "Building thunder-control-plane..."
+    docker build -f thunder/control-plane/provider/Dockerfile.prebuilt \
         -t "${DOCKER_IMAGE_CONTROL_PLANE}:${DOCKER_TAG}" \
         -t "${DOCKER_IMAGE_CONTROL_PLANE}:${VERSION}" \
         .
@@ -163,7 +163,7 @@ do_docker() {
 do_integration_test() {
     do_docker
     banner "INTEGRATION TEST"
-    mvn verify -Pacceptance-tests -pl lightning-engine/api-acceptance-test
+    mvn verify -Pacceptance-tests -pl thunder/engine/tests/api-acceptance
 }
 
 do_registry_start() {
@@ -173,9 +173,9 @@ do_registry_start() {
     echo "Registry started at ${LOCAL_REGISTRY}"
     echo ""
     echo "Available images (after ./build.sh docker-local):"
-    echo "  - ${LOCAL_REGISTRY}/lightning-engine:${VERSION}"
-    echo "  - ${LOCAL_REGISTRY}/lightning-auth:${VERSION}"
-    echo "  - ${LOCAL_REGISTRY}/lightning-control-plane:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/thunder-engine:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/thunder-auth:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/thunder-control-plane:${VERSION}"
     echo ""
     echo "IMPORTANT: On remote machines, add to /etc/docker/daemon.json:"
     echo "  { \"insecure-registries\": [\"${LOCAL_REGISTRY}\"] }"
@@ -210,25 +210,25 @@ do_docker_local() {
     fi
 
     # Build and push all services via Maven profile
-    echo "Building and pushing lightning-engine..."
-    mvn install -PlocalDockerRegistry -pl lightning-engine/webservice/quarkus-web-api -DskipTests
+    echo "Building and pushing thunder-engine..."
+    mvn install -PlocalDockerRegistry -pl thunder/engine/provider -DskipTests
 
-    echo "Building and pushing lightning-auth..."
-    mvn install -PlocalDockerRegistry -pl lightning-auth -DskipTests
+    echo "Building and pushing thunder-auth..."
+    mvn install -PlocalDockerRegistry -pl thunder/auth/provider -DskipTests
 
-    echo "Building and pushing lightning-control-plane..."
-    mvn install -PlocalDockerRegistry -pl lightning-control-plane -DskipTests
+    echo "Building and pushing thunder-control-plane..."
+    mvn install -PlocalDockerRegistry -pl thunder/control-plane/provider -DskipTests
 
     echo ""
     echo "All images pushed to local registry:"
-    echo "  - ${LOCAL_REGISTRY}/lightning-engine:${VERSION}"
-    echo "  - ${LOCAL_REGISTRY}/lightning-auth:${VERSION}"
-    echo "  - ${LOCAL_REGISTRY}/lightning-control-plane:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/thunder-engine:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/thunder-auth:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/thunder-control-plane:${VERSION}"
     echo ""
     echo "Pull from remote (via Tailscale):"
-    echo "  docker pull ${LOCAL_REGISTRY}/lightning-engine:${VERSION}"
-    echo "  docker pull ${LOCAL_REGISTRY}/lightning-auth:${VERSION}"
-    echo "  docker pull ${LOCAL_REGISTRY}/lightning-control-plane:${VERSION}"
+    echo "  docker pull ${LOCAL_REGISTRY}/thunder-engine:${VERSION}"
+    echo "  docker pull ${LOCAL_REGISTRY}/thunder-auth:${VERSION}"
+    echo "  docker pull ${LOCAL_REGISTRY}/thunder-control-plane:${VERSION}"
 }
 
 do_compose_up() {
@@ -248,16 +248,16 @@ do_compose_down() {
 }
 
 do_e2e_test() {
-    banner "E2E TESTS (thunder-cli)"
+    banner "E2E TESTS (lightning-cli)"
 
-    # Check if thunder CLI binary exists
-    if [ ! -x "thunder-cli/thunder" ]; then
-        echo "Building thunder CLI..."
-        (cd thunder-cli && go build -o thunder ./cmd/thunder)
+    # Check if lightning CLI binary exists
+    if [ ! -x "lightning/cli/lightning" ]; then
+        echo "Building lightning CLI..."
+        (cd lightning/cli && go build -o lightning ./cmd/lightning)
     fi
 
     # Run all e2e test scripts
-    E2E_DIR="thunder-cli/e2e"
+    E2E_DIR="lightning/cli/e2e"
     if [ -d "$E2E_DIR" ]; then
         for script in "$E2E_DIR"/e2e-*.sh; do
             if [ -x "$script" ]; then

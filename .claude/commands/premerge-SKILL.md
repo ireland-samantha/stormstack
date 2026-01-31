@@ -7,16 +7,29 @@ description: "Run all review skills (self, SOLID, test coverage, security, docs)
 
 Orchestrate all reviews before merging. Fix what's fixable. Report the rest.
 
+## Autonomous Operation Philosophy
+
+This skill operates as an **autonomous orchestrator** that:
+1. Runs all sub-skills with minimal human intervention
+2. Coordinates cross-skill collaboration automatically
+3. Applies safe fixes without asking
+4. Only prompts for decisions that truly require human judgment
+5. Produces a complete, actionable report
+
+**Goal**: Developer invokes `/premerge`, goes to get coffee, comes back to a clean codebase or a clear list of what needs manual attention.
+
 ## What This Does
 
 1. **Interactive scope selection** - Choose commits or review entire working tree
-2. Run `self-review`, `solid-review`, `test-coverage`, `security-review`, `write-docs` with selected scope
-3. Merge and deduplicate findings
-4. Prioritize by severity × impact
-5. Apply auto-fixable issues (with confirmation)
-6. Verify/update documentation accuracy
-7. Generate `summary.json`
-8. Present unified verdict
+2. Run all sub-skills in parallel with scope context
+3. **Facilitate skill collaboration** - Skills share findings and coordinate fixes
+4. Merge and deduplicate findings
+5. Prioritize by severity × impact
+6. **Apply all safe auto-fixes automatically**
+7. **Run collaboration round** - Let skills respond to each other's findings
+8. Verify/update documentation accuracy
+9. Generate `summary.json` with complete audit trail
+10. Present unified verdict with clear next steps
 
 ## Workflow
 
@@ -120,9 +133,9 @@ echo "Files: $FILE_COUNT"
 echo ""
 ```
 
-### Step 2: Run Reviews
+### Step 2: Run Reviews (Parallel Phase)
 
-Execute each review skill with scope context. Each skill reads `.review-output/scope.json` to know what to analyze.
+Execute all review skills in parallel. Each reads `.review-output/scope.json`.
 
 ```bash
 mkdir -p .review-output
@@ -130,35 +143,100 @@ mkdir -p .review-output
 # Pass scope to each skill via --scope-file flag or environment
 export REVIEW_SCOPE_FILE=".review-output/scope.json"
 
-# Run skills in parallel where possible
-# Each skill reads scope.json to determine which files/commits to analyze
-#
-# Skills invoked with scope awareness:
+# Run ALL skills in parallel using Task tool with multiple agents
+# Each skill operates autonomously and writes its findings
+
+# Skills invoked simultaneously:
 #   self-review --scope-file scope.json
 #   solid-review --scope-file scope.json
 #   test-coverage --scope-file scope.json
 #   security-review --scope-file scope.json
 #   write-docs --scope-file scope.json
-#
-# Each writes to their respective JSON files:
-#   self-review.json
-#   solid-review.json
-#   test-coverage.json
-#   security-review.json
-#   docs-review.json
+```
+
+**Parallel Execution Strategy:**
+- Launch all 5 skills as parallel Task agents
+- Each skill operates independently on the scoped files
+- Skills apply their own auto-fixes as they run
+- Skills write collaboration requests for cross-skill issues
+
+**Expected outputs (Phase 1):**
+- `self-review.json` - commit hygiene, build, architecture, patterns
+- `solid-review.json` - SOLID violations
+- `test-coverage.json` - missing tests, quality
+- `security-review.json` - vulnerabilities, OWASP checks, secrets
+- `docs-review.json` - documentation accuracy, completeness
+- `fixes-applied.json` - all auto-fixes applied by all skills
+
+### Step 2.5: Skill Collaboration Round
+
+After initial parallel run, process cross-skill collaboration requests.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    COLLABORATION FLOW                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────┐     flags security      ┌─────────────────┐  │
+│  │ self-review  │ ──────────────────────► │ security-review │  │
+│  └──────────────┘     concern             └─────────────────┘  │
+│         │                                          │            │
+│         │ flags missing docs                       │            │
+│         ▼                                          │            │
+│  ┌──────────────┐                                  │            │
+│  │  write-docs  │ ◄────────────────────────────────┘            │
+│  └──────────────┘     requests security docs                    │
+│         │                                                       │
+│         │ updates API docs                                      │
+│         ▼                                                       │
+│  ┌──────────────┐                                               │
+│  │ test-coverage│ ◄── security-review requests security tests  │
+│  └──────────────┘                                               │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Collaboration Protocol:**
+
+1. **Collect collaboration requests** from all skill outputs:
+```python
+collaboration_requests = []
+for report in ['self-review.json', 'security-review.json', ...]:
+    requests = json.load(report).get('collaborationNeeded', [])
+    collaboration_requests.extend(requests)
+```
+
+2. **Group by target skill**:
+```python
+by_skill = defaultdict(list)
+for req in collaboration_requests:
+    by_skill[req['targetSkill']].append(req)
+```
+
+3. **Execute collaboration actions**:
+
+| Source Skill | Target Skill | Action |
+|--------------|--------------|--------|
+| self-review → security-review | New auth code flagged | Deep security scan of specific files |
+| self-review → write-docs | New API endpoint | Generate endpoint documentation |
+| security-review → write-docs | Security requirements | Add security notes to docs |
+| security-review → test-coverage | Vulnerable code | Prioritize security test coverage |
+| security-review → self-review | Critical vulnerability | BLOCK_MERGE signal |
+| solid-review → write-docs | Architecture change | Update architecture docs |
+| test-coverage → write-docs | Test gaps | Document testing requirements |
+
+4. **Apply collaboration fixes**:
+```bash
+# write-docs responds to requests by generating docs
+# security-review does deep-dive on flagged files
+# test-coverage updates priority list
+# All append to fixes-applied.json
 ```
 
 **Scope-Aware Behavior:**
 - **commit/commits/branch scope**: Only analyze files changed in selected commits
 - **working-tree scope**: Only analyze modified and untracked files
 - **full scope**: Analyze entire codebase
-
-**Expected outputs:**
-- `self-review.json` - commit hygiene, build, architecture, patterns (scoped)
-- `solid-review.json` - SOLID violations (scoped)
-- `test-coverage.json` - missing tests, quality (scoped)
-- `security-review.json` - vulnerabilities, OWASP checks, secrets (scoped)
-- `docs-review.json` - documentation accuracy, completeness (scoped)
 
 ### Step 2.5: Documentation Verification
 
@@ -200,36 +278,93 @@ severity_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
 all_findings.sort(key=lambda f: severity_order.get(f['severity'], 99))
 ```
 
-### Step 4: Classify Auto-Fixable
+### Step 4: Autonomous Fix Application
 
-| Issue | Auto-Fix | How |
-|-------|----------|-----|
-| Missing `final` on `@Inject` | ✓ | Add `final` modifier |
-| Missing `@Override` | ✓ | Add annotation |
-| Import organization | ✓ | Sort imports |
-| Concrete collection types | ✓ | `ArrayList` → `List` |
-| DTO class → record | ~ | Simple cases only |
-| Outdated documentation | ✓ | Run write-docs to update |
+**Philosophy**: If a fix is mechanical and doesn't change behavior, just do it. Don't ask.
 
-**Cannot auto-fix:**
-- Architecture violations (need design decision)
-- Missing tests (need to write them)
-- SOLID violations (need refactoring)
+#### Tier 1: Apply Automatically (No Confirmation)
 
-### Step 5: Apply Fixes
+These fixes are applied immediately without user interaction:
 
-For each auto-fixable finding:
+| Category | Issue | Fix |
+|----------|-------|-----|
+| **Code Style** | Missing `final` on `@Inject` | Add `final` modifier |
+| **Code Style** | Missing `@Override` | Add annotation |
+| **Code Style** | Import organization | Sort and remove unused |
+| **Code Style** | Trailing whitespace | Remove |
+| **Types** | Concrete collection types | `ArrayList` → `List` |
+| **Types** | Raw generic types | Add type parameters |
+| **Security** | `printStackTrace()` | Replace with logger |
+| **Security** | Missing `@Valid` on DTOs | Add validation |
+| **Docs** | Outdated endpoint paths | Update automatically |
+| **Docs** | Stale config references | Correct from code |
 
-```markdown
-Found 3 auto-fixable issues:
-1. [MEDIUM] UserService.java:15 - Missing final on @Inject field
-2. [MEDIUM] OrderService.java:8 - Missing final on @Inject field  
-3. [LOW] PaymentService.java:22 - Missing @Override
+#### Tier 2: Apply and Report (Inform User)
 
-Apply these fixes? [y/N]
+These fixes are applied, then reported for awareness:
+
+| Category | Issue | Fix | Why Report |
+|----------|-------|-----|------------|
+| **Security** | Weak BCrypt cost | Upgrade to 12 | Performance impact |
+| **Security** | Missing rate limit | Add sensible default | May need tuning |
+| **Architecture** | Public → package-private | Reduce visibility | API change |
+| **Testing** | Test file renamed | Update to match prod | Verify coverage |
+
+#### Tier 3: Require Confirmation
+
+Only ask for these significant decisions:
+
+| Issue | Why Ask |
+|-------|---------|
+| Architecture boundary violation | May be intentional design |
+| Missing tests for complex logic | Need to understand requirements |
+| Security vulnerability with multiple fix options | Trade-offs to consider |
+| Breaking API changes | External consumers affected |
+| Removing deprecated code | May have hidden dependencies |
+
+### Step 5: Coordinated Fix Execution
+
+Fixes are applied in a coordinated manner across all skills:
+
+```bash
+# 1. Read all fixes from all skills
+cat .review-output/*/fixes-to-apply.json | jq -s 'flatten'
+
+# 2. Deduplicate (same file+line from multiple skills)
+# Security-review has priority for security fixes
+# self-review has priority for style fixes
+
+# 3. Apply in order: security → architecture → style → docs
+for fix in $(jq -r '.[] | @base64' fixes.json); do
+  apply_fix "$fix"
+  log_fix "$fix" >> .review-output/fixes-applied.json
+done
+
+# 4. Re-run build to verify fixes don't break anything
+./build.sh build 2>&1 | tee /tmp/post-fix-build.log
+
+# 5. If build fails, rollback last fix and report
+if [[ $? -ne 0 ]]; then
+  git checkout -- "$last_fixed_file"
+  echo "Fix caused build failure, rolled back"
+fi
 ```
 
-If confirmed, apply fixes and re-run build to verify.
+**Fix Conflict Resolution:**
+
+When multiple skills want to fix the same code:
+
+| Conflict | Resolution |
+|----------|------------|
+| security vs style | Security wins |
+| security vs docs | Security wins |
+| architecture vs style | Architecture wins |
+| self-review vs solid-review | More specific fix wins |
+
+**Post-Fix Verification:**
+- Re-run build after all fixes
+- Run affected tests if available
+- Verify no new issues introduced
 
 ### Step 6: Generate summary.json
 
@@ -238,15 +373,23 @@ If confirmed, apply fixes and re-run build to verify.
   "meta": {
     "commit": "abc1234",
     "branch": "feature/auth",
-    "reviewedAt": "2025-01-31T12:00:00Z",
-    "skillsRun": ["self-review", "solid-review", "test-coverage", "security-review", "write-docs"]
+    "reviewedAt": "2026-01-31T12:00:00Z",
+    "scope": "branch",
+    "scopeTarget": "main..HEAD",
+    "skillsRun": ["self-review", "solid-review", "test-coverage", "security-review", "write-docs"],
+    "autonomousMode": true
   },
   "build": {
     "passed": true,
-    "exitCode": 0
+    "exitCode": 0,
+    "fixedDuringReview": true,
+    "buildFixesApplied": 2
   },
   "findings": {
     "total": 15,
+    "beforeFixes": 28,
+    "afterFixes": 15,
+    "autoFixed": 13,
     "critical": 0,
     "high": 3,
     "medium": 8,
@@ -261,19 +404,58 @@ If confirmed, apply fixes and re-run build to verify.
     }
   },
   "fixes": {
-    "autoFixable": 3,
-    "applied": 3,
-    "remaining": 0
+    "tier1Applied": 10,
+    "tier2Applied": 3,
+    "tier3Pending": 2,
+    "total": 13,
+    "bySkill": {
+      "self-review": 5,
+      "security-review": 4,
+      "write-docs": 3,
+      "solid-review": 1
+    },
+    "details": [
+      {
+        "file": "UserService.java",
+        "line": 15,
+        "fix": "Added final to @Inject field",
+        "skill": "self-review",
+        "tier": 1
+      }
+    ]
+  },
+  "collaboration": {
+    "requestsSent": 5,
+    "requestsProcessed": 5,
+    "crossSkillFixes": 3,
+    "details": [
+      {
+        "from": "self-review",
+        "to": "write-docs",
+        "reason": "New endpoint needs documentation",
+        "status": "completed",
+        "result": "Added API docs for POST /api/matches"
+      },
+      {
+        "from": "security-review",
+        "to": "self-review",
+        "reason": "Critical: SQL injection in UserRepository",
+        "status": "completed",
+        "result": "BLOCK_MERGE signal sent"
+      }
+    ]
   },
   "coverage": {
     "testFilePercent": 85,
-    "criticalMissing": ["PaymentService.java"]
+    "criticalMissing": ["PaymentService.java"],
+    "securityTestsCoverage": 75
   },
   "documentation": {
-    "accuracy": 90,
-    "completeness": 85,
-    "staleFiles": ["README.md"],
-    "missingDocs": ["control-plane service"]
+    "accuracy": 95,
+    "completeness": 90,
+    "filesUpdated": ["api-reference.md", "architecture.md"],
+    "staleFilesFixed": ["README.md"],
+    "remainingGaps": []
   },
   "grades": {
     "overall": "B",
@@ -281,8 +463,8 @@ If confirmed, apply fixes and re-run build to verify.
     "architecture": "A",
     "solid": "C",
     "testing": "B",
-    "documentation": "B",
-    "security": "C"
+    "documentation": "A",
+    "security": "B"
   },
   "topIssues": [
     {
@@ -291,7 +473,9 @@ If confirmed, apply fixes and re-run build to verify.
       "category": "testing",
       "file": "PaymentService.java",
       "description": "Critical service missing tests",
-      "action": "Add PaymentServiceTest.java"
+      "action": "Add PaymentServiceTest.java",
+      "autoFixable": false,
+      "requiresHuman": true
     },
     {
       "priority": 2,
@@ -299,13 +483,29 @@ If confirmed, apply fixes and re-run build to verify.
       "category": "solid",
       "file": "UserService.java",
       "description": "SRP violation - 12 dependencies",
-      "action": "Split into focused services"
+      "action": "Split into focused services",
+      "autoFixable": false,
+      "suggestedRefactoring": "Extract UserAuthService and UserProfileService"
     }
   ],
   "verdict": {
     "canPush": false,
     "blockers": ["1 critical service missing tests"],
-    "warnings": ["SOLID violations in UserService"]
+    "warnings": ["SOLID violations in UserService"],
+    "humanDecisionsNeeded": 2,
+    "estimatedManualWork": "30 minutes"
+  },
+  "auditTrail": {
+    "startTime": "2026-01-31T12:00:00Z",
+    "endTime": "2026-01-31T12:03:45Z",
+    "duration": "3m45s",
+    "phases": [
+      {"phase": "scope-selection", "duration": "5s"},
+      {"phase": "parallel-review", "duration": "2m30s"},
+      {"phase": "collaboration", "duration": "45s"},
+      {"phase": "fix-application", "duration": "20s"},
+      {"phase": "verification", "duration": "5s"}
+    ]
   }
 }
 ```

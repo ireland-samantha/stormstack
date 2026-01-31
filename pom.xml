@@ -12,35 +12,33 @@
         <relativePath/>
     </parent>
 
-    <groupId>ca.samanthaireland</groupId>
-    <artifactId>backend</artifactId>
+    <groupId>ca.samanthaireland.stormstack</groupId>
+    <artifactId>stormstack</artifactId>
     <version>0.0.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>backend</name>
-    <description>Lightning Firefly Backend</description>
+    <name>StormStack</name>
+    <description>StormStack - Thunder Engine and Lightning Tools</description>
 
     <modules>
-        <module>utils</module>
-        <module>lightning-engine/engine-core</module>
-        <module>lightning-engine/engine-internal</module>
-        <module>thunder-rendering-engine-core</module>
-        <module>thunder-rendering-engine-test-framework</module>
-        <module>lightning-engine/engine-adapter</module>
-        <module>lightning-engine-extensions/modules</module>
-        <module>lightning-engine-extensions/game-masters</module>
-        <module>lightning-engine/webservice/quarkus-web-api</module>
-<!--        <module>lightning-engine-extensions/games</module>-->
-        <module>lightning-engine/api-acceptance-test</module>
-        <module>lightning-engine/webservice/playwright-test</module>
-        <module>lightning-control-plane-core</module>
-        <module>lightning-control-plane</module>
-        <module>lightning-auth-core</module>
-        <module>lightning-auth</module>
-        <module>lightning-auth-adapter-spring-provider</module>
-        <module>lightning-auth-adapter-quarkus-provider</module>
-        <module>lightning-proxy</module>
-<!--        <module>game-renderer</module>-->
+        <!-- Thunder - Backend Services -->
+        <module>thunder/shared</module>
+        <module>thunder/engine/adapters</module>
+        <module>thunder/engine/core</module>
+        <module>thunder/engine/extensions/modules</module>
+        <module>thunder/engine/provider</module>
+        <module>thunder/engine/tests/api-acceptance</module>
+        <module>thunder/engine/tests/playwright</module>
+        <module>thunder/auth/core</module>
+        <module>thunder/auth/provider</module>
+        <module>thunder/auth/adapters/spring</module>
+        <module>thunder/auth/adapters/quarkus</module>
+        <module>thunder/control-plane/core</module>
+        <module>thunder/control-plane/provider</module>
+
+        <!-- Lightning - Client Tools -->
+        <module>lightning/rendering/core</module>
+        <module>lightning/rendering/test-framework</module>
     </modules>
 
     <properties>
@@ -149,7 +147,7 @@
                     <executions>
                         <execution>
                             <id>build-docker-image</id>
-                            <phase>install</phase> <!-- runs after the JAR is packaged -->
+                            <phase>install</phase>
                             <goals>
                                 <goal>build</goal>
                             </goals>
@@ -158,7 +156,7 @@
                     <configuration>
                         <images>
                             <image>
-                                <name>samanthacireland/lightning-engine:0.0.2-SNAPSHOT-lean</name>
+                                <name>samanthacireland/thunder-engine:0.0.3-SNAPSHOT</name>
                                 <build>
                                     <dockerFile>${project.basedir}/Dockerfile</dockerFile>
                                     <contextDir>${project.basedir}</contextDir>

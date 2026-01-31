@@ -1,6 +1,6 @@
 # Game SDK
 
-The Game SDK (`lightning-engine/engine-adapter`) provides client libraries for building games on top of Lightning Engine.
+The Game SDK (`thunder/engine/adapters`) provides client libraries for building games on top of Thunder Engine.
 
 ## EngineClient
 

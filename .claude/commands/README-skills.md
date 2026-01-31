@@ -4,13 +4,35 @@ Comprehensive quality assurance workflow for pre-merge reviews.
 
 ## Overview
 
-The Lightning Engine review system provides automated quality checks across multiple dimensions:
+The Lightning Engine review system provides **autonomous, collaborative** quality checks across multiple dimensions:
 
 - **Code Quality** (SOLID principles, architecture)
 - **Security** (OWASP Top 10, vulnerabilities, secrets)
 - **Testing** (coverage, quality)
 - **Documentation** (accuracy, completeness)
 - **Commit Hygiene** (message format, build status)
+
+## Design Philosophy
+
+### Autonomous Operation
+Skills operate with **minimal human intervention**:
+- Apply safe fixes automatically without asking
+- Only prompt for decisions that truly require human judgment
+- Continue working through issues rather than stopping at first problem
+- Report what was done, not ask permission for every action
+
+### Skill Collaboration
+Skills **work together** rather than in isolation:
+- Share findings via standardized JSON format
+- Request deep-dives from specialized skills
+- Coordinate fixes to avoid conflicts
+- Build on each other's analysis
+
+### Fix-First Mentality
+The goal is a **clean codebase**, not just a report:
+- Mechanical issues are fixed, not reported
+- Complex issues get actionable recommendations
+- Only truly manual work remains for humans
 
 ## Skills
 
@@ -105,6 +127,71 @@ The Lightning Engine review system provides automated quality checks across mult
 - Updates only affected docs when scoped
 
 **Scope-aware**: ✓
+
+## Collaboration Flow
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                         PREMERGE ORCHESTRATION                           │
+└──────────────────────────────────────────────────────────────────────────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
+          ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+          │ self-review │  │  security   │  │ write-docs  │
+          │             │  │   review    │  │             │
+          └──────┬──────┘  └──────┬──────┘  └──────┬──────┘
+                 │                │                │
+                 │    PHASE 1: PARALLEL ANALYSIS   │
+                 │                │                │
+                 ▼                ▼                ▼
+          ┌─────────────────────────────────────────────┐
+          │           findings + collaborationNeeded     │
+          └─────────────────────┬───────────────────────┘
+                                │
+                    PHASE 2: COLLABORATION ROUND
+                                │
+          ┌─────────────────────┼─────────────────────┐
+          │                     │                     │
+          ▼                     ▼                     ▼
+   ┌─────────────┐       ┌─────────────┐       ┌─────────────┐
+   │ self-review │◄─────►│  security   │◄─────►│ write-docs  │
+   │ "new auth   │       │ "deep scan  │       │ "generate   │
+   │  code"      │       │  auth code" │       │  API docs"  │
+   └─────────────┘       └─────────────┘       └─────────────┘
+          │                     │                     │
+          └─────────────────────┼─────────────────────┘
+                                │
+                    PHASE 3: COORDINATED FIXES
+                                │
+                                ▼
+          ┌─────────────────────────────────────────────┐
+          │  Apply fixes in priority order:             │
+          │  1. Security fixes (security-review)        │
+          │  2. Architecture fixes (self-review)        │
+          │  3. Style fixes (self-review)               │
+          │  4. Documentation updates (write-docs)      │
+          └─────────────────────┬───────────────────────┘
+                                │
+                                ▼
+          ┌─────────────────────────────────────────────┐
+          │  UNIFIED SUMMARY                            │
+          │  • Fixes applied: 13                        │
+          │  • Remaining issues: 3 (need human)         │
+          │  • Verdict: Ready to push (or blockers)     │
+          └─────────────────────────────────────────────┘
+```
+
+### Collaboration Examples
+
+| Trigger | From Skill | To Skill | Action |
+|---------|------------|----------|--------|
+| New REST endpoint added | self-review | write-docs | Generate API documentation |
+| Auth code modified | self-review | security-review | Deep security scan |
+| Security vulnerability found | security-review | self-review | BLOCK_MERGE signal |
+| Architecture change | solid-review | write-docs | Update architecture docs |
+| Missing security tests | security-review | test-coverage | Prioritize security coverage |
 
 ## Scope Flow
 
