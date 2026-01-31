@@ -57,4 +57,31 @@ describe("RolesPanel", () => {
       expect(screen.getAllByText("view_only").length).toBeGreaterThan(1);
     });
   });
+
+  it("displays scopes column header", async () => {
+    renderWithProviders(<RolesPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Scopes")).toBeInTheDocument();
+    });
+  });
+
+  it("shows scopes for roles with scopes", async () => {
+    renderWithProviders(<RolesPanel />);
+
+    await waitFor(() => {
+      // view_only role has engine.snapshot.view scope
+      expect(screen.getByText("engine.snapshot.view")).toBeInTheDocument();
+    });
+    // admin role has * scope
+    expect(screen.getByText("*")).toBeInTheDocument();
+  });
+
+  it("shows command submit scope for command_manager", async () => {
+    renderWithProviders(<RolesPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByText("engine.command.submit")).toBeInTheDocument();
+    });
+  });
 });

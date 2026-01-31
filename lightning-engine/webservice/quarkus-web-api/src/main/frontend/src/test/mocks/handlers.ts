@@ -53,18 +53,21 @@ const mockRoles = [
     name: "admin",
     description: "Full access",
     includedRoles: ["view_only", "command_manager"],
+    scopes: ["*"],
   },
   {
     id: 2,
     name: "view_only",
     description: "Read-only access",
     includedRoles: [],
+    scopes: ["engine.snapshot.view", "controlplane.cluster.read"],
   },
   {
     id: 3,
     name: "command_manager",
     description: "Can execute commands",
     includedRoles: ["view_only"],
+    scopes: ["engine.command.submit", "engine.match.read"],
   },
 ];
 
@@ -589,6 +592,176 @@ export const handlers = [
   // Restore
   http.post("/api/restore/match/:matchId", async () => {
     await delay(200);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // =========================================================================
+  // CONTROL PLANE ENDPOINTS
+  // =========================================================================
+
+  // Cluster Status
+  http.get("/api/control-plane/cluster/status", async () => {
+    await delay(100);
+    return HttpResponse.json({
+      clusterName: "lightning-cluster",
+      healthyNodes: 3,
+      totalNodes: 3,
+      activeMatches: 5,
+      totalCapacity: 100,
+      usedCapacity: 45,
+    });
+  }),
+
+  // Cluster Nodes
+  http.get("/api/control-plane/cluster/nodes", async () => {
+    await delay(100);
+    return HttpResponse.json([
+      {
+        nodeId: "node-1",
+        status: "HEALTHY",
+        advertiseAddress: "192.168.1.10:8080",
+        matchCount: 2,
+        lastHeartbeat: new Date().toISOString(),
+      },
+      {
+        nodeId: "node-2",
+        status: "HEALTHY",
+        advertiseAddress: "192.168.1.11:8080",
+        matchCount: 2,
+        lastHeartbeat: new Date().toISOString(),
+      },
+      {
+        nodeId: "node-3",
+        status: "HEALTHY",
+        advertiseAddress: "192.168.1.12:8080",
+        matchCount: 1,
+        lastHeartbeat: new Date().toISOString(),
+      },
+    ]);
+  }),
+
+  // Cluster Matches (for DeploymentsPanel - uses /matches endpoint)
+  http.get("/api/control-plane/matches", async () => {
+    await delay(100);
+    return HttpResponse.json([
+      {
+        matchId: "match-001",
+        nodeId: "node-1",
+        status: "RUNNING",
+        moduleNames: ["EntityModule", "RigidBodyModule"],
+        playerCount: 4,
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        matchId: "match-002",
+        nodeId: "node-1",
+        status: "RUNNING",
+        moduleNames: ["EntityModule"],
+        playerCount: 2,
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+      },
+      {
+        matchId: "match-003",
+        nodeId: "node-2",
+        status: "CREATING",
+        moduleNames: ["EntityModule", "HealthModule"],
+        playerCount: 0,
+        createdAt: new Date().toISOString(),
+      },
+    ]);
+  }),
+
+  // Cluster Modules (uses /modules endpoint, not /cluster/modules)
+  http.get("/api/control-plane/modules", async () => {
+    await delay(100);
+    return HttpResponse.json([
+      {
+        name: "EntityModule",
+        version: "1.0.0",
+        nodeCount: 3,
+        nodes: ["node-1", "node-2", "node-3"],
+      },
+      {
+        name: "RigidBodyModule",
+        version: "1.0.0",
+        nodeCount: 2,
+        nodes: ["node-1", "node-2"],
+      },
+      {
+        name: "HealthModule",
+        version: "1.2.0",
+        nodeCount: 3,
+        nodes: ["node-1", "node-2", "node-3"],
+      },
+    ]);
+  }),
+
+  // Deploy
+  http.post("/api/control-plane/deploy", async ({ request }) => {
+    await delay(200);
+    const body = (await request.json()) as {
+      modules: string[];
+      preferredNodeId?: string;
+    };
+    return HttpResponse.json({
+      matchId: "match-new-" + Date.now(),
+      nodeId: body.preferredNodeId || "node-1",
+      status: "CREATING",
+    });
+  }),
+
+  // Undeploy
+  http.delete("/api/control-plane/deploy/:matchId", async () => {
+    await delay(100);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Get Deployment Details
+  http.get("/api/control-plane/deploy/:matchId", async ({ params }) => {
+    await delay(100);
+    return HttpResponse.json({
+      matchId: params.matchId,
+      nodeId: "node-1",
+      status: "RUNNING",
+      modules: ["EntityModule", "RigidBodyModule"],
+      endpoints: {
+        http: "http://192.168.1.10:8080/api/matches/" + params.matchId,
+        websocket: "ws://192.168.1.10:8080/ws/snapshots/" + params.matchId,
+        commands: "http://192.168.1.10:8080/api/matches/" + params.matchId + "/commands",
+      },
+    });
+  }),
+
+  // Autoscaler Status
+  http.get("/api/control-plane/autoscaler/status", async () => {
+    await delay(100);
+    return HttpResponse.json({
+      inCooldown: false,
+      lastRecommendation: {
+        action: "SCALE_UP",
+        reason: "High load detected",
+        currentNodes: 3,
+        recommendedNodes: 4,
+        timestamp: new Date(Date.now() - 1800000).toISOString(),
+      },
+    });
+  }),
+
+  // Autoscaler Recommendation
+  http.get("/api/control-plane/autoscaler/recommendation", async () => {
+    await delay(100);
+    return HttpResponse.json({
+      action: "NO_ACTION",
+      reason: "Cluster load is within acceptable range",
+      currentNodes: 3,
+      recommendedNodes: 3,
+      timestamp: new Date().toISOString(),
+    });
+  }),
+
+  // Acknowledge Scaling Action
+  http.post("/api/control-plane/autoscaler/acknowledge", async () => {
+    await delay(100);
     return new HttpResponse(null, { status: 204 });
   }),
 ];

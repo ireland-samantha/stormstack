@@ -1,5 +1,29 @@
+# Lightning Engine - Full Stack Docker Compose
+#
+# Services:
+#   - mongodb:         Shared MongoDB for all services (port 27017)
+#   - redis:           Redis for control plane node registry (port 6379)
+#   - auth:            Lightning Auth service (port 8082)
+#   - control-plane:   Lightning Control Plane (port 8081)
+#   - backend:         Lightning Engine API (port 8080)
+#
+# Usage:
+#   docker compose up                    # Start all services
+#   docker compose up -d                 # Start in background
+#   docker compose --profile cluster up  # Start with multiple backend nodes
+#   docker compose logs -f               # Follow logs
+#
+# Environment variables (optional):
+#   AUTH_JWT_SECRET          - JWT signing secret (required for production)
+#   ADMIN_INITIAL_PASSWORD   - Initial admin password (default: admin)
+#   CONTROL_PLANE_TOKEN      - Token for control plane API access
+
 services:
-  # MongoDB for snapshot persistence
+  # =============================================================================
+  # Infrastructure Services
+  # =============================================================================
+
+  # MongoDB - Shared database for all services
   mongodb:
     image: mongo:7
     container_name: lightning-mongodb
@@ -19,70 +43,232 @@ services:
     networks:
       - lightning-network
 
-  # Main Quarkus API backend
-  # Set LIGHTNING_IMAGE to use local registry:
-  #   LIGHTNING_IMAGE=$TAILSCALE_IP:5001/lightning-engine:0.0.2-SNAPSHOT docker compose up
+  # Redis - Control plane node registry and caching
+  redis:
+    image: redis:7-alpine
+    container_name: lightning-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - lightning-network
+
+  # =============================================================================
+  # Application Services
+  # =============================================================================
+
+  # Lightning Auth - Authentication service (port 8082)
+  auth:
+    image: ${AUTH_IMAGE:-samanthacireland/lightning-auth:0.0.3-SNAPSHOT}
+    container_name: lightning-auth
+    ports:
+      - "8082:8082"
+    environment:
+      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms128m -Xmx256m
+      - QUARKUS_LOG_LEVEL=INFO
+      - MONGODB_URI=mongodb://mongodb:27017
+      - JWT_ISSUER=https://lightningfirefly.com
+      - JWT_SECRET=${AUTH_JWT_SECRET:-change-me-in-production-use-long-random-string}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-admin}
+      - SESSION_EXPIRY_HOURS=24
+      - BCRYPT_COST=12
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/q/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - lightning-network
+
+  # Lightning Control Plane - Cluster management (port 8081)
+  control-plane:
+    image: ${CONTROL_PLANE_IMAGE:-samanthacireland/lightning-control-plane:0.0.3-SNAPSHOT}
+    container_name: lightning-control-plane
+    ports:
+      - "8081:8081"
+    environment:
+      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms128m -Xmx256m
+      - QUARKUS_LOG_LEVEL=INFO
+      - REDIS_HOSTS=redis://redis:6379
+      - CONTROL_PLANE_TOKEN=${CONTROL_PLANE_TOKEN:-dev-token}
+      - CONTROL_PLANE_REQUIRE_AUTH=true
+      - NODE_TTL_SECONDS=30
+      # Auth service integration
+      - JWT_AUTH_ENABLED=true
+      - AUTH_SERVICE_URL=http://auth:8082
+      - JWT_ISSUER=https://lightningfirefly.com
+      # OAuth2 Client Credentials for service-to-service auth
+      - OAUTH2_CLIENT_ID=control-plane
+      - OAUTH2_CLIENT_SECRET=${OAUTH2_CONTROL_PLANE_SECRET:-control-plane-secret}
+    depends_on:
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/q/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - lightning-network
+
+  # Lightning Engine - Main game server API (port 8080)
   backend:
-    image: ${LIGHTNING_IMAGE:-samanthacireland/lightning-engine:0.0.2}
+    image: ${ENGINE_IMAGE:-samanthacireland/lightning-engine:0.0.3-SNAPSHOT}
     container_name: lightning-engine
     ports:
       - "8080:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     environment:
-      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms4g -Xmx4g
+      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms1g -Xmx1536m
       - QUARKUS_LOG_LEVEL=INFO
       - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
+      # Snapshot persistence
       - SNAPSHOT_PERSISTENCE_ENABLED=true
       - SNAPSHOT_PERSISTENCE_DATABASE=lightningfirefly
       - SNAPSHOT_PERSISTENCE_COLLECTION=snapshots
       - SNAPSHOT_PERSISTENCE_TICK_INTERVAL=60
-      # Security: Required for JWT authentication
+      # Auth service integration
+      - AUTH_SERVICE_URL=http://auth:8082
+      - AUTH_ENABLED=true
+      # For local JWT validation fallback (same secret as auth service)
       - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-change-me-in-production-use-long-random-string}
       - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-admin}
-      # Production: Set CORS_ORIGINS to your domain
-      # - CORS_ORIGINS=https://yourdomain.com
+      # Control plane integration
+      - CONTROL_PLANE_URL=http://control-plane:8081
+      - CONTROL_PLANE_TOKEN=${CONTROL_PLANE_TOKEN:-dev-token}
+      - CONTROL_PLANE_NODE_ID=node-1
+      - CONTROL_PLANE_ADVERTISE_ADDRESS=http://backend:8080
+      - MAX_CONTAINERS=100
     depends_on:
       mongodb:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      control-plane:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
     networks:
       - lightning-network
 
-  # Pre-built variant (use when you've already built locally with mvn package)
-  # Usage: docker compose --profile prebuilt up backend-prebuilt
-  backend-prebuilt:
-    build:
-      context: .
-      dockerfile: Dockerfile.prebuilt
-    image: samanthacireland/lightning-engine:0.0.2-prebuilt
-    container_name: lightning-engine-prebuilt
+  # =============================================================================
+  # Cluster Profile - Additional Backend Nodes
+  # Usage: docker compose --profile cluster up
+  # =============================================================================
+
+  backend-node-2:
+    image: ${ENGINE_IMAGE:-samanthacireland/lightning-engine:0.0.3-SNAPSHOT}
+    container_name: lightning-engine-node-2
     profiles:
-      - prebuilt
+      - cluster
     ports:
-      - "8080:8080"
+      - "8083:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     environment:
-      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms4g -Xmx4g
+      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms512m -Xmx768m
       - QUARKUS_LOG_LEVEL=INFO
+      - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
+      - SNAPSHOT_PERSISTENCE_ENABLED=true
+      - AUTH_SERVICE_URL=http://auth:8082
+      - AUTH_ENABLED=true
       - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-change-me-in-production-use-long-random-string}
-      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD:-admin}
+      - CONTROL_PLANE_URL=http://control-plane:8081
+      - CONTROL_PLANE_TOKEN=${CONTROL_PLANE_TOKEN:-dev-token}
+      - NODE_ID=node-2
+      - ADVERTISE_ADDRESS=http://localhost:8083
+      - MAX_CONTAINERS=100
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      control-plane:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
     networks:
       - lightning-network
 
+  backend-node-3:
+    image: ${ENGINE_IMAGE:-samanthacireland/lightning-engine:0.0.3-SNAPSHOT}
+    container_name: lightning-engine-node-3
+    profiles:
+      - cluster
+    ports:
+      - "8084:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    environment:
+      - JAVA_OPTS=-Dquarkus.http.host=0.0.0.0 -Xms512m -Xmx768m
+      - QUARKUS_LOG_LEVEL=INFO
+      - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
+      - SNAPSHOT_PERSISTENCE_ENABLED=true
+      - AUTH_SERVICE_URL=http://auth:8082
+      - AUTH_ENABLED=true
+      - AUTH_JWT_SECRET=${AUTH_JWT_SECRET:-change-me-in-production-use-long-random-string}
+      - CONTROL_PLANE_URL=http://control-plane:8081
+      - CONTROL_PLANE_TOKEN=${CONTROL_PLANE_TOKEN:-dev-token}
+      - NODE_ID=node-3
+      - ADVERTISE_ADDRESS=http://localhost:8084
+      - MAX_CONTAINERS=100
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      control-plane:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+    networks:
+      - lightning-network
+
+  # =============================================================================
+  # Development Profiles
+  # =============================================================================
+
   # GUI client (optional - requires X11 or headless mode)
   # Usage: docker compose --profile gui up gui
-  # For X11: DISPLAY=$DISPLAY docker compose --profile gui up gui
   gui:
     build:
       context: .
@@ -105,6 +291,7 @@ services:
 
 volumes:
   mongodb-data:
+  redis-data:
 
 networks:
   lightning-network:

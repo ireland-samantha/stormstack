@@ -17,20 +17,20 @@ interface UiState {
   selectedMatchId: number | null;
   activePanel: PanelType;
   sidebarOpen: boolean;
-  containerMenuOpen: boolean;
-  adminMenuOpen: boolean;
-  iamMenuOpen: boolean;
+  controlPlaneMenuOpen: boolean;
+  engineMenuOpen: boolean;
+  authMenuOpen: boolean;
 }
 
 // Default UI state for tests
 const defaultUiState: UiState = {
   selectedContainerId: null,
   selectedMatchId: null,
-  activePanel: "dashboard",
+  activePanel: "clusterOverview",
   sidebarOpen: true,
-  containerMenuOpen: true,
-  adminMenuOpen: false,
-  iamMenuOpen: false,
+  controlPlaneMenuOpen: true,
+  engineMenuOpen: false,
+  authMenuOpen: false,
 };
 
 // Type for partial preloaded state that allows partial ui state

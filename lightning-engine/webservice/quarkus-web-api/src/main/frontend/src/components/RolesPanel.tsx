@@ -20,8 +20,57 @@ import {
 import { useState } from "react";
 import {
     RoleData, useCreateRoleMutation, useDeleteRoleMutation, useGetRolesQuery, useUpdateRoleDescriptionMutation,
-    useUpdateRoleIncludesMutation
+    useUpdateRoleIncludesMutation, useUpdateRoleScopesMutation
 } from "../store/api/apiSlice";
+
+// Common scopes for autocomplete suggestions
+const COMMON_SCOPES = [
+  // Auth service scopes
+  "auth.user.read",
+  "auth.user.create",
+  "auth.user.update",
+  "auth.user.delete",
+  "auth.user.*",
+  "auth.role.read",
+  "auth.role.create",
+  "auth.role.update",
+  "auth.role.delete",
+  "auth.role.*",
+  "auth.token.read",
+  "auth.token.create",
+  "auth.token.revoke",
+  "auth.token.*",
+  "auth.*",
+  // Engine service scopes
+  "engine.container.read",
+  "engine.container.create",
+  "engine.container.update",
+  "engine.container.delete",
+  "engine.container.*",
+  "engine.match.read",
+  "engine.match.create",
+  "engine.match.update",
+  "engine.match.delete",
+  "engine.match.*",
+  "engine.command.submit",
+  "engine.command.*",
+  "engine.snapshot.view",
+  "engine.snapshot.*",
+  "engine.module.read",
+  "engine.module.install",
+  "engine.module.*",
+  "engine.*",
+  // Control plane scopes
+  "controlplane.cluster.read",
+  "controlplane.node.read",
+  "controlplane.deploy",
+  "controlplane.undeploy",
+  "controlplane.autoscaler.read",
+  "controlplane.autoscaler.acknowledge",
+  "controlplane.*",
+  // Wildcard
+  "*",
+];
 
 const RolesPanel: React.FC = () => {
   const {
@@ -34,6 +83,7 @@ const RolesPanel: React.FC = () => {
   const [createRole] = useCreateRoleMutation();
   const [updateRoleDescription] = useUpdateRoleDescriptionMutation();
   const [updateRoleIncludes] = useUpdateRoleIncludesMutation();
+  const [updateRoleScopes] = useUpdateRoleScopesMutation();
   const [deleteRole] = useDeleteRoleMutation();
 
   const [localError, setLocalError] = useState<string | null>(null);
@@ -45,6 +95,7 @@ const RolesPanel: React.FC = () => {
     name: "",
     description: "",
     includedRoles: [] as string[],
+    scopes: [] as string[],
   });
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -57,6 +108,7 @@ const RolesPanel: React.FC = () => {
         name: role.name,
         description: role.description || "",
         includedRoles: role.includedRoles || [],
+        scopes: role.scopes || [],
       });
     } else {
       setEditingRole(null);
@@ -64,6 +116,7 @@ const RolesPanel: React.FC = () => {
         name: "",
         description: "",
         includedRoles: [],
+        scopes: [],
       });
     }
     setDialogOpen(true);
@@ -94,6 +147,16 @@ const RolesPanel: React.FC = () => {
             includes: formData.includedRoles,
           }).unwrap();
         }
+        // Update scopes if changed
+        if (
+          JSON.stringify(editingRole.scopes || []) !==
+          JSON.stringify(formData.scopes)
+        ) {
+          await updateRoleScopes({
+            roleId: editingRole.id,
+            scopes: formData.scopes,
+          }).unwrap();
+        }
         setSuccess("Role updated successfully");
       } else {
         await createRole({
@@ -102,6 +165,10 @@ const RolesPanel: React.FC = () => {
           includedRoles:
             formData.includedRoles.length > 0
               ? formData.includedRoles
+              : undefined,
+          scopes:
+            formData.scopes.length > 0
+              ? formData.scopes
               : undefined,
         }).unwrap();
         setSuccess("Role created successfully");
@@ -201,6 +268,7 @@ const RolesPanel: React.FC = () => {
               <TableCell>Name</TableCell>
               <TableCell>Description</TableCell>
               <TableCell>Includes Roles</TableCell>
+              <TableCell>Scopes</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -233,6 +301,31 @@ const RolesPanel: React.FC = () => {
                     )}
                   </Box>
                 </TableCell>
+                <TableCell>
+                  <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                    {(role.scopes || []).slice(0, 3).map((scope) => (
+                      <Chip
+                        key={scope}
+                        label={scope}
+                        size="small"
+                        color="info"
+                        variant="outlined"
+                      />
+                    ))}
+                    {(role.scopes || []).length > 3 && (
+                      <Chip
+                        label={`+${(role.scopes || []).length - 3}`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    )}
+                    {(!role.scopes || role.scopes.length === 0) && (
+                      <Typography color="text.secondary" variant="body2">
+                        None
+                      </Typography>
+                    )}
+                  </Box>
+                </TableCell>
                 <TableCell align="right">
                   <IconButton
                     size="small"
@@ -255,7 +348,7 @@ const RolesPanel: React.FC = () => {
             ))}
             {roles.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={5} align="center">
                   <Typography color="text.secondary">No roles found</Typography>
                 </TableCell>
               </TableRow>
@@ -314,6 +407,37 @@ const RolesPanel: React.FC = () => {
                       key={key}
                       label={option}
                       size="small"
+                      variant="outlined"
+                      {...rest}
+                    />
+                  );
+                })
+              }
+            />
+            <Autocomplete
+              multiple
+              freeSolo
+              options={COMMON_SCOPES}
+              value={formData.scopes}
+              onChange={(_, newValue) =>
+                setFormData({ ...formData, scopes: newValue })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Scopes"
+                  helperText="Permission scopes (e.g., auth.user.read, engine.command.*)"
+                />
+              )}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...rest } = getTagProps({ index });
+                  return (
+                    <Chip
+                      key={key}
+                      label={option}
+                      size="small"
+                      color="info"
                       variant="outlined"
                       {...rest}
                     />

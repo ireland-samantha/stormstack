@@ -7,7 +7,7 @@
     <parent>
         <groupId>ca.samanthaireland</groupId>
         <artifactId>backend</artifactId>
-        <version>0.0.2-SNAPSHOT</version>
+        <version>0.0.3-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
@@ -164,10 +164,24 @@
             <artifactId>quarkus-smallrye-jwt-build</artifactId>
         </dependency>
 
-        <!-- Auth module for roles -->
+        <!-- Auth client adapter for calling lightning-auth service -->
         <dependency>
             <groupId>ca.samanthaireland</groupId>
-            <artifactId>auth</artifactId>
+            <artifactId>web-api-adapter</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Auth core for match token models -->
+        <dependency>
+            <groupId>ca.samanthaireland</groupId>
+            <artifactId>lightning-auth-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- Auth adapter for scope-based authorization -->
+        <dependency>
+            <groupId>ca.samanthaireland</groupId>
+            <artifactId>lightning-auth-adapter-quarkus-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -475,7 +489,7 @@
                                         <argument>-f</argument>
                                         <argument>lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt</argument>
                                         <argument>-t</argument>
-                                        <argument>samanthacireland/lightning-engine:0.0.2-SNAPSHOT</argument>
+                                        <argument>samanthacireland/lightning-engine:${project.version}</argument>
                                         <argument>.</argument>
                                     </arguments>
                                 </configuration>

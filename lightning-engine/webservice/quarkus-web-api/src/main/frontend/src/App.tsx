@@ -4,8 +4,13 @@
  */
 
 import {
-    AdminPanelSettings as AdminIcon, Analytics as MetricsIcon, Bolt as BoltIcon, BugReport as LogsIcon, CameraAlt as SnapshotIcon, Code as CommandsIcon, Dashboard as DashboardIcon, Dns as ContainersIcon, ExpandLess,
-    ExpandMore, Extension as ModulesIcon, Folder as ResourcesIcon, History as HistoryIcon, Logout as LogoutIcon, ManageAccounts as IAMIcon, Menu as MenuIcon, People as PeopleIcon, PersonOutline as PlayersIcon, Psychology as AIIcon, Security as SecurityIcon, Settings as SettingsIcon, Speed as TickIcon, SportsEsports as MatchesIcon, VpnKey as SessionsIcon
+    Analytics as MetricsIcon, Bolt as BoltIcon, BugReport as LogsIcon, CameraAlt as SnapshotIcon,
+    Cloud as ControlPlaneIcon, Code as CommandsIcon, Dashboard as DashboardIcon, Dns as NodesIcon,
+    ExpandLess, ExpandMore, Extension as ModulesIcon, Folder as ResourcesIcon, History as HistoryIcon,
+    Hub as ClusterIcon, Key as ApiKeyIcon, Lock as AuthIcon, Logout as LogoutIcon, Menu as MenuIcon,
+    Memory as EngineIcon, People as PeopleIcon, PersonOutline as PlayersIcon, Psychology as AIIcon,
+    RocketLaunch as DeployIcon, Security as SecurityIcon, Speed as TickIcon,
+    SportsEsports as MatchesIcon, Tune as AutoscalerIcon, VpnKey as SessionsIcon
 } from "@mui/icons-material";
 import {
     alpha, AppBar, Avatar, Box, Button, Chip, Collapse, Divider, Drawer, FormControl, IconButton, InputLabel, List,
@@ -18,7 +23,14 @@ import {
 } from "@mui/material";
 import { useEffect } from "react";
 import AIPanel from "./components/AIPanel";
+import ApiTokensPanel from "./components/ApiTokensPanel";
+import AutoscalerPanel from "./components/AutoscalerPanel";
+import ClusterMatchesPanel from "./components/ClusterMatchesPanel";
+import ClusterModulesPanel from "./components/ClusterModulesPanel";
+import ClusterNodesPanel from "./components/ClusterNodesPanel";
+import ClusterOverviewPanel from "./components/ClusterOverviewPanel";
 import CommandsPanel from "./components/CommandsPanel";
+import DeploymentsPanel from "./components/DeploymentsPanel";
 import ContainerDashboard from "./components/ContainerDashboard";
 import HistoryPanel from "./components/HistoryPanel";
 import Login from "./components/Login";
@@ -40,10 +52,10 @@ import {
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { logout, selectIsAuthenticated } from "./store/slices/authSlice";
 import {
-    selectActivePanel, selectAdminMenuOpen, selectContainerMenuOpen, selectIamMenuOpen, selectSelectedContainerId,
-    selectSelectedMatchId, selectSidebarOpen, setActivePanel, setSelectedContainerId,
-    setSelectedMatchId, setSidebarOpen, toggleAdminMenu, toggleContainerMenu, toggleIamMenu,
-    type PanelType
+    selectActivePanel, selectAuthMenuOpen, selectControlPlaneMenuOpen, selectEngineMenuOpen,
+    selectSelectedContainerId, selectSelectedMatchId, selectSidebarOpen, setActivePanel,
+    setSelectedContainerId, setSelectedMatchId, setSidebarOpen, toggleAuthMenu,
+    toggleControlPlaneMenu, toggleEngineMenu, type PanelType
 } from "./store/slices/uiSlice";
 
 const drawerWidth = 280;
@@ -56,9 +68,9 @@ const AppContent: React.FC = () => {
   // Redux state
   const sidebarOpen = useAppSelector(selectSidebarOpen);
   const activePanel = useAppSelector(selectActivePanel);
-  const containerMenuOpen = useAppSelector(selectContainerMenuOpen);
-  const adminMenuOpen = useAppSelector(selectAdminMenuOpen);
-  const iamMenuOpen = useAppSelector(selectIamMenuOpen);
+  const controlPlaneMenuOpen = useAppSelector(selectControlPlaneMenuOpen);
+  const engineMenuOpen = useAppSelector(selectEngineMenuOpen);
+  const authMenuOpen = useAppSelector(selectAuthMenuOpen);
   const selectedContainerId = useAppSelector(selectSelectedContainerId);
   const selectedMatchId = useAppSelector(selectSelectedMatchId);
 
@@ -118,7 +130,18 @@ const AppContent: React.FC = () => {
     window.location.reload();
   };
 
-  const containerMenuItems = [
+  // Lightning Control Plane menu items
+  const controlPlaneMenuItems = [
+    { id: "clusterOverview" as const, label: "Overview", icon: <DashboardIcon /> },
+    { id: "clusterNodes" as const, label: "Nodes", icon: <NodesIcon /> },
+    { id: "clusterMatches" as const, label: "Matches", icon: <MatchesIcon /> },
+    { id: "clusterModules" as const, label: "Modules", icon: <ModulesIcon /> },
+    { id: "deployments" as const, label: "Deployments", icon: <DeployIcon /> },
+    { id: "autoscaler" as const, label: "Autoscaler", icon: <AutoscalerIcon /> },
+  ];
+
+  // Lightning Engine (Node) menu items
+  const engineMenuItems = [
     { id: "dashboard" as const, label: "Overview", icon: <DashboardIcon /> },
     { id: "matches" as const, label: "Matches", icon: <MatchesIcon /> },
     { id: "players" as const, label: "Players", icon: <PlayersIcon /> },
@@ -128,19 +151,16 @@ const AppContent: React.FC = () => {
     { id: "history" as const, label: "History", icon: <HistoryIcon /> },
     { id: "logs" as const, label: "Logs", icon: <LogsIcon /> },
     { id: "metrics" as const, label: "Metrics", icon: <MetricsIcon /> },
-    // Container-scoped configuration
     { id: "modules" as const, label: "Modules", icon: <ModulesIcon /> },
     { id: "ai" as const, label: "AI", icon: <AIIcon /> },
     { id: "resources" as const, label: "Resources", icon: <ResourcesIcon /> },
   ];
 
-  const adminMenuItems = [
-    { id: "settings" as const, label: "Settings", icon: <SettingsIcon /> },
-  ];
-
-  const iamMenuItems = [
+  // Authentication menu items
+  const authMenuItems = [
     { id: "users" as const, label: "Users", icon: <PeopleIcon /> },
     { id: "roles" as const, label: "Roles", icon: <SecurityIcon /> },
+    { id: "apiTokens" as const, label: "API Tokens", icon: <ApiKeyIcon /> },
   ];
 
   const drawer = (
@@ -152,7 +172,7 @@ const AppContent: React.FC = () => {
           </Avatar>
           <Box>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
-              Lightning Engine
+              Thunder
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Control Panel
@@ -162,52 +182,18 @@ const AppContent: React.FC = () => {
       </Toolbar>
       <Divider />
 
-      {/* Container Selector in Sidebar */}
-      {containers.length > 0 && (
-        <Box sx={{ px: 2, py: 2 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel id="sidebar-container-label">
-              Active Container
-            </InputLabel>
-            <Select
-              labelId="sidebar-container-label"
-              value={selectedContainerId || ""}
-              label="Active Container"
-              onChange={handleContainerChange}
-            >
-              {containers.map((container) => (
-                <MenuItem key={container.id} value={container.id}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Chip
-                      size="small"
-                      label={container.status}
-                      color={
-                        container.status === "RUNNING" ? "success" : "default"
-                      }
-                      sx={{ height: 20, fontSize: "0.7rem" }}
-                    />
-                    {container.name}
-                  </Box>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-      )}
-      <Divider />
-
       <List sx={{ flexGrow: 1, pt: 0 }}>
-        {/* Container Section */}
-        <ListItemButton onClick={() => dispatch(toggleContainerMenu())}>
+        {/* Lightning Control Plane Section */}
+        <ListItemButton onClick={() => dispatch(toggleControlPlaneMenu())}>
           <ListItemIcon>
-            <ContainersIcon />
+            <ControlPlaneIcon />
           </ListItemIcon>
-          <ListItemText primary="Container" />
-          {containerMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          <ListItemText primary="Control Plane" />
+          {controlPlaneMenuOpen ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
-        <Collapse in={containerMenuOpen} timeout="auto" unmountOnExit>
+        <Collapse in={controlPlaneMenuOpen} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            {containerMenuItems.map((item) => (
+            {controlPlaneMenuItems.map((item) => (
               <ListItem key={item.id} disablePadding>
                 <ListItemButton
                   sx={{ pl: 4 }}
@@ -222,17 +208,49 @@ const AppContent: React.FC = () => {
           </List>
         </Collapse>
 
-        {/* Admin Section */}
-        <ListItemButton onClick={() => dispatch(toggleAdminMenu())}>
+        {/* Lightning Engine Section */}
+        <ListItemButton onClick={() => dispatch(toggleEngineMenu())}>
           <ListItemIcon>
-            <AdminIcon />
+            <EngineIcon />
           </ListItemIcon>
-          <ListItemText primary="Administration" />
-          {adminMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          <ListItemText primary="Engine (Select Node)" />
+          {engineMenuOpen ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
-        <Collapse in={adminMenuOpen} timeout="auto" unmountOnExit>
+        <Collapse in={engineMenuOpen} timeout="auto" unmountOnExit>
+          {/* Container Selector in Engine submenu */}
+          {containers.length > 0 && (
+            <Box sx={{ px: 2, py: 1.5 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="sidebar-container-label">
+                  Active Container
+                </InputLabel>
+                <Select
+                  labelId="sidebar-container-label"
+                  value={selectedContainerId || ""}
+                  label="Active Container"
+                  onChange={handleContainerChange}
+                >
+                  {containers.map((container) => (
+                    <MenuItem key={container.id} value={container.id}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Chip
+                          size="small"
+                          label={container.status}
+                          color={
+                            container.status === "RUNNING" ? "success" : "default"
+                          }
+                          sx={{ height: 20, fontSize: "0.7rem" }}
+                        />
+                        {container.name}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          )}
           <List component="div" disablePadding>
-            {adminMenuItems.map((item) => (
+            {engineMenuItems.map((item) => (
               <ListItem key={item.id} disablePadding>
                 <ListItemButton
                   sx={{ pl: 4 }}
@@ -247,17 +265,17 @@ const AppContent: React.FC = () => {
           </List>
         </Collapse>
 
-        {/* Identity and Access Management Section */}
-        <ListItemButton onClick={() => dispatch(toggleIamMenu())}>
+        {/* Authentication Section */}
+        <ListItemButton onClick={() => dispatch(toggleAuthMenu())}>
           <ListItemIcon>
-            <IAMIcon />
+            <AuthIcon />
           </ListItemIcon>
-          <ListItemText primary="Identity & Access" />
-          {iamMenuOpen ? <ExpandLess /> : <ExpandMore />}
+          <ListItemText primary="Authentication" />
+          {authMenuOpen ? <ExpandLess /> : <ExpandMore />}
         </ListItemButton>
-        <Collapse in={iamMenuOpen} timeout="auto" unmountOnExit>
+        <Collapse in={authMenuOpen} timeout="auto" unmountOnExit>
           <List component="div" disablePadding>
-            {iamMenuItems.map((item) => (
+            {authMenuItems.map((item) => (
               <ListItem key={item.id} disablePadding>
                 <ListItemButton
                   sx={{ pl: 4 }}
@@ -288,6 +306,20 @@ const AppContent: React.FC = () => {
 
   const renderPanel = () => {
     switch (activePanel) {
+      // Control Plane panels
+      case "clusterOverview":
+        return <ClusterOverviewPanel />;
+      case "clusterNodes":
+        return <ClusterNodesPanel />;
+      case "clusterMatches":
+        return <ClusterMatchesPanel />;
+      case "clusterModules":
+        return <ClusterModulesPanel />;
+      case "deployments":
+        return <DeploymentsPanel />;
+      case "autoscaler":
+        return <AutoscalerPanel />;
+      // Engine panels
       case "dashboard":
         return <ContainerDashboard />;
       case "snapshot":
@@ -317,21 +349,13 @@ const AppContent: React.FC = () => {
         return <AIPanel />;
       case "resources":
         return <ResourcesPanel />;
+      // Authentication panels
       case "users":
         return <UsersPanel />;
       case "roles":
         return <RolesPanel />;
-      case "settings":
-        return (
-          <Box sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Settings
-            </Typography>
-            <Typography color="text.secondary">
-              Configuration options coming soon...
-            </Typography>
-          </Box>
-        );
+      case "apiTokens":
+        return <ApiTokensPanel />;
       default:
         return null;
     }
@@ -362,8 +386,8 @@ const AppContent: React.FC = () => {
             <MenuIcon />
           </IconButton>
 
-          {/* Current Container Info */}
-          {selectedContainer && (
+          {/* Section indicator and context info */}
+          {["clusterOverview", "clusterNodes", "clusterMatches", "clusterModules", "deployments", "autoscaler"].includes(activePanel) ? (
             <Box
               sx={{
                 display: "flex",
@@ -373,7 +397,39 @@ const AppContent: React.FC = () => {
               }}
             >
               <Chip
-                icon={<ContainersIcon />}
+                icon={<ClusterIcon />}
+                label="Lightning Control Plane"
+                color="primary"
+                variant="outlined"
+              />
+            </Box>
+          ) : ["users", "roles", "apiTokens"].includes(activePanel) ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flexGrow: 1,
+              }}
+            >
+              <Chip
+                icon={<AuthIcon />}
+                label="Authentication"
+                color="primary"
+                variant="outlined"
+              />
+            </Box>
+          ) : selectedContainer ? (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 2,
+                flexGrow: 1,
+              }}
+            >
+              <Chip
+                icon={<NodesIcon />}
                 label={selectedContainer.name}
                 color="primary"
                 variant="outlined"
@@ -393,9 +449,11 @@ const AppContent: React.FC = () => {
                 sx={{ fontFamily: "monospace" }}
               />
             </Box>
+          ) : (
+            <Box sx={{ flexGrow: 1 }} />
           )}
 
-          {/* Match Selector (context-aware) */}
+          {/* Match Selector (context-aware, only for engine panels) */}
           {matches.length > 0 &&
             (activePanel === "snapshot" || activePanel === "history") && (
               <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>

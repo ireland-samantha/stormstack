@@ -13,10 +13,16 @@ set -e
 #   frontend-test    - Run frontend tests with coverage
 #   integration-test - Build Docker image and run integration tests
 #   docker           - Build Docker image only
+#   compose-up       - Start docker-compose services
+#   compose-down     - Stop docker-compose services
+#   e2e-test         - Run thunder-cli e2e tests
 #   all              - Full pipeline: secrets, frontend, build, test, integration-test
 
-DOCKER_IMAGE="samanthacireland/lightning-engine"
+DOCKER_IMAGE_ENGINE="samanthacireland/lightning-engine"
+DOCKER_IMAGE_AUTH="samanthacireland/lightning-auth"
+DOCKER_IMAGE_CONTROL_PLANE="samanthacireland/lightning-control-plane"
 DOCKER_TAG="latest"
+VERSION="0.0.3-SNAPSHOT"
 FRONTEND_DIR="lightning-engine/webservice/quarkus-web-api/src/main/frontend"
 # Tailscale IP - set via environment variable or detect automatically
 if [ -z "$TAILSCALE_IP" ]; then
@@ -68,6 +74,13 @@ print_usage() {
     echo "  docker           - Build Docker image only"
     echo "  all              - Full pipeline: secrets, frontend, build, test, integration-test"
     echo ""
+    echo "Docker Compose:"
+    echo "  compose-up       - Start all docker-compose services"
+    echo "  compose-down     - Stop all docker-compose services"
+    echo ""
+    echo "E2E Testing:"
+    echo "  e2e-test         - Run thunder-cli e2e tests (starts/stops docker-compose)"
+    echo ""
     echo "Local Registry (Tailscale):"
     echo "  registry-start   - Start local Docker registry on ${LOCAL_REGISTRY}"
     echo "  registry-stop    - Stop local Docker registry"
@@ -115,11 +128,36 @@ do_frontend_test() {
 
 do_docker() {
     banner "DOCKER BUILD"
+
+    # Build Lightning Engine (main API)
+    echo "Building lightning-engine..."
     docker build -f lightning-engine/webservice/quarkus-web-api/Dockerfile.prebuilt \
-        -t "${DOCKER_IMAGE}:${DOCKER_TAG}" \
-        -t "${DOCKER_IMAGE}:0.0.2" \
+        -t "${DOCKER_IMAGE_ENGINE}:${DOCKER_TAG}" \
+        -t "${DOCKER_IMAGE_ENGINE}:${VERSION}" \
         .
-    echo "Docker image built: ${DOCKER_IMAGE}:${DOCKER_TAG}"
+    echo "  Built: ${DOCKER_IMAGE_ENGINE}:${DOCKER_TAG}"
+
+    # Build Lightning Auth
+    echo "Building lightning-auth..."
+    docker build -f lightning-auth/Dockerfile.prebuilt \
+        -t "${DOCKER_IMAGE_AUTH}:${DOCKER_TAG}" \
+        -t "${DOCKER_IMAGE_AUTH}:${VERSION}" \
+        .
+    echo "  Built: ${DOCKER_IMAGE_AUTH}:${DOCKER_TAG}"
+
+    # Build Lightning Control Plane
+    echo "Building lightning-control-plane..."
+    docker build -f lightning-control-plane/Dockerfile.prebuilt \
+        -t "${DOCKER_IMAGE_CONTROL_PLANE}:${DOCKER_TAG}" \
+        -t "${DOCKER_IMAGE_CONTROL_PLANE}:${VERSION}" \
+        .
+    echo "  Built: ${DOCKER_IMAGE_CONTROL_PLANE}:${DOCKER_TAG}"
+
+    echo ""
+    echo "All Docker images built successfully:"
+    echo "  - ${DOCKER_IMAGE_ENGINE}:${DOCKER_TAG}"
+    echo "  - ${DOCKER_IMAGE_AUTH}:${DOCKER_TAG}"
+    echo "  - ${DOCKER_IMAGE_CONTROL_PLANE}:${DOCKER_TAG}"
 }
 
 do_integration_test() {
@@ -133,7 +171,11 @@ do_registry_start() {
     docker compose -f docker-compose.registry.yml up -d
     echo ""
     echo "Registry started at ${LOCAL_REGISTRY}"
-    echo "From AWS (via Tailscale): docker pull ${LOCAL_REGISTRY}/lightning-engine:0.0.2-SNAPSHOT"
+    echo ""
+    echo "Available images (after ./build.sh docker-local):"
+    echo "  - ${LOCAL_REGISTRY}/lightning-engine:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/lightning-auth:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/lightning-control-plane:${VERSION}"
     echo ""
     echo "IMPORTANT: On remote machines, add to /etc/docker/daemon.json:"
     echo "  { \"insecure-registries\": [\"${LOCAL_REGISTRY}\"] }"
@@ -166,11 +208,69 @@ do_docker_local() {
         echo "Start with: ./build.sh registry-start"
         exit 1
     fi
-    # Build and push via Maven profile
+
+    # Build and push all services via Maven profile
+    echo "Building and pushing lightning-engine..."
     mvn install -PlocalDockerRegistry -pl lightning-engine/webservice/quarkus-web-api -DskipTests
+
+    echo "Building and pushing lightning-auth..."
+    mvn install -PlocalDockerRegistry -pl lightning-auth -DskipTests
+
+    echo "Building and pushing lightning-control-plane..."
+    mvn install -PlocalDockerRegistry -pl lightning-control-plane -DskipTests
+
     echo ""
-    echo "Image pushed to: ${LOCAL_REGISTRY}/lightning-engine:0.0.2-SNAPSHOT"
-    echo "Pull from AWS: docker pull ${LOCAL_REGISTRY}/lightning-engine:0.0.2-SNAPSHOT"
+    echo "All images pushed to local registry:"
+    echo "  - ${LOCAL_REGISTRY}/lightning-engine:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/lightning-auth:${VERSION}"
+    echo "  - ${LOCAL_REGISTRY}/lightning-control-plane:${VERSION}"
+    echo ""
+    echo "Pull from remote (via Tailscale):"
+    echo "  docker pull ${LOCAL_REGISTRY}/lightning-engine:${VERSION}"
+    echo "  docker pull ${LOCAL_REGISTRY}/lightning-auth:${VERSION}"
+    echo "  docker pull ${LOCAL_REGISTRY}/lightning-control-plane:${VERSION}"
+}
+
+do_compose_up() {
+    banner "DOCKER COMPOSE UP"
+    docker compose up -d
+    echo ""
+    echo "Services started. Health status:"
+    docker compose ps
+    echo ""
+    echo "To view logs: docker compose logs -f"
+}
+
+do_compose_down() {
+    banner "DOCKER COMPOSE DOWN"
+    docker compose down -v
+    echo "All services stopped and volumes removed."
+}
+
+do_e2e_test() {
+    banner "E2E TESTS (thunder-cli)"
+
+    # Check if thunder CLI binary exists
+    if [ ! -x "thunder-cli/thunder" ]; then
+        echo "Building thunder CLI..."
+        (cd thunder-cli && go build -o thunder ./cmd/thunder)
+    fi
+
+    # Run all e2e test scripts
+    E2E_DIR="thunder-cli/e2e"
+    if [ -d "$E2E_DIR" ]; then
+        for script in "$E2E_DIR"/e2e-*.sh; do
+            if [ -x "$script" ]; then
+                echo ""
+                echo "Running: $(basename "$script")"
+                echo "----------------------------------------"
+                "$script"
+            fi
+        done
+    else
+        echo "Error: E2E test directory not found: $E2E_DIR"
+        exit 1
+    fi
 }
 
 do_all() {
@@ -228,6 +328,16 @@ case "${1:-}" in
         ;;
     docker-local)
         do_docker_local
+        print_duration
+        ;;
+    compose-up)
+        do_compose_up
+        ;;
+    compose-down)
+        do_compose_down
+        ;;
+    e2e-test)
+        do_e2e_test
         print_duration
         ;;
     all)

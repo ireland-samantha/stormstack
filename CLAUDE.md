@@ -45,6 +45,12 @@ A production-grade multi-match game server framework built on Java 25 and Quarku
 
 6. **API-First Design**: Define contracts before implementation
 
+7. **Two-Module Pattern for Services**: Each service domain uses two Maven modules:
+   - **Core Module** (`*-core`): Contains interfaces, implementations, domain models, exceptions, DTOs - **NO framework annotations**
+   - **Provider Module**: Contains Quarkus-specific code (REST resources, configuration bindings, persistence, framework integration)
+   - Service implementations in core modules must be **completely framework-agnostic**
+   - Framework integration happens via `ServiceProducer` classes in the provider module
+
 ## Project Structure
 
 ```
@@ -493,6 +499,104 @@ public class AnthropicBackend implements AiBackend {
 }
 ```
 
+### Two-Module Pattern (Auth & Control Plane)
+
+Services like `lightning-auth` and `lightning-control-plane` follow a strict two-module pattern to separate business logic from framework concerns:
+
+```
+lightning-auth-core/                    # Pure domain (NO Quarkus deps)
+└── src/main/java/.../auth/
+    ├── model/                          # User, Role, ApiToken, AuthToken
+    ├── service/                        # Service interfaces + implementations
+    │   ├── UserService.java            # Interface - no annotations
+    │   ├── UserServiceImpl.java        # Implementation - no annotations
+    │   ├── dto/                        # Service DTOs for complex parameters
+    │   └── ...
+    ├── repository/                     # Repository interfaces
+    ├── config/                         # Configuration interfaces (no @ConfigProperty)
+    └── exception/                      # Domain exceptions
+
+lightning-auth/                         # Quarkus provider (port 8082)
+└── src/main/java/.../auth/provider/
+    ├── config/
+    │   ├── QuarkusAuthConfig.java      # @ConfigMapping implementation
+    │   └── ServiceProducer.java        # @ApplicationScoped, @Produces
+    ├── persistence/                    # MongoDB repositories with @Inject
+    ├── http/                           # REST resources with JAX-RS annotations
+    └── dto/                            # HTTP request/response DTOs
+```
+
+#### Service Producer Pattern
+
+The `ServiceProducer` bridges framework-agnostic core services to Quarkus CDI:
+
+```java
+// In provider module - ONLY place with framework annotations
+@ApplicationScoped
+public class ServiceProducer {
+
+    @Produces
+    @Singleton
+    public PasswordService passwordService(AuthConfiguration config) {
+        // Instantiate core implementation manually - no @Inject in core class
+        return new PasswordServiceImpl(config.bcryptCost());
+    }
+
+    @Produces
+    @Singleton
+    public UserService userService(
+            UserRepository userRepository,
+            PasswordService passwordService) {
+        return new UserServiceImpl(userRepository, passwordService);
+    }
+}
+```
+
+#### Rules for Core Module
+
+**ALLOWED in `*-core` modules:**
+- Standard Java libraries (java.util, java.time, java.security)
+- Third-party business libraries (BCrypt, JWT, Jackson annotations)
+- SLF4J for logging
+- Custom domain abstractions
+
+**PROHIBITED in `*-core` modules:**
+- `jakarta.enterprise.*` (CDI)
+- `jakarta.inject.*` (dependency injection)
+- `io.quarkus.*` (Quarkus)
+- `jakarta.ws.rs.*` (JAX-RS)
+- `org.eclipse.microprofile.*` (MicroProfile)
+- Any framework-specific annotations (@ApplicationScoped, @Inject, @Path, etc.)
+
+#### Build-Time Enforcement
+
+Core modules should use Maven Enforcer to prevent accidental framework dependencies:
+
+```xml
+<!-- In *-core/pom.xml -->
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-enforcer-plugin</artifactId>
+    <executions>
+        <execution>
+            <id>ban-framework-dependencies</id>
+            <configuration>
+                <rules>
+                    <bannedDependencies>
+                        <excludes>
+                            <exclude>io.quarkus:*</exclude>
+                            <exclude>jakarta.enterprise:*</exclude>
+                            <exclude>jakarta.inject:*</exclude>
+                        </excludes>
+                        <message>Core module must not depend on framework</message>
+                    </bannedDependencies>
+                </rules>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+
 ## Naming Conventions
 
 **Domain Models:**
@@ -650,7 +754,10 @@ Before declaring a feature complete, verify:
 - [ ] All layers implemented (resource -> service -> repository)
 - [ ] New extension points are interface-based and pluggable
 - [ ] Domain models encapsulate business logic
-- [ ] Strongly-typed IDs for all entitieshttps://github.com/ireland-samantha/lightning-engine/tree/main
+- [ ] Strongly-typed IDs for all entities
+- [ ] **Service implementations in `*-core` modules have NO framework annotations**
+- [ ] **No `@Inject`, `@ApplicationScoped`, `@Singleton` in core module services**
+- [ ] **ServiceProducer pattern used for framework integration in provider modules**
 - [ ] Unit tests for all classes (>80% coverage)
 - [ ] Integration tests with Testcontainers (MongoDB)
 - [ ] `./build.sh all` passes

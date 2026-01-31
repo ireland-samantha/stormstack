@@ -5,8 +5,10 @@
 
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type {
-    AIData, CommandData, ComponentDataResponse, ContainerData, ContainerMetricsData, ContainerStatsData, CreateContainerRequest, CreateRoleRequest, CreateUserRequest, DeltaSnapshotData, HistorySummary, LoginResponse, MatchData, MatchHistorySummary, ModuleData, ModuleDataResponse, PlayerData,
-    PlayerMatchData, ResourceData, RoleData, SessionData, SnapshotData, UserData
+    AIData, ApiTokenData, CommandData, ComponentDataResponse, ContainerData, ContainerMetricsData, ContainerStatsData, CreateApiTokenRequest, CreateApiTokenResponse, CreateContainerRequest, CreateRoleRequest, CreateUserRequest, DeltaSnapshotData, HistorySummary, LoginResponse, MatchData, MatchHistorySummary, ModuleData, ModuleDataResponse, PlayerData,
+    PlayerMatchData, ResourceData, RoleData, SessionData, SnapshotData, UserData,
+    ClusterStatusData, ClusterNodeData, ClusterMatchData, DashboardOverviewData, PagedResponse, ClusterModuleData, DeployRequest, DeployResponse,
+    AutoscalerStatus, ScalingRecommendation
 } from "../../services/api";
 
 // Re-export types for convenience
@@ -19,6 +21,9 @@ export type {
     CreateUserRequest,
     RoleData,
     CreateRoleRequest,
+    ApiTokenData,
+    CreateApiTokenRequest,
+    CreateApiTokenResponse,
     PlayerData,
     PlayerMatchData,
     SessionData,
@@ -73,6 +78,7 @@ export const apiSlice = createApi({
     "Match",
     "User",
     "Role",
+    "ApiToken",
     "Player",
     "Session",
     "Command",
@@ -81,6 +87,11 @@ export const apiSlice = createApi({
     "Resource",
     "Snapshot",
     "History",
+    "ClusterStatus",
+    "ClusterNode",
+    "ClusterMatch",
+    "ClusterModule",
+    "Autoscaler",
   ],
   endpoints: (builder) => ({
     // =========================================================================
@@ -397,6 +408,65 @@ export const apiSlice = createApi({
         body: { includes },
       }),
       invalidatesTags: (_, __, { roleId }) => [{ type: "Role", id: roleId }],
+    }),
+
+    updateRoleScopes: builder.mutation<
+      RoleData,
+      { roleId: number; scopes: string[] }
+    >({
+      query: ({ roleId, scopes }) => ({
+        url: `/auth/roles/${roleId}/scopes`,
+        method: "PUT",
+        body: scopes,
+      }),
+      invalidatesTags: (_, __, { roleId }) => [{ type: "Role", id: roleId }],
+    }),
+
+    getResolvedScopes: builder.query<string[], number>({
+      query: (roleId) => `/auth/roles/${roleId}/scopes/resolved`,
+      providesTags: (_, __, roleId) => [{ type: "Role", id: roleId }],
+    }),
+
+    // =========================================================================
+    // API TOKEN ENDPOINTS
+    // =========================================================================
+    getApiTokens: builder.query<ApiTokenData[], void>({
+      query: () => "/auth/tokens",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "ApiToken" as const, id })),
+              { type: "ApiToken", id: "LIST" },
+            ]
+          : [{ type: "ApiToken", id: "LIST" }],
+    }),
+
+    createApiToken: builder.mutation<CreateApiTokenResponse, CreateApiTokenRequest>({
+      query: (body) => ({
+        url: "/auth/tokens",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "ApiToken", id: "LIST" }],
+    }),
+
+    deleteApiToken: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/auth/tokens/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_, __, id) => [
+        { type: "ApiToken", id },
+        { type: "ApiToken", id: "LIST" },
+      ],
+    }),
+
+    revokeApiToken: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/auth/tokens/${id}/revoke`,
+        method: "POST",
+      }),
+      invalidatesTags: (_, __, id) => [{ type: "ApiToken", id }],
     }),
 
     // =========================================================================
@@ -784,6 +854,219 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Snapshot", "Match"],
     }),
+
+    // =========================================================================
+    // CONTROL PLANE ENDPOINTS
+    // =========================================================================
+
+    // Dashboard
+    getDashboardOverview: builder.query<DashboardOverviewData, void>({
+      query: () => "/control-plane/dashboard/overview",
+      providesTags: ["ClusterStatus", "ClusterNode", "ClusterMatch"],
+    }),
+
+    getDashboardNodes: builder.query<
+      PagedResponse<ClusterNodeData>,
+      { page?: number; pageSize?: number; status?: string }
+    >({
+      query: ({ page = 0, pageSize = 20, status }) => {
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("pageSize", String(pageSize));
+        if (status) params.set("status", status);
+        return `/control-plane/dashboard/nodes?${params.toString()}`;
+      },
+      providesTags: ["ClusterNode"],
+    }),
+
+    getDashboardMatches: builder.query<
+      PagedResponse<ClusterMatchData>,
+      { page?: number; pageSize?: number; status?: string; nodeId?: string }
+    >({
+      query: ({ page = 0, pageSize = 20, status, nodeId }) => {
+        const params = new URLSearchParams();
+        params.set("page", String(page));
+        params.set("pageSize", String(pageSize));
+        if (status) params.set("status", status);
+        if (nodeId) params.set("nodeId", nodeId);
+        return `/control-plane/dashboard/matches?${params.toString()}`;
+      },
+      providesTags: ["ClusterMatch"],
+    }),
+
+    // Cluster
+    getClusterStatus: builder.query<ClusterStatusData, void>({
+      query: () => "/control-plane/cluster/status",
+      providesTags: ["ClusterStatus"],
+    }),
+
+    getClusterNodes: builder.query<ClusterNodeData[], void>({
+      query: () => "/control-plane/cluster/nodes",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ nodeId }) => ({ type: "ClusterNode" as const, id: nodeId })),
+              { type: "ClusterNode", id: "LIST" },
+            ]
+          : [{ type: "ClusterNode", id: "LIST" }],
+    }),
+
+    getClusterNode: builder.query<ClusterNodeData, string>({
+      query: (nodeId) => `/control-plane/cluster/nodes/${nodeId}`,
+      providesTags: (_, __, nodeId) => [{ type: "ClusterNode", id: nodeId }],
+    }),
+
+    // Cluster Matches
+    getClusterMatches: builder.query<ClusterMatchData[], string | void>({
+      query: (status) => `/control-plane/matches${status ? `?status=${status}` : ""}`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ matchId }) => ({ type: "ClusterMatch" as const, id: matchId })),
+              { type: "ClusterMatch", id: "LIST" },
+            ]
+          : [{ type: "ClusterMatch", id: "LIST" }],
+    }),
+
+    getClusterMatch: builder.query<ClusterMatchData, string>({
+      query: (matchId) => `/control-plane/matches/${matchId}`,
+      providesTags: (_, __, matchId) => [{ type: "ClusterMatch", id: matchId }],
+    }),
+
+    createClusterMatch: builder.mutation<ClusterMatchData, { moduleNames: string[]; preferredNodeId?: string }>({
+      query: (body) => ({
+        url: "/control-plane/matches/create",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "ClusterMatch", id: "LIST" }, "ClusterStatus"],
+    }),
+
+    finishClusterMatch: builder.mutation<ClusterMatchData, string>({
+      query: (matchId) => ({
+        url: `/control-plane/matches/${matchId}/finish`,
+        method: "POST",
+      }),
+      invalidatesTags: (_, __, matchId) => [
+        { type: "ClusterMatch", id: matchId },
+        { type: "ClusterMatch", id: "LIST" },
+        "ClusterStatus",
+      ],
+    }),
+
+    deleteClusterMatch: builder.mutation<void, string>({
+      query: (matchId) => ({
+        url: `/control-plane/matches/${matchId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_, __, matchId) => [
+        { type: "ClusterMatch", id: matchId },
+        { type: "ClusterMatch", id: "LIST" },
+        "ClusterStatus",
+      ],
+    }),
+
+    // Node Management
+    drainNode: builder.mutation<ClusterNodeData, string>({
+      query: (nodeId) => ({
+        url: `/control-plane/nodes/${nodeId}/drain`,
+        method: "POST",
+      }),
+      invalidatesTags: (_, __, nodeId) => [
+        { type: "ClusterNode", id: nodeId },
+        { type: "ClusterNode", id: "LIST" },
+        "ClusterStatus",
+      ],
+    }),
+
+    deregisterNode: builder.mutation<void, string>({
+      query: (nodeId) => ({
+        url: `/control-plane/nodes/${nodeId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_, __, nodeId) => [
+        { type: "ClusterNode", id: nodeId },
+        { type: "ClusterNode", id: "LIST" },
+        "ClusterStatus",
+      ],
+    }),
+
+    // Cluster Modules
+    getClusterModules: builder.query<ClusterModuleData[], void>({
+      query: () => "/control-plane/modules",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ name }) => ({ type: "ClusterModule" as const, id: name })),
+              { type: "ClusterModule", id: "LIST" },
+            ]
+          : [{ type: "ClusterModule", id: "LIST" }],
+    }),
+
+    getClusterModule: builder.query<ClusterModuleData, string>({
+      query: (name) => `/control-plane/modules/${name}`,
+      providesTags: (_, __, name) => [{ type: "ClusterModule", id: name }],
+    }),
+
+    distributeModule: builder.mutation<{ moduleName: string; moduleVersion: string; nodesUpdated: number }, { name: string; version: string }>({
+      query: ({ name, version }) => ({
+        url: `/control-plane/modules/${name}/${version}/distribute`,
+        method: "POST",
+      }),
+      invalidatesTags: (_, __, { name }) => [
+        { type: "ClusterModule", id: name },
+        { type: "ClusterNode", id: "LIST" },
+      ],
+    }),
+
+    // Deploy
+    deploy: builder.mutation<DeployResponse, DeployRequest>({
+      query: (body) => ({
+        url: "/control-plane/deploy",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "ClusterMatch", id: "LIST" }, "ClusterStatus"],
+    }),
+
+    getDeployment: builder.query<DeployResponse, string>({
+      query: (matchId) => `/control-plane/deploy/${matchId}`,
+      providesTags: (_, __, matchId) => [{ type: "ClusterMatch", id: matchId }],
+    }),
+
+    undeploy: builder.mutation<void, string>({
+      query: (matchId) => ({
+        url: `/control-plane/deploy/${matchId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_, __, matchId) => [
+        { type: "ClusterMatch", id: matchId },
+        { type: "ClusterMatch", id: "LIST" },
+        "ClusterStatus",
+      ],
+    }),
+
+    // =========================================================================
+    // AUTOSCALER ENDPOINTS
+    // =========================================================================
+
+    getAutoscalerStatus: builder.query<AutoscalerStatus, void>({
+      query: () => "/control-plane/autoscaler/status",
+      providesTags: ["Autoscaler"],
+    }),
+
+    getAutoscalerRecommendation: builder.query<ScalingRecommendation, void>({
+      query: () => "/control-plane/autoscaler/recommendation",
+      providesTags: ["Autoscaler"],
+    }),
+
+    acknowledgeScalingAction: builder.mutation<void, void>({
+      query: () => ({
+        url: "/control-plane/autoscaler/acknowledge",
+        method: "POST",
+      }),
+      invalidatesTags: ["Autoscaler"],
+    }),
   }),
 });
 
@@ -825,6 +1108,13 @@ export const {
   useDeleteRoleMutation,
   useUpdateRoleDescriptionMutation,
   useUpdateRoleIncludesMutation,
+  useUpdateRoleScopesMutation,
+  useGetResolvedScopesQuery,
+  // API Tokens
+  useGetApiTokensQuery,
+  useCreateApiTokenMutation,
+  useDeleteApiTokenMutation,
+  useRevokeApiTokenMutation,
   // Players
   useGetPlayersInContainerQuery,
   useCreatePlayerInContainerMutation,
@@ -869,4 +1159,33 @@ export const {
   useGetDeltaQuery,
   // Restore
   useRestoreMatchMutation,
+  // Control Plane - Dashboard
+  useGetDashboardOverviewQuery,
+  useGetDashboardNodesQuery,
+  useGetDashboardMatchesQuery,
+  // Control Plane - Cluster
+  useGetClusterStatusQuery,
+  useGetClusterNodesQuery,
+  useGetClusterNodeQuery,
+  // Control Plane - Matches
+  useGetClusterMatchesQuery,
+  useGetClusterMatchQuery,
+  useCreateClusterMatchMutation,
+  useFinishClusterMatchMutation,
+  useDeleteClusterMatchMutation,
+  // Control Plane - Nodes
+  useDrainNodeMutation,
+  useDeregisterNodeMutation,
+  // Control Plane - Modules
+  useGetClusterModulesQuery,
+  useGetClusterModuleQuery,
+  useDistributeModuleMutation,
+  // Control Plane - Deploy
+  useDeployMutation,
+  useGetDeploymentQuery,
+  useUndeployMutation,
+  // Control Plane - Autoscaler
+  useGetAutoscalerStatusQuery,
+  useGetAutoscalerRecommendationQuery,
+  useAcknowledgeScalingActionMutation,
 } = apiSlice;

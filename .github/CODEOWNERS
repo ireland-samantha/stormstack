@@ -1,0 +1,5 @@
+# Code owners for Lightning Engine
+# These users can approve PRs and trigger pre-merge reviews
+
+# Default owner for everything
+* @ireland-samantha

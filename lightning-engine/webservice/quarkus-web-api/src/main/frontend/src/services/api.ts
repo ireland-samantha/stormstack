@@ -55,12 +55,43 @@ export interface RoleData {
   name: string;
   description?: string;
   includedRoles?: string[];
+  scopes?: string[];
 }
 
 export interface CreateRoleRequest {
   name: string;
   description?: string;
   includedRoles?: string[];
+  scopes?: string[];
+}
+
+export interface ApiTokenData {
+  id: string;
+  userId: string;
+  name: string;
+  scopes: string[];
+  createdAt: string;
+  expiresAt?: string;
+  revokedAt?: string;
+  lastUsedAt?: string;
+  lastUsedIp?: string;
+  active: boolean;
+}
+
+export interface CreateApiTokenRequest {
+  name: string;
+  scopes?: string[];
+  expiresAt?: string; // ISO 8601 datetime
+}
+
+export interface CreateApiTokenResponse {
+  id: string;
+  userId: string;
+  name: string;
+  scopes: string[];
+  createdAt: string;
+  expiresAt?: string;
+  plaintextToken: string; // The actual token - only shown once
 }
 
 export interface MatchData {
@@ -585,6 +616,17 @@ class ApiClient {
       method: "PUT",
       body: JSON.stringify({ includes }),
     });
+  }
+
+  async updateRoleScopes(roleId: number, scopes: string[]): Promise<RoleData> {
+    return this.fetch<RoleData>(`/api/auth/roles/${roleId}/scopes`, {
+      method: "PUT",
+      body: JSON.stringify(scopes),
+    });
+  }
+
+  async getResolvedScopes(roleId: number): Promise<string[]> {
+    return this.fetch<string[]>(`/api/auth/roles/${roleId}/scopes/resolved`);
   }
 
   async deleteRole(roleId: number): Promise<void> {
@@ -1613,4 +1655,109 @@ export function buildPlayerErrorWebSocketUrl(
 ): string {
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${window.location.host}/ws/matches/${matchId}/players/${playerId}/errors`;
+}
+
+// ============================================================================
+// Control Plane Types
+// ============================================================================
+
+export interface ClusterStatusData {
+  totalNodes: number;
+  healthyNodes: number;
+  drainingNodes: number;
+  totalCapacity: number;
+  usedCapacity: number;
+  averageSaturation: number;
+}
+
+export interface ClusterNodeData {
+  nodeId: string;
+  advertiseAddress: string;
+  status: "HEALTHY" | "DRAINING" | "OFFLINE";
+  capacity: {
+    maxContainers: number;
+  };
+  metrics?: {
+    containerCount: number;
+    matchCount: number;
+    cpuUsage: number;
+    memoryUsedMb: number;
+    memoryMaxMb: number;
+  };
+  registeredAt: string;
+  lastHeartbeat: string;
+}
+
+export interface ClusterMatchData {
+  matchId: string;
+  nodeId: string;
+  containerId: number;
+  status: "CREATING" | "RUNNING" | "FINISHED" | "ERROR";
+  createdAt: string;
+  moduleNames: string[];
+  advertiseAddress: string;
+  websocketUrl: string;
+  playerCount: number;
+}
+
+export interface DashboardOverviewData {
+  clusterStatus: ClusterStatusData;
+  recentMatches: ClusterMatchData[];
+  nodeStatuses: ClusterNodeData[];
+}
+
+export interface PagedResponse<T> {
+  content: T[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+export interface ClusterModuleData {
+  name: string;
+  version: string;
+  description: string;
+  versions?: string[];
+}
+
+export interface DeployRequest {
+  modules: string[];
+  preferredNodeId?: string;
+  autoStart?: boolean;
+}
+
+export interface DeployResponse {
+  matchId: string;
+  nodeId: string;
+  containerId: number;
+  status: string;
+  createdAt: string;
+  modules: string[];
+  endpoints: {
+    http: string;
+    websocket: string;
+    commands: string;
+  };
+}
+
+// ============================================================================
+// Autoscaler Types
+// ============================================================================
+
+export type ScalingAction = "SCALE_UP" | "SCALE_DOWN" | "NO_ACTION";
+
+export interface ScalingRecommendation {
+  action: ScalingAction;
+  reason: string;
+  currentNodes: number;
+  recommendedNodes: number;
+  timestamp: string;
+}
+
+export interface AutoscalerStatus {
+  inCooldown: boolean;
+  lastRecommendation: ScalingRecommendation | null;
 }

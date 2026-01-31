@@ -7,6 +7,14 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "../store";
 
 export type PanelType =
+  // Control Plane panels
+  | "clusterOverview"
+  | "clusterNodes"
+  | "clusterMatches"
+  | "clusterModules"
+  | "deployments"
+  | "autoscaler"
+  // Lightning Engine (Node) panels
   | "dashboard"
   | "snapshot"
   | "history"
@@ -19,28 +27,29 @@ export type PanelType =
   | "modules"
   | "ai"
   | "resources"
+  // Authentication panels
   | "users"
   | "roles"
-  | "settings";
+  | "apiTokens";
 
 interface UiState {
   selectedContainerId: number | null;
   selectedMatchId: number | null;
   activePanel: PanelType;
   sidebarOpen: boolean;
-  containerMenuOpen: boolean;
-  adminMenuOpen: boolean;
-  iamMenuOpen: boolean;
+  controlPlaneMenuOpen: boolean;
+  engineMenuOpen: boolean;
+  authMenuOpen: boolean;
 }
 
 const initialState: UiState = {
   selectedContainerId: null,
   selectedMatchId: null,
-  activePanel: "dashboard",
+  activePanel: "clusterOverview",
   sidebarOpen: true,
-  containerMenuOpen: true,
-  adminMenuOpen: false,
-  iamMenuOpen: false,
+  controlPlaneMenuOpen: true,
+  engineMenuOpen: false,
+  authMenuOpen: false,
 };
 
 const uiSlice = createSlice({
@@ -64,23 +73,23 @@ const uiSlice = createSlice({
     toggleSidebar: (state) => {
       state.sidebarOpen = !state.sidebarOpen;
     },
-    setContainerMenuOpen: (state, action: PayloadAction<boolean>) => {
-      state.containerMenuOpen = action.payload;
+    setControlPlaneMenuOpen: (state, action: PayloadAction<boolean>) => {
+      state.controlPlaneMenuOpen = action.payload;
     },
-    toggleContainerMenu: (state) => {
-      state.containerMenuOpen = !state.containerMenuOpen;
+    toggleControlPlaneMenu: (state) => {
+      state.controlPlaneMenuOpen = !state.controlPlaneMenuOpen;
     },
-    setAdminMenuOpen: (state, action: PayloadAction<boolean>) => {
-      state.adminMenuOpen = action.payload;
+    setEngineMenuOpen: (state, action: PayloadAction<boolean>) => {
+      state.engineMenuOpen = action.payload;
     },
-    toggleAdminMenu: (state) => {
-      state.adminMenuOpen = !state.adminMenuOpen;
+    toggleEngineMenu: (state) => {
+      state.engineMenuOpen = !state.engineMenuOpen;
     },
-    setIamMenuOpen: (state, action: PayloadAction<boolean>) => {
-      state.iamMenuOpen = action.payload;
+    setAuthMenuOpen: (state, action: PayloadAction<boolean>) => {
+      state.authMenuOpen = action.payload;
     },
-    toggleIamMenu: (state) => {
-      state.iamMenuOpen = !state.iamMenuOpen;
+    toggleAuthMenu: (state) => {
+      state.authMenuOpen = !state.authMenuOpen;
     },
   },
 });
@@ -91,12 +100,12 @@ export const {
   setActivePanel,
   setSidebarOpen,
   toggleSidebar,
-  setContainerMenuOpen,
-  toggleContainerMenu,
-  setAdminMenuOpen,
-  toggleAdminMenu,
-  setIamMenuOpen,
-  toggleIamMenu,
+  setControlPlaneMenuOpen,
+  toggleControlPlaneMenu,
+  setEngineMenuOpen,
+  toggleEngineMenu,
+  setAuthMenuOpen,
+  toggleAuthMenu,
 } = uiSlice.actions;
 
 // Selectors
@@ -106,9 +115,10 @@ export const selectSelectedMatchId = (state: RootState) =>
   state.ui.selectedMatchId;
 export const selectActivePanel = (state: RootState) => state.ui.activePanel;
 export const selectSidebarOpen = (state: RootState) => state.ui.sidebarOpen;
-export const selectContainerMenuOpen = (state: RootState) =>
-  state.ui.containerMenuOpen;
-export const selectAdminMenuOpen = (state: RootState) => state.ui.adminMenuOpen;
-export const selectIamMenuOpen = (state: RootState) => state.ui.iamMenuOpen;
+export const selectControlPlaneMenuOpen = (state: RootState) =>
+  state.ui.controlPlaneMenuOpen;
+export const selectEngineMenuOpen = (state: RootState) =>
+  state.ui.engineMenuOpen;
+export const selectAuthMenuOpen = (state: RootState) => state.ui.authMenuOpen;
 
 export default uiSlice.reducer;

@@ -1,34 +1,36 @@
-# Lightning Engine  
+# Stormstack (formerly Lightning Engine)
 ![Status](https://img.shields.io/badge/status-experimental-blueviolet)
 ![Java](https://img.shields.io/badge/java-25-blue)
 ![License](https://img.shields.io/github/license/ireland-samantha/lightning-engine)
 ![Build](https://github.com/ireland-samantha/lightning-engine/actions/workflows/maven.yml/badge.svg)
 
 ## What is this?
-Lightning Engine is an open-source, unapologetically Java multiplayer server and backend game development framework.
+Stormstack is an open-source multiplayer game development framework.
 
-The core idea: Run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules. 
-So, multi-game, muti-match development with isolation on the JVM level instead of process level.
+The project is divided into two subprojects: Lightning and Thunder. 
 
-With Lightning, deploying a backend for a game looks like:
-1. Building a JAR with your game logic  
-2. Uploading it to a Lightning instance  
-3. Triggering hot reload  
-4. Spawning containers and matches  
-5. Subscribing to state updates, and triggering commands, via Websocket.
+## Lightning
+Run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules.
+Autoscale and assign Lightning nodes via its control plane.
 
-## Why?
-Mostly for fun, but also [some other reasons](docs/why.md) 
+## Thunder
+Facilitate smooth game development deployment workflows, integrating with developer toolsets.
+
+With Stormstack, shipping a game looks like:
+1. Designing and implementing Lightning modules, which are .jar files containing your backend game logic.
+2. Integrating your game frontend with the Thunder SDK.
+3. Calling the Thunder CLI to build your Lightning jars, uploading them to a live Lightning instance.
+4. Lightning and Thunder create isolated instances of your game on shared infrastructure.
 
 ## Warning
-Lightning Engine is an experimental hobby project, not production software. It exists for fun, learning, and the pure joy of over-engineering. 
+Stormstack is an experimental hobby project, not production software. It exists for fun, learning, and the pure joy of over-engineering.
 
 It is:
- - experimental
- - unstable
- - aggressively over-engineered
- - powered by Java, hubris, and curiosity
- - built via ~vibe coding~ pair programming (read: tokens go burr while I yell at it for making mistakes) with Claude Code.
+- experimental
+- unstable
+- aggressively over-engineered
+- powered by Java, hubris, and curiosity
+- built via ~vibe coding~ pair programming (read: tokens go burr while I yell at it for making mistakes) with Claude Code.
 
 If any of this sounds appealing, we are currently looking for fellow travelers
 who enjoy complexity, puzzles, and whacky ideas executed thoughtfully.
@@ -106,43 +108,43 @@ who enjoy complexity, puzzles, and whacky ideas executed thoughtfully.
 
 ## 🏁 Quick Start
 
-### Option 1: Docker (Fastest)
+### Option 1: Docker Compose (Recommended)
 
-```bash
-docker run -d \
-  --name lightning-engine \
-  -p 8080:8080 \
-  -e ADMIN_INITIAL_PASSWORD=your-secure-password \
-  -e AUTH_JWT_SECRET=your-jwt-secret-at-least-32-chars \
-  samanthacireland/lightning-engine:latest
-```
-
-### Option 2: Docker Compose (Recommended)
-
-Includes MongoDB for snapshot persistence:
+The full stack includes MongoDB, Redis, Auth service, Control Plane, and the game engine:
 
 ```bash
 git clone https://github.com/ireland-samantha/lightning-engine.git
 cd lightning-engine
 
-export ADMIN_INITIAL_PASSWORD=your-secure-password
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env to set AUTH_JWT_SECRET and ADMIN_INITIAL_PASSWORD
+
 docker compose up -d
 ```
 
-### Option 3: Build from Source
+This starts:
+- **mongodb** (port 27017) - Shared database for all services
+- **redis** (port 6379) - Control plane node registry
+- **auth** (port 8082) - Authentication service (JWT, user management)
+- **control-plane** (port 8081) - Cluster management and node orchestration
+- **backend** (port 8080) - Lightning Engine game server API
+
+For a multi-node cluster:
+```bash
+docker compose --profile cluster up -d
+```
+
+### Option 2: Build from Source
 
 ```bash
 git clone https://github.com/ireland-samantha/lightning-engine.git
 cd lightning-engine
 
 ./build.sh build            # Build all modules
-./build.sh docker           # Build Docker image
+./build.sh docker           # Build all Docker images
 ./build.sh integration-test # Run integration tests
 ```
-
-This starts:
-- **lightning-engine** - The game server on port 8080
-- **mongodb** - For snapshot history persistence
 
 ### Environment Variables
 
@@ -150,9 +152,11 @@ This starts:
 |----------|----------|-------------|
 | `ADMIN_INITIAL_PASSWORD` | Yes | Password for the admin user |
 | `AUTH_JWT_SECRET` | Yes | Secret for JWT signing (use a long random string, 32+ chars) |
+| `CONTROL_PLANE_TOKEN` | No | Token for control plane API access (default: `dev-token`) |
+| `AUTH_IMAGE` | No | Override auth service Docker image |
+| `CONTROL_PLANE_IMAGE` | No | Override control plane Docker image |
+| `ENGINE_IMAGE` | No | Override engine Docker image |
 | `CORS_ORIGINS` | Production | Allowed CORS origins (e.g., `https://yourdomain.com`) |
-| `QUARKUS_MONGODB_CONNECTION_STRING` | No | MongoDB connection (default: `mongodb://mongodb:27017`) |
-| `SNAPSHOT_PERSISTENCE_ENABLED` | No | Enable snapshot history (default: `true` with MongoDB) |
 
 Open the React admin dashboard at:
 
