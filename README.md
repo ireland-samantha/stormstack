@@ -7,7 +7,7 @@
 ## What is this?
 Stormstack is an open-source multiplayer game development framework.
 
-The project is divided into two subprojects: Lightning and Thunder. 
+The project is divided into two subprojects: Lightning and Thunder. Lightning is the backend server, and Thunder is the build tool and SDK.
 
 ## Lightning
 Run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules.
@@ -16,6 +16,7 @@ Autoscale and assign Lightning nodes via its control plane.
 ## Thunder
 Facilitate smooth game development deployment workflows, integrating with developer toolsets.
 
+## Stormstack
 With Stormstack, shipping a game looks like:
 1. Designing and implementing Lightning modules, which are .jar files containing your backend game logic.
 2. Integrating your game frontend with the Thunder SDK.
