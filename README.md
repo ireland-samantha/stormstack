@@ -19,9 +19,8 @@ Facilitate smooth game development deployment workflows, integrating with develo
 ## Stormstack
 With Stormstack, shipping a game looks like:
 1. Designing and implementing Lightning modules, which are .jar files containing your backend game logic.
-2. Integrating your game frontend with the Thunder SDK.
-3. Calling the Thunder CLI to build your Lightning jars, uploading them to a live Lightning instance.
-4. Lightning and Thunder create isolated instances of your game on shared infrastructure.
+2. Calling the Thunder CLI to build your Lightning modules, upload them to the Lightning cluster, and trigger hot-reload.
+3. Deploying matches, posting game commands, and subscibing to state updates from your game frontend.
 
 ## Warning
 Stormstack is an experimental hobby project, not production software. It exists for fun, learning, and the pure joy of over-engineering.
