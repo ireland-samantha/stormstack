@@ -6,7 +6,9 @@
 
 ## What is this?
 
-StormStack is a multiplayer game server development framework and orchestrator, enabling developers to write and deploy backend game code directly to the cloud.
+StormStack is an authoritive multiplayer game server and orchestrator, enabling developers to write and deploy backend game code directly to the cloud.
+
+It allows for untrusted game logic to be hot-deployed at runtime, safely isolated via ClassLoader boundaries and enforced through JWT-scoped ECS access.
 
 The project has two main components:
 - **Thunder** (Backend): Game engine, control panel, and IAM service
