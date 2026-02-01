@@ -114,9 +114,14 @@ public class LightningNodeClientImpl implements LightningNodeClient {
         String url = node.advertiseAddress() + "/api/containers";
 
         try {
+            // Use smaller entity limits for cluster-managed containers to allow multiple
+            // containers per node without exhausting memory. 100K entities is sufficient
+            // for most game matches while keeping memory usage reasonable (~40MB per container).
             Map<String, Object> requestBody = Map.of(
                     "name", "cluster-container-" + System.currentTimeMillis(),
-                    "moduleNames", moduleNames
+                    "moduleNames", moduleNames,
+                    "maxEntities", 100_000,
+                    "maxComponents", 100
             );
 
             String body = objectMapper.writeValueAsString(requestBody);
