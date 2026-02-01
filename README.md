@@ -16,22 +16,24 @@ The project has two main components:
 ### How It Works
 
 1. **Write game modules** - Implement interfaces and build JAR files containing your backend game logic (ECS components, systems, commands)
-3. **Install to cluster** - Upload modules to the control plane and distribute to engine nodes
+3. **Install module in cluster** - Upload modules to the control plane and distribute to engine nodes
 
 ```
-$ lightning module upload MyGameModule 1.0.0 ./target/my-game-module.jar && \
-       lightning module distribute MyGameModule 1.0.0
-
+$ lightning module upload MyGameModule 1.0.0 ./target/my-module.jar
+✓ Module MyModule@1.0.0 uploaded successfully
+```
+```
+$ lightning module distribute MyModule 1.0.0
 # Output:
-Module MyGameModule@1.0.0 distributed to 3 nodes
+✓ Module MyGameModule@1.0.0 distributed to 3 nodes
 ```
 
-4. **Create matches** 
+4. **Deploy matches** 
 ```
 $ lightning deploy --modules EntityModule,RigidBodyModule,RenderingModule
 
 # Output:
-Match deployed successfully!
+✓ Match deployed successfully!
     Match ID:     node-1-42-1
     Node:         node-1
     Container:    42
