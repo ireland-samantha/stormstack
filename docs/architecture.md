@@ -1,8 +1,8 @@
 # Architecture
 
 ## System Overview
-
-StormStack is a distributed game server platform with three core services:
+StormStack is a distributed, authoritative multiplayer game server platform. It allows untrusted game logic to be hot-deployed at runtime, safely isolated via ClassLoader boundaries and enforced through JWT-scoped ECS access.
+The system consists of three services (auth, control plane, engine) and supports multi-node orchestration, live module reloads, and WebSocket-based state streaming.
 
 ```
                                     ┌─────────────────────────────────────┐
