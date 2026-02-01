@@ -14,10 +14,36 @@ The project has two main components:
 
 ### How It Works
 
-1. **Write game modules** - JAR files containing your backend game logic (ECS components, systems, commands)
-2. **Install to cluster** - Upload modules to the control plane and distribute to engine nodes with lightning (`lightning module upload your.jar` && `lightning module distribute`)
-3. **Create matches** - The control plane routes players to the best available node (`lightning match create MyGameModule`)
-4. **Stream game state** - Clients receive real-time ECS snapshots via WebSocket.
+1. **Write game modules** - Implement interfaces and build JAR files containing your backend game logic (ECS components, systems, commands)
+3. **Install to cluster** - Upload modules to the control plane and distribute to engine nodes
+
+```
+lightning module upload MyGameModule 1.0.0 ./target/my-game-module.jar \
+    --description "Custom game logic"
+lightning module distribute MyGameModule 1.0.0
+
+# Output:
+# Module MyGameModule@1.0.0 distributed to 3 nodes
+
+```
+
+4. **Create matches** 
+```
+  lightning deploy --modules EntityModule,RigidBodyModule,RenderingModule
+
+# Output:
+# Match deployed successfully!
+#   Match ID:     node-1-42-1
+#   Node:         node-1
+#   Container:    42
+#   Status:       RUNNING
+#
+# Endpoints:
+#   HTTP:         http://backend:8080/api/containers/42
+#   WebSocket:    ws://backend:8080/ws/containers/42/matches/1/snapshots
+#   Commands:     ws://backend:8080/ws/containers/42/matches/1/commands
+```
+5. **Stream game state** - Clients receive real-time ECS snapshots via WebSocket.
 
 ## Status
 
