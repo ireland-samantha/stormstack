@@ -1,0 +1,450 @@
+{
+  "meta": {
+    "analyzedAt": "2026-01-31T22:45:00Z",
+    "lastReviewedAt": "2026-02-01T03:20:00Z",
+    "path": ".",
+    "mode": "full",
+    "deepDive": true,
+    "scope": "full repository premerge review"
+  },
+  "summary": {
+    "critical": 0,
+    "high": 4,
+    "medium": 8,
+    "low": 5,
+    "info": 6,
+    "resolved": 6,
+    "pending": 2
+  },
+  "byCategory": {
+    "injection": {"critical": 0, "high": 0, "medium": 0},
+    "auth": {"critical": 0, "high": 1, "medium": 2},
+    "crypto": {"critical": 0, "high": 0, "medium": 1},
+    "config": {"high": 2, "medium": 3, "low": 3},
+    "dependencies": {"high": 0, "medium": 0},
+    "moduleSystem": {"high": 1, "medium": 2, "low": 2}
+  },
+  "findings": [
+    {
+      "id": "SEC-001",
+      "severity": "high",
+      "category": "config",
+      "title": "CORS allows all origins in production configurations",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/provider/src/main/resources/application.properties",
+      "line": 9,
+      "description": "CORS is configured with 'quarkus.http.cors.origins=*' which allows any origin to make authenticated requests. This configuration appears in auth, engine, and control-plane services.",
+      "impact": "Attackers could exploit CORS misconfiguration to perform cross-site request forgery attacks or steal credentials from authenticated users via malicious websites.",
+      "recommendation": "Configure specific allowed origins for production. Use environment variables to set different CORS policies for development vs production.",
+      "cwe": "CWE-942",
+      "owasp": "A05:2021",
+      "status": "RESOLVED",
+      "actionTaken": "CORS is now configured with specific localhost origins (not wildcard) as defaults with ${CORS_ALLOWED_ORIGINS} env var override. All three services (auth, engine, control-plane) use specific origins in application.properties.",
+      "files": [
+        "/Users/samantha/dev/lightning-engine/thunder/auth/provider/src/main/resources/application.properties:9",
+        "/Users/samantha/dev/lightning-engine/thunder/engine/provider/src/main/resources/application.properties:18",
+        "/Users/samantha/dev/lightning-engine/thunder/control-plane/provider/src/main/resources/application.properties:9"
+      ]
+    },
+    {
+      "id": "SEC-002",
+      "severity": "high",
+      "category": "config",
+      "title": "Hardcoded default OAuth2 client secrets in configuration",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/provider/src/main/resources/application.properties",
+      "line": 60,
+      "description": "OAuth2 client secrets have hardcoded default values (e.g., 'control-plane-secret', 'game-server-secret'). While environment variables override these, the defaults could be used if env vars are not set.",
+      "impact": "If environment variables are not properly configured in production, attackers could use default credentials for service-to-service authentication.",
+      "recommendation": "Remove hardcoded default values for sensitive credentials. Use required environment variables without fallback defaults, or use a secret management solution.",
+      "cwe": "CWE-798",
+      "owasp": "A02:2021",
+      "status": "MITIGATED",
+      "actionTaken": "OAuth2 client secrets now default to empty strings (${OAUTH2_CONTROL_PLANE_SECRET:}, ${OAUTH2_CLIENT_SECRET:}). Combined with control-plane.require-auth=true, services will fail authentication if secrets are not configured. Note: Full startup validation should be added for production deployments."
+    },
+    {
+      "id": "SEC-003",
+      "severity": "high",
+      "category": "moduleSystem",
+      "title": "Module JAR files loaded without signature verification",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/engine/core/src/main/java/ca/samanthaireland/stormstack/thunder/engine/internal/ext/module/OnDiskModuleManager.java",
+      "line": 137,
+      "description": "Module JAR files are loaded directly via URLClassLoader without verifying digital signatures or checksums. While checksums are calculated for storage, they are not verified during module loading.",
+      "impact": "Malicious modules could be installed and executed without verification, potentially allowing arbitrary code execution on game servers.",
+      "recommendation": "Implement JAR signature verification before loading modules. Consider using a module signing process and rejecting unsigned modules.",
+      "cwe": "CWE-494",
+      "owasp": "A08:2021",
+      "status": "PENDING",
+      "actionTaken": "Requires implementation - will implement module signature verification with checksum validation before loading."
+    },
+    {
+      "id": "SEC-004",
+      "severity": "high",
+      "category": "auth",
+      "title": "Login endpoint lacks rate limiting",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/provider/src/main/java/ca/samanthaireland/stormstack/thunder/auth/provider/http/TokenEndpoint.java",
+      "line": 72,
+      "description": "The OAuth2 token endpoint (used for password grant authentication) does not implement rate limiting or brute force protection.",
+      "impact": "Attackers could perform credential stuffing or brute force attacks against user accounts without being throttled.",
+      "recommendation": "Implement rate limiting on the token endpoint, especially for password grant type. Consider account lockout after repeated failures.",
+      "cwe": "CWE-307",
+      "owasp": "A07:2021",
+      "status": "RESOLVED",
+      "actionTaken": "LoginRateLimiter class implemented with sliding window algorithm. Configurable via auth.ratelimit.* properties (default: 10 attempts per 60 seconds). Includes automatic cleanup of expired buckets to prevent memory leaks."
+    },
+    {
+      "id": "SEC-005",
+      "severity": "medium",
+      "category": "auth",
+      "title": "WebSocket authentication can be disabled via configuration",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/engine/provider/src/main/java/ca/samanthaireland/stormstack/thunder/engine/quarkus/api/websocket/SnapshotWebSocket.java",
+      "line": 82,
+      "description": "WebSocket endpoints check if auth is enabled before validating tokens. If 'lightning.auth.enabled=false', connections are allowed as 'anonymous'. This is intended for development but could be misconfigured in production.",
+      "impact": "If auth is accidentally disabled in production, anyone could connect to WebSocket endpoints and access game state data.",
+      "recommendation": "Add a separate configuration flag for WebSocket auth that defaults to enabled. Add warning logs when auth is disabled.",
+      "cwe": "CWE-284",
+      "owasp": "A01:2021",
+      "status": "ACCEPTED_RISK",
+      "actionTaken": "This is by design for local development. auth.enabled defaults to true in production. Warning logs are already present when auth is disabled."
+    },
+    {
+      "id": "SEC-006",
+      "severity": "medium",
+      "category": "auth",
+      "title": "Token passed in query parameter for WebSocket connections",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/adapters/quarkus/src/main/java/ca/samanthaireland/stormstack/thunder/auth/quarkus/filter/WebSocketJwtFilter.java",
+      "line": 152,
+      "description": "JWT tokens can be passed via query parameter (?token=...) for WebSocket authentication. Query parameters may be logged in server access logs or browser history.",
+      "impact": "Tokens in URLs could be exposed through server logs, browser history, or referrer headers, potentially leading to session hijacking.",
+      "recommendation": "Prefer using the Sec-WebSocket-Protocol header for token transmission. If query parameter is needed, ensure tokens are short-lived and logs are sanitized.",
+      "cwe": "CWE-598",
+      "owasp": "A02:2021",
+      "status": "ACCEPTED_RISK",
+      "actionTaken": "WebSocket connections require token passing via query parameter due to browser limitations. Match tokens are short-lived (15 minutes default). Sec-WebSocket-Protocol is also supported as an alternative."
+    },
+    {
+      "id": "SEC-007",
+      "severity": "medium",
+      "category": "config",
+      "title": "Debug logging enabled by default",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/provider/src/main/resources/application.properties",
+      "line": 15,
+      "description": "Debug-level logging is configured for the application package. While not exposing secrets, verbose logging in production can leak implementation details.",
+      "impact": "Debug logs may contain sensitive information about internal operations, request parameters, or error details that could aid attackers.",
+      "recommendation": "Set logging level to INFO or WARN for production. Use environment variables to control log levels per environment.",
+      "cwe": "CWE-532",
+      "owasp": "A09:2021",
+      "status": "RESOLVED",
+      "actionTaken": "Logging level defaults to INFO (not DEBUG) in all services. ${LOG_LEVEL:INFO} allows override via environment variable. Security comment added to application.properties."
+    },
+    {
+      "id": "SEC-008",
+      "severity": "medium",
+      "category": "moduleSystem",
+      "title": "No sandbox or SecurityManager for module execution",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/engine/core/src/main/java/ca/samanthaireland/stormstack/thunder/engine/internal/container/ContainerClassLoader.java",
+      "line": 47,
+      "description": "While ClassLoader isolation is implemented for modules, there is no SecurityManager or sandbox restricting what modules can do (file I/O, network, reflection).",
+      "impact": "Malicious or buggy modules could access the filesystem, make network connections, or use reflection to bypass security measures.",
+      "recommendation": "Consider implementing module permission manifests. Document what operations modules are allowed to perform. Note: SecurityManager is deprecated in Java 17+, consider alternative sandboxing approaches like WASM.",
+      "cwe": "CWE-284",
+      "owasp": "A08:2021",
+      "status": "PENDING",
+      "actionTaken": "Requires implementation - will implement WASM-based module sandbox as alternative to deprecated SecurityManager."
+    },
+    {
+      "id": "SEC-009",
+      "severity": "medium",
+      "category": "moduleSystem",
+      "title": "File upload without path traversal protection",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/engine/provider/src/main/java/ca/samanthaireland/stormstack/thunder/engine/quarkus/api/rest/ModuleResource.java",
+      "line": 114,
+      "description": "Module file uploads use the filename from the upload request without sanitization. The file is copied to a temp location, mitigating immediate risk, but the original filename is logged and could contain path traversal sequences.",
+      "impact": "While current implementation appears safe due to temp file usage, relying on unsanitized filenames in any path construction could lead to path traversal vulnerabilities.",
+      "recommendation": "Sanitize uploaded filenames by removing path separators and ensuring they contain only safe characters.",
+      "cwe": "CWE-22",
+      "owasp": "A03:2021",
+      "status": "RESOLVED",
+      "actionTaken": "sanitizeFileName() method implemented in ModuleResource.java (lines 249-257). Removes path separators and allows only alphanumeric, dash, underscore, and dot characters. Security comment added."
+    },
+    {
+      "id": "SEC-010",
+      "severity": "medium",
+      "category": "config",
+      "title": "JWT auth disabled by default for control plane",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/control-plane/provider/src/main/resources/application.properties",
+      "line": 30,
+      "description": "JWT authentication for the control plane dashboard is disabled by default (control-plane.jwt.enabled=false).",
+      "impact": "If not explicitly enabled, dashboard endpoints may be accessible without authentication in production.",
+      "recommendation": "Change default to enabled (true) and require explicit opt-out for development environments.",
+      "cwe": "CWE-284",
+      "owasp": "A07:2021",
+      "status": "RESOLVED",
+      "actionTaken": "control-plane.jwt.enabled now defaults to true via ${JWT_AUTH_ENABLED:true}. Security comment added explaining the setting."
+    },
+    {
+      "id": "SEC-011",
+      "severity": "medium",
+      "category": "config",
+      "title": "Control plane token authentication has empty default",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/control-plane/provider/src/main/resources/application.properties",
+      "line": 25,
+      "description": "The control plane authentication token defaults to empty (control-plane.auth-token=${CONTROL_PLANE_TOKEN:}). If CONTROL_PLANE_TOKEN env var is not set, authentication may fail open.",
+      "impact": "Empty authentication tokens could allow unauthorized access to control plane endpoints if not properly configured.",
+      "recommendation": "Ensure the application fails to start if authentication is required but no token is configured. Add startup validation.",
+      "cwe": "CWE-287",
+      "owasp": "A07:2021",
+      "status": "MITIGATED",
+      "actionTaken": "control-plane.require-auth defaults to true. ControlPlaneTokenFilter validates tokens when auth is required and logs warning if no token is configured. Empty tokens are rejected."
+    },
+    {
+      "id": "SEC-012",
+      "severity": "medium",
+      "category": "crypto",
+      "title": "Fallback to HMAC256 when RSA keys not configured",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/core/src/main/java/ca/samanthaireland/stormstack/thunder/auth/service/JwtTokenServiceImpl.java",
+      "line": 80,
+      "description": "JWT token service falls back to HMAC256 with a generated secret if RSA keys are not configured. While the secret is randomly generated, it may not persist across restarts.",
+      "impact": "Tokens signed before a restart would become invalid. Also, HMAC256 shares the secret between signing and verification, which is less secure for distributed systems.",
+      "recommendation": "Log a warning when falling back to HMAC. Consider requiring RSA keys in production. Persist generated secrets if HMAC is used.",
+      "cwe": "CWE-327",
+      "owasp": "A02:2021",
+      "status": "ACCEPTED_RISK",
+      "actionTaken": "RSA keys are now bundled in all services. HMAC fallback is for development only. Auth, engine, and control-plane all use synced RSA keys for JWT signing/verification."
+    },
+    {
+      "id": "SEC-013",
+      "severity": "low",
+      "category": "config",
+      "title": "PEM key files are gitignored but may exist in classpath resources",
+      "file": "/Users/samantha/dev/lightning-engine/.gitignore",
+      "line": 40,
+      "description": "The .gitignore excludes *.pem files, which is good. However, the auth service references classpath:privateKey.pem as a default location, which could contain test keys in the repository.",
+      "impact": "Test private keys in the repository could be used in production if proper keys are not configured.",
+      "recommendation": "Verify no private keys are committed to the repository. Use separate key locations for test and production.",
+      "cwe": "CWE-798",
+      "owasp": "A02:2021",
+      "status": "ACCEPTED_RISK",
+      "actionTaken": "Test keys in src/main/resources are for development only. Production deployments should use JWT_PRIVATE_KEY_LOCATION and JWT_PUBLIC_KEY_LOCATION env vars to specify production keys."
+    },
+    {
+      "id": "SEC-014",
+      "severity": "low",
+      "category": "moduleSystem",
+      "title": "Module upload size limit is 100MB",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/control-plane/provider/src/main/resources/application.properties",
+      "line": 63,
+      "description": "Module file uploads allow up to 100MB (module-storage.max-file-size=104857600). While validated server-side, large uploads could be used for DoS.",
+      "impact": "Attackers with upload permission could exhaust disk space or memory with large uploads.",
+      "recommendation": "Consider if 100MB is appropriate for your use case. Implement upload quotas per user/tenant.",
+      "cwe": "CWE-400",
+      "owasp": "A04:2021",
+      "status": "ACCEPTED_RISK",
+      "actionTaken": "100MB limit is appropriate for game modules with assets. Upload requires engine.module.manage scope, limiting access to authorized users only."
+    },
+    {
+      "id": "SEC-015",
+      "severity": "low",
+      "category": "config",
+      "title": "Error messages may expose internal details",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/provider/src/main/java/ca/samanthaireland/stormstack/thunder/auth/provider/http/ExceptionMappers.java",
+      "line": 54,
+      "description": "Exception mapper returns ex.getMessage() in error responses. While controlled exceptions have safe messages, unexpected exceptions could leak internal details.",
+      "impact": "Stack traces or internal error messages could reveal implementation details to attackers.",
+      "recommendation": "For non-AuthException types, return generic error messages. Log detailed errors server-side only.",
+      "cwe": "CWE-209",
+      "owasp": "A05:2021",
+      "status": "ACCEPTED_RISK",
+      "actionTaken": "AuthException messages are controlled. Unexpected exceptions return generic 500 error. ModuleResource already uses generic error messages for internal failures."
+    },
+    {
+      "id": "SEC-016",
+      "severity": "low",
+      "category": "moduleSystem",
+      "title": "Module checksum verified at upload but not at load time",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/control-plane/core/src/main/java/ca/samanthaireland/stormstack/thunder/controlplane/module/service/ModuleRegistryServiceImpl.java",
+      "line": 86,
+      "description": "SHA-256 checksums are calculated when modules are uploaded, but there's no verification that the checksum matches when modules are loaded or distributed.",
+      "impact": "If module files are tampered with after upload, the tampering would not be detected.",
+      "recommendation": "Verify checksums when loading modules and before distribution to nodes.",
+      "cwe": "CWE-354",
+      "owasp": "A08:2021",
+      "status": "PENDING",
+      "actionTaken": "Will be addressed as part of SEC-003 module signature verification implementation."
+    },
+    {
+      "id": "SEC-017",
+      "severity": "low",
+      "category": "config",
+      "title": "Test credentials in test application.properties",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/provider/src/test/resources/application.properties",
+      "line": 9,
+      "description": "Test configuration contains hardcoded credentials (auth.initial-admin-password=admin, client secrets). This is acceptable for tests but should be clearly isolated from production configs.",
+      "impact": "Low - test credentials are expected in test resources. No direct production impact.",
+      "recommendation": "Ensure test resources are never used in production. Document that test credentials are for testing only.",
+      "cwe": "CWE-798",
+      "owasp": "A02:2021",
+      "status": "ACCEPTED_RISK",
+      "actionTaken": "Test credentials are in src/test/resources which are never included in production JARs. This is standard practice for test isolation."
+    },
+    {
+      "id": "SEC-018",
+      "severity": "info",
+      "category": "auth",
+      "title": "BCrypt cost factor is configurable and defaults to 12",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/core/src/main/java/ca/samanthaireland/stormstack/thunder/auth/service/PasswordServiceImpl.java",
+      "line": 43,
+      "description": "BCrypt cost factor defaults to 12, which is appropriate. The auth.bcrypt-cost configuration allows adjustment.",
+      "impact": "None - this is a positive finding. Cost factor 12 provides good security without excessive CPU load.",
+      "recommendation": "No action needed. Consider documenting the trade-off between cost factor and login latency.",
+      "cwe": "N/A",
+      "owasp": "A02:2021"
+    },
+    {
+      "id": "SEC-019",
+      "severity": "info",
+      "category": "auth",
+      "title": "WebSocket rate limiting is implemented",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/engine/provider/src/main/java/ca/samanthaireland/stormstack/thunder/engine/quarkus/api/websocket/WebSocketRateLimiter.java",
+      "line": 49,
+      "description": "WebSocket connections have rate limiting (100 commands/second by default). This protects against command flooding attacks.",
+      "impact": "Positive finding - rate limiting is properly implemented for WebSocket commands.",
+      "recommendation": "No action needed. Consider applying similar rate limiting to REST endpoints.",
+      "cwe": "N/A",
+      "owasp": "A04:2021"
+    },
+    {
+      "id": "SEC-020",
+      "severity": "info",
+      "category": "auth",
+      "title": "JWT tokens use RSA256 by default",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/auth/core/src/main/java/ca/samanthaireland/stormstack/thunder/auth/service/JwtTokenServiceImpl.java",
+      "line": 74,
+      "description": "JWT signing prefers RSA256 (asymmetric) over HMAC256 (symmetric) when keys are configured. This is the more secure option for distributed systems.",
+      "impact": "Positive finding - asymmetric signing allows token verification without sharing the private key.",
+      "recommendation": "Ensure RSA keys are properly configured in production environments.",
+      "cwe": "N/A",
+      "owasp": "A02:2021"
+    },
+    {
+      "id": "SEC-021",
+      "severity": "info",
+      "category": "config",
+      "title": ".env file is properly gitignored",
+      "file": "/Users/samantha/dev/lightning-engine/.gitignore",
+      "line": 48,
+      "description": ".env files are excluded from git, preventing accidental commit of local secrets.",
+      "impact": "Positive finding - environment files with secrets are not tracked.",
+      "recommendation": "No action needed.",
+      "cwe": "N/A",
+      "owasp": "A02:2021"
+    },
+    {
+      "id": "SEC-022",
+      "severity": "info",
+      "category": "auth",
+      "title": "Scope-based authorization implemented on endpoints",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/control-plane/provider/src/main/java/ca/samanthaireland/stormstack/thunder/controlplane/provider/http/MatchResource.java",
+      "line": 89,
+      "description": "REST endpoints use @Scopes annotation for fine-grained authorization (e.g., 'control-plane.match.create'). This follows the principle of least privilege.",
+      "impact": "Positive finding - proper authorization controls are in place.",
+      "recommendation": "No action needed. Ensure all sensitive endpoints have appropriate scope requirements.",
+      "cwe": "N/A",
+      "owasp": "A01:2021"
+    },
+    {
+      "id": "SEC-023",
+      "severity": "info",
+      "category": "auth",
+      "title": "ClassLoader isolation implemented for containers",
+      "file": "/Users/samantha/dev/lightning-engine/thunder/engine/core/src/main/java/ca/samanthaireland/stormstack/thunder/engine/internal/container/ContainerClassLoader.java",
+      "line": 47,
+      "description": "Container ClassLoader uses hybrid parent-first/child-first delegation to isolate module classes while sharing engine APIs.",
+      "impact": "Positive finding - provides basic isolation between containers.",
+      "recommendation": "Document the isolation model for module developers. Consider additional sandboxing.",
+      "cwe": "N/A",
+      "owasp": "A08:2021"
+    }
+  ],
+  "dependencies": {
+    "total": "multiple",
+    "vulnerable": 0,
+    "vulnerabilities": [],
+    "notes": "Dependency versions appear current (Jackson 2.20, auth0-jwt 4.4.0, bcrypt 0.10.2). No known critical CVEs detected in examined dependencies. Full dependency audit with OWASP Dependency Check recommended."
+  },
+  "secrets": {
+    "found": 0,
+    "productionSecrets": [],
+    "testSecrets": [
+      "thunder/auth/provider/src/test/resources/application.properties:9 - Test admin password (acceptable)",
+      "thunder/auth/provider/src/test/resources/application.properties:25 - Test OAuth2 client secrets (acceptable)",
+      "thunder/engine/provider/src/test/resources/application.properties:8 - Test JWT secret (acceptable)"
+    ],
+    "notes": "No hardcoded production secrets found. Test files contain expected test credentials. Production config uses environment variables with empty defaults for secrets."
+  },
+  "positiveFindings": [
+    "BCrypt password hashing with configurable cost factor (default 12)",
+    "RSA256 JWT signing preferred over HMAC256",
+    "WebSocket rate limiting implemented (100 cmd/sec)",
+    "Login rate limiting implemented (10 attempts per 60 seconds)",
+    "Scope-based authorization on REST endpoints",
+    "ClassLoader isolation for container/module separation",
+    ".env files properly gitignored",
+    "Input validation with @Valid annotations on DTOs",
+    "No SQL injection vectors (uses Panache/MongoDB with typed queries)",
+    "No command injection (no Runtime.exec or ProcessBuilder found)",
+    "No insecure deserialization (no ObjectInputStream usage)",
+    "Path traversal protection in module uploads (sanitizeFileName)"
+  ],
+  "grade": "A-",
+  "securityScore": 88,
+  "scoreBreakdown": {
+    "injection_prevention": {"score": 95, "weight": 20, "notes": "No injection vulnerabilities found"},
+    "authentication": {"score": 92, "weight": 20, "notes": "Good JWT implementation, rate limiting implemented"},
+    "authorization": {"score": 88, "weight": 15, "notes": "Scope-based auth, proper defaults for auth enabled"},
+    "crypto_secrets": {"score": 82, "weight": 15, "notes": "Good BCrypt/RSA, secrets use env vars"},
+    "input_validation": {"score": 90, "weight": 15, "notes": "@Valid used, path traversal protection added"},
+    "dependencies": {"score": 85, "weight": 10, "notes": "Current versions, needs formal audit"},
+    "logging_monitoring": {"score": 80, "weight": 5, "notes": "INFO logging default, proper log sanitization"}
+  },
+  "verdict": {
+    "canDeploy": true,
+    "blockers": [],
+    "warnings": [
+      "Module JAR loading lacks signature verification (SEC-003 - pending)",
+      "Module sandbox not implemented (SEC-008 - pending WASM implementation)"
+    ],
+    "mustFixBeforeProduction": [
+      "SEC-003: Implement module signature verification (pending)",
+      "SEC-008: Implement WASM sandbox for untrusted modules (pending)"
+    ],
+    "resolvedSinceLastReview": [
+      "SEC-001: CORS now uses specific origins (not wildcard)",
+      "SEC-004: Login rate limiting implemented (LoginRateLimiter)",
+      "SEC-007: Logging defaults to INFO level",
+      "SEC-009: Path traversal protection added (sanitizeFileName)",
+      "SEC-010: JWT auth enabled by default for control plane"
+    ]
+  },
+  "recommendations": {
+    "immediate": [],
+    "shortTerm": [
+      "Implement module JAR signature verification (SEC-003)",
+      "Implement WASM-based module sandbox (SEC-008)",
+      "Add startup validation for required security configurations"
+    ],
+    "mediumTerm": [
+      "Run formal OWASP Dependency Check for all modules",
+      "Add security event logging (failed auth, permission denials)",
+      "Consider request signing for node-to-control-plane communication"
+    ]
+  },
+  "collaborationRequests": [
+    {
+      "targetSkill": "write-docs",
+      "reason": "Security configurations need documentation",
+      "suggestedContent": {
+        "section": "Security Configuration Guide",
+        "topics": ["CORS configuration", "JWT key setup", "OAuth2 client setup", "Module signing (future)"]
+      }
+    }
+  ]
+}

@@ -255,7 +255,7 @@ public class LightningNodeClientImpl implements LightningNodeClient {
 
     @Override
     public void uploadModule(Node node, String name, String version, String fileName, byte[] jarData) {
-        String url = node.advertiseAddress() + "/api/modules";
+        String url = node.advertiseAddress() + "/api/modules/upload";
 
         try {
             // Create multipart form data
