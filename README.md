@@ -24,7 +24,6 @@ $ lightning module upload MyGameModule 1.0.0 ./target/my-module.jar
 ```
 ```
 $ lightning module distribute MyModule 1.0.0
-# Output:
 ✓ Module MyGameModule@1.0.0 distributed to 3 nodes
 ```
 
@@ -46,6 +45,28 @@ $ lightning deploy --modules EntityModule,RigidBodyModule,RenderingModule
 ```
 5. **Stream game state** - Clients receive real-time ECS snapshots via WebSocket.
 
+```
+[CMD] lightning snapshot get -o json
+[INFO] {
+  "matchId": 1,
+  "tick": 129,
+  "modules": [
+    {
+      "name": "EntityModule",
+      "version": "1.0",
+      "components": [
+        {
+          "name": "ENTITY_ID",
+          "values": [
+            1,
+            2,
+            3,... ]
+        }
+      ]
+    }
+  ]
+}
+```
 ## Status
 
 StormStack is an **experimental hobby project**, not production software. It exists for fun, learning, and the pure joy of over-engineering.
