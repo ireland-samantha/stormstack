@@ -39,6 +39,9 @@ quarkus-api/modules/
 *.log
 *.pem
 
+### Lightning CLI binary ###
+lightning/cli/lightning
+
 ### Frontend (React dashboard) ###
 **/node_modules/
 **/frontend/dist/
@@ -46,3 +49,7 @@ quarkus-api/modules/
 *.log
 .DS_Store
 .env
+
+### Code review and analysis outputs ###
+.review-output/
+**/coverage/
