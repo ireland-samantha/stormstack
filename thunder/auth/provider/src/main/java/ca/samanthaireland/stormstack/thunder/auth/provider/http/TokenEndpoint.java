@@ -28,6 +28,7 @@ import ca.samanthaireland.stormstack.thunder.auth.model.ServiceClient;
 import ca.samanthaireland.stormstack.thunder.auth.provider.dto.OAuth2ErrorResponse;
 import ca.samanthaireland.stormstack.thunder.auth.provider.dto.OAuth2TokenResponseDto;
 import ca.samanthaireland.stormstack.thunder.auth.service.OAuth2TokenService;
+import io.vertx.core.http.HttpServerRequest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
@@ -60,6 +61,12 @@ public class TokenEndpoint {
     @Inject
     OAuth2TokenService tokenService;
 
+    @Inject
+    LoginRateLimiter rateLimiter;
+
+    @Context
+    HttpServerRequest request;
+
     /**
      * Process a token request.
      *
@@ -72,6 +79,20 @@ public class TokenEndpoint {
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     public Response token(MultivaluedMap<String, String> form, @Context HttpHeaders headers) {
+        // Rate limiting for brute force protection
+        String clientIdentifier = getClientIdentifier(form);
+        LoginRateLimiter.RateLimitResult rateLimitResult = rateLimiter.tryAcquire(clientIdentifier);
+
+        if (!rateLimitResult.allowed()) {
+            log.warnf("Rate limit exceeded for token request from: %s", clientIdentifier);
+            return Response.status(429) // Too Many Requests
+                    .header("Retry-After", rateLimitResult.retryAfterSeconds())
+                    .header("X-RateLimit-Remaining", "0")
+                    .entity(OAuth2ErrorResponse.of("rate_limit_exceeded",
+                            "Too many requests. Please try again in " + rateLimitResult.retryAfterSeconds() + " seconds."))
+                    .build();
+        }
+
         try {
             // Convert form to simple map
             Map<String, String> parameters = new HashMap<>();
@@ -98,6 +119,8 @@ public class TokenEndpoint {
 
         } catch (AuthException e) {
             log.warnf("Token request failed: %s - %s", e.getErrorCode(), e.getMessage());
+            // Record failed attempt for rate limiting
+            rateLimiter.recordFailedAttempt(clientIdentifier);
             return buildErrorResponse(e);
         } catch (Exception e) {
             log.errorf(e, "Unexpected error in token endpoint");
@@ -152,6 +175,47 @@ public class TokenEndpoint {
         } catch (IllegalArgumentException e) {
             throw AuthException.invalidClient("Invalid Basic auth encoding");
         }
+    }
+
+    /**
+     * Get client identifier for rate limiting.
+     * Uses IP address combined with client_id if present.
+     */
+    private String getClientIdentifier(MultivaluedMap<String, String> form) {
+        String ip = getClientIp();
+        String clientId = form.getFirst("client_id");
+        String username = form.getFirst("username");
+
+        // Combine IP with username or client_id for more granular rate limiting
+        if (username != null && !username.isEmpty()) {
+            return ip + ":" + username;
+        } else if (clientId != null && !clientId.isEmpty()) {
+            return ip + ":" + clientId;
+        }
+        return ip;
+    }
+
+    /**
+     * Get client IP address, handling proxies via X-Forwarded-For.
+     */
+    private String getClientIp() {
+        if (request == null) {
+            return "unknown";
+        }
+
+        // Check for forwarded IP (when behind proxy/load balancer)
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isEmpty()) {
+            // X-Forwarded-For can contain multiple IPs; take the first (client IP)
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isEmpty()) {
+            return realIp;
+        }
+
+        return request.remoteAddress() != null ? request.remoteAddress().host() : "unknown";
     }
 
     /**

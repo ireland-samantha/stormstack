@@ -1,24 +1,31 @@
 # Rendering Library
 
-The rendering library (`lightning-engine/rendering-core`) is a custom GUI framework built on LWJGL 3 and NanoVG.
+The rendering library (`lightning/rendering/core`) is a custom GUI framework built on LWJGL 3 and NanoVG.
 
 ## Architecture
 
 ```
-rendering-core/
-├── render2d/              # Component abstractions
-│   ├── Window.java        # Window interface
-│   ├── WindowBuilder.java # Factory for windows
-│   ├── Panel.java         # Container with title bar
-│   ├── Button.java        # Clickable button
-│   ├── Label.java         # Text display
-│   ├── TextField.java     # Text input
-│   ├── TreeView.java      # Hierarchical data display
-│   ├── ListView.java      # Scrollable list
-│   ├── SpriteRenderer.java # Game sprite rendering
-│   └── impl/opengl/       # OpenGL/NanoVG implementations
+lightning/rendering/core/src/main/java/.../rendering/
+├── render2d/                   # Component abstractions
+│   ├── Window.java             # Window interface
+│   ├── WindowBuilder.java      # Factory for windows
+│   ├── Panel.java              # Container with title bar
+│   ├── Button.java             # Clickable button
+│   ├── Label.java              # Text display
+│   ├── TextField.java          # Text input
+│   ├── TreeView.java           # Hierarchical data display
+│   ├── ListView.java           # Scrollable list
+│   ├── SpriteRenderer.java     # Game sprite rendering
+│   ├── ComponentFactory.java   # Factory interface
+│   ├── Colour.java             # Color abstraction
+│   ├── ContextMenu.java        # Right-click menu
+│   └── impl/opengl/            # OpenGL/NanoVG implementations
 │       ├── GLWindow.java
 │       ├── GLButton.java
+│       ├── GLPanel.java
+│       ├── GLTreeView.java
+│       ├── GLComponentFactory.java
+│       ├── NanoVGRenderer.java
 │       └── ...
 ```
 
@@ -118,13 +125,16 @@ window.addComponent(renderer);
 
 ## Headless Testing
 
-The `rendering-test` module provides GPU-free testing:
+The `lightning/rendering/test-framework` module provides GPU-free testing:
 
 ```java
+import ca.samanthaireland.stormstack.lightning.rendering.testing.*;
+import ca.samanthaireland.stormstack.lightning.rendering.testing.headless.*;
+
 HeadlessWindow window = new HeadlessWindow(800, 600);
 HeadlessComponentFactory factory = new HeadlessComponentFactory();
 
-Button button = factory.createButton(10, 10, 100, 30, "Save");
+MockButton button = factory.createButton(10, 10, 100, 30, "Save");
 window.addComponent(button);
 
 GuiDriver driver = GuiDriver.connect(window);
@@ -172,7 +182,7 @@ driver.dumpComponentTree();
 
 ## Debug GUI
 
-The debug GUI (`lightning-engine/gui`) is built on this framework:
+The debug GUI is built on this framework and runs as a native application connecting to Thunder Engine:
 
 | Panel | Features |
 |-------|----------|
@@ -181,3 +191,18 @@ The debug GUI (`lightning-engine/gui`) is built on this framework:
 | **Resource Browser** | Upload textures, preview images, attach to entities |
 | **Module Manager** | View/upload/reload modules, see enabled match counts |
 | **Match Manager** | Create/delete matches, select modules per match |
+
+## Test Framework Components
+
+The `lightning/rendering/test-framework` module provides:
+
+| Class | Purpose |
+|-------|---------|
+| `HeadlessWindow` | Window that runs without GPU |
+| `HeadlessComponentFactory` | Creates mock components |
+| `GuiDriver` | Selenium-style driver for GUI testing |
+| `GuiElement` | Wrapper for interacting with components |
+| `By` | Locator strategies for finding elements |
+| `ExpectedConditions` | Wait conditions for async operations |
+| `Wait` | Fluent wait API |
+| `KeyCodes` | Keyboard constants for simulation |

@@ -5,35 +5,38 @@
 ![Build](https://github.com/ireland-samantha/lightning-engine/actions/workflows/maven.yml/badge.svg)
 
 ## What is this?
-Stormstack is an open-source multiplayer game development framework.
 
-The project is divided into two subprojects: Lightning and Thunder. Lightning is the backend server, and Thunder is the build tool and SDK.
+StormStack is an open-source multiplayer game server framework. Run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules.
 
-## Lightning
-Run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules.
-Autoscale and assign Lightning nodes via its control plane.
+The project has two main components:
+- **Thunder** (Backend): Game engine, authentication service, and cluster control plane
+- **Lightning** (Client Tools): CLI, web admin panel, and rendering engine
 
-## Thunder
-Facilitate smooth game development deployment workflows, integrating with developer toolsets.
+### How It Works
 
-## Stormstack
-With Stormstack, shipping a game looks like:
-1. Designing and implementing Lightning modules, which are .jar files containing your backend game logic.
-2. Calling the Thunder CLI to build your Lightning modules, upload them to the Lightning cluster, and trigger hot-reload.
-3. Deploying matches, posting game commands, and subscibing to state updates from your game frontend.
+1. **Write game modules** - JAR files containing your backend game logic (ECS components, systems, commands)
+2. **Deploy to cluster** - Upload modules to the control plane, distribute to engine nodes
+3. **Create matches** - The control plane routes players to the best available node
+4. **Stream game state** - Clients receive real-time ECS snapshots via WebSocket
 
-## Warning
-Stormstack is an experimental hobby project, not production software. It exists for fun, learning, and the pure joy of over-engineering.
+## Status
 
-It is:
-- experimental
-- unstable
-- aggressively over-engineered
-- powered by Java, hubris, and curiosity
-- built via ~vibe coding~ pair programming (read: tokens go burr while I yell at it for making mistakes) with Claude Code.
+StormStack is an **experimental hobby project**, not production software. It exists for fun, learning, and the pure joy of over-engineering.
 
-If any of this sounds appealing, we are currently looking for fellow travelers
-who enjoy complexity, puzzles, and whacky ideas executed thoughtfully.
+**What works:**
+- Multi-container game execution with ClassLoader isolation
+- Hot-reloadable modules with JWT-based permission scoping
+- Real-time WebSocket snapshot streaming with delta compression
+- OAuth2/OIDC authentication with scope-based authorization
+- Cluster orchestration with autoscaling recommendations
+- Full CLI for cluster management and game operations
+
+**What's experimental:**
+- Performance at scale (tested with hundreds of entities, not millions)
+- Production deployment patterns
+- Multi-region clustering
+
+If you enjoy complexity, puzzles, and well-executed over-engineering, welcome aboard.
 
 ## Key Capabilities
 
@@ -106,9 +109,9 @@ who enjoy complexity, puzzles, and whacky ideas executed thoughtfully.
 
 ---
 
-## 🏁 Quick Start
+## Quick Start
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Docker Compose + Lightning CLI (Recommended)
 
 The full stack includes MongoDB, Redis, Auth service, Control Plane, and the game engine:
 
@@ -128,12 +131,51 @@ This starts:
 - **redis** (port 6379) - Control plane node registry
 - **auth** (port 8082) - Authentication service (JWT, user management)
 - **control-plane** (port 8081) - Cluster management and node orchestration
-- **backend** (port 8080) - Lightning Engine game server API
+- **backend** (port 8080) - Thunder Engine game server API
 
 For a multi-node cluster:
 ```bash
 docker compose --profile cluster up -d
 ```
+
+### Using the Lightning CLI
+
+Build and use the CLI to manage your cluster:
+
+```bash
+# Build the CLI (requires Go 1.24+)
+cd lightning/cli && go build -o lightning ./cmd/lightning && cd ../..
+
+# Configure and authenticate
+./lightning/cli/lightning config set control_plane_url http://localhost:8081
+./lightning/cli/lightning auth login --username admin --password admin
+
+# Check cluster health
+./lightning/cli/lightning cluster status
+
+# Deploy a game match
+./lightning/cli/lightning deploy --modules EntityModule,RigidBodyModule,RenderingModule
+
+# List running matches
+./lightning/cli/lightning match list
+
+# Join a match and get WebSocket credentials
+./lightning/cli/lightning match join node-1-1-1 --player-name "Player1" --player-id "p1"
+
+# Set context for match operations
+./lightning/cli/lightning node context match node-1-1-1
+
+# Start the simulation
+./lightning/cli/lightning node simulation play --interval-ms 16
+
+# Send game commands
+./lightning/cli/lightning command send spawn '{"matchId":1,"playerId":1,"entityType":100}'
+
+# Get game state
+./lightning/cli/lightning snapshot get
+```
+
+See [CLI Quickstart](docs/cli-quickstart.md) for the complete guide.
 
 ### Option 2: Build from Source
 
@@ -274,6 +316,8 @@ mvn verify -Pacceptance-tests               # Integration tests
 
 | Documentation                                  | Description                                    |
 |------------------------------------------------|------------------------------------------------|
+| [CLI Quickstart](docs/cli-quickstart.md)       | Lightning CLI commands and workflows           |
+| [Control Plane](docs/control-plane.md)         | Cluster orchestration and node management      |
 | [Docker](docs/docker.md)                       | Container deployment and configuration         |
 | [Frontend](docs/frontend.md)                   | Web dashboard (React/TypeScript)               |
 | [Game SDK](docs/game-sdk.md)                   | EngineClient, Orchestrator, GameRenderer       |
@@ -288,9 +332,11 @@ mvn verify -Pacceptance-tests               # Integration tests
 
 ## Next Steps
 
-- [Game SDK](docs/game-sdk.md) - Build games with the client library
-- [Architecture](docs/architecture.md) - Read the architecture docs
-- [Module System](docs/module-system.md) - Create custom modules
+- [CLI Quickstart](docs/cli-quickstart.md) - Deploy your first game with the CLI
+- [Control Plane](docs/control-plane.md) - Manage multi-node clusters
+- [Module System](docs/module-system.md) - Create custom game modules
+- [Game SDK](docs/game-sdk.md) - Build games with the Java client library
+- [Architecture](docs/architecture.md) - Understand the system design
 - [API Reference](docs/api-reference.md) - Full REST API documentation
 
 ## Project Goals

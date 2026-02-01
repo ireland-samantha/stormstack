@@ -7,20 +7,19 @@ This guide documents how to add a new Quarkus-based microservice to the StormSta
 StormStack Thunder follows a **two-module pattern** for services:
 
 ```
-thunder-<service>-core/      # Pure domain (NO framework dependencies)
-├── model/                     # Domain models, value objects
-├── repository/                # Repository interfaces
-├── service/                   # Service interfaces + implementations
-├── config/                    # Configuration interfaces
-└── exception/                 # Domain exceptions
+thunder/<service>/core/        # Pure domain (NO framework dependencies)
+├── model/                       # Domain models, value objects
+├── repository/                  # Repository interfaces
+├── service/                     # Service interfaces + implementations
+├── config/                      # Configuration interfaces
+└── exception/                   # Domain exceptions
 
-thunder-<service>/           # Quarkus provider (framework integration)
-└── provider/
-    ├── config/                # QuarkusConfig classes + ServiceProducer
-    ├── http/                  # REST resources
-    ├── persistence/           # MongoDB/Redis implementations
-    ├── dto/                   # HTTP request/response DTOs
-    └── startup/               # Bootstrap logic
+thunder/<service>/provider/    # Quarkus provider (framework integration)
+├── config/                    # QuarkusConfig classes + ServiceProducer
+├── http/                      # REST resources
+├── persistence/               # MongoDB/Redis implementations
+├── dto/                       # HTTP request/response DTOs
+└── startup/                   # Bootstrap logic
 ```
 
 This separation ensures:
@@ -750,11 +749,16 @@ Before declaring the service complete:
 For reference implementations, see:
 
 - **thunder-auth**: JWT authentication, user management, role-based access
-  - Core: `thunder-auth-core/`
-  - Provider: `thunder-auth/`
+  - Core: `thunder/auth/core/`
+  - Provider: `thunder/auth/provider/`
   - Port: 8082
 
 - **thunder-control-plane**: Cluster management, node registry, autoscaling
-  - Core: `thunder-control-plane-core/`
-  - Provider: `thunder-control-plane/`
+  - Core: `thunder/control-plane/core/`
+  - Provider: `thunder/control-plane/provider/`
   - Port: 8081
+
+- **thunder-engine**: Game server with ECS, containers, matches
+  - Core: `thunder/engine/core/`
+  - Provider: `thunder/engine/provider/`
+  - Port: 8080

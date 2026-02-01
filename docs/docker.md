@@ -1,156 +1,279 @@
-# Docker
+# Docker & Deployment
 
-## Quick Start (Docker Hub)
+## Quick Start
 
-The easiest way to run Lightning Engine is using the published Docker image:
+The full StormStack platform runs as multiple Docker services:
 
 ```bash
-export ADMIN_INITIAL_PASSWORD=your-secure-password
-export AUTH_JWT_SECRET=your-jwt-secret-at-least-32-chars
+# Clone and configure
+git clone https://github.com/ireland-samantha/lightning-engine.git
+cd lightning-engine
+
+# Copy environment template and configure secrets
+cp .env.example .env
+# Edit .env to set AUTH_JWT_SECRET and ADMIN_INITIAL_PASSWORD
+
+# Start the platform
 docker compose up -d
 ```
 
-This pulls `samanthacireland/lightning-engine:0.0.2` from Docker Hub.
+This starts:
+
+| Service | Port | Image | Purpose |
+|---------|------|-------|---------|
+| **mongodb** | 27017 | `mongo:6` | Shared database |
+| **redis** | 6379 | `redis:7` | Control plane state |
+| **auth** | 8082 | `samanthacireland/thunder-auth` | Authentication service |
+| **control-plane** | 8081 | `samanthacireland/thunder-control-plane` | Cluster orchestration |
+| **backend** | 8080 | `samanthacireland/thunder-engine` | Game server |
+
+## Multi-Node Cluster
+
+For a multi-node cluster with multiple engine instances:
+
+```bash
+docker compose --profile cluster up -d
+```
+
+This adds additional engine nodes (node-2, node-3) that register with the control plane.
 
 ## Build from Source
 
-### Option 1: Maven Profile (Recommended)
-
-Build the Docker image as part of the Maven build:
+### Using build.sh (Recommended)
 
 ```bash
-# Full build with Docker image
-./mvnw clean install -Pdocker
+# Build all modules
+./build.sh build
 
-# Or just build the Docker image (after a regular build)
-./mvnw install -Pdocker -pl lightning-engine/webservice/quarkus-web-api
+# Build Docker images
+./build.sh docker
+
+# Full pipeline (build + test + Docker)
+./build.sh all
 ```
 
-### Option 2: Manual Docker Build
+### Manual Maven Build
 
 ```bash
-# Full build (compiles from source inside container)
-docker build -t samanthacireland/lightning-engine:0.0.2 .
+# Build all modules
+mvn clean install -DskipTests
 
-# Or use pre-built JARs (faster, requires local mvn package first)
-./mvnw package -DskipTests
-docker build -f Dockerfile.prebuilt -t samanthacireland/lightning-engine:0.0.2 .
+# Build Docker images with jib
+mvn package -Pdocker -DskipTests
 ```
 
-### Running Playwright Tests
+## Docker Images
 
-The Playwright E2E tests require the Docker image. Build it before running tests:
+| Image | Base | Size | Purpose |
+|-------|------|------|---------|
+| `samanthacireland/thunder-engine` | Eclipse Temurin 25 | ~300MB | Game server |
+| `samanthacireland/thunder-auth` | Eclipse Temurin 25 | ~200MB | Auth service |
+| `samanthacireland/thunder-control-plane` | Eclipse Temurin 25 | ~200MB | Control plane |
 
-```bash
-# Build with Docker
-./mvnw clean install -Pdocker
+## Environment Variables
 
-# Run Playwright tests
-./mvnw verify -pl lightning-engine/webservice/playwright-test -Pacceptance-tests
-```
+### Required (Production)
 
-## Run with Docker Compose
+| Variable | Description |
+|----------|-------------|
+| `AUTH_JWT_SECRET` | JWT signing secret (32+ characters). **Never deploy without this.** |
+| `ADMIN_INITIAL_PASSWORD` | Initial admin password |
+| `CORS_ALLOWED_ORIGINS` | Allowed CORS origins (e.g., `https://yourdomain.com`) |
 
-```bash
-# Start backend only
-docker compose up -d
-
-# Start with pre-built image
-docker compose --profile prebuilt up -d backend-prebuilt
-
-# View logs
-docker compose logs -f backend
-
-# Stop
-docker compose down
-```
-
-## Container Details
-
-| Image | Size | Contents |
-|-------|------|----------|
-| `samanthacireland/lightning-engine:0.0.2` | ~300MB | Quarkus app, modules JAR |
-| `eclipse-temurin:25-jre-alpine` | Base runtime |
-| `mongo:7` | MongoDB for snapshot persistence |
-
-**Exposed Ports:**
-- `8080` - REST API and WebSocket
-- `27017` - MongoDB (optional, for external access)
-
-**Health Check:** `GET /api/health` (30s interval)
-
-**Environment Variables:**
+### Thunder Auth Configuration
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `JAVA_OPTS` | `-Dquarkus.http.host=0.0.0.0` | JVM arguments |
+| `JWT_ISSUER` | `https://stormstack.io` | JWT issuer claim |
+| `SESSION_EXPIRY_HOURS` | `24` | Session token lifetime |
+| `BCRYPT_COST` | `12` | Password hashing cost factor |
+| `OAUTH2_SERVICE_TOKEN_LIFETIME` | `900` | Service token lifetime (seconds) |
+| `OAUTH2_REFRESH_TOKEN_LIFETIME` | `604800` | Refresh token lifetime (seconds) |
+| `RATE_LIMIT_ENABLED` | `true` | Enable login rate limiting |
+| `RATE_LIMIT_MAX_ATTEMPTS` | `10` | Max login attempts per window |
+| `OAUTH2_CONTROL_PLANE_SECRET` | - | Control plane OAuth2 client secret |
+| `OAUTH2_GAME_SERVER_SECRET` | - | Game server OAuth2 client secret |
+
+### Thunder Engine Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTH_ENABLED` | `true` | Enable authentication |
+| `AUTH_SERVICE_URL` | `http://auth:8082` | Auth service URL |
+| `SNAPSHOT_PERSISTENCE_ENABLED` | `false` | Enable MongoDB snapshot persistence |
+| `SNAPSHOT_PERSISTENCE_DATABASE` | `stormstack` | Snapshot database name |
+| `SNAPSHOT_PERSISTENCE_TICK_INTERVAL` | `60` | Ticks between persisted snapshots |
+| `CONTROL_PLANE_NODE_ID` | `node-1` | Node identifier for control plane |
+| `CONTROL_PLANE_ADVERTISE_ADDRESS` | - | URL for control plane registration |
+| `MAX_CONTAINERS` | `100` | Max containers per node |
+| `HEARTBEAT_INTERVAL_SECONDS` | `10` | Control plane heartbeat interval |
+
+### Thunder Control Plane Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REDIS_HOSTS` | `redis://localhost:6379` | Redis connection string |
+| `NODE_TTL_SECONDS` | `30` | Node registration TTL |
+| `CONTROL_PLANE_TOKEN` | - | Node authentication token |
+| `CONTROL_PLANE_REQUIRE_AUTH` | `true` | Require node authentication |
+| `JWT_AUTH_ENABLED` | `true` | Enable JWT auth for admin endpoints |
+| `AUTOSCALER_ENABLED` | `true` | Enable autoscaling |
+| `AUTOSCALER_SCALE_UP_THRESHOLD` | `0.8` | Scale up at 80% saturation |
+| `AUTOSCALER_SCALE_DOWN_THRESHOLD` | `0.3` | Scale down at 30% saturation |
+| `AUTOSCALER_MIN_NODES` | `1` | Minimum node count |
+| `AUTOSCALER_MAX_NODES` | `100` | Maximum node count |
+| `AUTOSCALER_COOLDOWN_SECONDS` | `300` | Cooldown between scaling actions |
+
+### JVM Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `JAVA_OPTS` | `-Xms128m -Xmx256m` | JVM memory settings (auth/control-plane) |
+| `JAVA_OPTS` | `-Xms1g -Xmx1536m` | JVM memory settings (engine) |
 | `QUARKUS_LOG_LEVEL` | `INFO` | Log verbosity |
-| `QUARKUS_MONGODB_CONNECTION_STRING` | `mongodb://mongodb:27017` | MongoDB connection |
-| `SNAPSHOT_PERSISTENCE_ENABLED` | `true` | Enable snapshot history |
-| `SNAPSHOT_PERSISTENCE_DATABASE` | `lightningfirefly` | MongoDB database name |
-| `SNAPSHOT_PERSISTENCE_COLLECTION` | `snapshots` | MongoDB collection name |
-| `SNAPSHOT_PERSISTENCE_TICK_INTERVAL` | `1` | Persist every N ticks |
 
-**Security Environment Variables:**
+## Docker Compose Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `ADMIN_INITIAL_PASSWORD` | (random) | Initial admin user password. **Required in production.** If not set, a secure random password is generated and logged. |
-| `AUTH_JWT_SECRET` | (required) | JWT signing secret. **Required.** Use a long random string (32+ characters). |
-| `CORS_ORIGINS` | (none) | Allowed CORS origins. **Required in production.** Example: `https://yourdomain.com` |
-
-> ⚠️ **Security Warning:** In production, always set `ADMIN_INITIAL_PASSWORD`, `AUTH_JWT_SECRET`, and `CORS_ORIGINS`. Never use wildcard (`*`) for CORS in production.
-
-## MongoDB Persistence
-
-The docker-compose setup includes MongoDB for snapshot history:
+### Single Node (Development)
 
 ```yaml
+version: '3.8'
 services:
   mongodb:
-    image: mongo:7
-    container_name: lightning-mongodb
+    image: mongo:6
     ports:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  auth:
+    image: samanthacireland/thunder-auth:0.0.3-SNAPSHOT
+    ports:
+      - "8082:8082"
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017
+      - JWT_SECRET=${AUTH_JWT_SECRET}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
+    depends_on:
+      - mongodb
+
+  control-plane:
+    image: samanthacireland/thunder-control-plane:0.0.3-SNAPSHOT
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=redis://redis:6379
+      - AUTH_SERVICE_URL=http://auth:8082
+      - CONTROL_PLANE_TOKEN=${CONTROL_PLANE_TOKEN:-dev-token}
+    depends_on:
+      - redis
+      - auth
 
   backend:
-    depends_on:
-      mongodb:
-        condition: service_healthy
+    image: samanthacireland/thunder-engine:0.0.3-SNAPSHOT
+    ports:
+      - "8080:8080"
     environment:
-      - QUARKUS_MONGODB_CONNECTION_STRING=mongodb://mongodb:27017
-      - SNAPSHOT_PERSISTENCE_ENABLED=true
+      - MONGODB_URI=mongodb://mongodb:27017
+      - AUTH_SERVICE_URL=http://auth:8082
+      - CONTROL_PLANE_URL=http://control-plane:8081
+      - CONTROL_PLANE_TOKEN=${CONTROL_PLANE_TOKEN:-dev-token}
+      - CONTROL_PLANE_NODE_ID=node-1
+      - CONTROL_PLANE_ADVERTISE_ADDRESS=http://backend:8080
+    depends_on:
+      - mongodb
+      - auth
+      - control-plane
+
+volumes:
+  mongodb-data:
 ```
 
-To disable MongoDB persistence:
+### Multi-Node Cluster
 
-```bash
-SNAPSHOT_PERSISTENCE_ENABLED=false docker compose up -d
+Add the `cluster` profile to start multiple engine nodes:
+
+```yaml
+  node-2:
+    profiles: [cluster]
+    image: samanthacireland/thunder-engine:0.0.3-SNAPSHOT
+    environment:
+      - CONTROL_PLANE_NODE_ID=node-2
+      - CONTROL_PLANE_ADVERTISE_ADDRESS=http://node-2:8080
+      # ... other env vars
+
+  node-3:
+    profiles: [cluster]
+    image: samanthacireland/thunder-engine:0.0.3-SNAPSHOT
+    environment:
+      - CONTROL_PLANE_NODE_ID=node-3
+      - CONTROL_PLANE_ADVERTISE_ADDRESS=http://node-3:8080
+      # ... other env vars
 ```
 
-## Production Deployment
+## Health Checks
 
-For production deployments, ensure you configure the required security environment variables:
+Each service exposes health endpoints:
 
-```bash
-# Required security configuration
-export ADMIN_INITIAL_PASSWORD="your-secure-admin-password"
-export AUTH_JWT_SECRET="your-long-random-jwt-secret-32-chars-minimum"
-export CORS_ORIGINS="https://yourdomain.com"
+| Service | Endpoint | Response |
+|---------|----------|----------|
+| Thunder Engine | `GET /api/health` | `{"status":"UP"}` |
+| Thunder Auth | `GET /q/health` | Quarkus health |
+| Thunder Control Plane | `GET /q/health` | Quarkus health |
 
-# Start with production profile
-QUARKUS_PROFILE=prod docker compose up -d
-```
+## Accessing the Admin Dashboard
 
-### Security Checklist
+After starting Docker Compose:
 
-- [ ] Set `ADMIN_INITIAL_PASSWORD` to a strong, unique password
+1. Open `http://localhost:8080/admin/dashboard`
+2. Login with:
+   - Username: `admin`
+   - Password: Value of `ADMIN_INITIAL_PASSWORD`
+
+## Production Deployment Checklist
+
 - [ ] Set `AUTH_JWT_SECRET` to a long random string (32+ characters)
-- [ ] Set `CORS_ORIGINS` to your specific domain(s) - never use `*`
-- [ ] Change the admin password after first login
-- [ ] Use HTTPS in production (configure a reverse proxy)
-- [ ] Review MongoDB access controls if exposed externally
+- [ ] Set `ADMIN_INITIAL_PASSWORD` to a strong password
+- [ ] Set `CORS_ALLOWED_ORIGINS` to your specific domain(s) - never use `*`
+- [ ] Set `OAUTH2_CONTROL_PLANE_SECRET` for service-to-service auth
+- [ ] Configure external MongoDB with authentication
+- [ ] Configure external Redis with authentication
+- [ ] Set up HTTPS via reverse proxy (nginx, Traefik, etc.)
+- [ ] Configure proper JVM memory limits for your workload
+- [ ] Set `QUARKUS_PROFILE=prod` for production optimizations
+- [ ] Review and configure autoscaler thresholds
+
+## Troubleshooting
+
+### Services not starting
+
+Check logs for each service:
+
+```bash
+docker compose logs auth
+docker compose logs control-plane
+docker compose logs backend
+```
+
+### Node not registering with Control Plane
+
+1. Verify `CONTROL_PLANE_URL` is reachable from the engine container
+2. Verify `CONTROL_PLANE_TOKEN` matches on both sides
+3. Check control-plane logs for registration attempts
+
+### Authentication failures
+
+1. Verify `AUTH_SERVICE_URL` is correct
+2. Check auth service logs for errors
+3. Verify JWT secrets match across services
+
+### MongoDB connection issues
+
+1. Verify MongoDB is healthy: `docker compose ps`
+2. Check connection string: `MONGODB_URI`
+3. Verify network connectivity between containers

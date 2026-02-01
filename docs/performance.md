@@ -58,7 +58,7 @@ mvn clean install -Pdocker -DskipTests
 docker build -t lightning-backend .
 
 # Run performance test
-mvn test -pl lightning-engine/api-acceptance-test \
+mvn test -pl thunder/engine/tests/api-acceptance \
     -Dtest=PhysicsPerformanceIT \
-    -Pacceptance-tests
+    -DskipTests=false
 ```

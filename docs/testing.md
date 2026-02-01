@@ -4,14 +4,16 @@
 
 | Module | Tests | Type |
 |--------|-------|------|
-| `quarkus-web-api` | 188 | REST API, WebSocket, security tests |
-| `auth` | 97 | Authentication, authorization, roles |
-| `gui` | 179 | Headless component/panel tests |
-| `api-acceptance-test` | ~15 | REST API with Testcontainers |
-| `gui-acceptance-test` | ~20 | E2E GUI + Docker backend |
-| `engine-internal` | ~50 | ECS store, query cache |
+| `thunder/engine/core` | 140+ | ECS store, game loop, snapshots, commands |
+| `thunder/engine/provider` | 100+ | REST API, WebSocket, security tests |
+| `thunder/auth/core` | 50+ | Authentication, authorization, token handlers |
+| `thunder/auth/provider` | 30+ | REST endpoints, rate limiting |
+| `thunder/control-plane/core` | 40+ | Scheduler, autoscaler, node registry |
+| `lightning/webpanel` | 24 | React component tests with MSW |
+| `thunder/engine/tests/api-acceptance` | ~15 | REST API with Testcontainers |
+| `thunder/engine/tests/playwright` | ~20 | E2E browser tests |
 
-31 additional tests require display and are skipped in CI.
+Tests requiring GPU/display are skipped in CI.
 
 ## Security Test Coverage
 
@@ -26,16 +28,27 @@ The `EndpointSecurityTest` class provides comprehensive RBAC coverage:
 
 ```bash
 # All unit tests (fast, no Docker)
-./mvnw test
+./build.sh test
+# Or directly:
+mvn test
 
 # Specific module
-./mvnw test -pl lightning-engine/gui
+mvn test -pl thunder/engine/core
+mvn test -pl thunder/auth/core
 
-# Acceptance tests (requires Docker)
-./mvnw verify -pl lightning-engine/api-acceptance-test
+# Integration tests with Testcontainers (requires Docker)
+./build.sh integration-test
+# Or directly:
+mvn verify -pl thunder/engine/tests/api-acceptance
 
-# macOS: GLFW requires main thread
-JAVA_TOOL_OPTIONS="-XstartOnFirstThread" ./mvnw test
+# Frontend tests
+cd lightning/webpanel && npm run test
+
+# E2E tests with Playwright
+mvn verify -pl thunder/engine/tests/playwright
+
+# macOS: GLFW requires main thread for GUI tests
+JAVA_TOOL_OPTIONS="-XstartOnFirstThread" mvn test -pl lightning/rendering/core
 ```
 
 ## Headless GUI Testing

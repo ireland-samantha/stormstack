@@ -79,16 +79,23 @@ public class HealthModule implements EngineModule {
 ## Deploying a Module
 
 ```bash
-# 1. Add engine-core dependency (provided scope)
+# 1. Add thunder-engine-core dependency (provided scope)
 # 2. Build JAR
 mvn clean package
 
-# 3. Upload to running server
+# 3. Get auth token
+TOKEN=$(curl -s -X POST http://localhost:8081/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"username":"admin","password":"admin"}' | jq -r '.token')
+
+# 4. Upload to running server (container-scoped)
 curl -X POST http://localhost:8080/api/modules/upload \
+  -H "Authorization: Bearer $TOKEN" \
   -F "file=@target/my-module.jar"
 
-# 4. Trigger reload
-curl -X POST http://localhost:8080/api/modules/reload
+# 5. Trigger reload
+curl -X POST http://localhost:8080/api/modules/reload \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ## ModuleContext API
@@ -308,27 +315,41 @@ public class EntityModuleFactory implements ModuleFactory {
 
 ## Reference Implementations
 
-- **Simple:** `MoveModuleFactory` (223 lines) - Position/velocity, movement system
-- **Medium:** `SpawnModuleFactory` (271 lines) - Entity creation, module flag attachment
-- **Complex:** `CheckersModuleFactory` (668 lines) - Full game with multi-jump validation
+Examine these modules in `thunder/engine/extensions/modules/`:
+
+- **Simple:** `MoveModuleFactory` - Position/velocity, movement system
+- **Components:** `EntityModuleFactory` - Core entity components (ENTITY_TYPE, MATCH_ID)
+- **Physics:** `PhysicsModuleFactory` - Rigid body physics integration
+- **Game Logic:** `HealthModuleFactory` - HP tracking, damage handling
 
 ## Maven Structure
 
 Each module is a separate Maven submodule:
 
 ```
-lightning-engine-extensions/modules/
+thunder/engine/extensions/modules/
 ├── pom.xml (parent)
 ├── entity-module/
 │   ├── pom.xml
 │   └── src/main/java/.../EntityModuleFactory.java
+├── move-module/
+│   ├── pom.xml
+│   └── src/main/java/.../MoveModuleFactory.java
+├── physics-module/
+│   ├── pom.xml
+│   └── src/main/java/.../PhysicsModuleFactory.java
 ├── health-module/
 │   ├── pom.xml
 │   └── src/main/java/.../HealthModuleFactory.java
-└── ...
+├── rendering-module/
+│   ├── pom.xml
+│   └── src/main/java/.../RenderingModuleFactory.java
+├── box-collider-module/
+├── items-module/
+└── projectile-module/
 ```
 
 Each module depends only on:
-- `engine` (core interfaces)
-- `utils` (ID generation, etc.)
-- `entity-module` (shared position components)
+- `thunder-engine-core` (core interfaces, provided scope)
+- `thunder-shared` (ID generation, etc.)
+- `entity-module` (shared position components, if needed)

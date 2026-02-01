@@ -46,12 +46,13 @@ These packages are always loaded from the parent (shared across all containers):
 
 | Package | Reason |
 |---------|--------|
-| `ca.samanthaireland.engine.core` | Engine API interfaces |
-| `ca.samanthaireland.engine.ext.module` | Module SPI |
-| `ca.samanthaireland.engine.ext.ai` | AI SPI |
+| `ca.samanthaireland.stormstack.thunder.engine.core` | Engine API interfaces |
+| `ca.samanthaireland.stormstack.thunder.engine.ext` | Module and AI SPI |
 | `java.`, `javax.`, `jakarta.` | JDK classes |
-| `org.slf4j`, `ch.qos.logback` | Logging |
+| `org.slf4j`, `ch.qos.logback` | Logging framework |
 | `lombok` | Compile-time annotations |
+
+The parent-first packages are defined in `ContainerClassLoader.java` (lines 53-65).
 
 ### Child-First (Module Classes)
 

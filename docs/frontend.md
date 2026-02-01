@@ -1,11 +1,11 @@
 # Frontend (Web Dashboard)
 
-The web dashboard is a React TypeScript application built with Vite, Material UI, and RTK Query.
+The Lightning Web Panel is a React TypeScript application built with Vite, Material UI, and RTK Query. It provides a comprehensive admin interface for managing Thunder Engine clusters.
 
 ## Location
 
 ```
-lightning-engine/webservice/quarkus-web-api/src/main/frontend/
+lightning/webpanel/
 ```
 
 ## Tech Stack
@@ -30,7 +30,7 @@ lightning-engine/webservice/quarkus-web-api/src/main/frontend/
 ### Install Dependencies
 
 ```bash
-cd lightning-engine/webservice/quarkus-web-api/src/main/frontend
+cd lightning/webpanel
 npm install
 ```
 
@@ -42,12 +42,14 @@ npm run dev
 
 Opens at http://localhost:5173 with hot module replacement (HMR).
 
-**Note:** The dev server proxies API requests to http://localhost:8080. Start the backend first:
+**Note:** The dev server proxies API requests to the backend services. Start the cluster first:
 
 ```bash
 # From project root
-./mvnw quarkus:dev -pl lightning-engine/webservice/quarkus-web-api
+docker compose up -d
 ```
+
+Or run services individually with `mvn quarkus:dev`.
 
 ### Build for Production
 
@@ -75,60 +77,93 @@ npm run test:coverage
 ```
 src/
 ├── main.tsx              # Application entry point
-├── App.tsx               # Root component with routing
-├── components/           # UI components
-│   ├── AIPanel.tsx       # AI management
-│   ├── CommandForm.tsx   # Command queue interface
+├── App.tsx               # Root component with routing and layout
+├── theme.ts              # Material UI theme configuration
+├── components/           # UI components (40+)
+│   ├── Login.tsx         # JWT authentication form
 │   ├── ContainerDashboard.tsx  # Container lifecycle controls
-│   ├── ContainersPanel.tsx     # Container list
-│   ├── HistoryPanel.tsx  # MongoDB snapshot history
-│   ├── Login.tsx         # Authentication form
-│   ├── MatchesPanel.tsx  # Match management
-│   ├── ModulesPanel.tsx  # Module listing
-│   ├── ResourcesPanel.tsx    # Resource management
-│   ├── RolesPanel.tsx    # Role management (admin)
-│   ├── SessionsPanel.tsx # Player sessions
-│   ├── SimulationControls.tsx  # Tick/play/stop controls
-│   ├── SnapshotPanel.tsx # Live snapshot viewer
-│   └── UsersPanel.tsx    # User management (admin)
-├── contexts/
-│   └── ContainerContext.tsx  # Selected container state
+│   ├── SnapshotPanel.tsx       # Live WebSocket snapshot viewer
+│   ├── CommandsPanel.tsx       # REST + WebSocket command submission
+│   ├── MatchesPanel.tsx        # Match CRUD
+│   ├── PlayersPanel.tsx        # Player management
+│   ├── SessionsPanel.tsx       # Session lifecycle
+│   ├── HistoryPanel.tsx        # Snapshot history browser
+│   ├── ModulesPanel.tsx        # Hot-reload module management
+│   ├── AIPanel.tsx             # AI backend management
+│   ├── ResourcesPanel.tsx      # Game asset management
+│   ├── UsersPanel.tsx          # User CRUD (admin)
+│   ├── RolesPanel.tsx          # Role hierarchy management
+│   ├── ApiTokensPanel.tsx      # API token generation
+│   ├── ClusterOverviewPanel.tsx    # Cluster health
+│   ├── ClusterNodesPanel.tsx       # Node management
+│   ├── ClusterMatchesPanel.tsx     # Cluster-wide matches
+│   ├── ClusterModulesPanel.tsx     # Module distribution
+│   ├── DeploymentsPanel.tsx        # Match deployment
+│   ├── AutoscalerPanel.tsx         # Autoscaling recommendations
+│   ├── CommandForm.tsx             # Dynamic command form
+│   ├── SimulationControls.tsx      # Tick/play/stop controls
+│   └── NotificationProvider.tsx    # Global toast notifications
+├── services/
+│   ├── api.ts            # TypeScript API type definitions
+│   ├── websocket.ts      # Snapshot WebSocket client
+│   └── commandWebSocket.ts   # Command WebSocket client
+├── hooks/
+│   ├── useSnapshot.ts         # Snapshot WebSocket hook
+│   ├── useCommandWebSocket.ts # Command WebSocket hook
+│   └── useContainerErrors.ts  # Error stream hook
 ├── store/
 │   ├── store.ts          # Redux store configuration
-│   └── apiSlice.ts       # RTK Query API definitions
+│   ├── hooks.ts          # Typed Redux hooks
+│   ├── api/
+│   │   └── apiSlice.ts   # RTK Query API (82+ endpoints)
+│   └── slices/
+│       ├── authSlice.ts      # Authentication state
+│       ├── uiSlice.ts        # UI navigation state
+│       └── notificationSlice.ts  # Notification queue
+├── contexts/
+│   └── ContainerContext.tsx  # Container-scoped state
 └── test/
-    └── testUtils.tsx     # Test utilities and providers
+    ├── setup.ts          # Vitest + MSW setup
+    ├── testUtils.tsx     # Render helpers
+    └── mocks/
+        ├── handlers.ts   # MSW request handlers (40+ routes)
+        └── server.ts     # MSW server instance
 ```
 
 ## Key Components
 
-### ContainerDashboard
+### Engine Panels (Local Container Management)
 
-Main dashboard showing container lifecycle controls:
-- Create/delete containers
-- Start/stop/pause/resume containers
-- Tick controls (step, play, stop)
+| Component | Purpose |
+|-----------|---------|
+| **ContainerDashboard** | Container lifecycle (create, start, stop, pause, resume), stats, tick control |
+| **SnapshotPanel** | Live WebSocket snapshot streaming, module/component tree view |
+| **CommandsPanel** | Dual-mode command submission (REST + WebSocket), dynamic forms |
+| **MatchesPanel** | Match CRUD within a container |
+| **PlayersPanel** | Player creation and management |
+| **SessionsPanel** | Session lifecycle (connect, disconnect, reconnect, abandon) |
+| **HistoryPanel** | Snapshot history browser, tick-range queries |
+| **ModulesPanel** | Module listing, hot-reload trigger |
 
-### SnapshotPanel
+### Control Plane Panels (Cluster Management)
 
-Real-time snapshot viewer:
-- WebSocket connection to container/match
-- Tree view of ECS data by module/component
-- Auto-refresh on tick updates
+| Component | Purpose |
+|-----------|---------|
+| **ClusterOverviewPanel** | Cluster health, node count, capacity |
+| **ClusterNodesPanel** | Node list, drain, deregister |
+| **ClusterMatchesPanel** | Cluster-wide match lifecycle |
+| **ClusterModulesPanel** | Module registry, version tracking, distribution |
+| **DeploymentsPanel** | Deploy matches to cluster |
+| **AutoscalerPanel** | Scaling recommendations, acknowledgment |
 
-### CommandForm
+### Auth Panels (Identity Management)
 
-Send commands to the game engine:
-- Dropdown of available commands
-- Dynamic form based on command schema
-- JSON preview before send
-
-### Login
-
-JWT authentication:
-- Username/password login
-- Token stored in localStorage
-- Role-based UI visibility
+| Component | Purpose |
+|-----------|---------|
+| **Login** | JWT authentication form |
+| **UsersPanel** | User CRUD, role assignment, password reset |
+| **RolesPanel** | Role creation, scope assignment, hierarchy |
+| **ApiTokensPanel** | API token generation, revocation |
 
 ## API Integration
 
@@ -185,20 +220,20 @@ test('renders panel', () => {
 
 ## Maven Integration
 
-The frontend is built as part of the Quarkus module:
+The frontend is built as part of the Thunder Engine provider module:
 
 ```bash
-# Build backend + frontend
-./mvnw package -pl lightning-engine/webservice/quarkus-web-api
+# Build everything including frontend
+./build.sh build
 
-# Skip frontend build
-./mvnw package -pl lightning-engine/webservice/quarkus-web-api -Dskip.npm
+# Build just the webpanel
+cd lightning/webpanel && npm run build
 ```
 
 The build process:
 1. `npm install` - Install dependencies
 2. `npm run build` - Build production bundle
-3. Copy `dist/` to `target/classes/META-INF/resources/`
+3. Copy output to `../resources/META-INF/resources/admin/dashboard/` (served by Quarkus)
 
 ## Environment Variables
 

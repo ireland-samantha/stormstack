@@ -125,6 +125,9 @@ public class ModuleResource {
                     .build();
         }
 
+        // SECURITY: Sanitize filename to prevent path traversal (defense-in-depth)
+        String sanitizedFileName = sanitizeFileName(fileName);
+
         try {
             // Get the uploaded file path
             java.nio.file.Path uploadedPath = file.uploadedFile();
@@ -139,7 +142,7 @@ public class ModuleResource {
             // Clean up temp file
             Files.deleteIfExists(tempJar);
 
-            log.info("Successfully uploaded module: {}", fileName);
+            log.info("Successfully uploaded module: {}", sanitizedFileName);
 
             // Return the list of newly available modules
             return Response.status(Response.Status.CREATED)
@@ -147,9 +150,10 @@ public class ModuleResource {
                     .build();
 
         } catch (IOException e) {
-            log.error("Failed to upload module: {}", fileName, e);
+            log.error("Failed to upload module: {}", sanitizedFileName, e);
+            // SECURITY: Don't expose internal error details to client
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Failed to upload module: " + e.getMessage() + "\"}")
+                    .entity("{\"error\":\"Failed to upload module\"}")
                     .build();
         }
     }
@@ -195,8 +199,9 @@ public class ModuleResource {
             return Response.ok(getAllModules()).build();
         } catch (IOException e) {
             log.error("Failed to reload modules", e);
+            // SECURITY: Don't expose internal error details to client
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Failed to reload modules: " + e.getMessage() + "\"}")
+                    .entity("{\"error\":\"Failed to reload modules\"}")
                     .build();
         }
     }
@@ -235,5 +240,19 @@ public class ModuleResource {
 
         return match.enabledModules().stream()
                 .anyMatch(m -> m.equals(targetModule.getName()));
+    }
+
+    /**
+     * Sanitize filename to prevent path traversal attacks.
+     * Removes path separators and keeps only alphanumeric, dash, underscore, and dot.
+     */
+    private String sanitizeFileName(String fileName) {
+        if (fileName == null) {
+            return "unknown.jar";
+        }
+        // Remove any path components
+        String name = fileName.replace("/", "").replace("\\", "").replace("..", "");
+        // Keep only safe characters
+        return name.replaceAll("[^a-zA-Z0-9._-]", "_");
     }
 }

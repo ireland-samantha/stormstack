@@ -2,201 +2,226 @@
 
 ## System Overview
 
+StormStack is a distributed game server platform with three core services:
+
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                         Clients                              │
-│    (Debug GUI / Web Dashboard / Game Client / Tests)         │
-└─────────────────┬───────────────────────┬───────────────────┘
-                  │ REST + JWT            │ WebSocket + Delta
-                  ▼                       ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Quarkus Web API                           │
-│ /api/auth  /api/containers  /api/containers/{id}/matches ... │
-│ ┌─────────────────────────────────────────────────────────┐ │
-│ │              JWT Authentication (SmallRye JWT)           │ │
-│ │     • Dynamic RBAC: admin, command_manager, view_only   │ │
-│ │     • Role hierarchy with includes                      │ │
-│ └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────┬───────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Container Manager                         │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │              Execution Container 1                      │ │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │ │
-│  │  │ ClassLoader  │  │  Game Loop   │  │ Command Queue│  │ │
-│  │  │  (isolated)  │  │  (own thread)│  │              │  │ │
-│  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  │ │
-│  │         │                 │                  │          │ │
-│  │         ▼                 ▼                  ▼          │ │
-│  │  ┌──────────────────────────────────────────────────┐  │ │
-│  │  │     EntityComponentStore (container-scoped)      │  │ │
-│  │  └──────────────────────────────────────────────────┘  │ │
-│  │  Matches: [1, 2, 3]  Status: RUNNING                   │ │
-│  └────────────────────────────────────────────────────────┘ │
-│  ┌────────────────────────────────────────────────────────┐ │
-│  │              Execution Container 2                      │ │
-│  │  ... (independent ClassLoader, GameLoop, Store)        │ │
-│  │  Matches: [4, 5]  Status: PAUSED                       │ │
-│  └────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    MongoDB (Optional)                        │
-│         Time-series collection for snapshot history          │
-└─────────────────────────────────────────────────────────────┘
+                                    ┌─────────────────────────────────────┐
+                                    │           Game Clients              │
+                                    │  (Web Panel / Game Client / CLI)    │
+                                    └──────────────┬──────────────────────┘
+                                                   │
+                              ┌────────────────────┼────────────────────┐
+                              │                    │                    │
+                              ▼                    ▼                    ▼
+                    ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+                    │  Thunder Auth   │  │ Thunder Control │  │ Thunder Engine  │
+                    │   (port 8082)   │  │     Plane       │  │   (port 8080)   │
+                    │                 │  │   (port 8081)   │  │                 │
+                    │  • OAuth2/OIDC  │  │                 │  │  • Containers   │
+                    │  • JWT tokens   │  │  • Node registry│  │  • ECS store    │
+                    │  • User/Role    │  │  • Match routing│  │  • Game loop    │
+                    │    management   │  │  • Autoscaling  │  │  • WebSocket    │
+                    │  • Rate limiting│  │  • Module dist  │  │  • Hot-reload   │
+                    └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+                             │                    │                    │
+                             │                    │                    │
+                             ▼                    ▼                    ▼
+                    ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+                    │    MongoDB      │  │     Redis       │  │    MongoDB      │
+                    │  (users, roles, │  │  (node registry,│  │   (snapshots,   │
+                    │   tokens)       │  │   match state)  │  │    history)     │
+                    └─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
+
+### Service Boundaries
+
+| Service | Purpose | Port | Storage |
+|---------|---------|------|---------|
+| **Thunder Auth** | OAuth2/OIDC authentication, user management, API tokens | 8082 | MongoDB |
+| **Thunder Control Plane** | Cluster orchestration, node registry, match routing | 8081 | Redis |
+| **Thunder Engine** | Game execution, ECS, WebSocket streaming | 8080 | MongoDB (optional) |
 
 ## Execution Containers
 
-Execution Containers provide complete runtime isolation for game instances:
+Each Thunder Engine node runs multiple isolated **Execution Containers**. A container is a complete runtime environment with:
+
+- Its own **ClassLoader** (module isolation)
+- Its own **EntityComponentStore** (ECS data)
+- Its own **GameLoop** (tick processing)
+- Its own **CommandQueue** (command execution)
+- Multiple **Matches** (game instances sharing the container's modules)
 
 ```
-ContainerManager
+Thunder Engine Node
     │
-    ├── Container 1 (name: "production")
-    │       ├── ContainerClassLoader (isolated module JARs)
-    │       ├── EntityComponentStore (container-scoped entities)
-    │       ├── GameLoop (own thread, 60 FPS)
-    │       ├── CommandQueue (container-scoped commands)
-    │       ├── SnapshotProvider (match filtering)
-    │       └── Matches [1, 2, 3]
+    ├── Container 1 (id: 1, name: "production")
+    │       ├── ContainerClassLoader (isolated)
+    │       │       └── Loaded JARs: EntityModule, RigidBodyModule, MyGameModule
+    │       ├── EntityComponentStore (1M entity capacity)
+    │       ├── GameLoop (tick thread, 60 FPS)
+    │       ├── CommandQueue (per-tick execution)
+    │       ├── SnapshotProvider (columnar format)
+    │       └── Matches
+    │               ├── Match 1 (players: 4, entities: 150)
+    │               ├── Match 2 (players: 2, entities: 80)
+    │               └── Match 3 (players: 6, entities: 200)
     │
-    └── Container 2 (name: "staging")
-            ├── ContainerClassLoader (can have different module versions)
-            ├── EntityComponentStore (completely separate)
-            ├── GameLoop (own thread, 30 FPS)
-            ├── CommandQueue
-            └── Matches [4, 5]
+    └── Container 2 (id: 2, name: "staging")
+            ├── ContainerClassLoader (different module versions)
+            ├── EntityComponentStore (separate)
+            ├── GameLoop (30 FPS for testing)
+            └── Matches
+                    └── Match 4 (test match)
 ```
 
 ### Container Lifecycle
 
 | Status | Description |
 |--------|-------------|
-| `CREATED` | Container initialized but not started |
-| `STARTING` | Container is starting up |
-| `RUNNING` | Container is actively processing ticks |
-| `PAUSED` | Container is paused (state preserved, no ticks) |
-| `STOPPING` | Container is shutting down |
-| `STOPPED` | Container has stopped |
+| `CREATED` | Container initialized, modules loaded, not ticking |
+| `STARTING` | Container starting up |
+| `RUNNING` | Container actively processing ticks |
+| `PAUSED` | Ticking stopped, state preserved |
+| `STOPPING` | Container shutting down |
+| `STOPPED` | Container stopped, resources released |
 
-### Key Benefits
+### Container Isolation
 
-- **ClassLoader Isolation** - Each container loads its own module JARs
-- **Independent Game Loop** - Containers tick at their own rate
-- **Separate ECS Store** - Entities and components are completely isolated
-- **Container-Scoped Commands** - Commands execute within their container
-- **Independent Lifecycle** - Start, stop, pause containers independently
+Each container provides:
 
-For more information regarding classloader isolation, please see [classloader isolation](classloaders.md).
+- **ClassLoader Isolation**: Separate `ContainerClassLoader` per container with hybrid delegation (parent-first for engine APIs, child-first for module classes)
+- **Independent Game Loop**: Containers tick at their own rate on their own thread
+- **Separate ECS Store**: Entities and components are completely isolated between containers
+- **Container-Scoped Commands**: Commands execute within their container context
+- **Independent Lifecycle**: Start, stop, pause containers independently
+
+See [ClassLoader Isolation](classloaders.md) for implementation details.
+
+## ECS Architecture
+
+The Entity Component System uses a columnar array-based storage with O(1) component access:
+
+```
+ArrayEntityComponentStore
+    │
+    ├── Entity Pool
+    │       ├── Entity 0: [POSITION_X, POSITION_Y, HEALTH, ENTITY_TYPE, MATCH_ID]
+    │       ├── Entity 1: [POSITION_X, POSITION_Y, VELOCITY_X, VELOCITY_Y, MATCH_ID]
+    │       └── Entity 2: [POSITION_X, POSITION_Y, SPRITE_ID, MATCH_ID]
+    │
+    └── Component Arrays (columnar storage)
+            ├── POSITION_X: [100.0, 200.0, 150.0, ...]  // Float array
+            ├── POSITION_Y: [50.0, 75.0, 100.0, ...]
+            ├── HEALTH: [100.0, Float.NaN, Float.NaN, ...]  // NaN = not present
+            ├── MATCH_ID: [1.0, 1.0, 2.0, ...]  // Match isolation
+            └── ...
+```
+
+### Store Decorator Pattern
+
+The ECS store uses decorators for layered functionality:
+
+```
+ModuleScopedStore              ← Module-specific view with JWT auth
+    └── LockingEntityComponentStore   ← Thread safety (ReentrantReadWriteLock)
+            └── DirtyTrackingStore         ← Delta snapshot support
+                    └── CachedEntityComponentStore    ← Query result caching
+                            └── ArrayEntityComponentStore     ← Columnar storage
+```
+
+### Core Components
+
+Every entity has these core components (defined in `CoreComponents.java`):
+
+| Component | Purpose |
+|-----------|---------|
+| `ENTITY_ID` | Unique entity identifier |
+| `MATCH_ID` | Match isolation - entities only visible within their match |
+| `OWNER_ID` | Player ownership tracking |
 
 ## Tick-Based Simulation
 
-The engine uses discrete ticks. Each tick:
-1. Processes all queued commands
-2. Runs all systems from enabled modules (e.g., movement applies velocity to position)
-3) Notifies any tick listenders or AI
-3. Increments tick counter
-4. Broadcasts snapshot to WebSocket clients
+The `GameLoop` processes ticks with this per-tick flow:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Game Tick                            │
+├─────────────────────────────────────────────────────────────┤
+│ 1. Execute Commands (up to maxCommandsPerTick, default 10k) │
+│    └── CommandQueueExecutor.executeCommands()               │
+├─────────────────────────────────────────────────────────────┤
+│ 2. Run Systems (from all enabled modules)                   │
+│    └── for each EngineSystem: system.updateEntities()       │
+│    └── Errors logged but don't stop tick                    │
+├─────────────────────────────────────────────────────────────┤
+│ 3. Notify Tick Listeners (async, fire-and-forget)           │
+│    └── Snapshot broadcasters, persistence, AI               │
+├─────────────────────────────────────────────────────────────┤
+│ 4. Record Metrics                                           │
+│    └── Tick duration, system execution times                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Tick Control
 
 ```bash
 # Manual tick control
-curl -X POST http://localhost:8080/api/simulation/tick
+curl -X POST http://localhost:8080/api/containers/1/tick \
+  -H "Authorization: Bearer $TOKEN"
 
-# Auto-advance at 60 FPS
-curl -X POST "http://localhost:8080/api/simulation/play?intervalMs=16"
+# Auto-advance at 60 FPS (16ms interval)
+curl -X POST "http://localhost:8080/api/containers/1/play?intervalMs=16" \
+  -H "Authorization: Bearer $TOKEN"
 
 # Stop auto-advance
-curl -X POST http://localhost:8080/api/simulation/stop
+curl -X POST http://localhost:8080/api/containers/1/stop-auto \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ## WebSocket Streaming
 
-Connect to `ws://localhost:8080/container/id/snapshots/{matchId}` to receive real-time snapshots:
-
-```javascript
-const ws = new WebSocket('ws://localhost:8080/snapshots/1');
-ws.onmessage = (event) => {
-  const snapshot = JSON.parse(event.data);
-  console.log(`Tick ${snapshot.tick}:`, snapshot.data);
-};
-```
-
-## WebSocket Commands
-
-For high-performance command submission, use the container-scoped command WebSocket endpoint. This is recommended for game clients that need to submit many commands with low latency.
-
-### Endpoint
-
-`ws://localhost:8080/containers/{containerId}/commands?token=xxx`
-
-### Authentication
-
-JWT authentication is required via query parameter (since browser WebSocket API doesn't support custom headers). The token must have `admin` or `command_manager` role.
-
-### Protocol
-
-Commands are sent as Protocol Buffer binary messages. The schema is defined in `api-proto/src/main/proto/command.proto`:
+Real-time game state streaming via WebSocket:
 
 ```
-Client                          Server
-  │                               │
-  │─── Connect with ?token=xxx ──▶│
-  │                               │
-  │◀── CommandResponse(ACCEPTED) ─│  (connection successful)
-  │                               │
-  │─── CommandRequest(spawn) ────▶│
-  │                               │
-  │◀── CommandResponse(ACCEPTED) ─│  (command queued)
-  │                               │
-  │─── CommandRequest(move) ─────▶│
-  │                               │
-  │◀── CommandResponse(ACCEPTED) ─│
-  │                               │
+Client                                          Server
+  │                                                │
+  │─── Connect to /ws/.../snapshot?token=xxx ────▶│
+  │                                                │
+  │◀───────── Full Snapshot (JSON) ───────────────│  (on connect)
+  │                                                │
+  │◀───────── Snapshot Update ────────────────────│  (every broadcast interval)
+  │◀───────── Snapshot Update ────────────────────│
+  │◀───────── ...                                 │
 ```
 
-### Supported Command Types
+### WebSocket Endpoints
 
-| Payload Type | Description |
-|--------------|-------------|
-| `SpawnPayload` | Create new entity with type and position |
-| `AttachRigidBodyPayload` | Attach physics body to entity |
-| `AttachSpritePayload` | Attach sprite rendering to entity |
-| `GenericPayload` | Custom commands with arbitrary parameters |
+| Endpoint | Purpose |
+|----------|---------|
+| `/ws/containers/{id}/matches/{matchId}/snapshot` | Full snapshot stream |
+| `/ws/containers/{id}/matches/{matchId}/delta` | Delta-compressed stream |
+| `/ws/containers/{id}/matches/{matchId}/players/{playerId}/snapshot` | Player-scoped snapshot |
+| `/ws/containers/{id}/matches/{matchId}/players/{playerId}/delta` | Player-scoped delta |
+| `/ws/matches/{matchId}/players/{playerId}/errors` | Player error stream |
+| `/containers/{id}/commands` | Command submission (subprotocol auth) |
 
-### Error Handling
+### Snapshot Format
 
-| Status | Description |
-|--------|-------------|
-| `ACCEPTED` | Command queued for next tick |
-| `ERROR` | Command failed (see message for details) |
-| `INVALID` | Malformed request or missing parameters |
-
-### Benefits vs REST API
-
-- **Lower latency**: No HTTP overhead per command
-- **Binary protocol**: Smaller message size with Protocol Buffers
-- **Persistent connection**: No connection setup per request
-- **Ordered delivery**: Commands processed in order received
-
-## Snapshot Format
+Snapshots use a columnar format for efficient JSON serialization:
 
 ```json
 {
   "matchId": 1,
   "tick": 42,
   "data": {
+    "EntityModule": {
+      "ENTITY_TYPE": [1.0, 2.0, 1.0],
+      "OWNER_ID": [1.0, 1.0, 2.0]
+    },
     "MoveModule": {
       "POSITION_X": [100.0, 200.0, 150.0],
       "POSITION_Y": [50.0, 75.0, 100.0],
       "VELOCITY_X": [1.0, -1.0, 0.0]
-    },
-    "SpawnModule": {
-      "ENTITY_TYPE": [1.0, 2.0, 1.0],
-      "OWNER_ID": [1.0, 1.0, 2.0]
     }
   }
 }
@@ -204,58 +229,9 @@ Client                          Server
 
 Each array is columnar: index 0 = entity 0's value, index 1 = entity 1's value, etc.
 
-## Authentication & Authorization
+### Delta Compression
 
-The API uses JWT-based authentication with dynamic RBAC (Role-Based Access Control).
-
-### Default Roles
-
-| Role | Permissions | Includes |
-|------|-------------|----------|
-| `admin` | Full access to all endpoints | command_manager, view_only |
-| `command_manager` | Can post commands and manage matches | view_only |
-| `view_only` | Read-only access to snapshots and status | - |
-
-### Role Hierarchy
-
-Roles can include other roles, forming a hierarchy. When a user has `admin`, they automatically have permissions of `command_manager` and `view_only`.
-
-```java
-// Creating custom roles via API
-POST /api/auth/roles
-{
-  "name": "game_operator",
-  "description": "Can manage game sessions",
-  "includedRoles": ["command_manager"]
-}
-```
-
-### API Token CLI
-
-The `issue-api-token` module provides a CLI for generating long-lived API tokens:
-
-```bash
-# Generate admin token
-java -jar issue-api-token.jar --roles=admin --secret=your-jwt-secret
-
-# Generate token with multiple roles
-java -jar issue-api-token.jar --roles=command_manager,view_only --user=my-service
-
-# View help
-java -jar issue-api-token.jar --help
-```
-
-### Authentication Flow
-
-1. **Login**: `POST /api/auth/login` with username/password returns JWT
-2. **Refresh**: `POST /api/auth/refresh` with current token returns new JWT
-3. **Use**: Include `Authorization: Bearer <token>` header in requests
-
-## Delta Compression
-
-For bandwidth-efficient real-time updates, use delta snapshots instead of full snapshots.
-
-### Delta Format
+For bandwidth efficiency, delta snapshots only transmit changes:
 
 ```json
 {
@@ -276,74 +252,215 @@ For bandwidth-efficient real-time updates, use delta snapshots instead of full s
 }
 ```
 
-## MongoDB Snapshot Persistence
+The delta algorithm:
+1. Extract entity IDs using ENTITY_ID component
+2. Compute added/removed entities (set difference)
+3. For unchanged entities, compare component values
+4. Record only changed values
 
-When enabled, snapshots are automatically persisted to MongoDB after each tick.
+## Authentication & Authorization
 
-### Configuration
+### OAuth2 Grant Types
 
-```properties
-# application.properties
-snapshot.persistence.enabled=true
-snapshot.persistence.database=lightningfirefly
-snapshot.persistence.collection=snapshots
-snapshot.persistence.tick-interval=1  # Persist every N ticks
+Thunder Auth implements four OAuth2 grant types:
 
-# MongoDB connection
-quarkus.mongodb.connection-string=mongodb://localhost:27017
-```
+| Grant Type | Use Case |
+|------------|----------|
+| `password` | User login (username/password) |
+| `client_credentials` | Service-to-service auth |
+| `refresh_token` | Token refresh with rotation |
+| `token_exchange` | Exchange API token for session JWT |
 
-## Async Tick Listeners
+### Token Types
 
-Tick listeners are notified asynchronously via a thread pool to avoid blocking the game loop. This is especially important for I/O-bound operations like MongoDB persistence.
+| Token | Purpose | Lifetime |
+|-------|---------|----------|
+| Session JWT | User authentication | 1 hour (configurable) |
+| Refresh Token | Token renewal | 7 days (configurable) |
+| API Token | Long-lived programmatic access | Custom (or never) |
+| Match Token | Player match authorization | Match duration |
+| Service Token | Service-to-service auth | 15 minutes |
 
-```java
-// GameLoop notifies listeners asynchronously (fire and forget)
-private void notifyTickListeners(long tick) {
-    for (TickListener listener : tickListeners) {
-        tickListenerExecutor.submit(() -> {
-            listener.onTickComplete(tick);
-        });
-    }
-}
-```
+### Scope-Based Authorization
 
+Permissions use hierarchical scopes: `service.resource.operation`
 
-## Module Permission Scoping
+Examples:
+- `engine.container.create` - Create containers
+- `auth.user.read` - Read users
+- `engine.*` - All engine operations
 
-Modules use `PermissionComponent` to control access levels for their data. Permissions are enforced via JWT tokens issued to each module.
+Wildcard matching: `engine.*` matches `engine.container.create`
 
-**Permission Levels:**
+### Module Permission Scoping
 
-| Level | Description |
-|-------|-------------|
-| `PRIVATE` | Only the owning module can read/write |
-| `READ` | Other modules can read, only owner can write |
-| `WRITE` | Any module can read and write |
+Modules receive JWT tokens with component permissions:
 
-```java
-// Components with permission levels
-public static final PermissionComponent POSITION_X =
-    PermissionComponent.create("POSITION_X", PermissionLevel.READ);  // Others can read
-public static final PermissionComponent INTERNAL_STATE =
-    PermissionComponent.create("INTERNAL_STATE", PermissionLevel.PRIVATE);  // Only owner
+| Permission | Description |
+|------------|-------------|
+| `OWNER` | Full read/write access to own components |
+| `READ` | Read-only access to other modules' components |
+| `WRITE` | Full read/write access to other modules' components |
 
-// In another module - reading works, writing throws EcsAccessForbiddenException
-float x = store.getComponent(entity, POSITION_X);  // OK
-store.attachComponent(entity, POSITION_X, 100f);   // Throws!
-```
+See [Module System](module-system.md) for details.
 
-For detailed documentation on module permissions, JWT authentication, and superuser modules, see [Module System - Permission Scoping](module-system.md#module-permission-scoping).
+## Control Plane Architecture
 
-## Store Decorator Pattern
-
-The ECS store uses a decorator pattern for layered functionality:
+The Control Plane orchestrates Thunder Engine nodes:
 
 ```
-PermissionedEntityComponentStore  ← Module scoping
-    └── LockingEntityComponentStore   ← Thread safety (ReentrantReadWriteLock)
-            └── CachedEntityComponentStore    ← Query result caching
-                    └── ArrayEntityComponentStore     ← Columnar storage
+                          ┌──────────────────────┐
+                          │   Thunder Control    │
+                          │       Plane          │
+                          │                      │
+                          │  ┌────────────────┐  │
+                          │  │ Node Registry  │  │  ← Tracks all nodes
+                          │  └────────────────┘  │
+                          │  ┌────────────────┐  │
+                          │  │   Scheduler    │  │  ← Selects best node
+                          │  └────────────────┘  │
+                          │  ┌────────────────┐  │
+                          │  │ Match Router   │  │  ← Creates matches
+                          │  └────────────────┘  │
+                          │  ┌────────────────┐  │
+                          │  │  Autoscaler    │  │  ← Scaling recommendations
+                          │  └────────────────┘  │
+                          │  ┌────────────────┐  │
+                          │  │ Module Registry│  │  ← Module distribution
+                          │  └────────────────┘  │
+                          └──────────┬───────────┘
+                                     │
+         ┌───────────────────────────┼───────────────────────────┐
+         │                           │                           │
+         ▼                           ▼                           ▼
+┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐
+│   Node 1        │        │   Node 2        │        │   Node 3        │
+│ (Thunder Engine)│        │ (Thunder Engine)│        │ (Thunder Engine)│
+│                 │        │                 │        │                 │
+│ Containers: 3   │        │ Containers: 2   │        │ Containers: 1   │
+│ Matches: 15     │        │ Matches: 8      │        │ Matches: 4      │
+│ CPU: 45%        │        │ CPU: 30%        │        │ CPU: 15%        │
+└─────────────────┘        └─────────────────┘        └─────────────────┘
 ```
 
-Each layer adds a specific concern without modifying the others
+### Node Registration Flow
+
+1. Node starts and registers with Control Plane
+2. Node sends heartbeats every 10 seconds (configurable)
+3. Control Plane tracks node metrics and capacity
+4. Nodes that miss heartbeats are expired (30 second TTL)
+
+### Match Scheduling Algorithm
+
+1. Filter to HEALTHY nodes only
+2. Filter to nodes with available capacity
+3. If preferred node specified and available, use it
+4. Otherwise, select least-loaded node (lowest saturation)
+
+Saturation = `activeContainers / maxContainers`
+
+### Autoscaling
+
+The autoscaler analyzes cluster saturation:
+
+- **Scale Up**: When saturation exceeds 80% (configurable)
+- **Scale Down**: When saturation falls below 30% (configurable)
+- **Cooldown**: 300 seconds between scaling actions
+
+See [Control Plane](control-plane.md) for configuration details.
+
+## Data Flow: Match Creation
+
+Complete flow for creating a match via the Control Plane:
+
+```
+Lightning CLI                Control Plane                    Node 1
+      │                            │                            │
+      │── POST /api/deploy ───────▶│                            │
+      │   {modules: [...]}         │                            │
+      │                            │                            │
+      │                            │──── Scheduler selects ────▶│
+      │                            │     least-loaded node      │
+      │                            │                            │
+      │                            │── POST /api/containers ───▶│
+      │                            │   {modules: [...]}         │
+      │                            │◀── 201 {containerId: 42} ──│
+      │                            │                            │
+      │                            │── POST /api/.../matches ──▶│
+      │                            │   {modules: [...]}         │
+      │                            │◀── 201 {matchId: 1} ───────│
+      │                            │                            │
+      │◀── 201 {matchId: node-1-42-1, ...} ─│                   │
+      │                            │                            │
+      │                            │                            │
+      │═══════════════ WebSocket connection ═══════════════════▶│
+      │                            │                            │
+```
+
+## Project Structure
+
+```
+stormstack/
+├── thunder/                         # Backend services (Java)
+│   ├── engine/                      # Thunder Engine
+│   │   ├── core/                    # Domain + implementation
+│   │   │   ├── container/           # ExecutionContainer, ClassLoader
+│   │   │   ├── entity/              # ECS core components
+│   │   │   ├── match/               # Match service
+│   │   │   ├── command/             # Command queue
+│   │   │   ├── snapshot/            # Snapshot/delta compression
+│   │   │   └── store/               # EntityComponentStore
+│   │   ├── provider/                # Quarkus REST/WebSocket
+│   │   └── extensions/modules/      # Game modules
+│   │
+│   ├── auth/                        # Thunder Auth
+│   │   ├── core/                    # OAuth2, JWT, RBAC
+│   │   └── provider/                # Quarkus endpoints
+│   │
+│   └── control-plane/               # Thunder Control Plane
+│       ├── core/                    # Scheduler, autoscaler
+│       └── provider/                # Quarkus endpoints
+│
+├── lightning/                       # Client tools
+│   ├── cli/                         # Go CLI
+│   ├── webpanel/                    # React admin panel
+│   └── rendering/                   # NanoVG GUI framework
+│
+└── docs/                            # Documentation
+```
+
+## Key Design Decisions
+
+### Two-Module Pattern
+
+Each Thunder service uses two Maven modules:
+- **Core**: Pure domain logic, no framework annotations
+- **Provider**: Quarkus-specific endpoints, persistence, DI
+
+This enables:
+- Framework-agnostic business logic
+- Easier testing (no container needed for core)
+- Potential future framework migration
+
+### Float-Based ECS
+
+All component values are stored as floats for:
+- Cache efficiency (contiguous memory)
+- Simple serialization
+- O(1) access by entity ID
+- `Float.NaN` as null sentinel
+
+### Match Isolation via Component
+
+Entities are isolated to matches via the `MATCH_ID` component rather than separate stores. This enables:
+- Shared container resources
+- Cross-match operations (admin tools)
+- Efficient memory usage
+
+### Async Tick Listeners
+
+Tick listeners (snapshot broadcast, persistence) run asynchronously via a thread pool to avoid blocking the game loop. This is critical for I/O-bound operations.
+
+### JWT-Based Module Auth
+
+Modules authenticate during installation and receive JWT tokens encoding their component permissions. This enables stateless permission verification without central lookups during ECS operations.

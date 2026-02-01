@@ -68,12 +68,14 @@ public class AIAIFactory implements AIFactory {
 # Build JAR implementing AIFactory
 mvn clean package
 
-# Upload to server
-curl -X POST http://localhost:8080/api/ai/upload \
+# Upload to server (requires auth)
+curl -X POST http://localhost:8080/api/containers/1/ai/upload \
+  -H "Authorization: Bearer $TOKEN" \
   -F "file=@target/my-ai.jar"
 
 # Enable for a match
-curl -X POST http://localhost:8080/api/matches \
+curl -X POST http://localhost:8080/api/containers/1/matches \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"enabledModuleNames": ["EntityModule"], "enabledAINames": ["AIAI"]}'
 ```
