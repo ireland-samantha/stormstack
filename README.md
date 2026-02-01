@@ -18,30 +18,28 @@ The project has two main components:
 3. **Install to cluster** - Upload modules to the control plane and distribute to engine nodes
 
 ```
-lightning module upload MyGameModule 1.0.0 ./target/my-game-module.jar \
-    --description "Custom game logic"
-lightning module distribute MyGameModule 1.0.0
+$ lightning module upload MyGameModule 1.0.0 ./target/my-game-module.jar && \
+       lightning module distribute MyGameModule 1.0.0
 
 # Output:
-# Module MyGameModule@1.0.0 distributed to 3 nodes
-
+Module MyGameModule@1.0.0 distributed to 3 nodes
 ```
 
 4. **Create matches** 
 ```
-  lightning deploy --modules EntityModule,RigidBodyModule,RenderingModule
+$ lightning deploy --modules EntityModule,RigidBodyModule,RenderingModule
 
 # Output:
-# Match deployed successfully!
-#   Match ID:     node-1-42-1
-#   Node:         node-1
-#   Container:    42
-#   Status:       RUNNING
-#
-# Endpoints:
-#   HTTP:         http://backend:8080/api/containers/42
-#   WebSocket:    ws://backend:8080/ws/containers/42/matches/1/snapshots
-#   Commands:     ws://backend:8080/ws/containers/42/matches/1/commands
+Match deployed successfully!
+    Match ID:     node-1-42-1
+    Node:         node-1
+    Container:    42
+    Status:       RUNNING
+ 
+  Endpoints:
+    HTTP:         http://backend:8080/api/containers/42
+    WebSocket:    ws://backend:8080/ws/containers/42/matches/1/snapshots
+    Commands:     ws://backend:8080/ws/containers/42/matches/1/commands
 ```
 5. **Stream game state** - Clients receive real-time ECS snapshots via WebSocket.
 
