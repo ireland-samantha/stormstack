@@ -24,13 +24,14 @@ package ca.samanthaireland.stormstack.thunder.controlplane.provider.client;
 
 import ca.samanthaireland.stormstack.thunder.controlplane.client.LightningNodeClient;
 import ca.samanthaireland.stormstack.thunder.controlplane.node.model.Node;
+import ca.samanthaireland.stormstack.thunder.controlplane.provider.auth.AuthServiceClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -44,6 +45,8 @@ import java.util.Map;
 
 /**
  * HTTP client implementation for communicating with Lightning Engine nodes.
+ *
+ * <p>Uses OAuth2 service tokens for authenticating requests to engine nodes.
  */
 @ApplicationScoped
 public class LightningNodeClientImpl implements LightningNodeClient {
@@ -52,24 +55,58 @@ public class LightningNodeClientImpl implements LightningNodeClient {
 
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
+    private final AuthServiceClient authServiceClient;
 
     /**
      * Default constructor for CDI.
      */
-    public LightningNodeClientImpl() {
-        this(HttpClient.newBuilder()
+    @Inject
+    public LightningNodeClientImpl(AuthServiceClient authServiceClient) {
+        this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(REQUEST_TIMEOUT)
-                .build());
+                .build();
+        this.objectMapper = new ObjectMapper();
+        this.authServiceClient = authServiceClient;
     }
 
     /**
-     * Constructor for testing with a custom HttpClient.
+     * Constructor for testing with custom dependencies.
      *
-     * @param httpClient the HTTP client to use
+     * @param httpClient       the HTTP client to use
+     * @param authServiceClient the auth service client for obtaining tokens
      */
-    public LightningNodeClientImpl(HttpClient httpClient) {
+    public LightningNodeClientImpl(HttpClient httpClient, AuthServiceClient authServiceClient) {
         this.httpClient = httpClient;
         this.objectMapper = new ObjectMapper();
+        this.authServiceClient = authServiceClient;
+    }
+
+    /**
+     * Adds authentication header to request builder if service token is available.
+     */
+    private HttpRequest.Builder addAuthHeader(HttpRequest.Builder builder) {
+        if (authServiceClient != null && authServiceClient.isRemoteValidationEnabled()) {
+            try {
+                // Get a service token from the auth service and use it for authorization
+                // For internal service calls, we use token exchange to get a JWT
+                String serviceToken = getServiceToken();
+                if (serviceToken != null && !serviceToken.isEmpty()) {
+                    builder.header("Authorization", "Bearer " + serviceToken);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to get service token for node request: {}", e.getMessage());
+            }
+        }
+        return builder;
+    }
+
+    /**
+     * Gets a service token for authenticating with engine nodes.
+     */
+    private String getServiceToken() {
+        // Use OAuth2 client credentials to get a service access token
+        // This calls the auth service's /oauth2/token endpoint
+        return authServiceClient.getServiceAccessToken();
     }
 
     @Override
@@ -84,11 +121,11 @@ public class LightningNodeClientImpl implements LightningNodeClient {
 
             String body = objectMapper.writeValueAsString(requestBody);
 
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = addAuthHeader(HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
                     .timeout(REQUEST_TIMEOUT)
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .POST(HttpRequest.BodyPublishers.ofString(body)))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -120,11 +157,11 @@ public class LightningNodeClientImpl implements LightningNodeClient {
 
             String body = objectMapper.writeValueAsString(requestBody);
 
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = addAuthHeader(HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
                     .timeout(REQUEST_TIMEOUT)
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .POST(HttpRequest.BodyPublishers.ofString(body)))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -150,10 +187,10 @@ public class LightningNodeClientImpl implements LightningNodeClient {
         String url = node.advertiseAddress() + "/api/containers/" + containerId + "/matches/" + matchId;
 
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = addAuthHeader(HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(REQUEST_TIMEOUT)
-                    .DELETE()
+                    .DELETE())
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -175,10 +212,10 @@ public class LightningNodeClientImpl implements LightningNodeClient {
         String url = node.advertiseAddress() + "/api/containers/" + containerId;
 
         try {
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = addAuthHeader(HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(REQUEST_TIMEOUT)
-                    .DELETE()
+                    .DELETE())
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -225,11 +262,11 @@ public class LightningNodeClientImpl implements LightningNodeClient {
             String boundary = "----ModuleBoundary" + System.currentTimeMillis();
             byte[] bodyBytes = createMultipartBody(boundary, name, version, fileName, jarData);
 
-            HttpRequest request = HttpRequest.newBuilder()
+            HttpRequest request = addAuthHeader(HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                     .timeout(Duration.ofSeconds(30))
-                    .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes))
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes)))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());

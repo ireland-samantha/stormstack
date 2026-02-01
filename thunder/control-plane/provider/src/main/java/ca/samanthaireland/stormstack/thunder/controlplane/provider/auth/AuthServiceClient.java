@@ -443,6 +443,23 @@ public class AuthServiceClient {
     }
 
     /**
+     * Get a service access token for authenticating with other services.
+     *
+     * <p>This exposes the service token for use by other clients that need
+     * to make authenticated requests to Lightning Engine nodes.
+     *
+     * @return the service access token, or empty string if not configured
+     */
+    public String getServiceAccessToken() {
+        try {
+            return getServiceToken();
+        } catch (Exception e) {
+            log.warn("Failed to get service access token: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    /**
      * Invalidate the cached service token, forcing a refresh on next call.
      */
     public void invalidateServiceToken() {

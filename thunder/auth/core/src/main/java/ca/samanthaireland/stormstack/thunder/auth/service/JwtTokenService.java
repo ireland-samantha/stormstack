@@ -103,4 +103,18 @@ public interface JwtTokenService {
      * @return the issuer URL
      */
     String getIssuer();
+
+    /**
+     * Creates an access token for API token exchange sessions.
+     *
+     * <p>This token is issued when an API token (lat_...) is exchanged
+     * for a session JWT via OAuth2 token exchange (RFC 8693).
+     *
+     * @param user       the user who owns the API token
+     * @param scopes     the scopes granted by the API token
+     * @param apiTokenId the ID of the API token being exchanged
+     * @param expiresIn  lifetime in seconds
+     * @return the signed JWT
+     */
+    String createApiTokenSessionToken(User user, Set<String> scopes, String apiTokenId, int expiresIn);
 }

@@ -135,7 +135,7 @@ public interface JwtAuthConfig {
      * @return scopes (default: service.match-token.issue service.match-token.validate)
      */
     @WithName("oauth2-scopes")
-    @WithDefault("service.match-token.issue service.match-token.validate")
+    @WithDefault("service.match-token.issue service.match-token.validate engine.*")
     String oauth2Scopes();
 
     /**

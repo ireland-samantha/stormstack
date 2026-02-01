@@ -144,6 +144,7 @@ public class ServiceProducer {
      * @param userRepository     the user repository
      * @param passwordService    the password service
      * @param config             the auth configuration
+     * @param jwtTokenService    the JWT token service for creating session tokens
      * @return the API token service
      */
     @Produces
@@ -152,8 +153,9 @@ public class ServiceProducer {
             ApiTokenRepository apiTokenRepository,
             UserRepository userRepository,
             PasswordService passwordService,
-            AuthConfiguration config) {
-        return new ApiTokenServiceImpl(apiTokenRepository, userRepository, passwordService, config);
+            AuthConfiguration config,
+            JwtTokenService jwtTokenService) {
+        return new ApiTokenServiceImpl(apiTokenRepository, userRepository, passwordService, config, jwtTokenService);
     }
 
     /**

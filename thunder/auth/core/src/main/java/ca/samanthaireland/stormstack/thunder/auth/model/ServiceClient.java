@@ -152,11 +152,29 @@ public record ServiceClient(
     /**
      * Checks if this client is allowed to request the specified scope.
      *
+     * <p>Supports wildcard patterns in allowedScopes:
+     * <ul>
+     *   <li>{@code *} - matches any scope</li>
+     *   <li>{@code engine.*} - matches any scope starting with "engine."</li>
+     * </ul>
+     *
      * @param scope the scope to check
      * @return true if the scope is allowed
      */
     public boolean isScopeAllowed(String scope) {
-        return allowedScopes.contains(scope) || allowedScopes.contains("*");
+        if (allowedScopes.contains("*") || allowedScopes.contains(scope)) {
+            return true;
+        }
+        // Check for wildcard patterns like "engine.*"
+        for (String allowed : allowedScopes) {
+            if (allowed.endsWith(".*")) {
+                String prefix = allowed.substring(0, allowed.length() - 1); // includes the dot
+                if (scope.startsWith(prefix)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

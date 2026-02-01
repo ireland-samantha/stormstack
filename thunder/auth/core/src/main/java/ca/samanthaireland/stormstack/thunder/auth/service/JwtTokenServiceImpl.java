@@ -203,6 +203,33 @@ public class JwtTokenServiceImpl implements JwtTokenService {
         return config.jwtIssuer();
     }
 
+    @Override
+    public String createApiTokenSessionToken(User user, Set<String> scopes, String apiTokenId, int expiresIn) {
+        Instant now = Instant.now();
+        Instant expiresAt = now.plusSeconds(expiresIn);
+        String jti = generateTokenId();
+
+        String jwt = JWT.create()
+                .withIssuer(config.jwtIssuer())
+                .withSubject(user.id().toString())
+                .withAudience(AUDIENCE)
+                .withClaim("upn", user.username())
+                .withClaim("user_id", user.id().toString())
+                .withClaim("username", user.username())
+                .withClaim(CLAIM_TOKEN_TYPE, TOKEN_TYPE_ACCESS)
+                .withClaim(CLAIM_SCOPE, String.join(" ", scopes))
+                .withClaim("api_token_id", apiTokenId)
+                .withClaim(CLAIM_JTI, jti)
+                .withIssuedAt(now)
+                .withExpiresAt(expiresAt)
+                .sign(algorithm);
+
+        log.debug("Created API token session for user: {}, apiTokenId: {}, jti: {}",
+                user.username(), apiTokenId, jti);
+
+        return jwt;
+    }
+
     private String generateTokenId() {
         byte[] bytes = new byte[16];
         secureRandom.nextBytes(bytes);

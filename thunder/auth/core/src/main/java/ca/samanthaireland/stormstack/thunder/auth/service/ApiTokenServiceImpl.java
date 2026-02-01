@@ -30,8 +30,6 @@ import ca.samanthaireland.stormstack.thunder.auth.model.UserId;
 import ca.samanthaireland.stormstack.thunder.auth.repository.ApiTokenRepository;
 import ca.samanthaireland.stormstack.thunder.auth.repository.UserRepository;
 import ca.samanthaireland.stormstack.thunder.auth.service.dto.CreateApiTokenRequest;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,41 +48,30 @@ public class ApiTokenServiceImpl implements ApiTokenService {
 
     private static final Logger log = LoggerFactory.getLogger(ApiTokenServiceImpl.class);
     private static final String TOKEN_PREFIX = "lat_"; // Lightning API Token
-    private static final String SESSION_TOKEN_ISSUER_SUFFIX = "/api-session";
-    private static final Duration SESSION_TOKEN_DURATION = Duration.ofHours(1);
+    private static final int SESSION_TOKEN_DURATION_SECONDS = 3600; // 1 hour
 
     private final ApiTokenRepository tokenRepository;
     private final UserRepository userRepository;
     private final PasswordService passwordService;
     private final AuthConfiguration config;
+    private final JwtTokenService jwtTokenService;
     private final SecureRandom secureRandom;
-    private final Algorithm jwtAlgorithm;
-    private final String jwtIssuer;
 
     public ApiTokenServiceImpl(
             ApiTokenRepository tokenRepository,
             UserRepository userRepository,
             PasswordService passwordService,
-            AuthConfiguration config) {
+            AuthConfiguration config,
+            JwtTokenService jwtTokenService) {
 
         this.tokenRepository = Objects.requireNonNull(tokenRepository, "ApiTokenRepository cannot be null");
         this.userRepository = Objects.requireNonNull(userRepository, "UserRepository cannot be null");
         this.passwordService = Objects.requireNonNull(passwordService, "PasswordService cannot be null");
         this.config = Objects.requireNonNull(config, "AuthConfiguration cannot be null");
+        this.jwtTokenService = Objects.requireNonNull(jwtTokenService, "JwtTokenService cannot be null");
         this.secureRandom = new SecureRandom();
 
-        // Initialize JWT signing for token exchange
-        this.jwtIssuer = config.jwtIssuer() + SESSION_TOKEN_ISSUER_SUFFIX;
-        String secret = config.jwtSecret().orElseGet(ApiTokenServiceImpl::generateSecretKey);
-        this.jwtAlgorithm = Algorithm.HMAC256(secret);
-
-        log.info("ApiTokenService initialized with session token issuer: {}", jwtIssuer);
-    }
-
-    private static String generateSecretKey() {
-        byte[] keyBytes = new byte[32];
-        new SecureRandom().nextBytes(keyBytes);
-        return Base64.getEncoder().encodeToString(keyBytes);
+        log.info("ApiTokenService initialized with JWT issuer: {}", jwtTokenService.getIssuer());
     }
 
     @Override
@@ -121,19 +108,15 @@ public class ApiTokenServiceImpl implements ApiTokenService {
         var user = userRepository.findById(apiToken.userId())
                 .orElseThrow(() -> AuthException.userNotFound(apiToken.userId()));
 
-        Instant now = Instant.now();
-        Instant expiresAt = now.plus(SESSION_TOKEN_DURATION);
+        Instant expiresAt = Instant.now().plusSeconds(SESSION_TOKEN_DURATION_SECONDS);
 
-        // Generate a session JWT
-        String sessionToken = JWT.create()
-                .withIssuer(jwtIssuer)
-                .withSubject(user.id().toString())
-                .withClaim("username", user.username())
-                .withClaim("scopes", new ArrayList<>(apiToken.scopes()))
-                .withClaim("api_token_id", apiToken.id().toString())
-                .withIssuedAt(now)
-                .withExpiresAt(expiresAt)
-                .sign(jwtAlgorithm);
+        // Generate a session JWT using the proper signing algorithm and issuer
+        String sessionToken = jwtTokenService.createApiTokenSessionToken(
+                user,
+                apiToken.scopes(),
+                apiToken.id().toString(),
+                SESSION_TOKEN_DURATION_SECONDS
+        );
 
         log.info("Exchanged API token {} for session token for user {}",
                 apiToken.id(), user.username());

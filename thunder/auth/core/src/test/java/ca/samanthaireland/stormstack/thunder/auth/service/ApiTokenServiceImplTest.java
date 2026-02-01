@@ -32,6 +32,7 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,6 +52,9 @@ class ApiTokenServiceImplTest {
     @Mock
     private AuthConfiguration config;
 
+    @Mock
+    private JwtTokenService jwtTokenService;
+
     private ApiTokenServiceImpl apiTokenService;
 
     private User testUser;
@@ -59,10 +63,11 @@ class ApiTokenServiceImplTest {
     @BeforeEach
     void setUp() {
         when(config.apiTokenLengthBytes()).thenReturn(32);
-        when(config.jwtIssuer()).thenReturn("https://test.lightningfirefly.com");
-        when(config.jwtSecret()).thenReturn(Optional.of("test-secret-key-for-unit-tests-only"));
+        when(jwtTokenService.getIssuer()).thenReturn("https://test.lightningfirefly.com");
+        when(jwtTokenService.createApiTokenSessionToken(any(), any(), any(), anyInt()))
+                .thenReturn("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.mock-session-token");
 
-        apiTokenService = new ApiTokenServiceImpl(tokenRepository, userRepository, passwordService, config);
+        apiTokenService = new ApiTokenServiceImpl(tokenRepository, userRepository, passwordService, config, jwtTokenService);
 
         testUserId = UserId.generate();
         testUser = new User(
@@ -414,28 +419,35 @@ class ApiTokenServiceImplTest {
         @Test
         @DisplayName("should reject null tokenRepository")
         void shouldRejectNullTokenRepository() {
-            assertThatThrownBy(() -> new ApiTokenServiceImpl(null, userRepository, passwordService, config))
+            assertThatThrownBy(() -> new ApiTokenServiceImpl(null, userRepository, passwordService, config, jwtTokenService))
                     .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         @DisplayName("should reject null userRepository")
         void shouldRejectNullUserRepository() {
-            assertThatThrownBy(() -> new ApiTokenServiceImpl(tokenRepository, null, passwordService, config))
+            assertThatThrownBy(() -> new ApiTokenServiceImpl(tokenRepository, null, passwordService, config, jwtTokenService))
                     .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         @DisplayName("should reject null passwordService")
         void shouldRejectNullPasswordService() {
-            assertThatThrownBy(() -> new ApiTokenServiceImpl(tokenRepository, userRepository, null, config))
+            assertThatThrownBy(() -> new ApiTokenServiceImpl(tokenRepository, userRepository, null, config, jwtTokenService))
                     .isInstanceOf(NullPointerException.class);
         }
 
         @Test
         @DisplayName("should reject null config")
         void shouldRejectNullConfig() {
-            assertThatThrownBy(() -> new ApiTokenServiceImpl(tokenRepository, userRepository, passwordService, null))
+            assertThatThrownBy(() -> new ApiTokenServiceImpl(tokenRepository, userRepository, passwordService, null, jwtTokenService))
+                    .isInstanceOf(NullPointerException.class);
+        }
+
+        @Test
+        @DisplayName("should reject null jwtTokenService")
+        void shouldRejectNullJwtTokenService() {
+            assertThatThrownBy(() -> new ApiTokenServiceImpl(tokenRepository, userRepository, passwordService, config, null))
                     .isInstanceOf(NullPointerException.class);
         }
     }
