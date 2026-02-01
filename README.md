@@ -6,7 +6,7 @@
 
 ## What is this?
 
-StormStack is an open-source multiplayer game server framework. Run **multiple games and matches concurrently on the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules.
+StormStack is an open-source multiplayer game server framework. Run **multiple games and matches concurrently on the same node, in the same JVM**, each inside an **isolated execution container** with its own ClassLoader, game loop, ECS store, and hot-reloadable game modules.
 
 The project has two main components:
 - **Thunder** (Backend): Game engine, authentication service, and cluster control plane
