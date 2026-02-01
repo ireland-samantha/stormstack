@@ -2,7 +2,6 @@
 ![Status](https://img.shields.io/badge/status-experimental-blueviolet)
 ![Java](https://img.shields.io/badge/java-25-blue)
 ![License](https://img.shields.io/github/license/ireland-samantha/lightning-engine)
-![Build](https://github.com/ireland-samantha/lightning-engine/actions/workflows/maven.yml/badge.svg)
 
 ## What is this?
 StormStack is a Java-based authoritative multiplayer game server platform.
@@ -12,7 +11,7 @@ I built StormStack to explore modular and secure backend architecture within a g
 
 The project has two main components:
 - **Thunder** (Backend): Game engine, control panel, and IAM service
-- **Lightning** (Client Tools): CLI, web admin panel, and rendering engine
+- **Lightning** (Client Tools): CLI, web admin panel, and, (eventually), rendering engine
 
 ### How It Works
 
