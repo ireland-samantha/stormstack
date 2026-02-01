@@ -15,9 +15,9 @@ The project has two main components:
 ### How It Works
 
 1. **Write game modules** - JAR files containing your backend game logic (ECS components, systems, commands)
-2. **Deploy to cluster** - Upload modules to the control plane, distribute to engine nodes
-3. **Create matches** - The control plane routes players to the best available node
-4. **Stream game state** - Clients receive real-time ECS snapshots via WebSocket
+2. **Install to cluster** - Upload modules to the control plane and distribute to engine nodes with lightning (`lightning module upload your.jar` && `lightning module distribute`)
+3. **Create matches** - The control plane routes players to the best available node (`lightning match create MyGameModule`)
+4. **Stream game state** - Clients receive real-time ECS snapshots via WebSocket.
 
 ## Status
 
