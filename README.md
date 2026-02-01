@@ -5,10 +5,10 @@
 ![Build](https://github.com/ireland-samantha/lightning-engine/actions/workflows/maven.yml/badge.svg)
 
 ## What is this?
+StormStack is a Java-based authoritative multiplayer game server platform.
+It enables hot-deployment of untrusted game logic at runtime, using JVM ClassLoader isolation and JWT-scoped ECS access to safely run multiple matches on shared infrastructure.
 
-StormStack is an authoritive multiplayer game server and orchestrator, enabling developers to write and deploy backend game code directly to the cloud.
-
-It allows for untrusted game logic to be hot-deployed at runtime, safely isolated via ClassLoader boundaries and enforced through JWT-scoped ECS access.
+I built StormStack to explore modular and secure backend architecture within a game dev context.
 
 The project has two main components:
 - **Thunder** (Backend): Game engine, control panel, and IAM service
