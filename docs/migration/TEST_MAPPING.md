@@ -234,11 +234,11 @@ Maps Java tests to their Rust equivalents.
 | stormstack-ecs | 22 | ✅ | +7 CommandWorld integration |
 | stormstack-modules | 29 | ✅ | Hot-reload |
 | stormstack-net | 16 | ✅ | HTTP server |
-| stormstack-server | 64 | ✅ | +49 container/match/ws |
+| stormstack-server | 92 | ✅ | +77 container/match/ws/api/gameloop |
 | stormstack-test-utils | 1 | ✅ | Harness |
 | stormstack-wasm | 13 | ✅ | Sandbox security |
 | stormstack-wasm-host | 10 | ✅ | Host functions |
 | stormstack-ws | 15 | ✅ | WebSocket |
 | Doc tests | 3 | ✅ | Auth examples |
-| **Total** | **237** | ✅ | +76 since initial |
+| **Total** | **265** | ✅ | +104 since initial (161) |
 

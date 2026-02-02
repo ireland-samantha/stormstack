@@ -9,17 +9,19 @@
 
 | Metric | Java (main) | Rust (rust-rewrite) | Gap |
 |--------|-------------|---------------------|-----|
-| Source Files | 715 | ~60 | -655 |
-| Test Files | 296 | ~45 | -251 |
-| Lines of Code | ~32,250 | ~11,000 | -21,250 |
-| Tests | ~600+ | 237 | ~363 |
-| Completion | 100% | 78% | 22% |
+| Source Files | 715 | ~70 | -645 |
+| Test Files | 296 | ~50 | -246 |
+| Lines of Code | ~32,250 | ~13,500 | -18,750 |
+| Tests | ~600+ | 265 | ~335 |
+| Completion | 100% | 85% | 15% |
 
 ### Recent Progress (2026-02-02)
 - ✅ Container Service implemented (32 tests)
 - ✅ Match Service with player management (17 tests)
 - ✅ Command System with queue (20 tests + 7 integration)
 - ✅ WebSocket axum integration (8 tests)
+- ✅ Game Loop with snapshot broadcasting (12 tests)
+- ✅ Complete REST API (18 tests)
 
 ---
 
@@ -117,17 +119,23 @@
 | Endpoint | Java | Rust | Status |
 |----------|:----:|:----:|--------|
 | `GET /health` | ✅ | ✅ | Complete |
-| `GET /api/containers` | ✅ | ⚠️ | Stub |
-| `POST /api/containers` | ✅ | ⚠️ | Stub |
-| `GET /api/containers/{id}` | ✅ | ❌ | **Gap** |
-| `DELETE /api/containers/{id}` | ✅ | ❌ | **Gap** |
-| `POST /api/containers/{id}/matches` | ✅ | ❌ | **Gap** |
-| `GET /api/containers/{id}/matches` | ✅ | ❌ | **Gap** |
-| `POST /api/containers/{id}/commands` | ✅ | ❌ | **Gap** |
+| `GET /api/containers` | ✅ | ✅ | **Complete** |
+| `POST /api/containers` | ✅ | ✅ | **Complete** |
+| `GET /api/containers/{id}` | ✅ | ✅ | **Complete** |
+| `DELETE /api/containers/{id}` | ✅ | ✅ | **Complete** |
+| `POST /api/containers/{id}/tick` | ✅ | ✅ | **Complete** |
+| `POST /api/containers/{id}/matches` | ✅ | ✅ | **Complete** |
+| `GET /api/containers/{id}/matches` | ✅ | ✅ | **Complete** |
+| `GET /api/containers/{id}/matches/{id}` | ✅ | ✅ | **Complete** |
+| `DELETE /api/containers/{id}/matches/{id}` | ✅ | ✅ | **Complete** |
+| `POST /.../matches/{id}/join` | ✅ | ✅ | **Complete** |
+| `POST /.../matches/{id}/leave` | ✅ | ✅ | **Complete** |
+| `POST /.../matches/{id}/start` | ✅ | ✅ | **Complete** |
+| `POST /api/containers/{id}/commands` | ✅ | ⚠️ | Partial - structure exists |
 | `POST /api/containers/{id}/modules` | ✅ | ❌ | **Gap** |
 | `GET /api/resources` | ✅ | ❌ | **Gap** |
 | `POST /api/resources` | ✅ | ❌ | **Gap** |
-| `WS /ws/snapshots/{matchId}` | ✅ | ❌ | **Gap** |
+| `WS /ws/matches/{matchId}` | ✅ | ✅ | **Complete** |
 
 ### Persistence
 
@@ -207,9 +215,10 @@
    - Implemented: `ws_upgrade` handler, message routing
    - 8 tests passing
 
-5. **Snapshot Streaming** - ⚠️ PARTIAL
-   - Java: `DeltaSnapshotWebSocket`, `SnapshotBroadcaster`
-   - Rust: Infrastructure ready, need to wire to game loop
+5. ~~**Snapshot Streaming**~~ ✅ DONE
+   - Implemented: GameLoop broadcasts snapshots via broadcast channel
+   - WebSocket handlers can subscribe to receive updates
+   - 12 tests passing
 
 ### Priority 2: HIGH (Full Feature Parity)
 
