@@ -1,0 +1,181 @@
+//! Strongly-typed identifiers for StormStack entities.
+//!
+//! Using newtype wrappers provides compile-time safety against
+//! mixing up different ID types (e.g., passing a `MatchId` where
+//! a `ContainerId` is expected).
+
+use serde::{Deserialize, Serialize};
+use std::fmt;
+use uuid::Uuid;
+
+/// Strongly-typed entity identifier.
+///
+/// Entities are the fundamental unit in the ECS system.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct EntityId(pub u64);
+
+impl fmt::Display for EntityId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Entity({})", self.0)
+    }
+}
+
+impl From<u64> for EntityId {
+    fn from(id: u64) -> Self {
+        Self(id)
+    }
+}
+
+/// Strongly-typed container identifier.
+///
+/// Containers provide isolated execution environments for game matches.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ContainerId(pub Uuid);
+
+impl ContainerId {
+    /// Create a new random container ID.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for ContainerId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for ContainerId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Container({})", self.0)
+    }
+}
+
+/// Strongly-typed match identifier.
+///
+/// Matches represent active game sessions within a container.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct MatchId(pub Uuid);
+
+impl MatchId {
+    /// Create a new random match ID.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for MatchId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for MatchId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Match({})", self.0)
+    }
+}
+
+/// Strongly-typed tenant identifier.
+///
+/// Tenants represent isolated customer environments in multi-tenant deployments.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct TenantId(pub Uuid);
+
+impl TenantId {
+    /// Create a new random tenant ID.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for TenantId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for TenantId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Tenant({})", self.0)
+    }
+}
+
+/// Strongly-typed user identifier.
+///
+/// Users are authenticated principals within a tenant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct UserId(pub Uuid);
+
+impl UserId {
+    /// Create a new random user ID.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for UserId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for UserId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "User({})", self.0)
+    }
+}
+
+/// Component type identifier for ECS serialization.
+///
+/// Each component type has a unique ID for serialization purposes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ComponentTypeId(pub u64);
+
+impl fmt::Display for ComponentTypeId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ComponentType({})", self.0)
+    }
+}
+
+/// WebSocket connection identifier.
+///
+/// Uniquely identifies a client WebSocket connection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ConnectionId(pub u64);
+
+impl fmt::Display for ConnectionId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Connection({})", self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn entity_id_display() {
+        let id = EntityId(42);
+        assert_eq!(format!("{id}"), "Entity(42)");
+    }
+
+    #[test]
+    fn container_id_unique() {
+        let id1 = ContainerId::new();
+        let id2 = ContainerId::new();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn ids_serialize_roundtrip() {
+        let entity_id = EntityId(123);
+        let json = serde_json::to_string(&entity_id).expect("serialize");
+        let parsed: EntityId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(entity_id, parsed);
+    }
+}

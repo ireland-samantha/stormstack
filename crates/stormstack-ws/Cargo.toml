@@ -1,0 +1,24 @@
+[package]
+name = "stormstack-ws"
+description = "WebSocket handling for StormStack"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+stormstack-core = { workspace = true }
+stormstack-auth = { workspace = true }
+tokio = { workspace = true }
+axum = { workspace = true }
+axum-extra = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+futures = { workspace = true }
+dashmap = { workspace = true }
+
+[dev-dependencies]
+tokio-test = { workspace = true }

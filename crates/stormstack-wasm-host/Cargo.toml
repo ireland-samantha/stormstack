@@ -1,0 +1,22 @@
+[package]
+name = "stormstack-wasm-host"
+description = "Host functions for WASM modules"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+stormstack-core = { workspace = true }
+stormstack-wasm = { workspace = true }
+stormstack-ecs = { workspace = true }
+wasmtime = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+parking_lot = { workspace = true }
+rand = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

@@ -1,0 +1,102 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/stormstack-core",
+    "crates/stormstack-ecs",
+    "crates/stormstack-wasm",
+    "crates/stormstack-wasm-host",
+    "crates/stormstack-auth",
+    "crates/stormstack-net",
+    "crates/stormstack-ws",
+    "crates/stormstack-modules",
+    "crates/stormstack-server",
+    "crates/stormstack-test-utils",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["StormStack Contributors"]
+license = "MIT"
+repository = "https://github.com/samanthaireland/stormstack"
+rust-version = "1.93"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.49", features = ["full"] }
+tokio-util = { version = "0.7", features = ["codec"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+bincode = "1.3"
+
+# Error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# Logging/tracing
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Web framework
+axum = { version = "0.8", features = ["ws", "macros"] }
+axum-extra = { version = "0.10", features = ["typed-header"] }
+tower = { version = "0.5", features = ["full"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "compression-gzip"] }
+hyper = { version = "1.8", features = ["full"] }
+
+# WASM runtime (CRITICAL - wasmtime only)
+wasmtime = { version = "30", features = ["component-model"] }
+wasmtime-wasi = "30"
+
+# ECS (legion - mandated)
+legion = "0.4"
+
+# Authentication
+jsonwebtoken = "9"
+argon2 = "0.5"
+
+# UUIDs
+uuid = { version = "1.16", features = ["v4", "serde"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Testing
+mockall = "0.13"
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.6"
+tokio-test = "0.4"
+
+# Utilities
+parking_lot = "0.12"
+dashmap = "6"
+bytes = "1.11"
+futures = "0.3"
+async-trait = "0.1"
+inventory = "0.3"
+libloading = "0.8"
+rand = "0.9"
+
+# Internal crates
+stormstack-core = { path = "crates/stormstack-core" }
+stormstack-ecs = { path = "crates/stormstack-ecs" }
+stormstack-wasm = { path = "crates/stormstack-wasm" }
+stormstack-wasm-host = { path = "crates/stormstack-wasm-host" }
+stormstack-auth = { path = "crates/stormstack-auth" }
+stormstack-net = { path = "crates/stormstack-net" }
+stormstack-ws = { path = "crates/stormstack-ws" }
+stormstack-modules = { path = "crates/stormstack-modules" }
+stormstack-test-utils = { path = "crates/stormstack-test-utils" }
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"

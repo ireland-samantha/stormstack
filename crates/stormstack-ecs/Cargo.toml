@@ -1,0 +1,25 @@
+[package]
+name = "stormstack-ecs"
+description = "Entity-Component-System implementation for StormStack (legion-based)"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+stormstack-core = { workspace = true }
+legion = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+parking_lot = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+criterion = { workspace = true }
+
+[[bench]]
+name = "ecs_benchmark"
+harness = false
