@@ -152,3 +152,24 @@ Active blockers and issues affecting the Rust rewrite.
 - System scheduling via `set_schedule()`
 - Ready for integration with WASM host functions
 
+---
+
+## COMPLETE: stormstack-net (HTTP Server & API)
+**Date:** 2026-02-02
+**Agent:** Net Agent
+**Interfaces:**
+- `ServerBuilder` - Fluent builder for configuring axum server
+- `ServerConfig` - Server configuration (bind addr, CORS, tracing, compression)
+- `shutdown_signal()` - Graceful shutdown on Ctrl+C/SIGTERM
+- `AuthUser` / `OptionalAuth` - JWT authentication extractors
+- `AuthState` trait - State requirement for auth extraction
+- `Pagination` - Query parameter pagination
+- `ApiResponse<T>` - Standard success/error response wrapper
+- `ApiError` - Structured error responses with codes
+- `PaginatedResponse<T>` - Paginated list response
+**Notes:**
+- 16 tests passing
+- CORS, tracing, compression middleware
+- Graceful shutdown support
+- Ready for route integration
+

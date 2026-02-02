@@ -2612,10 +2612,12 @@ dependencies = [
 name = "stormstack-net"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum",
  "bytes",
  "serde",
  "serde_json",
+ "stormstack-auth",
  "stormstack-core",
  "thiserror 2.0.18",
  "tokio",
