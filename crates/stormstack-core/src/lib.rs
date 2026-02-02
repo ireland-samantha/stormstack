@@ -7,16 +7,22 @@
 //! - Common error types (`StormError`, `AuthError`, `WasmError`)
 //! - Core traits and interfaces
 //! - Shared DTOs and domain models
+//! - Command system for game logic execution
 
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 #![warn(clippy::pedantic)]
 
+pub mod command;
 pub mod config;
 pub mod error;
 pub mod id;
 pub mod snapshot;
 
+pub use command::{
+    Command, CommandContext, CommandQueue, CommandResult, CommandWorld, DespawnEntityCommand,
+    QueuedCommand, SpawnEntityCommand,
+};
 pub use config::MatchConfig;
 pub use error::{AuthError, ModuleError, StormError, WasmError};
 pub use id::{ComponentTypeId, ConnectionId, ContainerId, EntityId, MatchId, TenantId, UserId};

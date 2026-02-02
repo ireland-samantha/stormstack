@@ -46,6 +46,8 @@ tracing-subscriber = { workspace = true }
 uuid = { workspace = true }
 dashmap = { workspace = true }
 parking_lot = { workspace = true }
+futures = { workspace = true }
+chrono = { workspace = true }
 
 [dev-dependencies]
 stormstack-test-utils = { workspace = true }

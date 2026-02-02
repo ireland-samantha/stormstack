@@ -408,6 +408,24 @@ impl EcsWorld for StormWorld {
     }
 }
 
+impl stormstack_core::CommandWorld for StormWorld {
+    fn spawn_entity(&mut self) -> EntityId {
+        self.spawn_with((Marker,))
+    }
+
+    fn despawn_entity(&mut self, entity: EntityId) -> Result<()> {
+        EcsWorld::despawn(self, entity)
+    }
+
+    fn entity_exists(&self, entity: EntityId) -> bool {
+        self.exists(entity)
+    }
+
+    fn current_tick(&self) -> u64 {
+        self.current_tick
+    }
+}
+
 unsafe impl Send for StormWorld {}
 unsafe impl Sync for StormWorld {}
 
@@ -619,5 +637,132 @@ mod tests {
 
         let delta = world.delta_since(0).expect("delta");
         assert!(delta.spawned.len() <= 5);
+    }
+
+    // =========================================================================
+    // CommandWorld integration tests
+    // =========================================================================
+
+    use stormstack_core::{
+        Command, CommandContext, CommandQueue, CommandWorld, DespawnEntityCommand, MatchId,
+        SpawnEntityCommand, UserId,
+    };
+
+    #[test]
+    fn command_world_spawn_entity() {
+        let mut world = StormWorld::new();
+        let entity = CommandWorld::spawn_entity(&mut world);
+        assert!(CommandWorld::entity_exists(&world, entity));
+        assert_eq!(world.entity_count(), 1);
+    }
+
+    #[test]
+    fn command_world_despawn_entity() {
+        let mut world = StormWorld::new();
+        let entity = CommandWorld::spawn_entity(&mut world);
+        assert!(CommandWorld::entity_exists(&world, entity));
+
+        CommandWorld::despawn_entity(&mut world, entity).expect("despawn");
+        assert!(!CommandWorld::entity_exists(&world, entity));
+        assert_eq!(world.entity_count(), 0);
+    }
+
+    #[test]
+    fn command_world_current_tick() {
+        let mut world = StormWorld::new();
+        assert_eq!(CommandWorld::current_tick(&world), 0);
+
+        world.advance(0.016).expect("advance");
+        assert_eq!(CommandWorld::current_tick(&world), 1);
+    }
+
+    #[test]
+    fn spawn_command_with_storm_world() {
+        let cmd = SpawnEntityCommand::new();
+        let mut world = StormWorld::new();
+        let match_id = MatchId::new();
+        let user_id = UserId::new();
+        let mut ctx = CommandContext::new(&mut world, match_id, user_id, 0);
+
+        let result = cmd.execute(&mut ctx).expect("execute");
+        assert!(result.is_success());
+
+        let entity_id = EntityId(
+            result.data.as_ref().unwrap()["entity_id"]
+                .as_u64()
+                .unwrap(),
+        );
+        assert!(CommandWorld::entity_exists(&world, entity_id));
+    }
+
+    #[test]
+    fn despawn_command_with_storm_world() {
+        let mut world = StormWorld::new();
+        let entity = CommandWorld::spawn_entity(&mut world);
+
+        let cmd = DespawnEntityCommand::new(entity);
+        let match_id = MatchId::new();
+        let user_id = UserId::new();
+        let mut ctx = CommandContext::new(&mut world, match_id, user_id, 0);
+
+        let result = cmd.execute(&mut ctx).expect("execute");
+        assert!(result.is_success());
+        assert!(!CommandWorld::entity_exists(&world, entity));
+    }
+
+    #[test]
+    fn command_queue_with_storm_world() {
+        let mut queue = CommandQueue::new();
+        let user_id = UserId::new();
+
+        // Queue spawn commands
+        queue.push(Box::new(SpawnEntityCommand::new()), user_id);
+        queue.push(Box::new(SpawnEntityCommand::new()), user_id);
+        queue.push(Box::new(SpawnEntityCommand::new()), user_id);
+
+        let mut world = StormWorld::new();
+        let match_id = MatchId::new();
+
+        let results = queue.execute_all(&mut world, match_id);
+
+        assert_eq!(results.len(), 3);
+        assert!(results.iter().all(|r| r.is_success()));
+        assert_eq!(world.entity_count(), 3);
+
+        // Now despawn all entities
+        let entities: Vec<_> = world.entities().collect();
+        for entity in entities {
+            queue.push(Box::new(DespawnEntityCommand::new(entity)), user_id);
+        }
+
+        let results = queue.execute_all(&mut world, match_id);
+        assert_eq!(results.len(), 3);
+        assert!(results.iter().all(|r| r.is_success()));
+        assert_eq!(world.entity_count(), 0);
+    }
+
+    #[test]
+    fn command_tracks_changes() {
+        let mut world = StormWorld::new();
+        let match_id = MatchId::new();
+        let user_id = UserId::new();
+
+        // Advance to tick 1
+        world.advance(0.016).expect("advance");
+
+        // Spawn via command
+        let cmd = SpawnEntityCommand::new();
+        let mut ctx = CommandContext::new(&mut world, match_id, user_id, 1);
+        let result = cmd.execute(&mut ctx).expect("execute");
+
+        let entity_id = EntityId(
+            result.data.as_ref().unwrap()["entity_id"]
+                .as_u64()
+                .unwrap(),
+        );
+
+        // Check that changes are tracked
+        let delta = world.delta_since(0).expect("delta");
+        assert!(delta.spawned.iter().any(|s| s.id == entity_id));
     }
 }

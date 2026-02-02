@@ -37,7 +37,13 @@
 pub mod container;
 mod routes;
 mod state;
+/// WebSocket upgrade handler for real-time match streaming.
+pub mod ws;
 
+pub use container::{
+    Container, ContainerService, LoadedModule, Match, MatchState, MatchSummary, SharedContainer,
+    SharedContainerService, shared_container_service,
+};
 pub use routes::create_router;
 pub use state::{AppState, SharedAppState};
 

@@ -210,33 +210,35 @@ Maps Java tests to their Rust equivalents.
 
 | Category | Total | ✅ | 🔄 | ⬜ | ❌ |
 |----------|-------|----|----|----|----|
-| ECS | 15 | 15 | 0 | 0 | 0 |
+| ECS | 22 | 22 | 0 | 0 | 0 |
 | WASM Security | 13 | 13 | 0 | 0 | 0 |
 | WASM Host | 10 | 10 | 0 | 0 | 0 |
 | Auth | 31 | 31 | 0 | 0 | 0 |
-| Container | 5 | 0 | 0 | 5 | 0 |
-| Match | 5 | 0 | 0 | 5 | 0 |
-| WebSocket | 15 | 15 | 0 | 0 | 0 |
+| Container | 32 | 32 | 0 | 0 | 0 |
+| Match | 17 | 17 | 0 | 0 | 0 |
+| Command System | 27 | 27 | 0 | 0 | 0 |
+| WebSocket | 23 | 23 | 0 | 0 | 0 |
 | Module System | 29 | 29 | 0 | 0 | 0 |
 | Net | 16 | 16 | 0 | 0 | 0 |
 | Server (Integration) | 15 | 15 | 0 | 0 | 0 |
-| Core | 13 | 13 | 0 | 0 | 0 |
+| Core | 33 | 33 | 0 | 0 | 0 |
 | Performance | 4 | 0 | 0 | 4 | 0 |
-| **Total** | **171** | **157** | **0** | **14** | **0** |
+| **Total** | **272** | **268** | **0** | **4** | **0** |
 
 ### Rust Test Counts by Crate
 
-| Crate | Tests | Status |
-|-------|-------|--------|
-| stormstack-auth | 31 | ✅ |
-| stormstack-core | 13 | ✅ |
-| stormstack-ecs | 15 | ✅ |
-| stormstack-modules | 29 | ✅ |
-| stormstack-net | 16 | ✅ |
-| stormstack-server | 15 | ✅ |
-| stormstack-test-utils | 1 | ✅ |
-| stormstack-wasm | 13 | ✅ |
-| stormstack-wasm-host | 10 | ✅ |
-| stormstack-ws | 15 | ✅ |
-| **Total** | **161** | ✅ |
+| Crate | Tests | Status | Notes |
+|-------|-------|--------|-------|
+| stormstack-auth | 31 | ✅ | JWT, passwords, RBAC |
+| stormstack-core | 33 | ✅ | +20 command system |
+| stormstack-ecs | 22 | ✅ | +7 CommandWorld integration |
+| stormstack-modules | 29 | ✅ | Hot-reload |
+| stormstack-net | 16 | ✅ | HTTP server |
+| stormstack-server | 64 | ✅ | +49 container/match/ws |
+| stormstack-test-utils | 1 | ✅ | Harness |
+| stormstack-wasm | 13 | ✅ | Sandbox security |
+| stormstack-wasm-host | 10 | ✅ | Host functions |
+| stormstack-ws | 15 | ✅ | WebSocket |
+| Doc tests | 3 | ✅ | Auth examples |
+| **Total** | **237** | ✅ | +76 since initial |
 

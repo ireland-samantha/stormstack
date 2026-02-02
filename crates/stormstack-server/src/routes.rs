@@ -1,6 +1,6 @@
 //! REST API route handlers.
 //!
-//! Provides the main router with health check and container endpoints.
+//! Provides the main router with health check, container, and WebSocket endpoints.
 
 use axum::{
     extract::State,
@@ -12,6 +12,7 @@ use stormstack_core::ContainerId;
 use stormstack_net::{ApiResponse, AuthUser};
 
 use crate::state::SharedAppState;
+use crate::ws;
 
 /// Health check response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,6 +56,8 @@ pub fn create_router(state: SharedAppState) -> Router {
         .route("/health", get(health_handler))
         .route("/api/containers", get(list_containers_handler))
         .route("/api/containers", post(create_container_handler))
+        // WebSocket endpoint for match streaming
+        .route("/ws/matches/{match_id}", get(ws::ws_upgrade))
         .with_state(state)
 }
 
