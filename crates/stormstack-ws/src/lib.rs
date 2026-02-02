@@ -13,9 +13,15 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
+pub mod connection;
 pub mod handler;
 pub mod messages;
+pub mod subscription;
 
-pub use messages::{ClientMessage, ServerMessage};
-
-// TODO: Implement WebSocket handling
+pub use connection::{
+    shared_connection_manager, ConnectionManager, ConnectionState, MessageSender,
+    SharedConnectionManager,
+};
+pub use handler::{ConnectionHandler, MatchStateProvider, WsHandler};
+pub use messages::{ClientMessage, Command, CommandResult, ServerMessage};
+pub use subscription::{shared_subscriptions, SharedSubscriptionManager, SubscriptionManager};

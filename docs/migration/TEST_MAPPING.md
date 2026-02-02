@@ -100,12 +100,21 @@ Maps Java tests to their Rust equivalents.
 
 | Java Test | Rust Test | Status | Notes |
 |-----------|-----------|--------|-------|
-| `WebSocketTest.testConnect` | `ws::tests::connection` | ⬜ | |
-| `WebSocketTest.testSubscribe` | `ws::tests::subscribe` | ⬜ | |
-| `WebSocketTest.testSnapshot` | `ws::tests::receive_snapshot` | ⬜ | |
-| `WebSocketTest.testDelta` | `ws::tests::receive_delta` | ⬜ | |
-| `WebSocketTest.testCommand` | `ws::tests::send_command` | ⬜ | |
-| `WebSocketTest.testAuth` | `ws::tests::authentication` | ⬜ | |
+| `WebSocketTest.testConnect` | `connection::tests::add_and_remove_connection` | ✅ | Connection lifecycle |
+| `WebSocketTest.testSubscribe` | `handler::tests::subscribe_sends_snapshot` | ✅ | Subscription + snapshot |
+| `WebSocketTest.testSubscribe` | `subscription::tests::subscribe_and_unsubscribe` | ✅ | Subscription tracking |
+| `WebSocketTest.testSnapshot` | `handler::tests::subscribe_sends_snapshot` | ✅ | Initial snapshot on subscribe |
+| `WebSocketTest.testBroadcast` | `connection::tests::subscribe_and_broadcast` | ✅ | Broadcast to subscribers |
+| `WebSocketTest.testPing` | `handler::tests::ping_responds_with_pong` | ✅ | Ping/pong keepalive |
+| `WebSocketTest.testDisconnect` | `handler::tests::disconnect_removes_subscriptions` | ✅ | Cleanup on disconnect |
+| N/A | `connection::tests::send_to_connection` | ✅ | Direct message send |
+| N/A | `connection::tests::connection_authentication` | ✅ | Auth state tracking |
+| N/A | `subscription::tests::multiple_subscribers` | ✅ | Multi-subscriber |
+| N/A | `subscription::tests::get_connection_subscriptions` | ✅ | Query subscriptions |
+| N/A | `subscription::tests::remove_connection_clears_all_subscriptions` | ✅ | Cleanup all |
+| N/A | `messages::tests::client_message_serialize` | ✅ | Message serialization |
+| N/A | `messages::tests::server_message_serialize` | ✅ | Message serialization |
+| N/A | `messages::tests::command_result_success` | ✅ | Command result |
 
 ---
 
@@ -162,9 +171,9 @@ Maps Java tests to their Rust equivalents.
 | Auth | 9 | 9 | 0 | 0 | 0 |
 | Container | 5 | 0 | 0 | 5 | 0 |
 | Match | 5 | 0 | 0 | 5 | 0 |
-| WebSocket | 6 | 0 | 0 | 6 | 0 |
+| WebSocket | 15 | 15 | 0 | 0 | 0 |
 | Module System | 4 | 0 | 0 | 4 | 0 |
 | Integration | 4 | 0 | 0 | 4 | 0 |
 | Performance | 4 | 0 | 0 | 4 | 0 |
-| **Total** | **63** | **35** | **0** | **28** | **0** |
+| **Total** | **72** | **50** | **0** | **22** | **0** |
 

@@ -89,6 +89,27 @@ Active blockers and issues affecting the Rust rewrite.
 
 ---
 
+## COMPLETE: stormstack-ws (WebSocket Handling)
+**Date:** 2026-02-02
+**Agent:** WebSocket Agent
+**Interfaces:**
+- `ConnectionHandler` trait - Handle WebSocket events
+- `MatchStateProvider` trait - Provide match state for subscriptions
+- `WsHandler<M>` - Default handler implementation
+- `ConnectionManager` - Manage active connections
+- `SubscriptionManager` - Track match subscriptions
+- `ClientMessage` / `ServerMessage` - Protocol message types
+- `Command` / `CommandResult` - Game command types
+**Notes:**
+- 15 tests passing
+- Thread-safe with DashMap for concurrent access
+- Subscription management (subscribe/unsubscribe)
+- Broadcast to match subscribers
+- Ping/pong keepalive support
+- Ready for integration with axum WebSocket
+
+---
+
 ## COMPLETE: stormstack-wasm-host (WASM Host Functions)
 **Date:** 2026-02-02
 **Agent:** WASM Host Agent

@@ -163,7 +163,21 @@ impl fmt::Display for ComponentTypeId {
 ///
 /// Uniquely identifies a client WebSocket connection.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct ConnectionId(pub u64);
+pub struct ConnectionId(pub Uuid);
+
+impl ConnectionId {
+    /// Create a new random connection ID.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for ConnectionId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl fmt::Display for ConnectionId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

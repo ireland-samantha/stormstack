@@ -5,7 +5,7 @@
 //! - `AuthError`: Authentication/authorization errors
 //! - `WasmError`: WASM sandbox execution errors
 
-use crate::id::{ContainerId, EntityId, MatchId, UserId};
+use crate::id::{ConnectionId, ContainerId, EntityId, MatchId, UserId};
 use thiserror::Error;
 
 /// Top-level error type for StormStack operations.
@@ -22,6 +22,14 @@ pub enum StormError {
     /// Match was not found.
     #[error("Match not found: {0}")]
     MatchNotFound(MatchId),
+
+    /// WebSocket connection was not found.
+    #[error("Connection not found: {0}")]
+    ConnectionNotFound(ConnectionId),
+
+    /// WebSocket connection was closed.
+    #[error("Connection closed: {0}")]
+    ConnectionClosed(ConnectionId),
 
     /// Authentication or authorization error.
     #[error("Authentication failed: {0}")]
