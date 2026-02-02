@@ -122,10 +122,34 @@ Maps Java tests to their Rust equivalents.
 
 | Java Test | Rust Test | Status | Notes |
 |-----------|-----------|--------|-------|
-| `ModuleLoaderTest.testLoad` | `modules::tests::load_module` | ⬜ | |
-| `ModuleLoaderTest.testReload` | `modules::tests::reload_module` | ⬜ | |
-| `ModuleLoaderTest.testUnload` | `modules::tests::unload_module` | ⬜ | |
-| `ModuleLoaderTest.testDiscovery` | `modules::tests::module_discovery` | ⬜ | Uses inventory crate |
+| `ModuleLoaderTest.testLoad` | `loader::tests::load_valid_module` | ✅ | libloading |
+| `ModuleLoaderTest.testReload` | `loader::tests::reload_module` | ✅ | Unload + load |
+| `ModuleLoaderTest.testUnload` | `loader::tests::unload_module` | ✅ | |
+| `ModuleLoaderTest.testDiscovery` | `registry::tests::*` | ✅ | Uses module registry |
+| N/A | `descriptor::tests::descriptor_creation` | ✅ | Module metadata |
+| N/A | `descriptor::tests::descriptor_with_dependencies` | ✅ | Dependency tracking |
+| N/A | `descriptor::tests::default_descriptor` | ✅ | Default values |
+| N/A | `descriptor::tests::abi_version_display` | ✅ | ABI formatting |
+| N/A | `module_trait::tests::module_lifecycle` | ✅ | on_load/tick/unload |
+| N/A | `module_trait::tests::context_access` | ✅ | Context in callbacks |
+| N/A | `loader::tests::load_invalid_path_fails` | ✅ | Error handling |
+| N/A | `loader::tests::symbol_not_found` | ✅ | Missing symbol |
+| N/A | `loader::tests::abi_version_mismatch` | ✅ | Version check |
+| N/A | `loader::tests::shared_loader_thread_safety` | ✅ | Thread-safe |
+| N/A | `registry::tests::register_and_resolve` | ✅ | Basic registration |
+| N/A | `registry::tests::dependency_resolution` | ✅ | Topological sort |
+| N/A | `registry::tests::circular_dependency_detected` | ✅ | Cycle detection |
+| N/A | `registry::tests::missing_dependency` | ✅ | Error handling |
+| N/A | `registry::tests::topological_sort_order` | ✅ | Load order |
+| N/A | `registry::tests::unregister_module` | ✅ | Removal |
+| N/A | `registry::tests::unregister_with_dependents_fails` | ✅ | Safety check |
+| N/A | `registry::tests::get_module_info` | ✅ | Query metadata |
+| N/A | `registry::tests::list_all_modules` | ✅ | Enumeration |
+| N/A | `registry::tests::clear_registry` | ✅ | Reset |
+| N/A | `registry::tests::duplicate_registration_fails` | ✅ | Unique names |
+| N/A | `declare_module::tests::macro_creates_descriptor` | ✅ | declare_module! |
+| N/A | `declare_module::tests::macro_with_dependencies` | ✅ | With deps |
+| N/A | `declare_module::tests::macro_default_version` | ✅ | Defaults |
 
 ---
 
@@ -137,6 +161,26 @@ Maps Java tests to their Rust equivalents.
 | `E2ETest.testMultiplayer` | `integration::tests::multiplayer_session` | ⬜ | |
 | `E2ETest.testTenantIsolation` | `integration::tests::tenant_isolation` | ⬜ | |
 | `E2ETest.testModuleHotReload` | `integration::tests::hot_reload` | ⬜ | |
+
+### Server Integration Tests (stormstack-server)
+
+| Rust Test | Status | Notes |
+|-----------|--------|-------|
+| `state::tests::app_state_creation` | ✅ | AppState setup |
+| `state::tests::app_state_auth_trait` | ✅ | AuthState implementation |
+| `state::tests::jwt_service_access` | ✅ | JWT via trait |
+| `server::tests::server_creation` | ✅ | Server setup |
+| `server::tests::server_with_config` | ✅ | Custom config |
+| `server::tests::server_routes_health` | ✅ | Health endpoint |
+| `routes::tests::health_returns_ok` | ✅ | GET /health |
+| `routes::tests::containers_returns_empty` | ✅ | GET /api/containers |
+| `routes::tests::not_found_returns_404` | ✅ | 404 handling |
+| `routes::tests::api_response_format` | ✅ | JSON response |
+| `routes::tests::auth_required_without_token` | ✅ | 401 without auth |
+| `routes::tests::auth_works_with_token` | ✅ | Auth extraction |
+| `routes::tests::invalid_token_rejected` | ✅ | Bad token |
+| `routes::tests::health_no_auth_required` | ✅ | Public endpoint |
+| `routes::tests::cors_headers_present` | ✅ | CORS middleware |
 
 ---
 
@@ -167,13 +211,32 @@ Maps Java tests to their Rust equivalents.
 | Category | Total | ✅ | 🔄 | ⬜ | ❌ |
 |----------|-------|----|----|----|----|
 | ECS | 15 | 15 | 0 | 0 | 0 |
-| WASM Security | 11 | 11 | 0 | 0 | 0 |
-| Auth | 9 | 9 | 0 | 0 | 0 |
+| WASM Security | 13 | 13 | 0 | 0 | 0 |
+| WASM Host | 10 | 10 | 0 | 0 | 0 |
+| Auth | 31 | 31 | 0 | 0 | 0 |
 | Container | 5 | 0 | 0 | 5 | 0 |
 | Match | 5 | 0 | 0 | 5 | 0 |
 | WebSocket | 15 | 15 | 0 | 0 | 0 |
-| Module System | 4 | 0 | 0 | 4 | 0 |
-| Integration | 4 | 0 | 0 | 4 | 0 |
+| Module System | 29 | 29 | 0 | 0 | 0 |
+| Net | 16 | 16 | 0 | 0 | 0 |
+| Server (Integration) | 15 | 15 | 0 | 0 | 0 |
+| Core | 13 | 13 | 0 | 0 | 0 |
 | Performance | 4 | 0 | 0 | 4 | 0 |
-| **Total** | **72** | **50** | **0** | **22** | **0** |
+| **Total** | **171** | **157** | **0** | **14** | **0** |
+
+### Rust Test Counts by Crate
+
+| Crate | Tests | Status |
+|-------|-------|--------|
+| stormstack-auth | 31 | ✅ |
+| stormstack-core | 13 | ✅ |
+| stormstack-ecs | 15 | ✅ |
+| stormstack-modules | 29 | ✅ |
+| stormstack-net | 16 | ✅ |
+| stormstack-server | 15 | ✅ |
+| stormstack-test-utils | 1 | ✅ |
+| stormstack-wasm | 13 | ✅ |
+| stormstack-wasm-host | 10 | ✅ |
+| stormstack-ws | 15 | ✅ |
+| **Total** | **161** | ✅ |
 

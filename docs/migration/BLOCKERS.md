@@ -173,3 +173,37 @@ Active blockers and issues affecting the Rust rewrite.
 - Graceful shutdown support
 - Ready for route integration
 
+---
+
+## COMPLETE: stormstack-modules (Native Hot-Reload)
+**Date:** 2026-02-02
+**Agent:** Module System Agent
+**Interfaces:**
+- `ModuleDescriptor` - Module metadata with ABI version and dependencies
+- `Module` trait - Lifecycle hooks (on_load, on_tick, on_unload)
+- `ModuleLoader` - Load/unload dynamic libraries via libloading
+- `ModuleRegistry` - Dependency resolution with topological sort
+- `declare_module!` macro - Static module registration
+- `SharedModuleLoader` - Thread-safe loader wrapper
+**Notes:**
+- 29 tests passing
+- ABI version checking prevents incompatible modules
+- Circular dependency detection
+- For TRUSTED developer code only (not user WASM)
+
+---
+
+## COMPLETE: stormstack-server (Integration)
+**Date:** 2026-02-02
+**Agent:** Integration Agent
+**Interfaces:**
+- `AppState` - Shared state implementing AuthState
+- `Server` - Main server holding all components
+- Routes: `/health`, `/api/containers`
+- `main.rs` - Entry point with tracing initialization
+**Notes:**
+- 15 tests passing
+- Integrates all crates (ECS, WASM, WS, Auth, Net, Modules)
+- Uses ServerBuilder from stormstack-net
+- Binary builds and runs successfully
+
