@@ -28,6 +28,8 @@ from pathlib import Path
 KEY_LOCATIONS = [
     "thunder/engine/provider/src/main/resources",
     "thunder/engine/provider/src/test/resources",
+    "thunder/auth/provider/src/main/resources",
+    "thunder/auth/provider/src/test/resources",
 ]
 
 PRIVATE_KEY_NAME = "privateKey.pem"

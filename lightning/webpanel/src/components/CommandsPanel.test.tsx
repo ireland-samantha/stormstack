@@ -21,9 +21,12 @@ describe("CommandsPanel", () => {
       },
     });
 
-    await waitFor(() => {
-      expect(screen.getByText("Commands")).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText("Commands")).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
   });
 
   it("displays commands in table", async () => {

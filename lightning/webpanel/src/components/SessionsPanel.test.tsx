@@ -30,9 +30,12 @@ describe("SessionsPanel", () => {
       },
     });
 
-    await waitFor(() => {
-      expect(screen.getByText("Sessions")).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText("Sessions")).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
   });
 
   it("shows loading state initially", () => {

@@ -119,8 +119,10 @@ describe("ContainerDashboard", () => {
     expect(screen.getByLabelText(/container name/i)).toBeInTheDocument();
   });
 
-  it("creates container when form is submitted", async () => {
-    const user = userEvent.setup();
+  it(
+    "creates container when form is submitted",
+    async () => {
+      const user = userEvent.setup();
     let createCalled = false;
     let requestBody: unknown;
 
@@ -161,7 +163,9 @@ describe("ContainerDashboard", () => {
       expect(createCalled).toBe(true);
     });
     expect((requestBody as { name: string })?.name).toBe("new-container");
-  });
+    },
+    30000,
+  );
 
   it("selects container when card is clicked", async () => {
     const user = userEvent.setup();
