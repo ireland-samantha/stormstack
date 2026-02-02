@@ -33,9 +33,10 @@ import ca.samanthaireland.stormstack.thunder.engine.ext.module.ModuleContext;
 import ca.samanthaireland.stormstack.thunder.engine.ext.module.ModuleExports;
 import ca.samanthaireland.stormstack.thunder.engine.ext.module.ModuleFactory;
 import ca.samanthaireland.stormstack.thunder.engine.ext.module.ModuleIdentifier;
-import ca.samanthaireland.stormstack.thunder.engine.internal.auth.module.ModuleAuthService;
+import ca.samanthaireland.stormstack.thunder.engine.internal.auth.module.LocalModuleTokenProvider;
 import ca.samanthaireland.stormstack.thunder.engine.internal.auth.module.ModuleAuthToken;
 import ca.samanthaireland.stormstack.thunder.engine.internal.auth.module.ModulePermissionClaimBuilder;
+import ca.samanthaireland.stormstack.thunder.engine.internal.auth.module.ModuleTokenProvider;
 import ca.samanthaireland.stormstack.thunder.engine.internal.core.store.ModuleScopedStore;
 import ca.samanthaireland.stormstack.thunder.engine.internal.ext.jar.FactoryClassloader;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,7 @@ public class OnDiskModuleManager implements ModuleManager {
     private final ModuleContext moduleContext;
     private final PermissionRegistry permissionRegistry;
     private final EntityComponentStore sharedStore;
-    private final ModuleAuthService authService;
+    private final ModuleTokenProvider tokenProvider;
 
     private final Map<String, ModuleFactory> factoryCache = new ConcurrentHashMap<>();
     private final Map<String, EngineModule> moduleCache = new ConcurrentHashMap<>();
@@ -77,6 +78,8 @@ public class OnDiskModuleManager implements ModuleManager {
 
     /**
      * Create an OnDiskModuleManager with a custom directory and factory classloader.
+     *
+     * <p>Uses local JWT signing for module authentication (suitable for testing/standalone).
      *
      * @param scanDirectory the directory to scan for JAR files
      * @param factoryClassloader the classloader to use for loading module factories from JARs
@@ -90,20 +93,49 @@ public class OnDiskModuleManager implements ModuleManager {
             ModuleContext moduleContext,
             PermissionRegistry permissionRegistry,
             EntityComponentStore sharedStore) {
+        this(scanDirectory, factoryClassloader, moduleContext, permissionRegistry, sharedStore,
+                new LocalModuleTokenProvider());
+    }
+
+    /**
+     * Create an OnDiskModuleManager with a custom token provider.
+     *
+     * <p>Use this constructor for production deployments with Thunder Auth:
+     * <pre>{@code
+     * RestModuleTokenProvider restProvider = new RestModuleTokenProvider(authUrl, clientId, clientSecret);
+     * ModuleTokenProvider tokenProvider = restProvider.toModuleTokenProvider();
+     * new OnDiskModuleManager(scanDir, classloader, context, registry, store, tokenProvider);
+     * }</pre>
+     *
+     * @param scanDirectory the directory to scan for JAR files
+     * @param factoryClassloader the classloader to use for loading module factories from JARs
+     * @param moduleContext the module context for dependency injection
+     * @param permissionRegistry the registry for component permissions
+     * @param sharedStore the shared entity component store for all modules
+     * @param tokenProvider the provider for module token operations
+     */
+    public OnDiskModuleManager(
+            Path scanDirectory,
+            FactoryClassloader<ModuleFactory> factoryClassloader,
+            ModuleContext moduleContext,
+            PermissionRegistry permissionRegistry,
+            EntityComponentStore sharedStore,
+            ModuleTokenProvider tokenProvider) {
         this.scanDirectory = scanDirectory;
         this.factoryClassloader = factoryClassloader;
         this.moduleContext = moduleContext;
         this.permissionRegistry = permissionRegistry;
         this.sharedStore = sharedStore;
-        this.authService = new ModuleAuthService();
-        log.info("OnDiskModuleManager initialized with JWT authentication");
+        this.tokenProvider = tokenProvider;
+        log.info("OnDiskModuleManager initialized with {} token provider",
+                tokenProvider.getClass().getSimpleName());
     }
 
     /**
      * Create an OnDiskModuleManager for a container with a custom parent classloader.
      *
      * <p>This constructor is designed for container isolation, where each container
-     * has its own classloader for module JAR loading.
+     * has its own classloader for module JAR loading. Uses local JWT signing.
      *
      * @param moduleContext the module context for dependency injection
      * @param permissionRegistry the registry for component permissions
@@ -115,6 +147,26 @@ public class OnDiskModuleManager implements ModuleManager {
             PermissionRegistry permissionRegistry,
             String scanDirectory,
             ClassLoader parentClassLoader) {
+        this(moduleContext, permissionRegistry, scanDirectory, parentClassLoader, new LocalModuleTokenProvider());
+    }
+
+    /**
+     * Create an OnDiskModuleManager for a container with a custom token provider.
+     *
+     * <p>This constructor is designed for container isolation with external authentication.
+     *
+     * @param moduleContext the module context for dependency injection
+     * @param permissionRegistry the registry for component permissions
+     * @param scanDirectory the directory path to scan for JAR files
+     * @param parentClassLoader the parent classloader for module class loading
+     * @param tokenProvider the provider for module token operations
+     */
+    public OnDiskModuleManager(
+            ModuleContext moduleContext,
+            PermissionRegistry permissionRegistry,
+            String scanDirectory,
+            ClassLoader parentClassLoader,
+            ModuleTokenProvider tokenProvider) {
         this.scanDirectory = Path.of(scanDirectory);
         this.factoryClassloader = new ca.samanthaireland.stormstack.thunder.engine.internal.ext.jar.ModuleFactoryClassLoader<>(
                 ModuleFactory.class, "ModuleFactory") {
@@ -127,8 +179,9 @@ public class OnDiskModuleManager implements ModuleManager {
         this.moduleContext = moduleContext;
         this.permissionRegistry = permissionRegistry;
         this.sharedStore = moduleContext.getEntityComponentStore();
-        this.authService = new ModuleAuthService();
-        log.info("OnDiskModuleManager initialized for container with custom classloader");
+        this.tokenProvider = tokenProvider;
+        log.info("OnDiskModuleManager initialized for container with {} token provider",
+                tokenProvider.getClass().getSimpleName());
     }
 
     /**
@@ -290,8 +343,8 @@ public class OnDiskModuleManager implements ModuleManager {
             // EntityModule gets superuser privileges to attach FLAG components during spawn
             boolean isSuperuser = ENTITY_MODULE_NAME.equals(moduleName);
             ModuleAuthToken authToken = isSuperuser
-                    ? authService.issueSuperuserToken(moduleName, componentPermissions)
-                    : authService.issueRegularToken(moduleName, componentPermissions);
+                    ? tokenProvider.issueSuperuserToken(moduleName, componentPermissions)
+                    : tokenProvider.issueRegularToken(moduleName, componentPermissions);
 
             // Create the final scoped store with the JWT token
             ModuleScopedStore finalStore = ModuleScopedStore.create(
@@ -375,8 +428,8 @@ public class OnDiskModuleManager implements ModuleManager {
                             .withAccessibleComponentsFrom(moduleCache.values())
                             .build();
 
-            // Refresh the JWT token using the auth service (preserves superuser status)
-            ModuleAuthToken newAuthToken = authService.refreshToken(existingToken, componentPermissions);
+            // Refresh the JWT token using the token provider (preserves superuser status)
+            ModuleAuthToken newAuthToken = tokenProvider.refreshToken(existingToken, componentPermissions);
 
             // Update the module's scoped store with the new token
             ModuleScopedStore newStore = ModuleScopedStore.create(

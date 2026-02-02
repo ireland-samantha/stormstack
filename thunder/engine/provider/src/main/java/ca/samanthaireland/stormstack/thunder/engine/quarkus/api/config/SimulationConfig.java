@@ -61,10 +61,13 @@ import ca.samanthaireland.stormstack.thunder.engine.internal.core.store.EcsPrope
 import ca.samanthaireland.stormstack.thunder.engine.internal.core.store.LockingEntityComponentStore;
 import ca.samanthaireland.stormstack.thunder.engine.internal.core.store.SimplePermissionRegistry;
 import ca.samanthaireland.stormstack.thunder.engine.internal.core.resource.OnDiskResourceManager;
+import ca.samanthaireland.stormstack.thunder.engine.internal.auth.module.LocalModuleTokenProvider;
+import ca.samanthaireland.stormstack.thunder.engine.internal.auth.module.ModuleTokenProvider;
 import ca.samanthaireland.stormstack.thunder.engine.internal.ext.jar.ModuleFactoryClassLoader;
 import ca.samanthaireland.stormstack.thunder.engine.internal.ext.module.DefaultInjector;
 import ca.samanthaireland.stormstack.thunder.engine.internal.ext.module.ModuleManager;
 import ca.samanthaireland.stormstack.thunder.engine.internal.ext.module.OnDiskModuleManager;
+import ca.samanthaireland.stormstack.thunder.engine.api.resource.adapter.RestModuleTokenProvider;
 import ca.samanthaireland.stormstack.thunder.engine.internal.container.InMemoryContainerManager;
 import ca.samanthaireland.stormstack.thunder.engine.internal.core.session.DefaultPlayerSessionService;
 import ca.samanthaireland.stormstack.thunder.engine.internal.core.session.InMemoryPlayerSessionRepository;
@@ -85,6 +88,7 @@ import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.nio.file.Path;
+import java.util.Optional;
 
 /**
  * CDI configuration for simulation beans.
@@ -106,6 +110,18 @@ public class SimulationConfig {
 
     @ConfigProperty(name = "storage.resources-path", defaultValue = "resources")
     String resourcesPath;
+
+    @ConfigProperty(name = "auth.module-token.enabled", defaultValue = "false")
+    boolean moduleTokenAuthEnabled;
+
+    @ConfigProperty(name = "auth.service-url", defaultValue = "http://localhost:8082")
+    String authServiceUrl;
+
+    @ConfigProperty(name = "oauth2.client-id")
+    Optional<String> oauth2ClientId;
+
+    @ConfigProperty(name = "oauth2.client-secret")
+    Optional<String> oauth2ClientSecret;
 
     // ---------- Core infrastructure ----------
 
@@ -132,6 +148,20 @@ public class SimulationConfig {
         return new SimplePermissionRegistry();
     }
 
+    // ---------- Module token authentication ----------
+
+    @Produces
+    @ApplicationScoped
+    public ModuleTokenProvider moduleTokenProvider() {
+        if (moduleTokenAuthEnabled && oauth2ClientId.isPresent() && oauth2ClientSecret.isPresent()) {
+            RestModuleTokenProvider restProvider = new RestModuleTokenProvider(
+                    authServiceUrl, oauth2ClientId.get(), oauth2ClientSecret.get());
+            return new RestModuleTokenProviderAdapter(restProvider);
+        }
+        // Fall back to local JWT signing for testing/standalone
+        return new LocalModuleTokenProvider();
+    }
+
     // ---------- Container management ----------
 
     @Produces
@@ -145,14 +175,15 @@ public class SimulationConfig {
     @Produces
     @ApplicationScoped
     public ModuleManager moduleManager(ModuleContext context, PermissionRegistry permissionRegistry,
-                                        EntityComponentStore store) {
-        // Pass store directly to OnDiskModuleManager to ensure it's available during module initialization
+                                        EntityComponentStore store, ModuleTokenProvider tokenProvider) {
+        // Pass store and token provider to OnDiskModuleManager
         OnDiskModuleManager manager =
                 new OnDiskModuleManager(Path.of(modulesPath),
                         new ModuleFactoryClassLoader<>(ModuleFactory.class, "ModuleFactory"),
                         context,
                         permissionRegistry,
-                        store);
+                        store,
+                        tokenProvider);
         // Register with the injector so modules can access it via ModuleResolver
         context.addClass(ModuleResolver.class, manager);
         return manager;
