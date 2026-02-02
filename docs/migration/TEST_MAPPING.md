@@ -51,12 +51,15 @@ Maps Java tests to their Rust equivalents.
 
 | Java Test | Rust Test | Status | Notes |
 |-----------|-----------|--------|-------|
-| `AuthServiceTest.testJwtValidation` | `auth::jwt::tests::validate_token` | ⬜ | |
-| `AuthServiceTest.testJwtGeneration` | `auth::jwt::tests::generate_token` | ⬜ | |
-| `AuthServiceTest.testJwtExpiration` | `auth::jwt::tests::token_expiration` | ⬜ | |
-| `AuthServiceTest.testPasswordHashing` | `auth::password::tests::hash_verify` | ⬜ | |
-| `RbacServiceTest.testPermissions` | `auth::rbac::tests::permissions` | ⬜ | |
-| `RbacServiceTest.testRoles` | `auth::rbac::tests::role_permissions` | ⬜ | |
+| `AuthServiceTest.testJwtValidation` | `jwt::tests::validate_and_generate_roundtrip` | ✅ | HS256 with jsonwebtoken |
+| `AuthServiceTest.testJwtGeneration` | `jwt::tests::generate_token` | ✅ | |
+| `AuthServiceTest.testJwtExpiration` | `jwt::tests::expired_token_rejected` | ✅ | Default 60s leeway |
+| `AuthServiceTest.testJwtRefresh` | `jwt::tests::refresh_token_creates_new_token` | ✅ | Refresh within window |
+| `AuthServiceTest.testPasswordHashing` | `password::tests::hash_and_verify_roundtrip` | ✅ | Argon2id OWASP params |
+| `AuthServiceTest.testPasswordSalting` | `password::tests::different_hashes_for_same_password` | ✅ | Random salt per hash |
+| `RbacServiceTest.testPermissions` | `rbac::tests::admin_has_all_permissions` | ✅ | |
+| `RbacServiceTest.testRoles` | `rbac::tests::role_permissions_list` | ✅ | |
+| `RbacServiceTest.testMultipleRoles` | `rbac::tests::multiple_roles_combine_permissions` | ✅ | |
 
 ---
 
@@ -146,13 +149,13 @@ Maps Java tests to their Rust equivalents.
 | Category | Total | ✅ | 🔄 | ⬜ | ❌ |
 |----------|-------|----|----|----|----|
 | ECS | 6 | 0 | 0 | 6 | 0 |
-| WASM Security | 8 | 0 | 0 | 8 | 0 |
-| Auth | 6 | 0 | 0 | 6 | 0 |
+| WASM Security | 11 | 10 | 0 | 1 | 0 |
+| Auth | 9 | 9 | 0 | 0 | 0 |
 | Container | 5 | 0 | 0 | 5 | 0 |
 | Match | 5 | 0 | 0 | 5 | 0 |
 | WebSocket | 6 | 0 | 0 | 6 | 0 |
 | Module System | 4 | 0 | 0 | 4 | 0 |
 | Integration | 4 | 0 | 0 | 4 | 0 |
 | Performance | 4 | 0 | 0 | 4 | 0 |
-| **Total** | **48** | **0** | **0** | **48** | **0** |
+| **Total** | **54** | **19** | **0** | **35** | **0** |
 

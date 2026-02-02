@@ -55,7 +55,7 @@ legion = "0.4"
 
 # Authentication
 jsonwebtoken = "9"
-argon2 = "0.5"
+argon2 = { version = "0.5", features = ["rand"] }
 
 # UUIDs
 uuid = { version = "1.16", features = ["v4", "serde"] }

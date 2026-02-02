@@ -6,6 +6,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::str::FromStr;
 use uuid::Uuid;
 
 /// Strongly-typed entity identifier.
@@ -104,6 +105,14 @@ impl fmt::Display for TenantId {
     }
 }
 
+impl FromStr for TenantId {
+    type Err = uuid::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(Uuid::parse_str(s)?))
+    }
+}
+
 /// Strongly-typed user identifier.
 ///
 /// Users are authenticated principals within a tenant.
@@ -127,6 +136,14 @@ impl Default for UserId {
 impl fmt::Display for UserId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "User({})", self.0)
+    }
+}
+
+impl FromStr for UserId {
+    type Err = uuid::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(Uuid::parse_str(s)?))
     }
 }
 
