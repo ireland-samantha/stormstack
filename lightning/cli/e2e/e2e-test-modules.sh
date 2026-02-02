@@ -176,7 +176,7 @@ if [ "$SKIP_BUILD" = false ]; then
     cd "$PROJECT_ROOT"
     mvn install -pl thunder/engine/extensions/modules/physics-module/rigid-body-module -DskipTests -q
 
-    RIGID_BODY_JAR="$PROJECT_ROOT/thunder/engine/extensions/modules/physics-module/rigid-body-module/target/rigid-body-module-0.0.3-SNAPSHOT.jar"
+    RIGID_BODY_JAR="$PROJECT_ROOT/thunder/engine/extensions/modules/physics-module/rigid-body-module/target/rigid-body-module-0.1.1.jar"
     if [ ! -f "$RIGID_BODY_JAR" ]; then
         log_error "Failed to build rigid body module JAR"
         exit 1
@@ -191,7 +191,7 @@ else
     fi
 
     # Check if rigid body JAR exists
-    RIGID_BODY_JAR="$PROJECT_ROOT/thunder/engine/extensions/modules/physics-module/rigid-body-module/target/rigid-body-module-0.0.3-SNAPSHOT.jar"
+    RIGID_BODY_JAR="$PROJECT_ROOT/thunder/engine/extensions/modules/physics-module/rigid-body-module/target/rigid-body-module-0.1.1.jar"
     if [ ! -f "$RIGID_BODY_JAR" ]; then
         log_warn "Rigid Body Module JAR not found. It will need to be built."
     fi
