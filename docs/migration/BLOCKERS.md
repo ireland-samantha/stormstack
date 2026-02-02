@@ -54,15 +54,36 @@ Active blockers and issues affecting the Rust rewrite.
 
 ## Completion Notices
 
-<!-- Post completion notices here when a module is ready for dependents:
+## COMPLETE: stormstack-wasm (WASM Sandbox)
+**Date:** 2026-02-02
+**Agent:** WASM Agent
+**Interfaces:**
+- `WasmSandbox::new()` - Create sandbox with epoch thread
+- `WasmSandbox::load_module()` - Load WASM bytes
+- `WasmSandbox::instantiate()` - Create instance with limits
+- `WasmSandbox::execute()` - Run function with fuel/epoch protection
+- `WasmResourceLimits` - Configure fuel, memory, epoch, stack limits
+**Notes:**
+- 13 security tests passing
+- Fuel metering + epoch interruption for timeout
+- Memory limits via StoreLimits
+- Ready for host function integration
 
-## COMPLETE: [Module name]
-**Date:** [Date]
-**Agent:** [Agent name]
-**Interfaces:** [List of interfaces now available]
-**Notes:** [Any usage notes]
+---
 
--->
-
-*No completion notices yet.*
+## COMPLETE: stormstack-auth (Authentication)
+**Date:** 2026-02-02
+**Agent:** Auth Agent
+**Interfaces:**
+- `JwtService::new(secret)` - Create JWT service
+- `JwtService::generate_token()` / `validate_token()` / `refresh_token()`
+- `PasswordService::new()` - Create password service (OWASP Argon2id)
+- `PasswordService::hash_password()` / `verify_password()`
+- `RbacService::has_permission()` / `role_permissions()`
+- `Claims`, `Permission` types
+**Notes:**
+- 31 tests + 3 doc tests passing
+- Uses HS256 for JWT (jsonwebtoken crate)
+- Uses Argon2id for passwords (argon2 crate)
+- Ready for integration with HTTP middleware
 
