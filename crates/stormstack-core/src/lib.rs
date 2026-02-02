@@ -18,7 +18,7 @@ pub mod id;
 pub mod snapshot;
 
 pub use config::MatchConfig;
-pub use error::{AuthError, StormError, WasmError};
+pub use error::{AuthError, ModuleError, StormError, WasmError};
 pub use id::{ComponentTypeId, ConnectionId, ContainerId, EntityId, MatchId, TenantId, UserId};
 pub use snapshot::{ComponentUpdate, EntitySnapshot, WorldDelta, WorldSnapshot};
 

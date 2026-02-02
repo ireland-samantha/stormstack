@@ -30,6 +30,13 @@ pub trait AuthState: Send + Sync {
     fn jwt_service(&self) -> &JwtService;
 }
 
+// Blanket implementation for Arc<T> where T: AuthState
+impl<T: AuthState> AuthState for std::sync::Arc<T> {
+    fn jwt_service(&self) -> &JwtService {
+        self.as_ref().jwt_service()
+    }
+}
+
 /// Extract auth from Authorization header.
 impl<S> FromRequestParts<S> for AuthUser
 where

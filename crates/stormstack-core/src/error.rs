@@ -39,6 +39,10 @@ pub enum StormError {
     #[error("WASM execution failed: {0}")]
     Wasm(#[from] WasmError),
 
+    /// Native module error.
+    #[error("Module error: {0}")]
+    Module(#[from] ModuleError),
+
     /// Invalid state transition or operation.
     #[error("Invalid state: {0}")]
     InvalidState(String),
@@ -86,6 +90,85 @@ pub enum AuthError {
     /// Password hashing failed.
     #[error("Password hashing failed: {0}")]
     HashingFailed(String),
+}
+
+/// Native module system errors.
+///
+/// These errors indicate issues with loading, unloading,
+/// or managing native dynamic library modules.
+#[derive(Debug, Error)]
+pub enum ModuleError {
+    /// Failed to load a dynamic library.
+    #[error("Failed to load module '{name}': {reason}")]
+    LoadFailed {
+        /// Module name.
+        name: String,
+        /// Failure reason.
+        reason: String,
+    },
+
+    /// Failed to unload a module.
+    #[error("Failed to unload module '{name}': {reason}")]
+    UnloadFailed {
+        /// Module name.
+        name: String,
+        /// Failure reason.
+        reason: String,
+    },
+
+    /// Module was not found in the registry.
+    #[error("Module not found: {0}")]
+    NotFound(String),
+
+    /// Module is already loaded.
+    #[error("Module already loaded: {0}")]
+    AlreadyLoaded(String),
+
+    /// Module symbol not found.
+    #[error("Symbol not found in module '{module}': {symbol}")]
+    SymbolNotFound {
+        /// Module name.
+        module: String,
+        /// Symbol name.
+        symbol: String,
+    },
+
+    /// Module version conflict.
+    #[error("Module version conflict: '{name}' requires {required}, but {found} is loaded")]
+    VersionConflict {
+        /// Module name.
+        name: String,
+        /// Required version.
+        required: String,
+        /// Found version.
+        found: String,
+    },
+
+    /// Dependency not satisfied.
+    #[error("Dependency not satisfied for module '{module}': requires '{dependency}'")]
+    DependencyNotSatisfied {
+        /// Module that has the dependency.
+        module: String,
+        /// Missing dependency.
+        dependency: String,
+    },
+
+    /// Circular dependency detected.
+    #[error("Circular dependency detected involving module: {0}")]
+    CircularDependency(String),
+
+    /// ABI version mismatch.
+    #[error("ABI version mismatch: module has {module_abi}, expected {expected_abi}")]
+    AbiMismatch {
+        /// Module's ABI version.
+        module_abi: u32,
+        /// Expected ABI version.
+        expected_abi: u32,
+    },
+
+    /// Module is still in use and cannot be unloaded.
+    #[error("Module '{0}' is still in use")]
+    InUse(String),
 }
 
 /// WASM sandbox execution errors.

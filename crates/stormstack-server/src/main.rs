@@ -2,6 +2,7 @@
 //!
 //! Main entry point for the StormStack server.
 
+use stormstack_server::{Server, ServerConfig};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -14,18 +15,13 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("StormStack server starting...");
 
-    // TODO: Initialize services
-    // - WASM sandbox
-    // - Auth service
-    // - Container manager
-    // - WebSocket handler
-    // - HTTP server
+    // Load configuration from environment
+    let config = ServerConfig::from_env();
+    tracing::info!("Binding to {}", config.bind_addr);
 
-    tracing::info!("StormStack server ready");
-
-    // TODO: Run server
-    // For now, just wait forever
-    std::future::pending::<()>().await;
+    // Create and run server
+    let server = Server::new(config)?;
+    server.run().await?;
 
     Ok(())
 }

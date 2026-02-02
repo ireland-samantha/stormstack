@@ -10,9 +10,9 @@ rust-version.workspace = true
 [dependencies]
 stormstack-core = { workspace = true }
 stormstack-ecs = { workspace = true }
-stormstack-wasm-host = { workspace = true }
 libloading = { workspace = true }
 inventory = { workspace = true }
+parking_lot = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
