@@ -1,6 +1,9 @@
 //! Host function provider trait.
 
+use crate::functions::register_host_functions;
+use crate::state::WasmState;
 use stormstack_core::WasmError;
+use wasmtime::Linker;
 
 /// Provider of host functions to WASM modules.
 ///
@@ -20,10 +23,7 @@ pub trait HostFunctionProvider: Send + Sync {
     /// # Errors
     ///
     /// Returns an error if registration fails.
-    fn register(
-        &self,
-        // TODO: linker: &mut wasmtime::Linker<WasmState>,
-    ) -> Result<(), WasmError>;
+    fn register(&self, linker: &mut Linker<WasmState>) -> Result<(), WasmError>;
 
     /// Name of this provider (for debugging/logging).
     fn name(&self) -> &'static str;
@@ -32,18 +32,15 @@ pub trait HostFunctionProvider: Send + Sync {
 /// Core host function provider.
 ///
 /// Provides the standard set of host functions:
-/// - Logging
-/// - Time access
-/// - Entity operations
-/// - Component operations
-/// - Random numbers
-/// - Entity queries
+/// - Logging: `log_debug`, `log_info`, `log_warn`, `log_error`
+/// - Time: `get_tick`, `get_delta_time`
+/// - Entity: `entity_spawn`, `entity_despawn`, `entity_exists`
+/// - Random: `random_u32`, `random_f32`, `random_range`
 pub struct CoreHostFunctions;
 
 impl HostFunctionProvider for CoreHostFunctions {
-    fn register(&self) -> Result<(), WasmError> {
-        // TODO: Register all core host functions
-        Ok(())
+    fn register(&self, linker: &mut Linker<WasmState>) -> Result<(), WasmError> {
+        register_host_functions(linker)
     }
 
     fn name(&self) -> &'static str {
@@ -54,6 +51,7 @@ impl HostFunctionProvider for CoreHostFunctions {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use wasmtime::Engine;
 
     #[test]
     fn core_provider_name() {
@@ -63,7 +61,9 @@ mod tests {
 
     #[test]
     fn core_provider_register() {
+        let engine = Engine::default();
+        let mut linker = Linker::new(&engine);
         let provider = CoreHostFunctions;
-        assert!(provider.register().is_ok());
+        assert!(provider.register(&mut linker).is_ok());
     }
 }

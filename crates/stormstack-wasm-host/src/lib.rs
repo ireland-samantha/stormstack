@@ -15,19 +15,29 @@
 //! - Logging: `log_debug`, `log_info`, `log_warn`, `log_error`
 //! - Time: `get_tick`, `get_delta_time`
 //! - Entity: `entity_spawn`, `entity_despawn`, `entity_exists`
-//! - Component: `component_get`, `component_set`, `component_has`
 //! - Random: `random_u32`, `random_f32`, `random_range`
-//! - Query: `query_entities`
+//!
+//! ## Example
+//!
+//! ```rust,ignore
+//! use stormstack_wasm_host::{CoreHostFunctions, HostFunctionProvider, WasmState};
+//! use wasmtime::{Engine, Linker};
+//!
+//! let engine = Engine::default();
+//! let mut linker = Linker::new(&engine);
+//!
+//! // Register host functions
+//! let provider = CoreHostFunctions;
+//! provider.register(&mut linker)?;
+//! ```
 
 #![warn(missing_docs)]
 #![warn(clippy::all)]
-#![forbid(unsafe_code)]
 
+pub mod functions;
 pub mod provider;
 pub mod state;
 
-pub use provider::HostFunctionProvider;
-pub use state::WasmState;
-
-// TODO: Implement host functions
-// See docs/migration/WASM_HOST_FUNCTIONS.md for specifications
+pub use functions::register_host_functions;
+pub use provider::{CoreHostFunctions, HostFunctionProvider};
+pub use state::{LogEntry, LogLevel, RateLimits, WasmState};

@@ -89,6 +89,27 @@ Active blockers and issues affecting the Rust rewrite.
 
 ---
 
+## COMPLETE: stormstack-wasm-host (WASM Host Functions)
+**Date:** 2026-02-02
+**Agent:** WASM Host Agent
+**Interfaces:**
+- `CoreHostFunctions` - Provider for registering all host functions
+- `HostFunctionProvider` trait - Interface for custom host function providers
+- `WasmState` - State available to host functions (tenant, tick, RNG)
+- Host functions registered with wasmtime Linker:
+  - Logging: `log_debug`, `log_info`, `log_warn`, `log_error`
+  - Time: `get_tick`, `get_delta_time`
+  - Entity: `entity_spawn`, `entity_despawn`, `entity_exists`
+  - Random: `random_u32`, `random_f32`, `random_range`
+**Notes:**
+- 10 tests passing
+- Rate limiting enforced (100 logs/tick, 100 spawns/tick)
+- Memory bounds checking on all string reads
+- Deterministic RNG for replay support
+- Ready for integration with WasmSandbox
+
+---
+
 ## COMPLETE: stormstack-ecs (ECS World)
 **Date:** 2026-02-02
 **Agent:** ECS Agent

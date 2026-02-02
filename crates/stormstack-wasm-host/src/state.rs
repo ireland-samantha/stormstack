@@ -1,6 +1,11 @@
 //! State available to WASM host functions.
 
+use parking_lot::RwLock;
+use rand::{Rng, SeedableRng};
+use rand::rngs::SmallRng;
+use std::sync::Arc;
 use stormstack_core::TenantId;
+use stormstack_ecs::StormWorld;
 
 /// State available to WASM host functions during execution.
 ///
@@ -22,8 +27,11 @@ pub struct WasmState {
     /// Rate limit counters.
     pub rate_limits: RateLimits,
 
-    /// Random number generator state (deterministic).
-    pub rng_seed: u64,
+    /// Deterministic random number generator.
+    pub rng: SmallRng,
+
+    /// Reference to the ECS world (optional during tests).
+    pub world: Option<Arc<RwLock<StormWorld>>>,
 }
 
 /// Log entry from WASM module.
@@ -94,8 +102,28 @@ impl WasmState {
             delta_time: 0.0,
             log_buffer: Vec::new(),
             rate_limits: RateLimits::default(),
-            rng_seed: 0,
+            rng: SmallRng::seed_from_u64(0),
+            world: None,
         }
+    }
+
+    /// Create state with an ECS world reference.
+    #[must_use]
+    pub fn with_world(tenant_id: TenantId, world: Arc<RwLock<StormWorld>>) -> Self {
+        Self {
+            tenant_id,
+            current_tick: 0,
+            delta_time: 0.0,
+            log_buffer: Vec::new(),
+            rate_limits: RateLimits::default(),
+            rng: SmallRng::seed_from_u64(0),
+            world: Some(world),
+        }
+    }
+
+    /// Set the RNG seed for deterministic replay.
+    pub fn set_rng_seed(&mut self, seed: u64) {
+        self.rng = SmallRng::seed_from_u64(seed);
     }
 
     /// Prepare state for a new tick.
@@ -108,6 +136,25 @@ impl WasmState {
     /// Drain log buffer after tick.
     pub fn drain_logs(&mut self) -> Vec<LogEntry> {
         std::mem::take(&mut self.log_buffer)
+    }
+
+    /// Generate next random u32.
+    pub fn random_u32(&mut self) -> u32 {
+        self.rng.random()
+    }
+
+    /// Generate next random f32 in [0, 1).
+    pub fn random_f32(&mut self) -> f32 {
+        self.rng.random()
+    }
+
+    /// Generate random i32 in [min, max].
+    pub fn random_range(&mut self, min: i32, max: i32) -> i32 {
+        if min > max {
+            min
+        } else {
+            self.rng.random_range(min..=max)
+        }
     }
 }
 
@@ -145,5 +192,36 @@ mod tests {
         assert_eq!(state.current_tick, 100);
         assert!((state.delta_time - 0.016).abs() < f64::EPSILON);
         assert_eq!(state.rate_limits.log_calls, 0);
+    }
+
+    #[test]
+    fn deterministic_rng() {
+        let mut state1 = WasmState::new(TenantId::new());
+        let mut state2 = WasmState::new(TenantId::new());
+
+        state1.set_rng_seed(42);
+        state2.set_rng_seed(42);
+
+        for _ in 0..100 {
+            assert_eq!(state1.random_u32(), state2.random_u32());
+        }
+    }
+
+    #[test]
+    fn random_range_bounds() {
+        let mut state = WasmState::new(TenantId::new());
+
+        for _ in 0..100 {
+            let val = state.random_range(10, 20);
+            assert!(val >= 10 && val <= 20);
+        }
+    }
+
+    #[test]
+    fn random_range_inverted() {
+        let mut state = WasmState::new(TenantId::new());
+        // When min > max, returns min
+        let val = state.random_range(20, 10);
+        assert_eq!(val, 20);
     }
 }

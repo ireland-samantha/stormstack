@@ -46,7 +46,7 @@ Maps Java tests to their Rust equivalents.
 | Infinite loop termination | `sandbox::tests::test_infinite_loop_terminated` | ✅ | Fuel/epoch terminates loop |
 | Memory bomb prevention | `sandbox::tests::test_memory_bomb_prevented` | ✅ | StoreLimits enforced |
 | Stack overflow handling | `sandbox::tests::test_stack_overflow_handled` | ✅ | Deep recursion caught |
-| Host function input validation | `wasm::security::tests::host_function_validation` | ⬜ | Pending host function impl |
+| Host function input validation | `wasm_host::functions::tests::*` | ✅ | Rate limits, memory bounds checked |
 | Fuel exhaustion | `sandbox::tests::test_fuel_exhausted` | ✅ | Fuel metering works |
 | Epoch deadline exceeded | `sandbox::tests::test_infinite_loop_terminated` | ✅ | Epoch interruption backup |
 | Valid module execution | `sandbox::tests::test_valid_module_executes` | ✅ | Add, factorial, get_answer work |
@@ -158,7 +158,7 @@ Maps Java tests to their Rust equivalents.
 | Category | Total | ✅ | 🔄 | ⬜ | ❌ |
 |----------|-------|----|----|----|----|
 | ECS | 15 | 15 | 0 | 0 | 0 |
-| WASM Security | 11 | 10 | 0 | 1 | 0 |
+| WASM Security | 11 | 11 | 0 | 0 | 0 |
 | Auth | 9 | 9 | 0 | 0 | 0 |
 | Container | 5 | 0 | 0 | 5 | 0 |
 | Match | 5 | 0 | 0 | 5 | 0 |
@@ -166,5 +166,5 @@ Maps Java tests to their Rust equivalents.
 | Module System | 4 | 0 | 0 | 4 | 0 |
 | Integration | 4 | 0 | 0 | 4 | 0 |
 | Performance | 4 | 0 | 0 | 4 | 0 |
-| **Total** | **63** | **34** | **0** | **29** | **0** |
+| **Total** | **63** | **35** | **0** | **28** | **0** |
 
