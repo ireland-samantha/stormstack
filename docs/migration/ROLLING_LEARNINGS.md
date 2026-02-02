@@ -351,5 +351,202 @@ std::thread::scope(|s| {
 
 ---
 
+## Java Architecture Insights (Phase 1 Analysis)
+
+### ECS Store Architecture
+
+**Java Pattern (ArrayEntityComponentStore):**
+```java
+// Backing storage: float[][] - entity ID × component ID
+// NULL sentinel: Float.NaN for missing values
+// Entity index tracks which entities exist
+```
+
+**Rust Approach:**
+```rust
+// Legion uses archetype-based storage (different model)
+// For custom storage, use:
+// - HashMap<EntityId, HashMap<ComponentTypeId, Component>>
+// - Or sparse arrays with Option<T>
+// NaN sentinel not needed - Rust's Option is idiomatic
+```
+
+**Key Insight:**
+Java uses columnar float arrays for memory efficiency. Legion's archetype storage provides similar benefits through different means.
+
+---
+
+### ClassLoader Isolation → WASM Isolation
+
+**Java Pattern:**
+```java
+// ContainerClassLoader with hybrid delegation:
+// - PARENT_FIRST for engine APIs
+// - CHILD_FIRST for game modules
+// Enables per-container code isolation
+```
+
+**Rust WASM Approach:**
+```rust
+// Each container gets separate wasmtime Store
+// Engine shared across containers (compiled code cache)
+// Store isolation = ClassLoader isolation
+// Host functions = shared engine APIs
+```
+
+**Key Insight:**
+ClassLoader's parent-first packages map to WASM host functions. Game module code runs in isolated WASM instances.
+
+---
+
+### Columnar Snapshot Format
+
+**Java Pattern:**
+```java
+// Snapshot structure:
+// List<ModuleData> → List<ComponentData> → List<Float>
+// Columnar: one list of values per component type
+// Delta: Map<module> → Map<component> → Map<entityId> → value
+```
+
+**Rust Approach:**
+```rust
+// Keep columnar format for wire protocol compatibility
+// WorldSnapshot { entities: Vec<EntitySnapshot> } for API
+// Internal: Can use either format depending on use case
+// Delta: Same map-based structure
+```
+
+---
+
+### ExecutionContainer Fluent API
+
+**Java Pattern:**
+```java
+// Container uses multiple operation interfaces:
+// - ContainerModuleOperations
+// - ContainerLifecycleOperations
+// - ContainerTickOperations
+// etc.
+// Fluent API style
+```
+
+**Rust Approach:**
+```rust
+// Use builder pattern or method chaining
+// Group operations in impl blocks by concern
+// Consider trait-based composition for extension
+impl Container {
+    // Lifecycle operations
+    pub fn start(&mut self) -> Result<()> { ... }
+    pub fn stop(&mut self) -> Result<()> { ... }
+
+    // Tick operations
+    pub fn advance(&mut self, dt: f64) -> Result<()> { ... }
+
+    // Match operations
+    pub fn create_match(&mut self, config: MatchConfig) -> Result<MatchId> { ... }
+}
+```
+
+---
+
+### Command Queue Pattern
+
+**Java Pattern:**
+```java
+// InMemoryCommandQueueManager:
+// - Per-match command queues
+// - Tick-based scheduling (future ticks)
+// - Batch execution (limit 10k/tick)
+```
+
+**Rust Approach:**
+```rust
+pub struct CommandQueue {
+    pending: BTreeMap<u64, Vec<Command>>,  // tick -> commands
+}
+
+impl CommandQueue {
+    pub fn add(&mut self, tick: u64, cmd: Command) { ... }
+    pub fn execute(&mut self, current_tick: u64, limit: usize) -> Vec<CommandResult> { ... }
+}
+```
+
+---
+
+### Scope-Based Authorization
+
+**Java Pattern:**
+```java
+// Scopes: "service.resource.operation"
+// e.g., "engine.container.create"
+// User → Roles → Scopes (hierarchical)
+```
+
+**Rust Approach:**
+```rust
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Permission {
+    ContainerCreate,
+    ContainerRead,
+    // ...
+}
+
+// Or string-based for flexibility
+pub fn has_scope(claims: &Claims, scope: &str) -> bool {
+    claims.scopes.iter().any(|s| scope_matches(s, scope))
+}
+```
+
+---
+
+### Module System Design
+
+**Java EngineModule Interface:**
+```java
+interface EngineModule {
+    createSystems() → List<EngineSystem>
+    createCommands() → List<EngineCommand>
+    createComponents() → List<BaseComponent>
+    getName() → String
+    getVersion() → ModuleVersion
+}
+```
+
+**Rust WASM Module Interface:**
+```rust
+// WASM modules export functions, not interfaces
+// Use naming conventions or component model:
+pub trait WasmGameModule {
+    fn on_init(&mut self, ctx: &mut WasmContext);
+    fn on_tick(&mut self, ctx: &mut WasmContext, dt: f64);
+    fn on_command(&mut self, ctx: &mut WasmContext, cmd: &Command);
+}
+// Host provides entity/component access via imported functions
+```
+
+---
+
+### WebSocket Streaming Pattern
+
+**Java Pattern:**
+```java
+// Snapshot streaming at configurable interval (default 100ms)
+// Delta streaming: first full, then changes only
+// Per-connection state tracking
+// Auth via WebSocketAuthResultStore
+```
+
+**Rust Approach:**
+```rust
+// axum::extract::ws for WebSocket handling
+// tokio::sync::broadcast for match updates
+// Per-connection state in handler task
+// Auth via tower middleware
+```
+
+---
+
 <!-- Add new learnings above this line -->
 

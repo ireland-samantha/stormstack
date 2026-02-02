@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// These limits are critical for security - they prevent
 /// malicious or buggy WASM modules from exhausting system resources.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WasmResourceLimits {
     /// Maximum fuel (instructions) per execution.
     ///

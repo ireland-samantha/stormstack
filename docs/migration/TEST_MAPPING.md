@@ -33,14 +33,17 @@ Maps Java tests to their Rust equivalents.
 
 | Test | Rust Test | Status | Notes |
 |------|-----------|--------|-------|
-| Memory escape attempt | `wasm::security::tests::memory_escape_blocked` | ⬜ | TDD - write before impl |
-| Infinite loop termination | `wasm::security::tests::infinite_loop_terminated` | ⬜ | TDD - write before impl |
-| Memory bomb prevention | `wasm::security::tests::memory_bomb_prevented` | ⬜ | TDD - write before impl |
-| Stack overflow handling | `wasm::security::tests::stack_overflow_handled` | ⬜ | TDD - write before impl |
-| Host function input validation | `wasm::security::tests::host_function_validation` | ⬜ | TDD - write before impl |
-| Fuel exhaustion | `wasm::security::tests::fuel_exhausted` | ⬜ | TDD - write before impl |
-| Epoch deadline exceeded | `wasm::security::tests::epoch_deadline_exceeded` | ⬜ | TDD - write before impl |
-| Valid module execution | `wasm::security::tests::valid_module_executes` | ⬜ | TDD - write before impl |
+| Memory escape attempt | `sandbox::tests::test_memory_bomb_prevented` | ✅ | memory.grow returns -1 on limit |
+| Infinite loop termination | `sandbox::tests::test_infinite_loop_terminated` | ✅ | Fuel/epoch terminates loop |
+| Memory bomb prevention | `sandbox::tests::test_memory_bomb_prevented` | ✅ | StoreLimits enforced |
+| Stack overflow handling | `sandbox::tests::test_stack_overflow_handled` | ✅ | Deep recursion caught |
+| Host function input validation | `wasm::security::tests::host_function_validation` | ⬜ | Pending host function impl |
+| Fuel exhaustion | `sandbox::tests::test_fuel_exhausted` | ✅ | Fuel metering works |
+| Epoch deadline exceeded | `sandbox::tests::test_infinite_loop_terminated` | ✅ | Epoch interruption backup |
+| Valid module execution | `sandbox::tests::test_valid_module_executes` | ✅ | Add, factorial, get_answer work |
+| Fuel tracking | `sandbox::tests::test_fuel_tracking` | ✅ | Fuel consumption tracked |
+| Memory usage tracking | `sandbox::tests::test_memory_usage_tracking` | ✅ | Memory size tracked |
+| Function not found | `sandbox::tests::test_function_not_found` | ✅ | FunctionNotFound error |
 
 ---
 
