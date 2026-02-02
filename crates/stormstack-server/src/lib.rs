@@ -35,6 +35,8 @@
 #![warn(clippy::all)]
 
 pub mod container;
+/// Game loop for tick-based simulation.
+pub mod game_loop;
 mod routes;
 mod state;
 /// WebSocket upgrade handler for real-time match streaming.
@@ -44,6 +46,7 @@ pub use container::{
     Container, ContainerService, LoadedModule, Match, MatchState, MatchSummary, SharedContainer,
     SharedContainerService, shared_container_service,
 };
+pub use game_loop::{GameLoop, GameLoopConfig};
 pub use routes::create_router;
 pub use state::{AppState, SharedAppState};
 

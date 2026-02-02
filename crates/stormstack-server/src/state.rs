@@ -11,6 +11,8 @@ use stormstack_net::AuthState;
 use stormstack_wasm::WasmSandbox;
 use stormstack_ws::SharedConnectionManager;
 
+use crate::container::{shared_container_service, SharedContainerService};
+
 /// Shared application state type alias.
 pub type SharedAppState = Arc<AppState>;
 
@@ -28,6 +30,8 @@ pub struct AppState {
     sandbox: Arc<WasmSandbox>,
     /// WebSocket connection manager.
     connections: SharedConnectionManager,
+    /// Container service for managing execution containers.
+    container_service: SharedContainerService,
 }
 
 impl AppState {
@@ -43,6 +47,7 @@ impl AppState {
             world,
             sandbox,
             connections,
+            container_service: shared_container_service(),
         }
     }
 
@@ -68,6 +73,12 @@ impl AppState {
     #[must_use]
     pub fn connections(&self) -> &SharedConnectionManager {
         &self.connections
+    }
+
+    /// Get the container service.
+    #[must_use]
+    pub fn container_service(&self) -> &SharedContainerService {
+        &self.container_service
     }
 }
 

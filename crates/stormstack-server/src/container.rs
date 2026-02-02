@@ -704,6 +704,14 @@ impl ContainerService {
 
         container.tick(delta_time)
     }
+
+    /// Get all containers.
+    ///
+    /// Returns a vector of all containers currently managed by this service.
+    #[must_use]
+    pub fn all_containers(&self) -> Vec<SharedContainer> {
+        self.containers.iter().map(|entry| entry.value().clone()).collect()
+    }
 }
 
 impl Default for ContainerService {

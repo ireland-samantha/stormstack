@@ -24,6 +24,7 @@ stormstack-modules = { workspace = true }
 
 # Async runtime
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 
 # Web framework
 axum = { workspace = true }
