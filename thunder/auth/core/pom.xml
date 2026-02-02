@@ -7,12 +7,12 @@
     <parent>
         <groupId>ca.samanthaireland.stormstack</groupId>
         <artifactId>stormstack</artifactId>
-        <version>0.0.3-SNAPSHOT</version>
+        <version>0.1.1</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <artifactId>thunder-auth-core</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.1.1</version>
     <name>Lightning Auth Core</name>
     <description>Pure domain abstractions for Lightning Auth - NO framework dependencies</description>
 

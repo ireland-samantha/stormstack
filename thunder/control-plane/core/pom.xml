@@ -7,12 +7,12 @@
     <parent>
         <groupId>ca.samanthaireland.stormstack</groupId>
         <artifactId>stormstack</artifactId>
-        <version>0.0.3-SNAPSHOT</version>
+        <version>0.1.1</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
     <artifactId>thunder-control-plane-core</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>0.1.1</version>
     <name>Lightning Control Plane Core</name>
     <description>Pure domain abstractions for the Control Plane - NO framework dependencies</description>
 
