@@ -16,12 +16,4 @@
 
 pub mod world;
 
-pub use world::{EcsWorld, StormWorld};
-
-// TODO: Implement ECS world
-// - Entity creation/deletion
-// - Component access with O(1) lookup
-// - Query system
-// - Snapshot generation
-// - Delta computation
-// - System scheduling
+pub use world::{shared_world, EcsWorld, Marker, SharedWorld, StormWorld};

@@ -20,12 +20,21 @@ Maps Java tests to their Rust equivalents.
 
 | Java Test | Rust Test | Status | Notes |
 |-----------|-----------|--------|-------|
-| `EcsWorldTest.testEntityCreation` | `ecs::world::tests::entity_creation` | ⬜ | |
-| `EcsWorldTest.testComponentAccess` | `ecs::world::tests::component_access` | ⬜ | |
-| `EcsWorldTest.testEntityDespawn` | `ecs::world::tests::entity_despawn` | ⬜ | |
-| `EcsWorldTest.testSystemExecution` | `ecs::world::tests::system_execution` | ⬜ | |
-| `EcsWorldTest.testSnapshot` | `ecs::world::tests::snapshot` | ⬜ | |
-| `EcsWorldTest.testDelta` | `ecs::world::tests::delta_updates` | ⬜ | |
+| `EcsWorldTest.testEntityCreation` | `world::tests::spawn_increments_id` | ✅ | EntityId generation |
+| `EcsWorldTest.testEntityCreation` | `world::tests::spawn_with_components` | ✅ | Spawn with tuple of components |
+| `EcsWorldTest.testComponentAccess` | `world::tests::add_component_to_entity` | ✅ | Add component to existing entity |
+| `EcsWorldTest.testComponentAccess` | `world::tests::remove_component_from_entity` | ✅ | Remove component from entity |
+| `EcsWorldTest.testComponentAccess` | `world::tests::register_component_type` | ✅ | Type ID registration |
+| `EcsWorldTest.testComponentAccess` | `world::tests::component_type_ids_are_unique` | ✅ | Unique type IDs |
+| `EcsWorldTest.testEntityDespawn` | `world::tests::despawn_removes_entity` | ✅ | Entity removal |
+| `EcsWorldTest.testEntityDespawn` | `world::tests::despawn_nonexistent_fails` | ✅ | Error on invalid despawn |
+| `EcsWorldTest.testSystemExecution` | `world::tests::advance_increments_tick` | ✅ | Tick advancement |
+| `EcsWorldTest.testSnapshot` | `world::tests::snapshot_includes_entities` | ✅ | Snapshot generation |
+| `EcsWorldTest.testDelta` | `world::tests::delta_tracks_spawns` | ✅ | Delta spawns tracking |
+| `EcsWorldTest.testDelta` | `world::tests::delta_tracks_despawns` | ✅ | Delta despawns tracking |
+| N/A | `world::tests::entities_iterator` | ✅ | Entity iteration |
+| N/A | `world::tests::cleanup_history` | ✅ | Change history cleanup |
+| N/A | `world::tests::shared_world_works` | ✅ | Thread-safe SharedWorld |
 
 ---
 
@@ -148,7 +157,7 @@ Maps Java tests to their Rust equivalents.
 
 | Category | Total | ✅ | 🔄 | ⬜ | ❌ |
 |----------|-------|----|----|----|----|
-| ECS | 6 | 0 | 0 | 6 | 0 |
+| ECS | 15 | 15 | 0 | 0 | 0 |
 | WASM Security | 11 | 10 | 0 | 1 | 0 |
 | Auth | 9 | 9 | 0 | 0 | 0 |
 | Container | 5 | 0 | 0 | 5 | 0 |
@@ -157,5 +166,5 @@ Maps Java tests to their Rust equivalents.
 | Module System | 4 | 0 | 0 | 4 | 0 |
 | Integration | 4 | 0 | 0 | 4 | 0 |
 | Performance | 4 | 0 | 0 | 4 | 0 |
-| **Total** | **54** | **19** | **0** | **35** | **0** |
+| **Total** | **63** | **34** | **0** | **29** | **0** |
 

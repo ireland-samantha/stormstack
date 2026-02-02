@@ -87,3 +87,26 @@ Active blockers and issues affecting the Rust rewrite.
 - Uses Argon2id for passwords (argon2 crate)
 - Ready for integration with HTTP middleware
 
+---
+
+## COMPLETE: stormstack-ecs (ECS World)
+**Date:** 2026-02-02
+**Agent:** ECS Agent
+**Interfaces:**
+- `EcsWorld` trait - Entity-component management interface
+- `StormWorld::new()` - Create legion-backed ECS world
+- `StormWorld::spawn()` / `spawn_with()` - Entity creation
+- `StormWorld::despawn()` - Entity deletion
+- `StormWorld::add_component()` / `remove_component()` / `get_component()`
+- `StormWorld::advance()` - Tick execution with system scheduling
+- `StormWorld::snapshot()` / `delta_since()` - State streaming
+- `SharedWorld` type alias for thread-safe access
+- `Marker` component for empty entities
+**Notes:**
+- 15 tests passing
+- Uses legion ECS with entity ID mapping (our EntityId vs legion Entity)
+- Change tracking for efficient delta generation
+- Component type registry for serialization
+- System scheduling via `set_schedule()`
+- Ready for integration with WASM host functions
+
