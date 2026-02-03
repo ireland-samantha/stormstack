@@ -24,20 +24,20 @@ WebSocket Endpoints
 ===================
 
 .. list-table::
-   :widths: 40 60
+   :widths: 55 45
    :header-rows: 1
 
    * - Endpoint
      - Description
-   * - ``/ws/snapshots/{matchId}``
+   * - ``/ws/containers/{containerId}/matches/{matchId}/snapshot``
      - Full snapshot stream
-   * - ``/ws/delta/{matchId}``
+   * - ``/ws/containers/{containerId}/matches/{matchId}/delta``
      - Delta-compressed stream
-   * - ``/ws/player/{matchId}/{playerId}``
+   * - ``/ws/containers/{containerId}/matches/{matchId}/players/{playerId}/snapshot``
      - Player-filtered snapshot stream
-   * - ``/ws/player/{matchId}/{playerId}/delta``
+   * - ``/ws/containers/{containerId}/matches/{matchId}/players/{playerId}/delta``
      - Player-filtered delta stream
-   * - ``/ws/commands/{matchId}``
+   * - ``/containers/{containerId}/commands``
      - Bidirectional command channel
    * - ``/ws/simulation``
      - Tick-synchronized stream
@@ -51,13 +51,13 @@ Basic Connection
 Connect with authentication token::
 
     const ws = new WebSocket(
-      'ws://localhost:8080/ws/snapshots/1',
+      'ws://localhost:8080/ws/containers/1/matches/1/snapshot',
       ['Authorization', token]  // Subprotocol for auth
     );
 
     // Or via query parameter (less secure)
     const ws = new WebSocket(
-      `ws://localhost:8080/ws/snapshots/1?token=${token}`
+      `ws://localhost:8080/ws/containers/1/matches/1/snapshot?token=${token}`
     );
 
 Connection Events
@@ -88,7 +88,7 @@ Connection Events
 Full Snapshots
 ==============
 
-The ``/ws/snapshots/{matchId}`` endpoint streams complete game state each tick.
+The ``/ws/containers/{containerId}/matches/{matchId}/snapshot`` endpoint streams complete game state each tick.
 
 Message Format
 --------------
@@ -131,7 +131,7 @@ Message Format
 Delta Snapshots
 ===============
 
-The ``/ws/delta/{matchId}`` endpoint streams only changes since the last tick.
+The ``/ws/containers/{containerId}/matches/{matchId}/delta`` endpoint streams only changes since the last tick.
 This dramatically reduces bandwidth for games with large state.
 
 Message Format
@@ -259,7 +259,7 @@ Connecting as a Player
 ::
 
     const ws = new WebSocket(
-      `ws://localhost:8080/ws/player/1/player_abc123?token=${token}`
+      `ws://localhost:8080/ws/containers/1/matches/1/players/player_abc123/snapshot?token=${token}`
     );
 
 Only entities visible to that player are included in the stream.
@@ -276,7 +276,7 @@ Visibility is determined by the game module's visibility system. Common patterns
 Command WebSocket
 =================
 
-The ``/ws/commands/{matchId}`` endpoint provides bidirectional communication
+The ``/containers/{containerId}/commands`` endpoint provides bidirectional communication
 for sending commands and receiving confirmations.
 
 Sending Commands
@@ -285,7 +285,7 @@ Sending Commands
 .. code-block:: javascript
 
     const ws = new WebSocket(
-      `ws://localhost:8080/ws/commands/1?token=${token}`
+      `ws://localhost:8080/containers/1/commands?token=${token}`
     );
 
     // Send a command
@@ -325,22 +325,27 @@ Or on error::
 Binary Protocol
 ===============
 
-For maximum efficiency, Thunder Engine supports Protocol Buffers over WebSocket.
+Thunder Engine supports Protocol Buffers for the command WebSocket endpoint.
 
-Enabling Binary Mode
---------------------
+.. note::
 
-Connect with binary subprotocol::
+    Binary mode is currently only supported for **commands**, not for snapshot streaming.
+    Snapshot endpoints use JSON format. Binary snapshot streaming is planned for a future release.
+
+Enabling Binary Mode for Commands
+---------------------------------
+
+Connect to the command endpoint with binary subprotocol::
 
     const ws = new WebSocket(
-      'ws://localhost:8080/ws/delta/1',
+      'ws://localhost:8080/containers/1/commands',
       ['binary', token]
     );
 
     ws.binaryType = 'arraybuffer';
 
     ws.onmessage = (event) => {
-      const snapshot = DeltaSnapshot.decode(
+      const response = CommandResponse.decode(
         new Uint8Array(event.data)
       );
       // Process protobuf message
@@ -349,20 +354,24 @@ Connect with binary subprotocol::
 Protobuf Definitions
 --------------------
 
-The proto files are in ``thunder/engine/adapters/api-proto/``::
+The proto files are in ``thunder/engine/adapters/api-proto/``. The command protocol uses::
 
-    message DeltaSnapshot {
-      int64 match_id = 1;
-      int64 tick = 2;
-      int64 base_tick = 3;
-      repeated ModuleChanges changes = 4;
+    message CommandRequest {
+      string command_name = 1;
+      int64 match_id = 2;
+      string player_id = 3;
+      oneof payload {
+        bytes json_payload = 4;
+        bytes binary_payload = 5;
+      }
     }
 
-    message ModuleChanges {
-      string module_name = 1;
-      repeated Entity added = 2;
-      repeated EntityPatch modified = 3;
-      repeated int64 removed = 4;
+    message CommandResponse {
+      bool success = 1;
+      string command_id = 2;
+      int64 tick = 3;
+      string error = 4;
+      string message = 5;
     }
 
 Bandwidth Comparison
@@ -381,9 +390,6 @@ Bandwidth Comparison
    * - JSON Delta
      - 500 bytes/tick
      - ~200 bytes gzipped
-   * - Binary Delta
-     - 100 bytes/tick
-     - ~80 bytes
 
 Connection Management
 =====================
