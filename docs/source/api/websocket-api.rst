@@ -30,7 +30,7 @@ Full Snapshots
 
 .. code-block:: text
 
-   ws://host:8080/ws/containers/{containerId}/snapshots/{matchId}?token={jwt}
+   ws://host:8080/ws/containers/{containerId}/matches/{matchId}/snapshot?token={jwt}
 
 **Parameters:**
 
@@ -74,7 +74,7 @@ Delta Snapshots
 
 .. code-block:: text
 
-   ws://host:8080/ws/containers/{containerId}/snapshots/delta/{matchId}?token={jwt}
+   ws://host:8080/ws/containers/{containerId}/matches/{matchId}/delta?token={jwt}
 
 Delta snapshots only include entities that changed since the last snapshot,
 significantly reducing bandwidth for large game states.
@@ -158,7 +158,7 @@ with Protocol Buffer messages.
 
 .. code-block:: text
 
-   ws://host:8080/containers/{containerId}/commands?token={jwt}
+   ws://host:8080/ws/containers/{containerId}/commands?token={jwt}
 
 Protocol Buffer Definitions
 ---------------------------
@@ -166,26 +166,40 @@ Protocol Buffer Definitions
 The Protocol Buffer schema is located at:
 ``thunder/engine/adapters/api-proto/src/main/proto/command.proto``
 
-**CommandBatch Message:**
+**CommandRequest Message:**
 
 .. code-block:: protobuf
 
-   message CommandBatch {
-     int64 match_id = 1;
-     repeated Command commands = 2;
-   }
+   message CommandRequest {
+     // Name of the command to execute
+     string command_name = 1;
 
-   message Command {
-     string name = 1;
-     map<string, Value> params = 2;
-   }
+     // Match ID for the command context
+     int64 match_id = 2;
 
-   message Value {
-     oneof value {
-       double number_value = 1;
-       string string_value = 2;
-       bool bool_value = 3;
+     // Player ID sending the command
+     int64 player_id = 3;
+
+     // Command-specific payload
+     oneof payload {
+       SpawnPayload spawn = 10;
+       AttachRigidBodyPayload attach_rigid_body = 11;
+       AttachSpritePayload attach_sprite = 12;
+       GenericPayload generic = 13;
      }
+   }
+
+   message SpawnPayload {
+     int64 entity_type = 1;
+     int64 position_x = 2;
+     int64 position_y = 3;
+   }
+
+   message GenericPayload {
+     map<string, string> string_params = 1;
+     map<string, int64> long_params = 2;
+     map<string, double> double_params = 3;
+     map<string, bool> bool_params = 4;
    }
 
 **CommandResponse Message:**
@@ -193,14 +207,21 @@ The Protocol Buffer schema is located at:
 .. code-block:: protobuf
 
    message CommandResponse {
-     int64 tick = 1;
-     int32 queued_count = 2;
-     repeated Error errors = 3;
-   }
+     // Status of the command
+     Status status = 1;
 
-   message Error {
-     string command_name = 1;
+     // Optional message (error details, etc.)
      string message = 2;
+
+     // Command name that was processed
+     string command_name = 3;
+
+     enum Status {
+       UNKNOWN = 0;
+       ACCEPTED = 1;
+       ERROR = 2;
+       INVALID = 3;
+     }
    }
 
 Usage Example
@@ -214,48 +235,51 @@ Usage Example
 
    // Load the proto file
    const root = await protobuf.load('command.proto');
-   const CommandBatch = root.lookupType('CommandBatch');
+   const CommandRequest = root.lookupType('CommandRequest');
    const CommandResponse = root.lookupType('CommandResponse');
 
-   // Create command batch
-   const batch = CommandBatch.create({
+   // Create command request
+   const request = CommandRequest.create({
+     commandName: 'spawn',
      matchId: 1,
-     commands: [
-       {
-         name: 'SpawnEntity',
-         params: {
-           x: { numberValue: 100.0 },
-           y: { numberValue: 50.0 },
-           type: { stringValue: 'player' }
-         }
-       }
-     ]
+     playerId: 1,
+     spawn: {
+       entityType: 100,
+       positionX: 100,
+       positionY: 50
+     }
    });
 
    // Send binary message
-   const buffer = CommandBatch.encode(batch).finish();
+   const buffer = CommandRequest.encode(request).finish();
    socket.send(buffer);
 
    // Receive response
    socket.onmessage = (event) => {
      const response = CommandResponse.decode(new Uint8Array(event.data));
-     console.log(`Queued ${response.queuedCount} commands for tick ${response.tick}`);
+     if (response.status === 1) { // ACCEPTED
+       console.log(`Command ${response.commandName} accepted`);
+     } else {
+       console.log(`Command failed: ${response.message}`);
+     }
    };
 
 **Java (with generated classes):**
 
 .. code-block:: java
 
-   CommandBatch batch = CommandBatch.newBuilder()
+   CommandRequest request = CommandRequest.newBuilder()
+       .setCommandName("spawn")
        .setMatchId(1L)
-       .addCommands(Command.newBuilder()
-           .setName("SpawnEntity")
-           .putParams("x", Value.newBuilder().setNumberValue(100.0).build())
-           .putParams("y", Value.newBuilder().setNumberValue(50.0).build())
+       .setPlayerId(1L)
+       .setSpawn(SpawnPayload.newBuilder()
+           .setEntityType(100)
+           .setPositionX(100)
+           .setPositionY(50)
            .build())
        .build();
 
-   session.getBasicRemote().sendBinary(ByteBuffer.wrap(batch.toByteArray()));
+   session.getBasicRemote().sendBinary(ByteBuffer.wrap(request.toByteArray()));
 
 Connection Management
 =====================

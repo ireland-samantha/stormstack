@@ -40,7 +40,7 @@ For WebSocket connections, pass the token as a query parameter:
 
 .. code-block:: text
 
-   ws://localhost:8080/ws/containers/{containerId}/snapshots/{matchId}?token=<jwt>
+   ws://localhost:8080/ws/containers/{containerId}/matches/{matchId}/snapshot?token=<jwt>
 
 API Sections
 ============
@@ -127,11 +127,11 @@ WebSocket Endpoints
 
    * - Endpoint
      - Description
-   * - ``ws://.../ws/containers/{id}/snapshots/{matchId}``
+   * - ``ws://.../ws/containers/{id}/matches/{matchId}/snapshot``
      - Full snapshot streaming
-   * - ``ws://.../ws/containers/{id}/snapshots/delta/{matchId}``
+   * - ``ws://.../ws/containers/{id}/matches/{matchId}/delta``
      - Delta-compressed snapshot streaming
-   * - ``ws://.../containers/{id}/commands``
+   * - ``ws://.../ws/containers/{id}/commands``
      - Binary command WebSocket (Protobuf)
 
 Response Formats

@@ -18,7 +18,7 @@ Optional (for development from source):
 * **Java** 25 (with preview features enabled)
 * **Maven** 3.9+
 * **Node.js** 18+ and npm (for frontend development)
-* **MongoDB** 6.0+ (if not using Docker)
+* **MongoDB** 7.0+ (if not using Docker)
 
 Verify Prerequisites
 ~~~~~~~~~~~~~~~~~~~~
@@ -128,7 +128,7 @@ For contributors who want to build from source:
 
 .. code-block:: bash
 
-   docker run -d --name mongodb -p 27017:27017 mongo:6.0
+   docker run -d --name mongodb -p 27017:27017 mongo:7
 
 4. Run the backend in dev mode:
 

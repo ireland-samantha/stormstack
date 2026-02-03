@@ -73,8 +73,14 @@ You'll see output like:
 
    Endpoints:
      HTTP:         http://backend:8080/api/containers/1
-     WebSocket:    ws://backend:8080/ws/containers/1/matches/1/snapshots
-     Commands:     ws://backend:8080/ws/containers/1/matches/1/commands
+     WebSocket:    ws://backend:8080/ws/containers/1/matches/1/snapshot
+     Commands:     ws://backend:8080/ws/containers/1/commands
+
+.. note::
+
+   **Match ID Format:** The match ID ``node-1-1-1`` follows the format ``{nodeId}-{containerId}-{matchId}``.
+   This composite ID uniquely identifies a match across the entire cluster. You'll use this ID
+   to set context and interact with specific matches.
 
 Step 5: View the Match
 ----------------------
@@ -124,6 +130,11 @@ Start the game loop running at 60 FPS (16ms per tick):
 .. code-block:: bash
 
    lightning node simulation play --interval-ms 16
+
+.. note::
+
+   This command uses the match context you set in Step 6. The ``lightning node context match``
+   command must be run before any simulation or snapshot commands.
 
 Step 8: Send a Command
 ----------------------
