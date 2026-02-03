@@ -331,4 +331,303 @@ mod tests {
         let parsed: SessionId = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(id, parsed);
     }
+
+    // =========================================================================
+    // Additional ID type tests - Alex
+    // =========================================================================
+
+    #[test]
+    fn match_id_unique() {
+        let id1 = MatchId::new();
+        let id2 = MatchId::new();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn match_id_display() {
+        let id = MatchId::new();
+        let display = format!("{id}");
+        assert!(display.starts_with("Match("));
+        assert!(display.ends_with(")"));
+    }
+
+    #[test]
+    fn match_id_default() {
+        let id1 = MatchId::default();
+        let id2 = MatchId::default();
+        // Default should create new unique IDs
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn match_id_serialize_roundtrip() {
+        let id = MatchId::new();
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: MatchId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn container_id_display() {
+        let id = ContainerId::new();
+        let display = format!("{id}");
+        assert!(display.starts_with("Container("));
+        assert!(display.ends_with(")"));
+    }
+
+    #[test]
+    fn container_id_default() {
+        let id1 = ContainerId::default();
+        let id2 = ContainerId::default();
+        // Default should create new unique IDs
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn container_id_serialize_roundtrip() {
+        let id = ContainerId::new();
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: ContainerId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn tenant_id_unique() {
+        let id1 = TenantId::new();
+        let id2 = TenantId::new();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn tenant_id_display() {
+        let id = TenantId::new();
+        let display = format!("{id}");
+        assert!(display.starts_with("Tenant("));
+        assert!(display.ends_with(")"));
+    }
+
+    #[test]
+    fn tenant_id_from_str() {
+        let id = TenantId::new();
+        let s = id.0.to_string();
+        let parsed: TenantId = s.parse().expect("parse");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn tenant_id_from_str_invalid() {
+        let result: Result<TenantId, _> = "not-a-valid-uuid".parse();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn tenant_id_serialize_roundtrip() {
+        let id = TenantId::new();
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: TenantId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn user_id_unique() {
+        let id1 = UserId::new();
+        let id2 = UserId::new();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn user_id_display() {
+        let id = UserId::new();
+        let display = format!("{id}");
+        assert!(display.starts_with("User("));
+        assert!(display.ends_with(")"));
+    }
+
+    #[test]
+    fn user_id_default() {
+        let id1 = UserId::default();
+        let id2 = UserId::default();
+        // Default should create new unique IDs
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn user_id_from_str() {
+        let id = UserId::new();
+        let s = id.0.to_string();
+        let parsed: UserId = s.parse().expect("parse");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn user_id_from_str_invalid() {
+        let result: Result<UserId, _> = "invalid-uuid-string".parse();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn user_id_serialize_roundtrip() {
+        let id = UserId::new();
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: UserId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn connection_id_unique() {
+        let id1 = ConnectionId::new();
+        let id2 = ConnectionId::new();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn connection_id_display() {
+        let id = ConnectionId::new();
+        let display = format!("{id}");
+        assert!(display.starts_with("Connection("));
+        assert!(display.ends_with(")"));
+    }
+
+    #[test]
+    fn connection_id_default() {
+        let id1 = ConnectionId::default();
+        let id2 = ConnectionId::default();
+        // Default should create new unique IDs
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn connection_id_serialize_roundtrip() {
+        let id = ConnectionId::new();
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: ConnectionId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn component_type_id_display() {
+        let id = ComponentTypeId(999);
+        assert_eq!(format!("{id}"), "ComponentType(999)");
+    }
+
+    #[test]
+    fn component_type_id_serialize_roundtrip() {
+        let id = ComponentTypeId(12345);
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: ComponentTypeId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn entity_id_from_u64() {
+        let id: EntityId = 42u64.into();
+        assert_eq!(id.0, 42);
+    }
+
+    #[test]
+    fn entity_id_serialize_roundtrip() {
+        let id = EntityId(9999);
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: EntityId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn resource_id_default() {
+        let id1 = ResourceId::default();
+        let id2 = ResourceId::default();
+        // Default should create new unique IDs
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn resource_id_from_str_invalid() {
+        let result: Result<ResourceId, _> = "not-a-uuid".parse();
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn session_id_default() {
+        let id1 = SessionId::default();
+        let id2 = SessionId::default();
+        // Default should create new unique IDs
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn session_id_from_str_invalid() {
+        let result: Result<SessionId, _> = "bad-uuid".parse();
+        assert!(result.is_err());
+    }
+
+    // =========================================================================
+    // Peer Review Improvements - Dana
+    // =========================================================================
+
+    #[test]
+    fn entity_id_boundary_zero() {
+        let id = EntityId(0);
+        assert_eq!(id.0, 0);
+        assert_eq!(format!("{id}"), "Entity(0)");
+        // Should serialize correctly
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: EntityId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn entity_id_boundary_max() {
+        let id = EntityId(u64::MAX);
+        assert_eq!(id.0, u64::MAX);
+        assert_eq!(format!("{id}"), format!("Entity({})", u64::MAX));
+        // Should serialize correctly
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: EntityId = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn component_type_id_different_values_not_equal() {
+        let id1 = ComponentTypeId(1);
+        let id2 = ComponentTypeId(2);
+        assert_ne!(id1, id2);
+        // Same value should be equal
+        let id3 = ComponentTypeId(1);
+        assert_eq!(id1, id3);
+    }
+
+    #[test]
+    fn id_types_hash_correctly() {
+        use std::collections::HashMap;
+        use std::hash::{Hash, Hasher};
+        use std::collections::hash_map::DefaultHasher;
+
+        fn hash_value<T: Hash>(val: &T) -> u64 {
+            let mut hasher = DefaultHasher::new();
+            val.hash(&mut hasher);
+            hasher.finish()
+        }
+
+        // EntityId - equal values should have equal hashes
+        let e1 = EntityId(42);
+        let e2 = EntityId(42);
+        assert_eq!(hash_value(&e1), hash_value(&e2));
+
+        // ContainerId - can be used as HashMap key
+        let mut container_map: HashMap<ContainerId, String> = HashMap::new();
+        let cid = ContainerId::new();
+        container_map.insert(cid, "test".to_string());
+        assert_eq!(container_map.get(&cid), Some(&"test".to_string()));
+
+        // MatchId - can be used as HashMap key
+        let mut match_map: HashMap<MatchId, i32> = HashMap::new();
+        let mid = MatchId::new();
+        match_map.insert(mid, 100);
+        assert_eq!(match_map.get(&mid), Some(&100));
+
+        // ComponentTypeId - equal values should have equal hashes
+        let ct1 = ComponentTypeId(999);
+        let ct2 = ComponentTypeId(999);
+        assert_eq!(hash_value(&ct1), hash_value(&ct2));
+    }
 }

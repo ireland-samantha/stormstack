@@ -168,6 +168,64 @@ impl Pagination {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::{
+        body::Body,
+        http::{header, Request},
+        routing::get,
+        Router,
+    };
+    use std::sync::Arc;
+    use tower::ServiceExt;
+
+    // Test state implementing AuthState
+    struct TestAppState {
+        jwt_service: JwtService,
+    }
+
+    impl AuthState for TestAppState {
+        fn jwt_service(&self) -> &JwtService {
+            &self.jwt_service
+        }
+    }
+
+    fn test_secret() -> &'static [u8] {
+        b"test-secret-key-32-bytes-long!!"
+    }
+
+    fn create_test_state() -> Arc<TestAppState> {
+        Arc::new(TestAppState {
+            jwt_service: JwtService::new(test_secret()),
+        })
+    }
+
+    fn create_valid_token(state: &TestAppState) -> String {
+        let claims = Claims::new(
+            UserId::new(),
+            TenantId::new(),
+            vec!["user".to_string()],
+        );
+        state.jwt_service.generate_token(&claims).expect("generate token")
+    }
+
+    // Handler that requires authentication
+    async fn protected_handler(auth: AuthUser) -> String {
+        format!("user_id: {}", auth.user_id)
+    }
+
+    // Handler that uses optional authentication
+    async fn optional_handler(OptionalAuth(auth): OptionalAuth) -> String {
+        match auth {
+            Some(user) => format!("authenticated: {}", user.user_id),
+            None => "anonymous".to_string(),
+        }
+    }
+
+    fn create_test_router(state: Arc<TestAppState>) -> Router {
+        Router::new()
+            .route("/protected", get(protected_handler))
+            .route("/optional", get(optional_handler))
+            .with_state(state)
+    }
 
     #[test]
     fn pagination_defaults() {
@@ -195,6 +253,13 @@ mod tests {
     }
 
     #[test]
+    fn pagination_page_zero() {
+        // page 0 should behave like page 1 (offset 0)
+        let p = Pagination { page: 0, per_page: 20 };
+        assert_eq!(p.offset(), 0);
+    }
+
+    #[test]
     fn auth_user_fields() {
         let user = AuthUser {
             user_id: UserId::new(),
@@ -205,5 +270,237 @@ mod tests {
 
         assert!(!user.roles.is_empty());
         assert!(user.claims.roles.contains(&"admin".to_string()));
+    }
+
+    // ===== AuthUser Extractor Tests =====
+
+    #[tokio::test]
+    async fn auth_user_missing_header_returns_401() {
+        let state = create_test_state();
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/protected")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn auth_user_invalid_format_returns_401() {
+        let state = create_test_state();
+        let app = create_test_router(state);
+
+        // Missing "Bearer " prefix
+        let request = Request::builder()
+            .uri("/protected")
+            .header(header::AUTHORIZATION, "InvalidFormat token123")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn auth_user_invalid_token_returns_401() {
+        let state = create_test_state();
+        let app = create_test_router(state);
+
+        // Bearer prefix but invalid token
+        let request = Request::builder()
+            .uri("/protected")
+            .header(header::AUTHORIZATION, "Bearer invalid.token.here")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn auth_user_valid_token_succeeds() {
+        let state = create_test_state();
+        let token = create_valid_token(&state);
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/protected")
+            .header(header::AUTHORIZATION, format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn auth_user_expired_token_returns_401() {
+        let state = create_test_state();
+
+        // Create an expired token by using a negative lifetime
+        let claims = Claims::new(
+            UserId::new(),
+            TenantId::new(),
+            vec!["user".to_string()],
+        );
+        // Generate token with -100 second lifetime (already expired)
+        let token = state.jwt_service.generate_token_with_expiry(&claims, -100).expect("generate token");
+
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/protected")
+            .header(header::AUTHORIZATION, format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn auth_user_wrong_secret_returns_401() {
+        let state = create_test_state();
+
+        // Create token with different secret
+        let other_jwt = JwtService::new(b"different-secret-32-bytes-long!!");
+        let claims = Claims::new(
+            UserId::new(),
+            TenantId::new(),
+            vec!["user".to_string()],
+        );
+        let token = other_jwt.generate_token(&claims).expect("generate token");
+
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/protected")
+            .header(header::AUTHORIZATION, format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn auth_user_empty_bearer_token_returns_401() {
+        let state = create_test_state();
+        let app = create_test_router(state);
+
+        // "Bearer " with nothing after - empty token
+        let request = Request::builder()
+            .uri("/protected")
+            .header(header::AUTHORIZATION, "Bearer ")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    // ===== OptionalAuth Extractor Tests =====
+
+    #[tokio::test]
+    async fn optional_auth_missing_header_returns_none() {
+        let state = create_test_state();
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/optional")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        assert_eq!(&body[..], b"anonymous");
+    }
+
+    #[tokio::test]
+    async fn optional_auth_invalid_format_returns_none() {
+        let state = create_test_state();
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/optional")
+            .header(header::AUTHORIZATION, "NotBearer token123")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        assert_eq!(&body[..], b"anonymous");
+    }
+
+    #[tokio::test]
+    async fn optional_auth_invalid_token_returns_none() {
+        let state = create_test_state();
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/optional")
+            .header(header::AUTHORIZATION, "Bearer invalid.token.here")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        assert_eq!(&body[..], b"anonymous");
+    }
+
+    #[tokio::test]
+    async fn optional_auth_valid_token_returns_user() {
+        let state = create_test_state();
+        let token = create_valid_token(&state);
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/optional")
+            .header(header::AUTHORIZATION, format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        assert!(body_str.starts_with("authenticated:"));
+    }
+
+    #[tokio::test]
+    async fn optional_auth_expired_token_returns_none() {
+        let state = create_test_state();
+
+        // Create an expired token by using a negative lifetime
+        let claims = Claims::new(
+            UserId::new(),
+            TenantId::new(),
+            vec!["user".to_string()],
+        );
+        let token = state.jwt_service.generate_token_with_expiry(&claims, -100).expect("generate token");
+
+        let app = create_test_router(state);
+
+        let request = Request::builder()
+            .uri("/optional")
+            .header(header::AUTHORIZATION, format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        assert_eq!(&body[..], b"anonymous");
     }
 }

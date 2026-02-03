@@ -194,4 +194,202 @@ mod tests {
         assert!(subs.contains(&match1));
         assert!(subs.contains(&match2));
     }
+
+    // ===== Edge case tests =====
+
+    #[test]
+    fn double_subscribe_is_idempotent() {
+        let manager = SubscriptionManager::new();
+        let conn = ConnectionId::new();
+        let match_id = MatchId::new();
+
+        manager.subscribe(conn, match_id);
+        manager.subscribe(conn, match_id);
+
+        // Should still only count as 1 subscription
+        assert_eq!(manager.subscriber_count(match_id), 1);
+        assert_eq!(manager.total_subscriptions(), 1);
+    }
+
+    #[test]
+    fn unsubscribe_nonexistent_is_safe() {
+        let manager = SubscriptionManager::new();
+        let conn = ConnectionId::new();
+        let match_id = MatchId::new();
+
+        // Unsubscribe from a match we never subscribed to - should not panic
+        manager.unsubscribe(conn, match_id);
+
+        assert!(!manager.is_subscribed(conn, match_id));
+    }
+
+    #[test]
+    fn remove_nonexistent_connection_is_safe() {
+        let manager = SubscriptionManager::new();
+        let conn = ConnectionId::new();
+
+        // Remove a connection that was never added - should not panic
+        manager.remove_connection(conn);
+    }
+
+    #[test]
+    fn get_subscribers_empty_match_returns_empty() {
+        let manager = SubscriptionManager::new();
+        let match_id = MatchId::new();
+
+        let subscribers = manager.get_match_subscribers(match_id);
+        assert!(subscribers.is_empty());
+    }
+
+    #[test]
+    fn get_subscriptions_unknown_connection_returns_empty() {
+        let manager = SubscriptionManager::new();
+        let conn = ConnectionId::new();
+
+        let subs = manager.get_connection_subscriptions(conn);
+        assert!(subs.is_empty());
+    }
+
+    #[test]
+    fn subscriber_count_unknown_match_returns_zero() {
+        let manager = SubscriptionManager::new();
+        let match_id = MatchId::new();
+
+        assert_eq!(manager.subscriber_count(match_id), 0);
+    }
+
+    #[test]
+    fn total_subscriptions_empty_returns_zero() {
+        let manager = SubscriptionManager::new();
+        assert_eq!(manager.total_subscriptions(), 0);
+    }
+
+    #[test]
+    fn is_subscribed_unknown_connection_returns_false() {
+        let manager = SubscriptionManager::new();
+        let conn = ConnectionId::new();
+        let match_id = MatchId::new();
+
+        assert!(!manager.is_subscribed(conn, match_id));
+    }
+
+    #[test]
+    fn many_connections_one_match() {
+        let manager = SubscriptionManager::new();
+        let match_id = MatchId::new();
+
+        // Subscribe 100 connections to the same match
+        let mut conns = Vec::new();
+        for _ in 0..100 {
+            let conn = ConnectionId::new();
+            manager.subscribe(conn, match_id);
+            conns.push(conn);
+        }
+
+        assert_eq!(manager.subscriber_count(match_id), 100);
+
+        // Verify all are subscribed
+        for conn in &conns {
+            assert!(manager.is_subscribed(*conn, match_id));
+        }
+    }
+
+    #[test]
+    fn one_connection_many_matches() {
+        let manager = SubscriptionManager::new();
+        let conn = ConnectionId::new();
+
+        // Subscribe one connection to 100 matches
+        let mut matches = Vec::new();
+        for _ in 0..100 {
+            let match_id = MatchId::new();
+            manager.subscribe(conn, match_id);
+            matches.push(match_id);
+        }
+
+        assert_eq!(manager.total_subscriptions(), 100);
+
+        let subs = manager.get_connection_subscriptions(conn);
+        assert_eq!(subs.len(), 100);
+
+        // Verify all subscriptions
+        for match_id in &matches {
+            assert!(manager.is_subscribed(conn, *match_id));
+        }
+    }
+
+    #[test]
+    fn unsubscribe_preserves_other_subscriptions() {
+        let manager = SubscriptionManager::new();
+        let conn1 = ConnectionId::new();
+        let conn2 = ConnectionId::new();
+        let match_id = MatchId::new();
+
+        manager.subscribe(conn1, match_id);
+        manager.subscribe(conn2, match_id);
+
+        // Unsubscribe conn1 only
+        manager.unsubscribe(conn1, match_id);
+
+        assert!(!manager.is_subscribed(conn1, match_id));
+        assert!(manager.is_subscribed(conn2, match_id));
+        assert_eq!(manager.subscriber_count(match_id), 1);
+    }
+
+    #[test]
+    fn remove_connection_preserves_other_connections() {
+        let manager = SubscriptionManager::new();
+        let conn1 = ConnectionId::new();
+        let conn2 = ConnectionId::new();
+        let match_id = MatchId::new();
+
+        manager.subscribe(conn1, match_id);
+        manager.subscribe(conn2, match_id);
+
+        // Remove conn1
+        manager.remove_connection(conn1);
+
+        assert!(!manager.is_subscribed(conn1, match_id));
+        assert!(manager.is_subscribed(conn2, match_id));
+        assert_eq!(manager.subscriber_count(match_id), 1);
+    }
+
+    #[test]
+    fn unsubscribe_one_match_preserves_other_match_subscriptions() {
+        // Test that a single connection unsubscribing from one match
+        // still remains subscribed to other matches
+        let manager = SubscriptionManager::new();
+        let conn = ConnectionId::new();
+        let match1 = MatchId::new();
+        let match2 = MatchId::new();
+        let match3 = MatchId::new();
+
+        // Subscribe to all three matches
+        manager.subscribe(conn, match1);
+        manager.subscribe(conn, match2);
+        manager.subscribe(conn, match3);
+
+        assert_eq!(manager.total_subscriptions(), 3);
+
+        // Unsubscribe from match2 only
+        manager.unsubscribe(conn, match2);
+
+        // Should still be subscribed to match1 and match3
+        assert!(manager.is_subscribed(conn, match1));
+        assert!(!manager.is_subscribed(conn, match2));
+        assert!(manager.is_subscribed(conn, match3));
+
+        // Verify counts
+        assert_eq!(manager.total_subscriptions(), 2);
+        assert_eq!(manager.subscriber_count(match1), 1);
+        assert_eq!(manager.subscriber_count(match2), 0);
+        assert_eq!(manager.subscriber_count(match3), 1);
+
+        // Verify get_connection_subscriptions returns correct matches
+        let subs = manager.get_connection_subscriptions(conn);
+        assert_eq!(subs.len(), 2);
+        assert!(subs.contains(&match1));
+        assert!(!subs.contains(&match2));
+        assert!(subs.contains(&match3));
+    }
 }

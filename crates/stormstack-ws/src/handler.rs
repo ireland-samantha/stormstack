@@ -188,6 +188,7 @@ impl MatchStateProvider for NullMatchProvider {
 mod tests {
     use super::*;
     use crate::connection::ConnectionState;
+    use stormstack_core::StormError;
     use tokio::sync::mpsc;
 
     fn create_handler() -> WsHandler<NullMatchProvider> {
@@ -268,5 +269,228 @@ mod tests {
 
         handler.on_disconnect(conn_id);
         assert!(!handler.subscriptions.is_subscribed(conn_id, match_id));
+    }
+
+    // ===== Match not found tests =====
+
+    /// Provider that always returns match_exists = false
+    struct MatchNotFoundProvider;
+
+    impl MatchStateProvider for MatchNotFoundProvider {
+        fn get_snapshot(&self, _match_id: MatchId) -> Result<stormstack_core::WorldSnapshot> {
+            Err(StormError::MatchNotFound(_match_id))
+        }
+
+        fn match_exists(&self, _match_id: MatchId) -> bool {
+            false
+        }
+    }
+
+    #[test]
+    fn subscribe_nonexistent_match_sends_error() {
+        let handler = WsHandler::new(Arc::new(MatchNotFoundProvider));
+
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let state = ConnectionState::new(ConnectionId::new(), tx);
+        let conn_id = state.id;
+        handler.connections.add_connection(state);
+
+        let match_id = MatchId::new();
+
+        handler
+            .on_message(conn_id, ClientMessage::Subscribe { match_id })
+            .expect("subscribe message handling should not fail");
+
+        // Should receive an error message
+        let msg = rx.try_recv().expect("receive error");
+        match msg {
+            ServerMessage::Error { code, message: _ } => {
+                assert_eq!(code, "MATCH_NOT_FOUND");
+            }
+            _ => panic!("expected error message, got {:?}", msg),
+        }
+
+        // Connection should NOT be subscribed to the nonexistent match
+        assert!(!handler.subscriptions.is_subscribed(conn_id, match_id));
+    }
+
+    // ===== Provider that fails snapshot retrieval =====
+
+    /// Provider that exists but fails to get snapshot
+    struct SnapshotFailProvider;
+
+    impl MatchStateProvider for SnapshotFailProvider {
+        fn get_snapshot(&self, match_id: MatchId) -> Result<stormstack_core::WorldSnapshot> {
+            Err(StormError::InvalidState(format!(
+                "Failed to get snapshot for {:?}",
+                match_id
+            )))
+        }
+
+        fn match_exists(&self, _match_id: MatchId) -> bool {
+            true // Match exists but snapshot fails
+        }
+    }
+
+    #[test]
+    fn subscribe_snapshot_failure_sends_error() {
+        let handler = WsHandler::new(Arc::new(SnapshotFailProvider));
+
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let state = ConnectionState::new(ConnectionId::new(), tx);
+        let conn_id = state.id;
+        handler.connections.add_connection(state);
+
+        let match_id = MatchId::new();
+
+        handler
+            .on_message(conn_id, ClientMessage::Subscribe { match_id })
+            .expect("subscribe message handling should not fail");
+
+        // Should receive an error message about snapshot failure
+        let msg = rx.try_recv().expect("receive error");
+        match msg {
+            ServerMessage::Error { code, message: _ } => {
+                assert_eq!(code, "SNAPSHOT_FAILED");
+            }
+            _ => panic!("expected error message, got {:?}", msg),
+        }
+    }
+
+    // ===== Additional edge case tests =====
+
+    #[test]
+    fn unsubscribe_sends_nothing() {
+        let handler = create_handler();
+        let (conn_id, mut rx) = add_test_connection(&handler);
+        let match_id = MatchId::new();
+
+        // Subscribe first
+        handler
+            .on_message(conn_id, ClientMessage::Subscribe { match_id })
+            .expect("subscribe");
+        let _ = rx.try_recv(); // Consume the snapshot
+
+        // Unsubscribe
+        handler
+            .on_message(conn_id, ClientMessage::Unsubscribe { match_id })
+            .expect("unsubscribe");
+
+        // Should not receive any message for unsubscribe
+        assert!(rx.try_recv().is_err());
+        assert!(!handler.subscriptions.is_subscribed(conn_id, match_id));
+    }
+
+    #[test]
+    fn command_message_is_acknowledged() {
+        let handler = create_handler();
+        let (conn_id, _rx) = add_test_connection(&handler);
+        let match_id = MatchId::new();
+
+        let command = crate::messages::Command {
+            name: "test_command".to_string(),
+            entity_id: Some(123),
+            payload: serde_json::json!({"key": "value"}),
+        };
+
+        // Command handling should not error (even though not fully implemented)
+        let result = handler.on_message(
+            conn_id,
+            ClientMessage::Command {
+                match_id,
+                command,
+            },
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn on_connect_succeeds() {
+        let handler = create_handler();
+        let conn_id = ConnectionId::new();
+
+        // on_connect should succeed
+        let result = handler.on_connect(conn_id);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn broadcast_to_match_uses_connection_manager() {
+        let handler = create_handler();
+        let (conn_id, mut rx) = add_test_connection(&handler);
+        let match_id = MatchId::new();
+
+        // Subscribe to match
+        handler
+            .on_message(conn_id, ClientMessage::Subscribe { match_id })
+            .expect("subscribe");
+        let _ = rx.try_recv(); // Consume the snapshot
+
+        // Broadcast via handler
+        let message = ServerMessage::Error {
+            code: "BROADCAST_TEST".to_string(),
+            message: "broadcast test".to_string(),
+        };
+        handler
+            .broadcast_to_match(match_id, message)
+            .expect("broadcast");
+
+        // Should receive the broadcast
+        let msg = rx.try_recv().expect("receive broadcast");
+        match msg {
+            ServerMessage::Error { code, .. } => {
+                assert_eq!(code, "BROADCAST_TEST");
+            }
+            _ => panic!("expected error message"),
+        }
+    }
+
+    #[test]
+    fn double_disconnect_is_safe() {
+        let handler = create_handler();
+        let (conn_id, _rx) = add_test_connection(&handler);
+        let match_id = MatchId::new();
+
+        // Subscribe to a match
+        handler
+            .on_message(conn_id, ClientMessage::Subscribe { match_id })
+            .expect("subscribe");
+
+        // Verify connection is tracked and subscribed
+        assert!(handler.connections.has_connection(conn_id));
+        assert!(handler.subscriptions.is_subscribed(conn_id, match_id));
+
+        // First disconnect
+        handler.on_disconnect(conn_id);
+        assert!(!handler.connections.has_connection(conn_id));
+        assert!(!handler.subscriptions.is_subscribed(conn_id, match_id));
+
+        // Second disconnect - should not panic
+        handler.on_disconnect(conn_id);
+        assert!(!handler.connections.has_connection(conn_id));
+        assert!(!handler.subscriptions.is_subscribed(conn_id, match_id));
+    }
+
+    #[test]
+    fn subscribe_same_match_twice_via_handler() {
+        let handler = create_handler();
+        let (conn_id, mut rx) = add_test_connection(&handler);
+        let match_id = MatchId::new();
+
+        // First subscribe
+        handler
+            .on_message(conn_id, ClientMessage::Subscribe { match_id })
+            .expect("subscribe 1");
+        let _ = rx.try_recv(); // Consume first snapshot
+
+        // Second subscribe to same match
+        handler
+            .on_message(conn_id, ClientMessage::Subscribe { match_id })
+            .expect("subscribe 2");
+        let _ = rx.try_recv(); // Consume second snapshot
+
+        // Should still only count as one subscription
+        assert_eq!(handler.subscriptions.subscriber_count(match_id), 1);
+        assert!(handler.subscriptions.is_subscribed(conn_id, match_id));
     }
 }

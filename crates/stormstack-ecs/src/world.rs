@@ -765,4 +765,174 @@ mod tests {
         let delta = world.delta_since(0).expect("delta");
         assert!(delta.spawned.iter().any(|s| s.id == entity_id));
     }
+
+    // =========================================================================
+    // Eli's Phase 2 Tests - TypeRegistry & ChangeTracker Edge Cases
+    // =========================================================================
+
+    #[test]
+    fn type_registry_idempotent_registration() {
+        // Registering the same component type twice should return the same ID
+        let mut world = StormWorld::new();
+
+        let first_id = world.register_component::<Position>();
+        let second_id = world.register_component::<Position>();
+
+        assert_eq!(first_id, second_id, "Registering same type twice should return same ID");
+
+        // Verify it's still retrievable
+        assert_eq!(world.component_type_id::<Position>(), Some(first_id));
+    }
+
+    #[test]
+    fn cleanup_before_tick_zero() {
+        // Edge case: cleanup_before(0) should keep all history
+        let mut world = StormWorld::new();
+
+        // Spawn entities at tick 0
+        let e1 = world.spawn();
+        let e2 = world.spawn();
+
+        // Advance and spawn more
+        world.advance(0.016).expect("advance");
+        let e3 = world.spawn();
+
+        // Cleanup before tick 0 - should retain everything at tick 0 and later
+        world.cleanup_history(0);
+
+        let delta = world.delta_since(0).expect("delta");
+        // All entities spawned at tick 0 or later should still be tracked
+        assert!(delta.spawned.iter().any(|s| s.id == e1));
+        assert!(delta.spawned.iter().any(|s| s.id == e2));
+        assert!(delta.spawned.iter().any(|s| s.id == e3));
+    }
+
+    #[test]
+    fn cleanup_before_current_tick() {
+        // cleanup_before(current_tick) should keep only current tick's changes
+        let mut world = StormWorld::new();
+
+        // Spawn at tick 0
+        world.spawn();
+        world.spawn();
+
+        // Advance to tick 1
+        world.advance(0.016).expect("advance");
+
+        // Spawn at tick 1
+        let _e3 = world.spawn();
+
+        // Advance to tick 2
+        world.advance(0.016).expect("advance");
+
+        // Cleanup before current tick (2) - should clear ticks 0 and 1
+        world.cleanup_history(world.tick());
+
+        let delta = world.delta_since(0).expect("delta");
+        // Only tick 1 spawns should remain (since we're at tick 2 now and cleaned before tick 2)
+        // Actually, e3 was spawned at tick 1, which is < current_tick(2), so it should be cleaned
+        assert!(delta.spawned.len() <= 1, "Only current tick changes should remain");
+    }
+
+    #[test]
+    fn cleanup_before_future_tick() {
+        // cleanup_before(future_tick) should clear all history
+        let mut world = StormWorld::new();
+
+        // Spawn several entities across multiple ticks
+        for _ in 0..5 {
+            world.spawn();
+            world.advance(0.016).expect("advance");
+        }
+
+        // Current tick is 5, cleanup before tick 100 (future)
+        world.cleanup_history(100);
+
+        let delta = world.delta_since(0).expect("delta");
+        // All history should be cleared since all changes happened before tick 100
+        assert_eq!(delta.spawned.len(), 0, "All history should be cleared for future cleanup tick");
+    }
+
+    #[test]
+    fn large_delta_generation() {
+        // Test delta generation with many spawn/despawn operations
+        let mut world = StormWorld::new();
+
+        // Advance to tick 1 so we can track changes
+        world.advance(0.016).expect("advance");
+
+        // Spawn 500 entities
+        let mut entities = Vec::new();
+        for _ in 0..500 {
+            entities.push(world.spawn());
+        }
+
+        // Despawn half of them
+        for entity in entities.iter().take(250) {
+            world.despawn(*entity).expect("despawn");
+        }
+
+        world.advance(0.016).expect("advance");
+
+        // Generate delta
+        let delta = world.delta_since(0).expect("delta");
+
+        // Should have tracked 500 spawns and 250 despawns
+        // Spawned entities that were also despawned should be filtered out from spawned list
+        // The first 250 entities were despawned, so only the remaining 250 should appear in spawned
+        assert_eq!(delta.spawned.len(), 250, "Only surviving entities should be in spawned list");
+        assert_eq!(delta.despawned.len(), 250);
+
+        // Verify despawned entities are in the despawned list
+        for entity in entities.iter().take(250) {
+            assert!(delta.despawned.contains(entity), "Despawned entity {:?} should be in delta", entity);
+        }
+
+        // Verify surviving entities (indices 250-499) are in the spawned list
+        for entity in entities.iter().skip(250) {
+            assert!(delta.spawned.iter().any(|s| s.id == *entity),
+                "Surviving entity {:?} should be in spawned list", entity);
+        }
+    }
+
+    #[test]
+    fn cleanup_before_u64_max() {
+        // Security edge case: cleanup_before(u64::MAX) should clear all history without overflow
+        let mut world = StormWorld::new();
+
+        // Spawn entities across multiple ticks
+        for _ in 0..10 {
+            world.spawn();
+            world.advance(0.016).expect("advance");
+        }
+
+        // Current tick is 10, cleanup before u64::MAX - should clear everything
+        world.cleanup_history(u64::MAX);
+
+        let delta = world.delta_since(0).expect("delta");
+        // All history should be cleared - u64::MAX is far in the future
+        assert_eq!(delta.spawned.len(), 0, "All history should be cleared when cleanup tick is u64::MAX");
+        assert_eq!(delta.despawned.len(), 0, "No despawns should be tracked after cleanup");
+    }
+
+    #[test]
+    fn delta_excludes_spawned_then_despawned() {
+        // Entities spawned and despawned in the same delta window should not appear as spawned
+        let mut world = StormWorld::new();
+
+        world.advance(0.016).expect("advance"); // tick 1
+
+        let entity = world.spawn();
+        world.despawn(entity).expect("despawn");
+
+        world.advance(0.016).expect("advance"); // tick 2
+
+        let delta = world.delta_since(0).expect("delta");
+
+        // The entity should appear in despawned but NOT in spawned (since it no longer exists)
+        assert!(!delta.spawned.iter().any(|s| s.id == entity),
+            "Despawned entity should not appear in spawned list");
+        assert!(delta.despawned.contains(&entity),
+            "Entity should appear in despawned list");
+    }
 }

@@ -263,4 +263,228 @@ mod tests {
         state.set_auth(stormstack_core::UserId::new(), stormstack_core::TenantId::new());
         assert!(state.is_authenticated());
     }
+
+    // ===== Error path tests =====
+
+    #[test]
+    fn send_to_nonexistent_connection_returns_error() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        let nonexistent_id = ConnectionId::new();
+        let message = ServerMessage::Pong {
+            timestamp: 1000,
+            server_time: 2000,
+        };
+
+        let result = manager.send(nonexistent_id, message);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            StormError::ConnectionNotFound(_)
+        ));
+    }
+
+    #[test]
+    fn send_to_closed_channel_returns_error() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        let (state, rx) = create_test_connection();
+        let id = state.id;
+        manager.add_connection(state);
+
+        // Drop the receiver to close the channel
+        drop(rx);
+
+        let message = ServerMessage::Pong {
+            timestamp: 1000,
+            server_time: 2000,
+        };
+
+        let result = manager.send(id, message);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            StormError::ConnectionClosed(_)
+        ));
+    }
+
+    #[test]
+    fn subscribe_nonexistent_connection_returns_error() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        let nonexistent_id = ConnectionId::new();
+        let match_id = MatchId::new();
+
+        let result = manager.subscribe(nonexistent_id, match_id);
+        assert!(result.is_err());
+        assert!(matches!(
+            result.unwrap_err(),
+            StormError::ConnectionNotFound(_)
+        ));
+    }
+
+    #[test]
+    fn get_nonexistent_connection_returns_none() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        let nonexistent_id = ConnectionId::new();
+        assert!(manager.get_connection(nonexistent_id).is_none());
+    }
+
+    // ===== Edge case tests =====
+
+    #[test]
+    fn double_subscribe_same_match_is_idempotent() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions.clone());
+
+        let (state, _rx) = create_test_connection();
+        let id = state.id;
+        manager.add_connection(state);
+
+        let match_id = MatchId::new();
+
+        // Subscribe twice
+        manager.subscribe(id, match_id).expect("subscribe 1");
+        manager.subscribe(id, match_id).expect("subscribe 2");
+
+        // Should still only receive one message on broadcast
+        let (state2, _rx2) = create_test_connection();
+        let id2 = state2.id;
+        manager.add_connection(state2);
+        manager.subscribe(id2, match_id).expect("subscribe");
+
+        // Verify subscription count is correct
+        assert_eq!(subscriptions.subscriber_count(match_id), 2);
+    }
+
+    #[test]
+    fn unsubscribe_without_subscribe_is_safe() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        let (state, _rx) = create_test_connection();
+        let id = state.id;
+        manager.add_connection(state);
+
+        let match_id = MatchId::new();
+
+        // Unsubscribe without having subscribed - should not panic
+        manager.unsubscribe(id, match_id);
+    }
+
+    #[test]
+    fn remove_connection_twice_is_safe() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        let (state, _rx) = create_test_connection();
+        let id = state.id;
+        manager.add_connection(state);
+
+        // Remove twice - should not panic
+        manager.remove_connection(id);
+        manager.remove_connection(id);
+
+        assert!(!manager.has_connection(id));
+    }
+
+    #[test]
+    fn broadcast_to_match_with_no_subscribers_succeeds() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        let match_id = MatchId::new();
+        let message = ServerMessage::Pong {
+            timestamp: 1000,
+            server_time: 2000,
+        };
+
+        // Broadcasting to match with no subscribers should succeed (no-op)
+        let result = manager.broadcast_to_match(match_id, message);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn broadcast_skips_closed_connections() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        // Connection 1 - will be closed
+        let (state1, rx1) = create_test_connection();
+        let id1 = state1.id;
+        manager.add_connection(state1);
+
+        // Connection 2 - will remain open
+        let (state2, mut rx2) = create_test_connection();
+        let id2 = state2.id;
+        manager.add_connection(state2);
+
+        let match_id = MatchId::new();
+        manager.subscribe(id1, match_id).expect("subscribe 1");
+        manager.subscribe(id2, match_id).expect("subscribe 2");
+
+        // Close connection 1's receiver
+        drop(rx1);
+
+        let message = ServerMessage::Pong {
+            timestamp: 1000,
+            server_time: 2000,
+        };
+
+        // Broadcast should still succeed (just skips the closed connection)
+        let result = manager.broadcast_to_match(match_id, message);
+        assert!(result.is_ok());
+
+        // Connection 2 should receive the message
+        assert!(rx2.try_recv().is_ok());
+    }
+
+    #[test]
+    fn subscribe_to_multiple_matches() {
+        let subscriptions = shared_subscriptions();
+        let manager = ConnectionManager::new(subscriptions);
+
+        let (state, mut rx) = create_test_connection();
+        let id = state.id;
+        manager.add_connection(state);
+
+        let match_id1 = MatchId::new();
+        let match_id2 = MatchId::new();
+
+        manager.subscribe(id, match_id1).expect("subscribe 1");
+        manager.subscribe(id, match_id2).expect("subscribe 2");
+
+        // Broadcast to match 1
+        let message1 = ServerMessage::Error {
+            code: "MATCH1".to_string(),
+            message: "from match 1".to_string(),
+        };
+        manager.broadcast_to_match(match_id1, message1).expect("broadcast 1");
+
+        // Broadcast to match 2
+        let message2 = ServerMessage::Error {
+            code: "MATCH2".to_string(),
+            message: "from match 2".to_string(),
+        };
+        manager.broadcast_to_match(match_id2, message2).expect("broadcast 2");
+
+        // Should receive both messages
+        let msg1 = rx.try_recv().expect("receive 1");
+        let msg2 = rx.try_recv().expect("receive 2");
+
+        // Verify we got messages from both matches
+        match (&msg1, &msg2) {
+            (ServerMessage::Error { code: c1, .. }, ServerMessage::Error { code: c2, .. }) => {
+                assert!(c1 == "MATCH1" || c1 == "MATCH2");
+                assert!(c2 == "MATCH1" || c2 == "MATCH2");
+                assert_ne!(c1, c2);
+            }
+            _ => panic!("Expected Error messages"),
+        }
+    }
 }

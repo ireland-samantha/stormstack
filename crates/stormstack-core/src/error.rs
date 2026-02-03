@@ -283,4 +283,213 @@ mod tests {
             StormError::Wasm(WasmError::FuelExhausted { consumed: 500 })
         ));
     }
+
+    // =========================================================================
+    // ModuleError tests - Alex
+    // =========================================================================
+
+    #[test]
+    fn module_error_load_failed_display() {
+        let err = ModuleError::LoadFailed {
+            name: "game-module".to_string(),
+            reason: "file not found".to_string(),
+        };
+        let msg = format!("{err}");
+        assert!(msg.contains("game-module"));
+        assert!(msg.contains("file not found"));
+        assert!(msg.contains("Failed to load"));
+    }
+
+    #[test]
+    fn module_error_unload_failed_display() {
+        let err = ModuleError::UnloadFailed {
+            name: "physics".to_string(),
+            reason: "still in use".to_string(),
+        };
+        let msg = format!("{err}");
+        assert!(msg.contains("physics"));
+        assert!(msg.contains("still in use"));
+        assert!(msg.contains("unload"));
+    }
+
+    #[test]
+    fn module_error_not_found_display() {
+        let err = ModuleError::NotFound("missing-module".to_string());
+        let msg = format!("{err}");
+        assert!(msg.contains("missing-module"));
+        assert!(msg.contains("not found"));
+    }
+
+    #[test]
+    fn module_error_already_loaded_display() {
+        let err = ModuleError::AlreadyLoaded("core-module".to_string());
+        let msg = format!("{err}");
+        assert!(msg.contains("core-module"));
+        assert!(msg.contains("already loaded"));
+    }
+
+    #[test]
+    fn module_error_symbol_not_found_display() {
+        let err = ModuleError::SymbolNotFound {
+            module: "renderer".to_string(),
+            symbol: "init_graphics".to_string(),
+        };
+        let msg = format!("{err}");
+        assert!(msg.contains("renderer"));
+        assert!(msg.contains("init_graphics"));
+        assert!(msg.contains("Symbol not found"));
+    }
+
+    #[test]
+    fn module_error_version_conflict_display() {
+        let err = ModuleError::VersionConflict {
+            name: "network".to_string(),
+            required: "2.0.0".to_string(),
+            found: "1.5.0".to_string(),
+        };
+        let msg = format!("{err}");
+        assert!(msg.contains("network"));
+        assert!(msg.contains("2.0.0"));
+        assert!(msg.contains("1.5.0"));
+        assert!(msg.contains("version conflict"));
+    }
+
+    #[test]
+    fn module_error_dependency_not_satisfied_display() {
+        let err = ModuleError::DependencyNotSatisfied {
+            module: "game-logic".to_string(),
+            dependency: "physics-engine".to_string(),
+        };
+        let msg = format!("{err}");
+        assert!(msg.contains("game-logic"));
+        assert!(msg.contains("physics-engine"));
+        assert!(msg.contains("Dependency not satisfied"));
+    }
+
+    #[test]
+    fn module_error_circular_dependency_display() {
+        let err = ModuleError::CircularDependency("module-a".to_string());
+        let msg = format!("{err}");
+        assert!(msg.contains("module-a"));
+        assert!(msg.contains("Circular dependency"));
+    }
+
+    #[test]
+    fn module_error_abi_mismatch_display() {
+        let err = ModuleError::AbiMismatch {
+            module_abi: 1,
+            expected_abi: 2,
+        };
+        let msg = format!("{err}");
+        assert!(msg.contains("1"));
+        assert!(msg.contains("2"));
+        assert!(msg.contains("ABI version mismatch"));
+    }
+
+    #[test]
+    fn module_error_in_use_display() {
+        let err = ModuleError::InUse("active-module".to_string());
+        let msg = format!("{err}");
+        assert!(msg.contains("active-module"));
+        assert!(msg.contains("still in use"));
+    }
+
+    #[test]
+    fn storm_error_from_module() {
+        let mod_err = ModuleError::NotFound("test-module".to_string());
+        let storm_err: StormError = mod_err.into();
+        assert!(matches!(
+            storm_err,
+            StormError::Module(ModuleError::NotFound(_))
+        ));
+    }
+
+    // =========================================================================
+    // Additional StormError tests - Alex
+    // =========================================================================
+
+    #[test]
+    fn storm_error_entity_not_found_display() {
+        let err = StormError::EntityNotFound(EntityId(42));
+        let msg = format!("{err}");
+        assert!(msg.contains("Entity"));
+        assert!(msg.contains("42"));
+        assert!(msg.contains("not found"));
+    }
+
+    #[test]
+    fn storm_error_container_not_found_display() {
+        let id = ContainerId::new();
+        let err = StormError::ContainerNotFound(id);
+        let msg = format!("{err}");
+        assert!(msg.contains("Container"));
+        assert!(msg.contains("not found"));
+    }
+
+    #[test]
+    fn storm_error_match_not_found_display() {
+        let id = MatchId::new();
+        let err = StormError::MatchNotFound(id);
+        let msg = format!("{err}");
+        assert!(msg.contains("Match"));
+        assert!(msg.contains("not found"));
+    }
+
+    #[test]
+    fn storm_error_invalid_state_display() {
+        let err = StormError::InvalidState("cannot transition to running".to_string());
+        let msg = format!("{err}");
+        assert!(msg.contains("Invalid state"));
+        assert!(msg.contains("cannot transition"));
+    }
+
+    // =========================================================================
+    // AuthError tests - Alex
+    // =========================================================================
+
+    #[test]
+    fn auth_error_invalid_token_display() {
+        let err = AuthError::InvalidToken("malformed JWT".to_string());
+        let msg = format!("{err}");
+        assert!(msg.contains("Invalid token"));
+        assert!(msg.contains("malformed JWT"));
+    }
+
+    #[test]
+    fn auth_error_token_expired_display() {
+        let err = AuthError::TokenExpired;
+        let msg = format!("{err}");
+        assert!(msg.contains("Token expired"));
+    }
+
+    #[test]
+    fn auth_error_invalid_credentials_display() {
+        let err = AuthError::InvalidCredentials;
+        let msg = format!("{err}");
+        assert!(msg.contains("Invalid credentials"));
+    }
+
+    #[test]
+    fn auth_error_access_denied_display() {
+        let err = AuthError::AccessDenied("insufficient permissions".to_string());
+        let msg = format!("{err}");
+        assert!(msg.contains("Access denied"));
+        assert!(msg.contains("insufficient permissions"));
+    }
+
+    #[test]
+    fn auth_error_user_not_found_display() {
+        let user_id = UserId::new();
+        let err = AuthError::UserNotFound(user_id);
+        let msg = format!("{err}");
+        assert!(msg.contains("User not found"));
+    }
+
+    #[test]
+    fn auth_error_hashing_failed_display() {
+        let err = AuthError::HashingFailed("out of memory".to_string());
+        let msg = format!("{err}");
+        assert!(msg.contains("Password hashing failed"));
+        assert!(msg.contains("out of memory"));
+    }
 }

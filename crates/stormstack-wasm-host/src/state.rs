@@ -224,4 +224,158 @@ mod tests {
         let val = state.random_range(20, 10);
         assert_eq!(val, 20);
     }
+
+    // =========================================================================
+    // Casey's security tests - rate limits and drain_logs
+    // =========================================================================
+
+    #[test]
+    fn rate_limits_spawn_enforcement() {
+        let mut limits = RateLimits::default();
+        assert!(limits.can_spawn());
+
+        limits.spawn_calls = RateLimits::MAX_SPAWN_CALLS;
+        assert!(!limits.can_spawn());
+    }
+
+    #[test]
+    fn rate_limits_just_under_max_allows() {
+        let mut limits = RateLimits::default();
+
+        limits.log_calls = RateLimits::MAX_LOG_CALLS - 1;
+        assert!(limits.can_log(), "one under max should still allow");
+
+        limits.spawn_calls = RateLimits::MAX_SPAWN_CALLS - 1;
+        assert!(limits.can_spawn(), "one under max should still allow");
+    }
+
+    #[test]
+    fn rate_limits_constants_are_reasonable() {
+        // Security: limits should not be too high (DoS) or too low (unusable)
+        assert!(
+            RateLimits::MAX_LOG_CALLS >= 10,
+            "log limit should allow at least 10 calls per tick"
+        );
+        assert!(
+            RateLimits::MAX_LOG_CALLS <= 1000,
+            "log limit should not be excessively high"
+        );
+        assert!(
+            RateLimits::MAX_SPAWN_CALLS >= 10,
+            "spawn limit should allow at least 10 calls per tick"
+        );
+        assert!(
+            RateLimits::MAX_SPAWN_CALLS <= 1000,
+            "spawn limit should not be excessively high"
+        );
+    }
+
+    #[test]
+    fn drain_logs_returns_all_and_clears() {
+        let mut state = WasmState::new(TenantId::new());
+
+        // Add some log entries
+        state.log_buffer.push(LogEntry {
+            level: LogLevel::Info,
+            message: "first".to_string(),
+            tick: 0,
+        });
+        state.log_buffer.push(LogEntry {
+            level: LogLevel::Debug,
+            message: "second".to_string(),
+            tick: 1,
+        });
+        state.log_buffer.push(LogEntry {
+            level: LogLevel::Error,
+            message: "third".to_string(),
+            tick: 2,
+        });
+
+        assert_eq!(state.log_buffer.len(), 3);
+
+        // Drain should return all entries
+        let drained = state.drain_logs();
+        assert_eq!(drained.len(), 3);
+        assert_eq!(drained[0].message, "first");
+        assert_eq!(drained[1].message, "second");
+        assert_eq!(drained[2].message, "third");
+
+        // Buffer should now be empty
+        assert!(state.log_buffer.is_empty());
+
+        // Second drain should return empty
+        let drained_again = state.drain_logs();
+        assert!(drained_again.is_empty());
+    }
+
+    #[test]
+    fn drain_logs_empty_buffer_returns_empty() {
+        let mut state = WasmState::new(TenantId::new());
+        let drained = state.drain_logs();
+        assert!(drained.is_empty());
+    }
+
+    #[test]
+    fn random_f32_bounds() {
+        let mut state = WasmState::new(TenantId::new());
+        state.set_rng_seed(12345);
+
+        // Test 1000 samples - all should be in [0, 1)
+        for _ in 0..1000 {
+            let val = state.random_f32();
+            assert!(val >= 0.0, "random_f32 should be >= 0, got {}", val);
+            assert!(val < 1.0, "random_f32 should be < 1, got {}", val);
+        }
+    }
+
+    #[test]
+    fn new_state_has_default_values() {
+        let tenant_id = TenantId::new();
+        let state = WasmState::new(tenant_id);
+
+        assert_eq!(state.current_tick, 0);
+        assert!((state.delta_time - 0.0).abs() < f64::EPSILON);
+        assert!(state.log_buffer.is_empty());
+        assert_eq!(state.rate_limits.log_calls, 0);
+        assert_eq!(state.rate_limits.spawn_calls, 0);
+        assert!(state.world.is_none());
+    }
+
+    #[test]
+    fn state_with_world_has_world_reference() {
+        let tenant_id = TenantId::new();
+        let world = Arc::new(RwLock::new(StormWorld::new()));
+        let state = WasmState::with_world(tenant_id, world.clone());
+
+        assert!(state.world.is_some());
+
+        // Verify we can access the world
+        let world_ref = state.world.as_ref().unwrap();
+        let w = world_ref.read();
+        assert_eq!(w.entity_count(), 0);
+    }
+
+    #[test]
+    fn log_level_equality() {
+        assert_eq!(LogLevel::Debug, LogLevel::Debug);
+        assert_eq!(LogLevel::Info, LogLevel::Info);
+        assert_eq!(LogLevel::Warn, LogLevel::Warn);
+        assert_eq!(LogLevel::Error, LogLevel::Error);
+        assert_ne!(LogLevel::Debug, LogLevel::Info);
+        assert_ne!(LogLevel::Warn, LogLevel::Error);
+    }
+
+    #[test]
+    fn log_entry_clone() {
+        let entry = LogEntry {
+            level: LogLevel::Info,
+            message: "test message".to_string(),
+            tick: 42,
+        };
+
+        let cloned = entry.clone();
+        assert_eq!(cloned.level, entry.level);
+        assert_eq!(cloned.message, entry.message);
+        assert_eq!(cloned.tick, entry.tick);
+    }
 }

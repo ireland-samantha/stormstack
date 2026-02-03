@@ -250,4 +250,112 @@ mod tests {
         assert!(!response.has_next());
         assert!(response.has_prev());
     }
+
+    // ===== IntoResponse tests =====
+
+    #[tokio::test]
+    async fn api_response_success_returns_200() {
+        let response: ApiResponse<String> = ApiResponse::ok("test".to_string());
+        let axum_response = response.into_response();
+
+        assert_eq!(axum_response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn api_response_error_returns_correct_status() {
+        // NOT_FOUND error should return 404
+        let response: ApiResponse<()> = ApiResponse::err(ApiError::not_found("Resource"));
+        let axum_response = response.into_response();
+        assert_eq!(axum_response.status(), StatusCode::NOT_FOUND);
+
+        // VALIDATION error should return 400
+        let response: ApiResponse<()> = ApiResponse::err(ApiError::validation("Invalid input"));
+        let axum_response = response.into_response();
+        assert_eq!(axum_response.status(), StatusCode::BAD_REQUEST);
+
+        // UNAUTHORIZED error should return 401
+        let response: ApiResponse<()> = ApiResponse::err(ApiError::unauthorized());
+        let axum_response = response.into_response();
+        assert_eq!(axum_response.status(), StatusCode::UNAUTHORIZED);
+
+        // FORBIDDEN error should return 403
+        let response: ApiResponse<()> = ApiResponse::err(ApiError::forbidden());
+        let axum_response = response.into_response();
+        assert_eq!(axum_response.status(), StatusCode::FORBIDDEN);
+
+        // CONFLICT error should return 409
+        let response: ApiResponse<()> = ApiResponse::err(ApiError::conflict("Already exists"));
+        let axum_response = response.into_response();
+        assert_eq!(axum_response.status(), StatusCode::CONFLICT);
+
+        // INTERNAL error should return 500
+        let response: ApiResponse<()> = ApiResponse::err(ApiError::internal("Something broke"));
+        let axum_response = response.into_response();
+        assert_eq!(axum_response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn api_error_into_response_returns_correct_status() {
+        let error = ApiError::not_found("User");
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn api_error_conflict_status_code() {
+        assert_eq!(ApiError::conflict("x").status_code(), StatusCode::CONFLICT);
+    }
+
+    #[test]
+    fn api_error_with_details() {
+        let error = ApiError::validation("Invalid input").with_details(vec![
+            FieldError::new("email", "Invalid email format"),
+            FieldError::new("name", "Name is required"),
+        ]);
+
+        assert!(error.details.is_some());
+        let details = error.details.unwrap();
+        assert_eq!(details.len(), 2);
+        assert_eq!(details[0].field, "email");
+        assert_eq!(details[1].field, "name");
+    }
+
+    #[test]
+    fn api_error_unknown_code_returns_internal() {
+        let error = ApiError::new("CUSTOM_ERROR", "Custom error message");
+        assert_eq!(error.status_code(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    // ===== Pagination edge cases =====
+
+    #[test]
+    fn paginated_response_single_page() {
+        let items = vec!["a", "b", "c"];
+        let response = PaginatedResponse::new(items, 1, 10, 3);
+
+        assert_eq!(response.total_pages, 1);
+        assert!(!response.has_next());
+        assert!(!response.has_prev());
+    }
+
+    #[test]
+    fn paginated_response_empty() {
+        let items: Vec<&str> = vec![];
+        let response = PaginatedResponse::new(items, 1, 10, 0);
+
+        assert_eq!(response.total_pages, 0);
+        assert!(!response.has_next());
+        assert!(!response.has_prev());
+    }
+
+    #[test]
+    fn paginated_response_exact_page_boundary() {
+        // 30 items, 10 per page = exactly 3 pages
+        let items = vec!["a"; 10];
+        let response = PaginatedResponse::new(items, 2, 10, 30);
+
+        assert_eq!(response.total_pages, 3);
+        assert!(response.has_next());
+        assert!(response.has_prev());
+    }
 }

@@ -95,4 +95,117 @@ mod tests {
         assert_eq!(claims.tenant_id, parsed.tenant_id);
         assert_eq!(claims.roles, parsed.roles);
     }
+
+    // =========================================================================
+    // Additional Claims tests - Alex
+    // =========================================================================
+
+    #[test]
+    fn claims_has_role_multiple_roles() {
+        let claims = Claims::new(
+            UserId::new(),
+            TenantId::new(),
+            vec![
+                "user".to_string(),
+                "developer".to_string(),
+                "moderator".to_string(),
+            ],
+        );
+
+        assert!(claims.has_role("user"));
+        assert!(claims.has_role("developer"));
+        assert!(claims.has_role("moderator"));
+        assert!(!claims.has_role("admin"));
+        assert!(!claims.has_role("superuser"));
+    }
+
+    #[test]
+    fn claims_has_role_empty_roles() {
+        let claims = Claims::new(UserId::new(), TenantId::new(), vec![]);
+
+        assert!(!claims.has_role("user"));
+        assert!(!claims.has_role("admin"));
+        assert!(!claims.has_role(""));
+    }
+
+    #[test]
+    fn claims_has_role_case_sensitive() {
+        let claims = Claims::new(
+            UserId::new(),
+            TenantId::new(),
+            vec!["Admin".to_string()],
+        );
+
+        assert!(claims.has_role("Admin"));
+        assert!(!claims.has_role("admin"));
+        assert!(!claims.has_role("ADMIN"));
+    }
+
+    #[test]
+    fn claims_not_expired_boundary() {
+        let mut claims = Claims::new(UserId::new(), TenantId::new(), vec![]);
+        // Set expiration to exactly now - should NOT be expired yet
+        // (is_expired checks >, not >=)
+        claims.exp = chrono::Utc::now().timestamp();
+        assert!(!claims.is_expired());
+    }
+
+    #[test]
+    fn claims_expired_boundary() {
+        let mut claims = Claims::new(UserId::new(), TenantId::new(), vec![]);
+        // Set expiration to 1 second ago - should be expired
+        claims.exp = chrono::Utc::now().timestamp() - 1;
+        assert!(claims.is_expired());
+    }
+
+    #[test]
+    fn claims_far_future_not_expired() {
+        let mut claims = Claims::new(UserId::new(), TenantId::new(), vec![]);
+        // Set expiration to far future (1 year from now)
+        claims.exp = chrono::Utc::now().timestamp() + 365 * 24 * 60 * 60;
+        assert!(!claims.is_expired());
+    }
+
+    #[test]
+    fn claims_jti_is_unique() {
+        let claims1 = Claims::new(UserId::new(), TenantId::new(), vec![]);
+        let claims2 = Claims::new(UserId::new(), TenantId::new(), vec![]);
+
+        // JTI should be unique for each token
+        assert_ne!(claims1.jti, claims2.jti);
+        assert!(claims1.jti.is_some());
+        assert!(claims2.jti.is_some());
+    }
+
+    #[test]
+    fn claims_iat_is_recent() {
+        let before = chrono::Utc::now().timestamp();
+        let claims = Claims::new(UserId::new(), TenantId::new(), vec![]);
+        let after = chrono::Utc::now().timestamp();
+
+        // iat should be between before and after
+        assert!(claims.iat >= before);
+        assert!(claims.iat <= after);
+    }
+
+    #[test]
+    fn claims_exp_is_one_hour_after_iat() {
+        let claims = Claims::new(UserId::new(), TenantId::new(), vec![]);
+
+        // Default expiration is 1 hour (3600 seconds) after iat
+        assert_eq!(claims.exp - claims.iat, 3600);
+    }
+
+    #[test]
+    fn claims_serialize_without_jti() {
+        let mut claims = Claims::new(UserId::new(), TenantId::new(), vec!["user".to_string()]);
+        claims.jti = None;
+
+        let json = serde_json::to_string(&claims).expect("serialize");
+        // jti should not appear in JSON when None (skip_serializing_if)
+        assert!(!json.contains("jti"));
+
+        let parsed: Claims = serde_json::from_str(&json).expect("deserialize");
+        assert!(parsed.jti.is_none());
+    }
 }
