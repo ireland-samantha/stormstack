@@ -24,7 +24,7 @@ DOCKER_IMAGE_CONTROL_PLANE="samanthacireland/thunder-control-plane"
 DOCKER_TAG="latest"
 VERSION="0.0.3-SNAPSHOT"
 FRONTEND_DIR="lightning/webpanel"
-DOCS_DIR="docs/source"
+DOCS_DIR="docs/"
 # Tailscale IP - set via environment variable or detect automatically
 if [ -z "$TAILSCALE_IP" ]; then
     TAILSCALE_IP=$(/Applications/Tailscale.app/Contents/MacOS/Tailscale ip -4 2>/dev/null || echo "")
@@ -288,7 +288,7 @@ do_build_docs() {
     fi
 
     # Build the docs
-    sphinx-build -b html "${DOCS_DIR}/source" "${DOCS_DIR}/build/html"
+    sphinx-build -b html "${DOCS_DIR}/source" "${DOCS_DIR}/"
 
     echo ""
     echo "Documentation built successfully!"
@@ -363,6 +363,9 @@ case "${1:-}" in
     e2e-test)
         do_e2e_test
         print_duration
+        ;;
+    docs)
+        do_build_docs
         ;;
     all)
         do_all

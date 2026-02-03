@@ -4,9 +4,9 @@ Getting Started
 
 Welcome to StormStack! This guide will help you get up and running quickly.
 
-StormStack is a production-grade multi-match game server framework. It consists of:
+StormStack is a multi-match multiplayer game server and orchestrator. It consists of:
 
-* **Thunder** - Backend services (Engine, Auth, Control Plane)
+* **Thunder** - Backend services (Control Plane, Core engine, Auth)
 * **Lightning** - Client tools (CLI, Web Panel, Rendering Engine)
 
 What You'll Learn
