@@ -279,7 +279,7 @@ Rate Limiting
 The token endpoint includes built-in rate limiting to prevent brute force attacks:
 
 - **Per-client limiting**: Based on IP + client_id/username
-- **Exponential backoff**: Failed attempts increase lockout time
+- **Sliding window**: Requests are tracked within a configurable time window
 - **Retry-After header**: Indicates when to retry
 
 When rate limited::
