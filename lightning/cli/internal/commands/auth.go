@@ -23,10 +23,11 @@ var authCmd = &cobra.Command{
 	Long: `Manage authentication for the Lightning CLI.
 
 Commands:
-  login  - Authenticate with username/password and save token
-  token  - Set an API token directly
-  status - Show current authentication status
-  logout - Remove saved authentication`,
+  login   - Authenticate with username/password and save token
+  refresh - Refresh authentication token using stored refresh token
+  token   - Set an API token directly
+  status  - Show current authentication status
+  logout  - Remove saved authentication`,
 }
 
 // Login subcommand
@@ -223,5 +224,87 @@ func runAuthLogout(cmd *cobra.Command, args []string) error {
 	}
 
 	out.PrintSuccess("Logged out")
+	return nil
+}
+
+// Refresh subcommand
+var authRefreshCmd = &cobra.Command{
+	Use:   "refresh",
+	Short: "Refresh the authentication token",
+	Long: `Refresh the current authentication token using the stored refresh token.
+This command uses the OAuth2 refresh_token grant type to obtain new access
+and refresh tokens without requiring credentials.
+
+The refresh token must have been obtained from a previous 'lightning auth login'.
+
+Examples:
+  lightning auth refresh`,
+	RunE: runAuthRefresh,
+}
+
+func init() {
+	authCmd.AddCommand(authRefreshCmd)
+}
+
+func runAuthRefresh(cmd *cobra.Command, args []string) error {
+	// Get refresh token from config
+	refreshToken := config.GetRefreshToken()
+	if refreshToken == "" {
+		return fmt.Errorf("no refresh token available - please run 'lightning auth login' first")
+	}
+
+	// Get control plane URL from config
+	controlPlaneURL := config.GetControlPlaneURL()
+
+	// Make refresh request via control plane auth proxy
+	// The control plane translates this to OAuth2 refresh_token grant internally
+	refreshReq := map[string]string{
+		"grant_type":    "refresh_token",
+		"refresh_token": refreshToken,
+	}
+	body, err := json.Marshal(refreshReq)
+	if err != nil {
+		return fmt.Errorf("failed to encode request: %w", err)
+	}
+
+	resp, err := http.Post(controlPlaneURL+"/api/auth/token", "application/json", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("failed to connect to control plane: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("token refresh failed: %s", string(respBody))
+	}
+
+	var tokenResp struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		TokenType    string `json:"token_type"`
+		ExpiresIn    int    `json:"expires_in"`
+	}
+	if err := json.Unmarshal(respBody, &tokenResp); err != nil {
+		return fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	// Save new tokens to config
+	cfg, err := config.Load()
+	if err != nil {
+		return err
+	}
+	cfg.AuthToken = tokenResp.AccessToken
+	if tokenResp.RefreshToken != "" {
+		cfg.RefreshToken = tokenResp.RefreshToken
+	}
+	if err := config.Save(cfg); err != nil {
+		return fmt.Errorf("failed to save tokens: %w", err)
+	}
+
+	out.PrintSuccess("Token refreshed successfully")
 	return nil
 }
