@@ -14,10 +14,13 @@ I built StormStack to explore modular and secure backend architecture within a g
 1. **Write game modules** - Implement interfaces and build JAR files containing your backend game logic (ECS components, systems, commands)
 3. **Install module in cluster** - Upload modules to the control plane and distribute to engine nodes
 
+First upload
 ```
 $ lightning module upload MyGameModule 1.0.0 ./target/my-module.jar
 ✓ Module MyModule@1.0.0 uploaded successfully
 ```
+
+Then distribute
 ```
 $ lightning module distribute MyModule 1.0.0
 ✓ Module MyGameModule@1.0.0 distributed to 3 nodes
@@ -65,7 +68,7 @@ $ lightning deploy --modules EntityModule,RigidBodyModule,RenderingModule
 ```
 
 ## Want to learn more?
-* [Documentation](https://ireland-samantha.github.io/stormstack)
+* [Read the docs](https://ireland-samantha.github.io/stormstack)
 * [Architecture design](docs/legacy/architecture.md)
 * [CLI quickstart](docs/legacy/cli-quickstart.md)
 
