@@ -131,7 +131,7 @@ WebSocket Endpoints
      - Full snapshot streaming
    * - ``ws://.../ws/containers/{id}/matches/{matchId}/delta``
      - Delta-compressed snapshot streaming
-   * - ``ws://.../ws/containers/{id}/commands``
+   * - ``ws://.../containers/{id}/commands``
      - Binary command WebSocket (Protobuf)
 
 Response Formats

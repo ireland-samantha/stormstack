@@ -158,7 +158,7 @@ with Protocol Buffer messages.
 
 .. code-block:: text
 
-   ws://host:8080/ws/containers/{containerId}/commands?token={jwt}
+   ws://host:8080/containers/{containerId}/commands?token={jwt}
 
 Protocol Buffer Definitions
 ---------------------------
