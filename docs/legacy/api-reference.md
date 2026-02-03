@@ -1,8 +1,8 @@
 # REST API Reference
 
-Full API documentation: [openapi.yaml](../openapi.yaml)
+Full API documentation: [openapi.yaml](../../openapi.yaml)
 
-Postman collection: [postman-collection.json](../postman/postman-collection.json)
+Postman collection: [postman-collection.json](../../postman/postman-collection.json)
 
 ## Overview
 

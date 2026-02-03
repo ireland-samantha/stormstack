@@ -223,7 +223,7 @@ cd lightning/cli && go build -o lightning ./cmd/lightning && cd ../..
 ./lightning/cli/lightning snapshot get
 ```
 
-See [CLI Quickstart](docs/cli-quickstart.md) for the complete guide.
+See [CLI Quickstart](docs/legacy/cli-quickstart.md) for the complete guide.
 
 ### Option 2: Build from Source
 
@@ -253,7 +253,7 @@ Open the React admin dashboard at:
 ```
 http://localhost:8080/admin/dashboard
 ```
-![demo.png](docs/demo.png)
+![demo.png](docs/legacy/demo.png)
 **Credentials:**
 - Username: `admin`
 - Password: The value you set in `ADMIN_INITIAL_PASSWORD` (or check logs for the generated password)
@@ -364,28 +364,28 @@ mvn verify -Pacceptance-tests               # Integration tests
 
 | Documentation                                  | Description                                    |
 |------------------------------------------------|------------------------------------------------|
-| [CLI Quickstart](docs/cli-quickstart.md)       | Lightning CLI commands and workflows           |
-| [Control Plane](docs/control-plane.md)         | Cluster orchestration and node management      |
-| [Docker](docs/docker.md)                       | Container deployment and configuration         |
-| [Frontend](docs/frontend.md)                   | Web dashboard (React/TypeScript)               |
-| [Game SDK](docs/game-sdk.md)                   | EngineClient, Orchestrator, GameRenderer       |
-| [AI System](docs/ai.md)                        | Server-side game logic (formerly Game Masters) |
-| [Module System](docs/module-system.md)         | Creating and deploying modules                 |
-| [ClassLoader Isolation](docs/classloaders.md)  | Container runtime isolation                    |
-| [Rendering Library](docs/rendering-library.md) | NanoVG/OpenGL GUI framework                    |
-| [Architecture](docs/architecture.md)           | System design, project structure               |
-| [API Reference](docs/api-reference.md)         | REST endpoints                                 |
-| [Testing](docs/testing.md)                     | Headless testing, performance                  |
-| [Performance](docs/performance.md)             | Performance notes + results                    |
+| [CLI Quickstart](docs/legacy/cli-quickstart.md)       | Lightning CLI commands and workflows           |
+| [Control Plane](docs/legacy/control-plane.md)         | Cluster orchestration and node management      |
+| [Docker](docs/legacy/docker.md)                       | Container deployment and configuration         |
+| [Frontend](docs/legacy/frontend.md)                   | Web dashboard (React/TypeScript)               |
+| [Game SDK](docs/legacy/game-sdk.md)                   | EngineClient, Orchestrator, GameRenderer       |
+| [AI System](docs/legacy/ai.md)                        | Server-side game logic (formerly Game Masters) |
+| [Module System](docs/legacy/module-system.md)         | Creating and deploying modules                 |
+| [ClassLoader Isolation](docs/legacy/classloaders.md)  | Container runtime isolation                    |
+| [Rendering Library](docs/legacy/rendering-library.md) | NanoVG/OpenGL GUI framework                    |
+| [Architecture](docs/legacy/architecture.md)           | System design, project structure               |
+| [API Reference](docs/legacy/api-reference.md)         | REST endpoints                                 |
+| [Testing](docs/legacy/testing.md)                     | Headless testing, performance                  |
+| [Performance](docs/legacy/performance.md)             | Performance notes + results                    |
 
 ## Next Steps
 
-- [CLI Quickstart](docs/cli-quickstart.md) - Deploy your first game with the CLI
-- [Control Plane](docs/control-plane.md) - Manage multi-node clusters
-- [Module System](docs/module-system.md) - Create custom game modules
-- [Game SDK](docs/game-sdk.md) - Build games with the Java client library
-- [Architecture](docs/architecture.md) - Understand the system design
-- [API Reference](docs/api-reference.md) - Full REST API documentation
+- [CLI Quickstart](docs/legacy/cli-quickstart.md) - Deploy your first game with the CLI
+- [Control Plane](docs/legacy/control-plane.md) - Manage multi-node clusters
+- [Module System](docs/legacy/module-system.md) - Create custom game modules
+- [Game SDK](docs/legacy/game-sdk.md) - Build games with the Java client library
+- [Architecture](docs/legacy/architecture.md) - Understand the system design
+- [API Reference](docs/legacy/api-reference.md) - Full REST API documentation
 
 ## Project Goals
 - Have fun

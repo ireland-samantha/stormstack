@@ -49,12 +49,19 @@ Create `thunder-<service>-core/pom.xml`:
         <groupId>ca.samanthaireland</groupId>
         <artifactId>backend</artifactId>
         <version>0.0.3-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>thunder-<service>-core</artifactId>
-    <name>Lightning <Service> Core</name>
-    <description>Core domain for Lightning <Service> - NO framework dependencies</description>
+    <artifactId>thunder-<service>-core
+    </artifactId>
+    <name>Lightning
+        <Service>
+        Core
+    </name>
+    <description>Core domain for Lightning
+        <Service>
+        - NO framework dependencies
+    </description>
 
     <properties>
         <maven.compiler.source>25</maven.compiler.source>
