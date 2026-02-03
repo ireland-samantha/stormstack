@@ -65,7 +65,9 @@ $ lightning deploy --modules EntityModule,RigidBodyModule,RenderingModule
 ```
 
 ## Want to learn more?
-Please see the [docs](https://ireland-samantha.github.io/stormstack).
+* [Documentation](https://ireland-samantha.github.io/stormstack)
+* [Architecture design](docs/legacy/architecture.md)
+* [CLI quickstart](docs/legacy/cli-quickstart.md)
 
 ## License
 

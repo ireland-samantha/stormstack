@@ -120,6 +120,17 @@
 <p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="concepts/index.html">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="concepts/why.html">Why Stormstack Exists</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="concepts/why.html#the-tradeoffs-that-annoy-me">The Tradeoffs That Annoy Me</a></li>
+<li class="toctree-l3"><a class="reference internal" href="concepts/why.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="concepts/why.html#why-java">Why Java</a></li>
+<li class="toctree-l3"><a class="reference internal" href="concepts/why.html#what-stormstack-is-good-at">What Stormstack Is Good At</a></li>
+<li class="toctree-l3"><a class="reference internal" href="concepts/why.html#what-stormstack-is-not">What Stormstack Is Not</a></li>
+<li class="toctree-l3"><a class="reference internal" href="concepts/why.html#design-philosophy">Design Philosophy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="concepts/why.html#why-i-built-this">Why I Built This</a></li>
+<li class="toctree-l3"><a class="reference internal" href="concepts/why.html#who-this-is-for">Who This Is For</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="concepts/ecs-basics.html">ECS Basics</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="concepts/ecs-basics.html#overview">Overview</a></li>
 </ul>
@@ -311,6 +322,29 @@
 <p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="architecture/index.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture/system-overview.html">Architecture Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#service-boundaries">Service Boundaries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#execution-containers">Execution Containers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#container-lifecycle">Container Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#container-isolation">Container Isolation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#ecs-architecture">ECS Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#store-decorator-pattern">Store Decorator Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#core-components">Core Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#tick-based-simulation">Tick-Based Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#tick-control">Tick Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#websocket-streaming">WebSocket Streaming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#websocket-endpoints">WebSocket Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#authentication-authorization">Authentication &amp; Authorization</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="architecture/system-overview.html#oauth2-grant-types">OAuth2 Grant Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="architecture/system-overview.html#scope-based-authorization">Scope-Based Authorization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#control-plane-architecture">Control Plane Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#project-structure">Project Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="architecture/system-overview.html#key-design-decisions">Key Design Decisions</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="architecture/ecs-internals.html">ECS Internals</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="architecture/ecs-internals.html#array-pool-memory-layout">Array Pool Memory Layout</a></li>
 <li class="toctree-l3"><a class="reference internal" href="architecture/ecs-internals.html#key-source-files">Key Source Files</a></li>
@@ -416,6 +450,7 @@
 <li><p><a class="reference internal" href="tutorials/index.html"><span class="doc">Tutorials</span></a> - Step-by-step tutorials</p></li>
 <li><p><a class="reference internal" href="api/index.html"><span class="doc">API Reference</span></a> - REST and WebSocket API reference</p></li>
 <li><p><a class="reference internal" href="lightning/cli/index.html"><span class="doc">Lightning CLI</span></a> - CLI command reference</p></li>
+<li><p><a class="reference internal" href="concepts/why.html"><span class="doc">Why Stormstack Exists</span></a> - Motivation behind the project</p></li>
 </ul>
 </section>
 <section id="key-features">
@@ -475,6 +510,7 @@
 <p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="concepts/index.html">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="concepts/why.html">Why Stormstack Exists</a></li>
 <li class="toctree-l2"><a class="reference internal" href="concepts/ecs-basics.html">ECS Basics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="concepts/tick-cycle.html">Tick Cycle</a></li>
 <li class="toctree-l2"><a class="reference internal" href="concepts/containers.html">Execution Containers</a></li>
@@ -528,6 +564,7 @@
 <p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="architecture/index.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="architecture/system-overview.html">Architecture Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture/ecs-internals.html">ECS Internals</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture/delta-compression.html">Delta Compression</a></li>
 <li class="toctree-l2"><a class="reference internal" href="architecture/two-module-pattern.html">Two-Module Pattern</a></li>

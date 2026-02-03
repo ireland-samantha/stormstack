@@ -22,7 +22,7 @@ Quick Links
 * :doc:`tutorials/index` - Step-by-step tutorials
 * :doc:`api/index` - REST and WebSocket API reference
 * :doc:`lightning/cli/index` - CLI command reference
-
+* :doc:`concepts/why` - Motivation behind the project
 Key Features
 ------------
 

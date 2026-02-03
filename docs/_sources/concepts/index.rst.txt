@@ -11,6 +11,7 @@ This section covers the core concepts you need to understand to work effectively
 .. toctree::
    :maxdepth: 2
 
+   why
    ecs-basics
    tick-cycle
    containers

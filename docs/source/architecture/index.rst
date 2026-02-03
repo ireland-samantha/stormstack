@@ -11,6 +11,8 @@ Deep dives into StormStack's internal architecture for contributors.
 .. toctree::
    :maxdepth: 2
 
+   system-overview
    ecs-internals
    delta-compression
    two-module-pattern
+

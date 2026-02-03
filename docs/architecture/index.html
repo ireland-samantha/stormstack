@@ -19,7 +19,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="ECS Internals" href="ecs-internals.html" />
+    <link rel="next" title="Architecture Overview" href="system-overview.html" />
     <link rel="prev" title="WebSocket API" href="../api/websocket-api.html" /> 
 </head>
 
@@ -312,6 +312,29 @@
 <p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html">Architecture Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#service-boundaries">Service Boundaries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#execution-containers">Execution Containers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#container-lifecycle">Container Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#container-isolation">Container Isolation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#ecs-architecture">ECS Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#store-decorator-pattern">Store Decorator Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#core-components">Core Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#tick-based-simulation">Tick-Based Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#tick-control">Tick Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#websocket-streaming">WebSocket Streaming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#websocket-endpoints">WebSocket Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#authentication-authorization">Authentication &amp; Authorization</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="system-overview.html#oauth2-grant-types">OAuth2 Grant Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="system-overview.html#scope-based-authorization">Scope-Based Authorization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#control-plane-architecture">Control Plane Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#project-structure">Project Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="system-overview.html#key-design-decisions">Key Design Decisions</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="ecs-internals.html">ECS Internals</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="ecs-internals.html#array-pool-memory-layout">Array Pool Memory Layout</a></li>
 <li class="toctree-l3"><a class="reference internal" href="ecs-internals.html#key-source-files">Key Source Files</a></li>
@@ -407,6 +430,25 @@
 </div>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="system-overview.html">Architecture Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#service-boundaries">Service Boundaries</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#execution-containers">Execution Containers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#container-lifecycle">Container Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#container-isolation">Container Isolation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#ecs-architecture">ECS Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#store-decorator-pattern">Store Decorator Pattern</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#core-components">Core Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#tick-based-simulation">Tick-Based Simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#tick-control">Tick Control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#websocket-streaming">WebSocket Streaming</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#websocket-endpoints">WebSocket Endpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#authentication-authorization">Authentication &amp; Authorization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#control-plane-architecture">Control Plane Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#project-structure">Project Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="system-overview.html#key-design-decisions">Key Design Decisions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="ecs-internals.html">ECS Internals</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="ecs-internals.html#array-pool-memory-layout">Array Pool Memory Layout</a></li>
 <li class="toctree-l2"><a class="reference internal" href="ecs-internals.html#key-source-files">Key Source Files</a></li>
@@ -433,7 +475,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../api/websocket-api.html" class="btn btn-neutral float-left" title="WebSocket API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="ecs-internals.html" class="btn btn-neutral float-right" title="ECS Internals" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="system-overview.html" class="btn btn-neutral float-right" title="Architecture Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

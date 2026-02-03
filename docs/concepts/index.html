@@ -19,7 +19,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="ECS Basics" href="ecs-basics.html" />
+    <link rel="next" title="Why Stormstack Exists" href="why.html" />
     <link rel="prev" title="Tutorial: Your First Module" href="../tutorials/first-module.html" /> 
 </head>
 
@@ -121,6 +121,17 @@
 <p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="why.html">Why Stormstack Exists</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="why.html#the-tradeoffs-that-annoy-me">The Tradeoffs That Annoy Me</a></li>
+<li class="toctree-l3"><a class="reference internal" href="why.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l3"><a class="reference internal" href="why.html#why-java">Why Java</a></li>
+<li class="toctree-l3"><a class="reference internal" href="why.html#what-stormstack-is-good-at">What Stormstack Is Good At</a></li>
+<li class="toctree-l3"><a class="reference internal" href="why.html#what-stormstack-is-not">What Stormstack Is Not</a></li>
+<li class="toctree-l3"><a class="reference internal" href="why.html#design-philosophy">Design Philosophy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="why.html#why-i-built-this">Why I Built This</a></li>
+<li class="toctree-l3"><a class="reference internal" href="why.html#who-this-is-for">Who This Is For</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="ecs-basics.html">ECS Basics</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="ecs-basics.html#overview">Overview</a></li>
 </ul>
@@ -312,6 +323,29 @@
 <p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../architecture/index.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../architecture/system-overview.html">Architecture Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#service-boundaries">Service Boundaries</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#execution-containers">Execution Containers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#container-lifecycle">Container Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#container-isolation">Container Isolation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#ecs-architecture">ECS Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#store-decorator-pattern">Store Decorator Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#core-components">Core Components</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#tick-based-simulation">Tick-Based Simulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#tick-control">Tick Control</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#websocket-streaming">WebSocket Streaming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#websocket-endpoints">WebSocket Endpoints</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#authentication-authorization">Authentication &amp; Authorization</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../architecture/system-overview.html#oauth2-grant-types">OAuth2 Grant Types</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../architecture/system-overview.html#scope-based-authorization">Scope-Based Authorization</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#control-plane-architecture">Control Plane Architecture</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#project-structure">Project Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/system-overview.html#key-design-decisions">Key Design Decisions</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="../architecture/ecs-internals.html">ECS Internals</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="../architecture/ecs-internals.html#array-pool-memory-layout">Array Pool Memory Layout</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../architecture/ecs-internals.html#key-source-files">Key Source Files</a></li>
@@ -407,6 +441,17 @@
 </div>
 <div class="toctree-wrapper compound">
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="why.html">Why Stormstack Exists</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="why.html#the-tradeoffs-that-annoy-me">The Tradeoffs That Annoy Me</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why.html#the-core-idea">The Core Idea</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why.html#why-java">Why Java</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why.html#what-stormstack-is-good-at">What Stormstack Is Good At</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why.html#what-stormstack-is-not">What Stormstack Is Not</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why.html#design-philosophy">Design Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why.html#why-i-built-this">Why I Built This</a></li>
+<li class="toctree-l2"><a class="reference internal" href="why.html#who-this-is-for">Who This Is For</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="ecs-basics.html">ECS Basics</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="ecs-basics.html#overview">Overview</a></li>
 </ul>
@@ -435,7 +480,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="../tutorials/first-module.html" class="btn btn-neutral float-left" title="Tutorial: Your First Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="ecs-basics.html" class="btn btn-neutral float-right" title="ECS Basics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="why.html" class="btn btn-neutral float-right" title="Why Stormstack Exists" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
