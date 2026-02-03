@@ -36,6 +36,67 @@ The goal is a **clean codebase**, not just a report:
 
 ## Skills
 
+### 0a. `/team-analysis` - Multi-Agent Analysis 🤝
+
+**Triggers**: `team analysis`, `analyze codebase`, `partition analysis`, `multi-agent review`
+
+**What it does:**
+1. Explores codebase and identifies 5 logical partitions
+2. Spawns 5 friendly, collaborative subagents (Alex, Bailey, Casey, Dana, Eli)
+3. Each agent analyzes their partition thoroughly
+4. Agents chat in `team-slack.md` like engineers on Slack
+5. Findings compiled to `findings.md`
+6. Generates executive summary
+
+**Key features:**
+- **Chatty collaboration** - Agents share discoveries and help each other
+- **Accuracy over speed** - Thorough, careful analysis
+- **Fun to watch** - The team-slack.md is entertaining reading
+
+**Usage:**
+```bash
+/team-analysis                          # Basic codebase analysis
+/team-analysis test coverage            # Focus on test coverage
+/team-analysis feature parity           # Compare implementations
+/team-analysis --output-dir docs/report # Custom output location
+```
+
+### 0b. `/critical-squad` - Critical Investigation Squad 🔬
+
+**Triggers**: `critical squad`, `investigate codebase`, `tear it apart`, `critical analysis`, `skeptical review`
+
+**What it does:**
+1. Partitions codebase into 5 investigation zones
+2. Deploys 5 ruthlessly analytical agents (ALPHA, BRAVO, CHARLIE, DELTA, ECHO)
+3. Each agent forms hypotheses, tests them with data, reports findings
+4. Agents coordinate via `team-slack.md` with structured, emotionless precision
+5. Evidence-based findings compiled with severity ratings
+6. Quantified verdict with risk assessment
+
+**Key features:**
+- **Hypothesis-driven** - Form claims, test them, confirm/reject with data
+- **Accuracy over speed** - No rushing, no shortcuts, every finding verified
+- **No feelings** - Cold, analytical, constructively critical
+- **Quantified** - Metrics, scores, correlations - not opinions
+- **Cross-zone correlation** - Agents trigger investigations in other zones
+
+**Squad Specialties:**
+| Agent | Focus |
+|-------|-------|
+| ALPHA | Architecture, coupling, dependencies |
+| BRAVO | Code complexity, duplication, debt |
+| CHARLIE | Test coverage, assertion quality |
+| DELTA | Security vulnerabilities |
+| ECHO | Performance bottlenecks |
+
+**Usage:**
+```bash
+/critical-squad                         # Full investigation
+/critical-squad technical debt          # Focus on debt
+/critical-squad security                # Security-focused
+/critical-squad --severity-threshold high  # Only high+ findings
+```
+
 ### 1. `/premerge` - Orchestrator Skill ⭐
 
 **Triggers**: `premerge`, `pre-merge`, `full review`, `review everything`, `pre-push`, `check all`
