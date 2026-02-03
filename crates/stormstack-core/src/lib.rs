@@ -25,7 +25,7 @@ pub use command::{
 };
 pub use config::MatchConfig;
 pub use error::{AuthError, ModuleError, StormError, WasmError};
-pub use id::{ComponentTypeId, ConnectionId, ContainerId, EntityId, MatchId, ResourceId, TenantId, UserId};
+pub use id::{ComponentTypeId, ConnectionId, ContainerId, EntityId, MatchId, ResourceId, SessionId, TenantId, UserId};
 pub use snapshot::{ComponentUpdate, EntitySnapshot, WorldDelta, WorldSnapshot};
 
 /// Re-export common result type

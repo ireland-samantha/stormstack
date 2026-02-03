@@ -42,6 +42,8 @@ pub mod game_loop;
 /// Resource management for game assets (WASM modules, textures, etc.).
 pub mod resources;
 mod routes;
+/// Player session management.
+pub mod session;
 mod state;
 /// WebSocket upgrade handler for real-time match streaming.
 pub mod ws;
@@ -50,8 +52,9 @@ pub use commands::{
     shared_command_registry, CommandProvider, CommandRegistry, SharedCommandRegistry,
 };
 pub use container::{
-    Container, ContainerService, LoadedModule, Match, MatchState, MatchSummary, SharedContainer,
-    SharedContainerService, shared_container_service,
+    AutoPlayConfig, CommandError, Container, ContainerMetrics, ContainerService, LoadedModule,
+    Match, MatchState, MatchSummary, SharedContainer, SharedContainerService,
+    shared_container_service,
 };
 pub use game_loop::{GameLoop, GameLoopConfig};
 pub use resources::{
@@ -59,6 +62,10 @@ pub use resources::{
     ResourceMetadata, ResourceStorage, ResourceType, SharedResourceStorage,
 };
 pub use routes::create_router;
+pub use session::{
+    shared_session_service, PlayerSession, SessionError, SessionService, SessionState,
+    SharedSessionService,
+};
 pub use state::{AppState, SharedAppState};
 
 use anyhow::Result;

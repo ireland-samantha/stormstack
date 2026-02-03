@@ -3,12 +3,14 @@
 //! Containers provide isolated execution environments for game matches.
 //! Each container has its own ECS world and can run multiple matches.
 
+use chrono::{DateTime, Utc};
 use dashmap::DashMap;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use stormstack_core::{
     Command, CommandQueue, CommandResult, ContainerId, MatchConfig, MatchId, Result, StormError,
     TenantId, UserId,
@@ -274,6 +276,46 @@ pub struct LoadedModule {
     pub version: String,
 }
 
+/// Container metrics for monitoring.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContainerMetrics {
+    /// Total number of ticks executed.
+    pub tick_count: u64,
+    /// Current number of entities in the ECS world.
+    pub entity_count: usize,
+    /// Current number of matches.
+    pub match_count: usize,
+    /// Seconds since container creation.
+    pub uptime_seconds: u64,
+    /// Total commands processed successfully.
+    pub commands_processed: u64,
+    /// Total commands that failed.
+    pub commands_failed: u64,
+}
+
+/// Record of a command execution error.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandError {
+    /// Name of the command that failed.
+    pub command_name: String,
+    /// Error message.
+    pub error: String,
+    /// When the error occurred.
+    pub timestamp: DateTime<Utc>,
+}
+
+/// Auto-play configuration for automatic tick execution.
+#[derive(Debug, Clone)]
+pub struct AutoPlayConfig {
+    /// Whether auto-play is enabled.
+    pub enabled: bool,
+    /// Tick rate in milliseconds.
+    pub tick_rate_ms: u64,
+}
+
+/// Maximum number of command errors to retain.
+const MAX_COMMAND_ERRORS: usize = 100;
+
 /// Execution container for isolated game instances.
 ///
 /// Each container has:
@@ -282,6 +324,8 @@ pub struct LoadedModule {
 /// - Its own ECS world
 /// - A collection of active matches
 /// - A list of loaded modules
+/// - Metrics tracking
+/// - Auto-play configuration
 pub struct Container {
     /// Container identifier.
     id: ContainerId,
@@ -293,6 +337,18 @@ pub struct Container {
     matches: DashMap<MatchId, Match>,
     /// Loaded modules.
     modules: RwLock<Vec<LoadedModule>>,
+    /// Container creation time.
+    created_at: Instant,
+    /// Total commands processed successfully.
+    commands_processed: AtomicU64,
+    /// Total commands that failed.
+    commands_failed: AtomicU64,
+    /// Recent command errors (circular buffer).
+    command_errors: RwLock<VecDeque<CommandError>>,
+    /// Auto-play enabled flag.
+    auto_play_enabled: AtomicBool,
+    /// Auto-play tick rate in milliseconds.
+    auto_play_tick_rate_ms: AtomicU64,
 }
 
 impl Container {
@@ -307,6 +363,12 @@ impl Container {
             world: shared_world(),
             matches: DashMap::new(),
             modules: RwLock::new(Vec::new()),
+            created_at: Instant::now(),
+            commands_processed: AtomicU64::new(0),
+            commands_failed: AtomicU64::new(0),
+            command_errors: RwLock::new(VecDeque::with_capacity(MAX_COMMAND_ERRORS)),
+            auto_play_enabled: AtomicBool::new(false),
+            auto_play_tick_rate_ms: AtomicU64::new(16), // Default ~60 FPS
         }
     }
 
@@ -320,6 +382,12 @@ impl Container {
             world: shared_world(),
             matches: DashMap::new(),
             modules: RwLock::new(Vec::new()),
+            created_at: Instant::now(),
+            commands_processed: AtomicU64::new(0),
+            commands_failed: AtomicU64::new(0),
+            command_errors: RwLock::new(VecDeque::with_capacity(MAX_COMMAND_ERRORS)),
+            auto_play_enabled: AtomicBool::new(false),
+            auto_play_tick_rate_ms: AtomicU64::new(16), // Default ~60 FPS
         }
     }
 
@@ -496,6 +564,82 @@ impl Container {
         self.modules.read().iter().any(|m| m.name == name)
     }
 
+    /// Get container metrics.
+    #[must_use]
+    pub fn metrics(&self) -> ContainerMetrics {
+        ContainerMetrics {
+            tick_count: self.current_tick(),
+            entity_count: self.entity_count(),
+            match_count: self.match_count(),
+            uptime_seconds: self.created_at.elapsed().as_secs(),
+            commands_processed: self.commands_processed.load(Ordering::Relaxed),
+            commands_failed: self.commands_failed.load(Ordering::Relaxed),
+        }
+    }
+
+    /// Get recent command errors.
+    #[must_use]
+    pub fn command_errors(&self) -> Vec<CommandError> {
+        self.command_errors.read().iter().cloned().collect()
+    }
+
+    /// Clear command errors.
+    pub fn clear_errors(&self) {
+        self.command_errors.write().clear();
+    }
+
+    /// Record a command error.
+    fn record_command_error(&self, command_name: String, error: String) {
+        let error = CommandError {
+            command_name,
+            error,
+            timestamp: Utc::now(),
+        };
+
+        let mut errors = self.command_errors.write();
+        if errors.len() >= MAX_COMMAND_ERRORS {
+            errors.pop_front();
+        }
+        errors.push_back(error);
+    }
+
+    /// Set auto-play mode.
+    ///
+    /// When enabled, the container will automatically tick at the specified rate.
+    pub fn set_auto_play(&self, enabled: bool, tick_rate: Duration) {
+        self.auto_play_enabled.store(enabled, Ordering::Relaxed);
+        self.auto_play_tick_rate_ms
+            .store(tick_rate.as_millis() as u64, Ordering::Relaxed);
+        debug!(
+            "Container {:?} auto-play: enabled={}, tick_rate_ms={}",
+            self.id,
+            enabled,
+            tick_rate.as_millis()
+        );
+    }
+
+    /// Check if auto-play is enabled.
+    #[must_use]
+    pub fn is_auto_playing(&self) -> bool {
+        self.auto_play_enabled.load(Ordering::Relaxed)
+    }
+
+    /// Get the auto-play tick rate in milliseconds.
+    #[must_use]
+    pub fn auto_play_tick_rate_ms(&self) -> u64 {
+        self.auto_play_tick_rate_ms.load(Ordering::Relaxed)
+    }
+
+    /// Get all player IDs across all matches.
+    #[must_use]
+    pub fn all_players(&self) -> Vec<UserId> {
+        let mut players = Vec::new();
+        for entry in self.matches.iter() {
+            players.extend(entry.value().players().iter().copied());
+        }
+        players
+    }
+
     /// Queue a command for a specific match.
     ///
     /// The command will be executed on the next tick.
@@ -558,13 +702,20 @@ impl Container {
                     game_match.command_queue_mut().execute_all(&mut *world, match_id)
                 };
 
-                // Log command results
+                // Track command metrics and errors
                 for result in &command_results {
                     if result.is_failure() {
+                        self.commands_failed.fetch_add(1, Ordering::Relaxed);
+                        self.record_command_error(
+                            "unknown".to_string(),
+                            result.message.clone().unwrap_or_else(|| "Unknown error".to_string()),
+                        );
                         warn!(
                             "Command failed in match {:?}: {:?}",
                             match_id, result.message
                         );
+                    } else {
+                        self.commands_processed.fetch_add(1, Ordering::Relaxed);
                     }
                 }
             }
@@ -616,6 +767,19 @@ impl Container {
                     let mut world = self.world.write();
                     game_match.command_queue_mut().execute_all(&mut *world, match_id)
                 };
+
+                // Track command metrics and errors
+                for result in &command_results {
+                    if result.is_failure() {
+                        self.commands_failed.fetch_add(1, Ordering::Relaxed);
+                        self.record_command_error(
+                            "unknown".to_string(),
+                            result.message.clone().unwrap_or_else(|| "Unknown error".to_string()),
+                        );
+                    } else {
+                        self.commands_processed.fetch_add(1, Ordering::Relaxed);
+                    }
+                }
 
                 if !command_results.is_empty() {
                     all_results.push((match_id, command_results));
@@ -1542,5 +1706,98 @@ mod tests {
 
         let result = container.leave_match(fake_id, user_id);
         assert!(result.is_err());
+    }
+
+    // === Container metrics and auto-play tests ===
+
+    #[test]
+    fn container_metrics() {
+        let container = Container::new(TenantId::new());
+
+        // Initial metrics
+        let metrics = container.metrics();
+        assert_eq!(metrics.tick_count, 0);
+        assert_eq!(metrics.entity_count, 0);
+        assert_eq!(metrics.match_count, 0);
+        assert_eq!(metrics.commands_processed, 0);
+        assert_eq!(metrics.commands_failed, 0);
+        assert!(metrics.uptime_seconds < 2); // Just created
+
+        // Create a match and tick
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+        container.start_match(match_id).unwrap();
+
+        // Spawn an entity
+        {
+            let mut world = container.world().write();
+            world.spawn();
+        }
+
+        container.tick(0.016).unwrap();
+        container.tick(0.016).unwrap();
+
+        let metrics = container.metrics();
+        assert_eq!(metrics.tick_count, 2);
+        assert_eq!(metrics.entity_count, 1);
+        assert_eq!(metrics.match_count, 1);
+    }
+
+    #[test]
+    fn container_auto_play() {
+        let container = Container::new(TenantId::new());
+
+        // Initially disabled
+        assert!(!container.is_auto_playing());
+        assert_eq!(container.auto_play_tick_rate_ms(), 16); // Default
+
+        // Enable with custom rate
+        container.set_auto_play(true, Duration::from_millis(50));
+        assert!(container.is_auto_playing());
+        assert_eq!(container.auto_play_tick_rate_ms(), 50);
+
+        // Disable
+        container.set_auto_play(false, Duration::from_millis(100));
+        assert!(!container.is_auto_playing());
+        assert_eq!(container.auto_play_tick_rate_ms(), 100);
+    }
+
+    #[test]
+    fn container_all_players() {
+        let container = Container::new(TenantId::new());
+
+        // No players initially
+        assert!(container.all_players().is_empty());
+
+        // Create matches and add players
+        let match1 = container.create_match(MatchConfig::default()).unwrap();
+        let match2 = container.create_match(MatchConfig::default()).unwrap();
+
+        let user1 = UserId::new();
+        let user2 = UserId::new();
+        let user3 = UserId::new();
+
+        container.join_match(match1, user1).unwrap();
+        container.join_match(match1, user2).unwrap();
+        container.join_match(match2, user3).unwrap();
+
+        let players = container.all_players();
+        assert_eq!(players.len(), 3);
+        assert!(players.contains(&user1));
+        assert!(players.contains(&user2));
+        assert!(players.contains(&user3));
+    }
+
+    #[test]
+    fn container_command_errors() {
+        let container = Container::new(TenantId::new());
+
+        // Initially no errors
+        assert!(container.command_errors().is_empty());
+
+        // Note: We can't easily trigger a command error without
+        // submitting a failing command through the queue, so we
+        // test the clear_errors method instead
+        container.clear_errors();
+        assert!(container.command_errors().is_empty());
     }
 }

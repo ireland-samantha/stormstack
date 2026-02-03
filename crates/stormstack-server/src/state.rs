@@ -15,6 +15,7 @@ use stormstack_ws::SharedConnectionManager;
 use crate::commands::{shared_command_registry, SharedCommandRegistry};
 use crate::container::{shared_container_service, SharedContainerService};
 use crate::resources::{shared_file_storage, SharedResourceStorage};
+use crate::session::{shared_session_service, SharedSessionService};
 
 /// Shared application state type alias.
 pub type SharedAppState = Arc<AppState>;
@@ -44,6 +45,8 @@ pub struct AppState {
     command_registry: SharedCommandRegistry,
     /// Resource storage for game assets.
     resource_storage: SharedResourceStorage,
+    /// Session service for player session management.
+    session_service: SharedSessionService,
 }
 
 impl AppState {
@@ -63,6 +66,7 @@ impl AppState {
             container_service: shared_container_service(),
             command_registry: shared_command_registry(),
             resource_storage: shared_file_storage(),
+            session_service: shared_session_service(),
         }
     }
 
@@ -83,6 +87,7 @@ impl AppState {
             container_service: shared_container_service(),
             command_registry: shared_command_registry(),
             resource_storage: shared_file_storage(),
+            session_service: shared_session_service(),
         }
     }
 
@@ -103,6 +108,7 @@ impl AppState {
             container_service: shared_container_service(),
             command_registry,
             resource_storage: shared_file_storage(),
+            session_service: shared_session_service(),
         }
     }
 
@@ -152,6 +158,12 @@ impl AppState {
     #[must_use]
     pub fn command_registry(&self) -> &SharedCommandRegistry {
         &self.command_registry
+    }
+
+    /// Get the session service.
+    #[must_use]
+    pub fn session_service(&self) -> &SharedSessionService {
+        &self.session_service
     }
 }
 

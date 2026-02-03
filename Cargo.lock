@@ -3152,6 +3152,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "stormstack-game-modules"
+version = "0.1.0"
+dependencies = [
+ "legion",
+ "serde",
+ "serde_json",
+ "stormstack-core",
+ "stormstack-ecs",
+ "stormstack-modules",
+ "tracing",
+]
+
+[[package]]
 name = "stormstack-modules"
 version = "0.1.0"
 dependencies = [

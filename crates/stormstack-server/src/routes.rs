@@ -12,12 +12,13 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use stormstack_auth::{TokenError, TokenRequest, TokenResponse};
-use stormstack_core::{CommandResult, ContainerId, MatchConfig, MatchId, ResourceId};
+use stormstack_core::{CommandResult, ContainerId, MatchConfig, MatchId, ResourceId, SessionId};
 use stormstack_net::{ApiError, ApiResponse, AuthUser};
 use uuid::Uuid;
 
 use crate::container::MatchState;
 use crate::resources::{ResourceMetadata, ResourceType};
+use crate::session::{PlayerSession, SessionState};
 use crate::state::SharedAppState;
 use crate::ws;
 
@@ -160,6 +161,106 @@ pub struct AvailableCommandsResponse {
     pub commands: Vec<String>,
 }
 
+/// Request to toggle auto-play mode.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AutoPlayRequest {
+    /// Whether auto-play is enabled.
+    pub enabled: bool,
+    /// Tick rate in milliseconds.
+    #[serde(default = "default_tick_rate_ms")]
+    pub tick_rate_ms: u64,
+}
+
+fn default_tick_rate_ms() -> u64 {
+    16 // ~60 FPS
+}
+
+/// Response for auto-play state.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AutoPlayResponse {
+    /// Whether auto-play is enabled.
+    pub enabled: bool,
+    /// Tick rate in milliseconds.
+    pub tick_rate_ms: u64,
+}
+
+/// Response with container metrics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetricsResponse {
+    /// Total number of ticks executed.
+    pub tick_count: u64,
+    /// Current number of entities.
+    pub entity_count: usize,
+    /// Current number of matches.
+    pub match_count: usize,
+    /// Seconds since container creation.
+    pub uptime_seconds: u64,
+    /// Total commands processed successfully.
+    pub commands_processed: u64,
+    /// Total commands that failed.
+    pub commands_failed: u64,
+}
+
+/// Response for command errors.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandErrorResponse {
+    /// Name of the command that failed.
+    pub command_name: String,
+    /// Error message.
+    pub error: String,
+    /// When the error occurred (ISO 8601).
+    pub timestamp: String,
+}
+
+/// Response listing players in a container.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayersResponse {
+    /// List of player user IDs.
+    pub player_ids: Vec<String>,
+}
+
+/// Session response for API endpoints.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionResponse {
+    /// Session ID.
+    pub id: String,
+    /// User ID.
+    pub user_id: String,
+    /// Match ID.
+    pub match_id: String,
+    /// Container ID.
+    pub container_id: String,
+    /// Connection timestamp (ISO 8601).
+    pub connected_at: String,
+    /// Last activity timestamp (ISO 8601).
+    pub last_activity: String,
+    /// Session state.
+    pub state: String,
+}
+
+impl From<&PlayerSession> for SessionResponse {
+    fn from(session: &PlayerSession) -> Self {
+        Self {
+            id: session.id.0.to_string(),
+            user_id: session.user_id.0.to_string(),
+            match_id: session.match_id.0.to_string(),
+            container_id: session.container_id.0.to_string(),
+            connected_at: session.connected_at.to_rfc3339(),
+            last_activity: session.last_activity.to_rfc3339(),
+            state: session_state_to_string(session.state),
+        }
+    }
+}
+
+/// Helper to convert SessionState to string.
+fn session_state_to_string(state: SessionState) -> String {
+    match state {
+        SessionState::Active => "active".to_string(),
+        SessionState::Disconnected => "disconnected".to_string(),
+        SessionState::Expired => "expired".to_string(),
+    }
+}
+
 /// Resource response for API endpoints.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResourceResponse {
@@ -220,6 +321,13 @@ fn parse_resource_id(id: &str) -> Result<ResourceId, ApiError> {
         .map_err(|_| ApiError::validation(format!("Invalid resource ID: {}", id)))
 }
 
+/// Helper to parse session ID from path.
+fn parse_session_id(id: &str) -> Result<SessionId, ApiError> {
+    Uuid::parse_str(id)
+        .map(SessionId)
+        .map_err(|_| ApiError::validation(format!("Invalid session ID: {}", id)))
+}
+
 /// Create the main application router.
 pub fn create_router(state: SharedAppState) -> Router {
     Router::new()
@@ -230,6 +338,22 @@ pub fn create_router(state: SharedAppState) -> Router {
         .route("/api/containers/{id}", get(get_container_handler))
         .route("/api/containers/{id}", delete(delete_container_handler))
         .route("/api/containers/{id}/tick", post(tick_container_handler))
+        .route(
+            "/api/containers/{id}/ticks/auto",
+            post(toggle_auto_play_handler),
+        )
+        .route(
+            "/api/containers/{id}/players",
+            get(list_players_handler),
+        )
+        .route(
+            "/api/containers/{id}/commands/errors",
+            get(get_command_errors_handler),
+        )
+        .route(
+            "/api/containers/{id}/metrics",
+            get(get_container_metrics_handler),
+        )
         // Match endpoints
         .route(
             "/api/containers/{id}/matches",
@@ -265,6 +389,19 @@ pub fn create_router(state: SharedAppState) -> Router {
             post(submit_command_handler),
         )
         .route("/api/commands", get(list_commands_handler))
+        // Session endpoints
+        .route(
+            "/api/containers/{id}/sessions",
+            get(list_sessions_handler),
+        )
+        .route(
+            "/api/containers/{id}/sessions/{session_id}",
+            get(get_session_handler),
+        )
+        .route(
+            "/api/containers/{id}/sessions/{session_id}",
+            delete(delete_session_handler),
+        )
         // Resource endpoints
         .route("/api/resources", post(upload_resource_handler))
         .route("/api/resources", get(list_resources_handler))
@@ -409,6 +546,118 @@ async fn tick_container_handler(
         match_count: container.match_count(),
         entity_count: container.entity_count(),
         current_tick: container.current_tick(),
+    }))
+}
+
+/// Toggle auto-play endpoint.
+///
+/// POST /api/containers/{id}/ticks/auto
+///
+/// Enables or disables automatic tick execution for the container.
+async fn toggle_auto_play_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+    Json(request): Json<AutoPlayRequest>,
+) -> Result<ApiResponse<AutoPlayResponse>, ApiError> {
+    let container_id = parse_container_id(&id)?;
+
+    let container = state
+        .container_service()
+        .get_container_for_tenant(container_id, auth.tenant_id)
+        .map_err(|_| ApiError::not_found("Container"))?;
+
+    let tick_rate = std::time::Duration::from_millis(request.tick_rate_ms);
+    container.set_auto_play(request.enabled, tick_rate);
+
+    Ok(ApiResponse::ok(AutoPlayResponse {
+        enabled: container.is_auto_playing(),
+        tick_rate_ms: container.auto_play_tick_rate_ms(),
+    }))
+}
+
+/// List players in container endpoint.
+///
+/// GET /api/containers/{id}/players
+///
+/// Returns a list of all player IDs across all matches in the container.
+async fn list_players_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> Result<ApiResponse<PlayersResponse>, ApiError> {
+    let container_id = parse_container_id(&id)?;
+
+    let container = state
+        .container_service()
+        .get_container_for_tenant(container_id, auth.tenant_id)
+        .map_err(|_| ApiError::not_found("Container"))?;
+
+    let player_ids: Vec<String> = container
+        .all_players()
+        .into_iter()
+        .map(|id| id.0.to_string())
+        .collect();
+
+    Ok(ApiResponse::ok(PlayersResponse { player_ids }))
+}
+
+/// Get command errors endpoint.
+///
+/// GET /api/containers/{id}/commands/errors
+///
+/// Returns a list of recent command execution errors.
+async fn get_command_errors_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> Result<ApiResponse<Vec<CommandErrorResponse>>, ApiError> {
+    let container_id = parse_container_id(&id)?;
+
+    let container = state
+        .container_service()
+        .get_container_for_tenant(container_id, auth.tenant_id)
+        .map_err(|_| ApiError::not_found("Container"))?;
+
+    let errors: Vec<CommandErrorResponse> = container
+        .command_errors()
+        .into_iter()
+        .map(|e| CommandErrorResponse {
+            command_name: e.command_name,
+            error: e.error,
+            timestamp: e.timestamp.to_rfc3339(),
+        })
+        .collect();
+
+    Ok(ApiResponse::ok(errors))
+}
+
+/// Get container metrics endpoint.
+///
+/// GET /api/containers/{id}/metrics
+///
+/// Returns metrics for the container.
+async fn get_container_metrics_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> Result<ApiResponse<MetricsResponse>, ApiError> {
+    let container_id = parse_container_id(&id)?;
+
+    let container = state
+        .container_service()
+        .get_container_for_tenant(container_id, auth.tenant_id)
+        .map_err(|_| ApiError::not_found("Container"))?;
+
+    let metrics = container.metrics();
+
+    Ok(ApiResponse::ok(MetricsResponse {
+        tick_count: metrics.tick_count,
+        entity_count: metrics.entity_count,
+        match_count: metrics.match_count,
+        uptime_seconds: metrics.uptime_seconds,
+        commands_processed: metrics.commands_processed,
+        commands_failed: metrics.commands_failed,
     }))
 }
 
@@ -657,6 +906,101 @@ async fn start_match_handler(
         max_players: match_ref.config.max_players,
         current_tick: match_ref.current_tick,
     }))
+}
+
+/// List sessions in container endpoint.
+///
+/// GET /api/containers/{id}/sessions
+///
+/// Returns a list of all sessions in the container.
+async fn list_sessions_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> Result<ApiResponse<Vec<SessionResponse>>, ApiError> {
+    let container_id = parse_container_id(&id)?;
+
+    // Verify container exists and belongs to tenant
+    let _container = state
+        .container_service()
+        .get_container_for_tenant(container_id, auth.tenant_id)
+        .map_err(|_| ApiError::not_found("Container"))?;
+
+    let sessions: Vec<SessionResponse> = state
+        .session_service()
+        .get_by_container(container_id)
+        .iter()
+        .map(SessionResponse::from)
+        .collect();
+
+    Ok(ApiResponse::ok(sessions))
+}
+
+/// Get session details endpoint.
+///
+/// GET /api/containers/{id}/sessions/{session_id}
+///
+/// Returns details about a specific session.
+async fn get_session_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path((id, session_id_str)): Path<(String, String)>,
+) -> Result<ApiResponse<SessionResponse>, ApiError> {
+    let container_id = parse_container_id(&id)?;
+    let session_id = parse_session_id(&session_id_str)?;
+
+    // Verify container exists and belongs to tenant
+    let _container = state
+        .container_service()
+        .get_container_for_tenant(container_id, auth.tenant_id)
+        .map_err(|_| ApiError::not_found("Container"))?;
+
+    let session = state
+        .session_service()
+        .get(session_id)
+        .ok_or_else(|| ApiError::not_found("Session"))?;
+
+    // Verify session belongs to this container
+    if session.container_id != container_id {
+        return Err(ApiError::not_found("Session"));
+    }
+
+    Ok(ApiResponse::ok(SessionResponse::from(&session)))
+}
+
+/// Delete (end) session endpoint.
+///
+/// DELETE /api/containers/{id}/sessions/{session_id}
+///
+/// Ends a session and removes it from the system.
+async fn delete_session_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path((id, session_id_str)): Path<(String, String)>,
+) -> Result<ApiResponse<()>, ApiError> {
+    let container_id = parse_container_id(&id)?;
+    let session_id = parse_session_id(&session_id_str)?;
+
+    // Verify container exists and belongs to tenant
+    let _container = state
+        .container_service()
+        .get_container_for_tenant(container_id, auth.tenant_id)
+        .map_err(|_| ApiError::not_found("Container"))?;
+
+    // Get session to verify it exists and belongs to this container
+    let session = state
+        .session_service()
+        .get(session_id)
+        .ok_or_else(|| ApiError::not_found("Session"))?;
+
+    if session.container_id != container_id {
+        return Err(ApiError::not_found("Session"));
+    }
+
+    // Remove the session
+    state.session_service().remove(session_id);
+
+    Ok(ApiResponse::ok(()))
 }
 
 /// Submit command endpoint.
@@ -956,7 +1300,7 @@ mod tests {
     };
     use stormstack_auth::{Claims, JwtService};
     use stormstack_core::{TenantId, UserId};
-    use stormstack_ecs::shared_world;
+    use stormstack_ecs::{shared_world, EcsWorld};
     use stormstack_wasm::WasmSandbox;
     use stormstack_ws::{shared_connection_manager, shared_subscriptions};
     use std::sync::Arc;
@@ -1753,5 +2097,470 @@ mod tests {
 
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    // =========================================================================
+    // Session endpoint tests
+    // =========================================================================
+
+    #[tokio::test]
+    async fn list_sessions_endpoint() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container with a match
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+
+        // Create sessions
+        let user1 = UserId::new();
+        let user2 = UserId::new();
+        state.session_service().create(user1, match_id, container_id);
+        state.session_service().create(user2, match_id, container_id);
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/sessions", container_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(json["success"].as_bool().unwrap());
+        assert_eq!(json["data"].as_array().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn get_session_endpoint() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container with a match
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+
+        // Create a session
+        let user_id = UserId::new();
+        let session_id = state.session_service().create(user_id, match_id, container_id);
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/sessions/{}", container_id.0, session_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(json["success"].as_bool().unwrap());
+        assert_eq!(json["data"]["id"].as_str().unwrap(), session_id.0.to_string());
+        assert_eq!(json["data"]["user_id"].as_str().unwrap(), user_id.0.to_string());
+        assert_eq!(json["data"]["state"].as_str().unwrap(), "active");
+    }
+
+    #[tokio::test]
+    async fn delete_session_endpoint() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container with a match
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+
+        // Create a session
+        let user_id = UserId::new();
+        let session_id = state.session_service().create(user_id, match_id, container_id);
+        assert!(state.session_service().has_session(session_id));
+
+        let app = create_router(state.clone());
+
+        let request = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/containers/{}/sessions/{}", container_id.0, session_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        // Verify session is deleted
+        assert!(!state.session_service().has_session(session_id));
+    }
+
+    #[tokio::test]
+    async fn get_session_not_found() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container
+        let container_id = state.container_service().create_container(tenant_id);
+
+        let fake_session_id = Uuid::new_v4();
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/sessions/{}", container_id.0, fake_session_id))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn list_sessions_empty_container() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container without sessions
+        let container_id = state.container_service().create_container(tenant_id);
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/sessions", container_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(json["data"].as_array().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn session_isolation_between_containers() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create two containers
+        let container1_id = state.container_service().create_container(tenant_id);
+        let container1 = state.container_service().get_container(container1_id).unwrap();
+        let match1_id = container1.create_match(MatchConfig::default()).unwrap();
+
+        let container2_id = state.container_service().create_container(tenant_id);
+        let container2 = state.container_service().get_container(container2_id).unwrap();
+        let match2_id = container2.create_match(MatchConfig::default()).unwrap();
+
+        // Create sessions in each container
+        let user_id = UserId::new();
+        let session1_id = state.session_service().create(user_id, match1_id, container1_id);
+        let _session2_id = state.session_service().create(user_id, match2_id, container2_id);
+
+        let app = create_router(state.clone());
+
+        // List sessions in container1 - should only have 1 session
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/sessions", container1_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.clone().oneshot(request).await.unwrap();
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["data"].as_array().unwrap().len(), 1);
+        assert_eq!(json["data"][0]["id"].as_str().unwrap(), session1_id.0.to_string());
+
+        // Try to get session1 from container2 - should return 404
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/sessions/{}", container2_id.0, session1_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    // =========================================================================
+    // Auto-play, players, metrics, and command errors tests
+    // =========================================================================
+
+    #[tokio::test]
+    async fn toggle_auto_play() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+
+        // Initially auto-play should be disabled
+        assert!(!container.is_auto_playing());
+
+        let app = create_router(state.clone());
+
+        // Enable auto-play
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/ticks/auto", container_id.0))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(r#"{"enabled": true, "tick_rate_ms": 32}"#))
+            .unwrap();
+
+        let response = app.clone().oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert!(json["success"].as_bool().unwrap());
+        assert!(json["data"]["enabled"].as_bool().unwrap());
+        assert_eq!(json["data"]["tick_rate_ms"].as_u64().unwrap(), 32);
+
+        // Verify on the container
+        assert!(container.is_auto_playing());
+        assert_eq!(container.auto_play_tick_rate_ms(), 32);
+
+        // Disable auto-play
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/ticks/auto", container_id.0))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(r#"{"enabled": false, "tick_rate_ms": 16}"#))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        assert!(!container.is_auto_playing());
+    }
+
+    #[tokio::test]
+    async fn list_players_in_container() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+
+        // Create a match and add players
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+        let user1 = UserId::new();
+        let user2 = UserId::new();
+        container.join_match(match_id, user1).unwrap();
+        container.join_match(match_id, user2).unwrap();
+
+        // Create another match with more players
+        let match_id2 = container.create_match(MatchConfig::default()).unwrap();
+        let user3 = UserId::new();
+        container.join_match(match_id2, user3).unwrap();
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/players", container_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert!(json["success"].as_bool().unwrap());
+        let player_ids = json["data"]["player_ids"].as_array().unwrap();
+        assert_eq!(player_ids.len(), 3);
+
+        // Verify all user IDs are present
+        let ids_as_strings: Vec<&str> = player_ids
+            .iter()
+            .map(|v| v.as_str().unwrap())
+            .collect();
+        assert!(ids_as_strings.contains(&user1.0.to_string().as_str()));
+        assert!(ids_as_strings.contains(&user2.0.to_string().as_str()));
+        assert!(ids_as_strings.contains(&user3.0.to_string().as_str()));
+    }
+
+    #[tokio::test]
+    async fn get_command_errors() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+
+        // Create an active match
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+        container.start_match(match_id).unwrap();
+
+        // Initially no errors
+        assert!(container.command_errors().is_empty());
+
+        // Submit a command that will fail (despawn non-existent entity)
+        let app = create_router(state.clone());
+
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/matches/{}/commands", container_id.0, match_id.0))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(r#"{"command_type": "despawn_entity", "payload": {"entity_id": 999999}}"#))
+            .unwrap();
+
+        let _response = app.clone().oneshot(request).await.unwrap();
+
+        // Tick to execute the command (it should fail)
+        container.tick(0.016).unwrap();
+
+        // Now get the errors via API
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/commands/errors", container_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert!(json["success"].as_bool().unwrap());
+        let errors = json["data"].as_array().unwrap();
+        assert!(!errors.is_empty());
+
+        // Verify error structure
+        let error = &errors[0];
+        assert!(error["command_name"].as_str().is_some());
+        assert!(error["error"].as_str().is_some());
+        assert!(error["timestamp"].as_str().is_some());
+    }
+
+    #[tokio::test]
+    async fn get_container_metrics() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+
+        // Create matches and spawn entities
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+        container.start_match(match_id).unwrap();
+
+        // Spawn some entities via world directly
+        {
+            let mut world = container.world().write();
+            world.spawn();
+            world.spawn();
+        }
+
+        // Tick a few times
+        container.tick(0.016).unwrap();
+        container.tick(0.016).unwrap();
+        container.tick(0.016).unwrap();
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/metrics", container_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert!(json["success"].as_bool().unwrap());
+        let data = &json["data"];
+
+        assert_eq!(data["tick_count"].as_u64().unwrap(), 3);
+        assert_eq!(data["entity_count"].as_u64().unwrap(), 2);
+        assert_eq!(data["match_count"].as_u64().unwrap(), 1);
+        assert!(data["uptime_seconds"].as_u64().is_some());
+        assert!(data["commands_processed"].as_u64().is_some());
+        assert!(data["commands_failed"].as_u64().is_some());
+    }
+
+    #[tokio::test]
+    async fn auto_play_changes_tick_behavior() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+
+        // Default auto-play state
+        assert!(!container.is_auto_playing());
+        assert_eq!(container.auto_play_tick_rate_ms(), 16); // Default
+
+        let app = create_router(state.clone());
+
+        // Set custom tick rate
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/ticks/auto", container_id.0))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(r#"{"enabled": true, "tick_rate_ms": 50}"#))
+            .unwrap();
+
+        let response = app.clone().oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        // Verify settings changed
+        assert!(container.is_auto_playing());
+        assert_eq!(container.auto_play_tick_rate_ms(), 50);
+
+        // Get metrics to verify tick_rate could be used by game loop
+        let request = Request::builder()
+            .uri(format!("/api/containers/{}/metrics", container_id.0))
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        // Initial tick count should be 0 (auto-play sets up the mode but
+        // doesn't automatically tick - that's the game loop's job)
+        assert_eq!(json["data"]["tick_count"].as_u64().unwrap(), 0);
     }
 }

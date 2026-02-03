@@ -219,6 +219,40 @@ impl FromStr for ResourceId {
     }
 }
 
+/// Strongly-typed session identifier.
+///
+/// Sessions represent active player connections to matches.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct SessionId(pub Uuid);
+
+impl SessionId {
+    /// Create a new random session ID.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for SessionId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for SessionId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Session({})", self.0)
+    }
+}
+
+impl FromStr for SessionId {
+    type Err = uuid::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(Uuid::parse_str(s)?))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -264,6 +298,37 @@ mod tests {
         let id = ResourceId::new();
         let s = id.0.to_string();
         let parsed: ResourceId = s.parse().expect("parse");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn session_id_unique() {
+        let id1 = SessionId::new();
+        let id2 = SessionId::new();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn session_id_display() {
+        let id = SessionId::new();
+        let display = format!("{id}");
+        assert!(display.starts_with("Session("));
+        assert!(display.ends_with(")"));
+    }
+
+    #[test]
+    fn session_id_from_str() {
+        let id = SessionId::new();
+        let s = id.0.to_string();
+        let parsed: SessionId = s.parse().expect("parse");
+        assert_eq!(id, parsed);
+    }
+
+    #[test]
+    fn session_id_serialize_roundtrip() {
+        let id = SessionId::new();
+        let json = serde_json::to_string(&id).expect("serialize");
+        let parsed: SessionId = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(id, parsed);
     }
 }

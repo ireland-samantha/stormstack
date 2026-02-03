@@ -10,6 +10,7 @@ members = [
     "crates/stormstack-net",
     "crates/stormstack-ws",
     "crates/stormstack-modules",
+    "crates/stormstack-game-modules",
     "crates/stormstack-server",
     "crates/stormstack-test-utils",
 ]
