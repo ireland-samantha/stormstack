@@ -1,6 +1,6 @@
-=========================
+===========================
 Tutorial: Your First Module
-=========================
+===========================
 
 In this tutorial, you'll create a HealthModule that adds HP tracking to entities.
 

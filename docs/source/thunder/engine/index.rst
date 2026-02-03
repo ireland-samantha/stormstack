@@ -5,6 +5,13 @@ Thunder Engine
 Thunder Engine is the core game execution service, providing ECS-based game state
 management, tick-based simulation, and real-time state streaming.
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   commands
+   websocket
+
 .. contents:: Contents
    :local:
    :depth: 2

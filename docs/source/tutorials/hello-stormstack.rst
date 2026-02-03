@@ -1,6 +1,6 @@
-=========================
+==========================
 Tutorial: Hello StormStack
-=========================
+==========================
 
 In this tutorial, you'll explore StormStack's core features by interacting with a running game match.
 

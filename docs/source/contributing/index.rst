@@ -6,6 +6,12 @@ Thank you for your interest in contributing to StormStack!
 
 This guide covers how to set up your development environment and contribute to the project.
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   code-style
+
 Getting Started
 ---------------
 

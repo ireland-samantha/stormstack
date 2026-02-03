@@ -19,6 +19,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
+    'sphinxcontrib.httpdomain',
 ]
 
 templates_path = ['_templates']
@@ -31,7 +32,7 @@ master_doc = 'index'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_static_path = []
 
 # Theme options
 html_theme_options = {
@@ -56,10 +57,10 @@ todo_include_todos = True
 
 # -- Custom configuration ----------------------------------------------------
 
-# Add any custom CSS
-html_css_files = [
-    'custom.css',
-]
+# Add any custom CSS (disabled until _static/custom.css exists)
+# html_css_files = [
+#     'custom.css',
+# ]
 
 # Logo and favicon
 # html_logo = '_static/logo.png'
