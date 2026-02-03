@@ -1,0 +1,913 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thunder Control Plane &mdash; StormStack 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Cluster Management" href="cluster.html" />
+    <link rel="prev" title="Authorization" href="../auth/authorization.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            StormStack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#time-required">Time Required</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#prerequisites-overview">Prerequisites Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../getting-started/installation.html">Installation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#quick-install-docker-compose">Quick Install (Docker Compose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#multi-node-cluster">Multi-Node Cluster</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#build-from-source-development">Build from Source (Development)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting-started/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-1-configure-the-cli">Step 1: Configure the CLI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-2-authenticate">Step 2: Authenticate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-3-check-cluster-health">Step 3: Check Cluster Health</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-4-deploy-a-match">Step 4: Deploy a Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-5-view-the-match">Step 5: View the Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-6-get-game-state">Step 6: Get Game State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-7-start-the-simulation">Step 7: Start the Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-8-send-a-command">Step 8: Send a Command</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-9-see-the-result">Step 9: See the Result</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#you-ve-done-it">You’ve Done It!</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#what-s-happening-behind-the-scenes">What’s Happening Behind the Scenes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#next-steps">Next Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#web-dashboard">Web Dashboard</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#tutorial-path">Tutorial Path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/hello-stormstack.html">Tutorial: Hello StormStack</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-1-understanding-containers">Part 1: Understanding Containers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-2-the-tick-cycle">Part 2: The Tick Cycle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-3-spawning-entities">Part 3: Spawning Entities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-4-real-time-simulation">Part 4: Real-Time Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-5-websocket-streaming">Part 5: WebSocket Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-6-cleanup">Part 6: Cleanup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/first-module.html">Tutorial: Your First Module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#module-overview">Module Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-1-project-setup">Part 1: Project Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-2-create-components">Part 2: Create Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-3-create-the-module">Part 3: Create the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-4-register-the-module">Part 4: Register the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-5-build-the-module">Part 5: Build the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-6-deploy-the-module">Part 6: Deploy the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-7-test-the-module">Part 7: Test the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-8-enhance-the-module">Part 8: Enhance the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#learning-objectives">Learning Objectives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#after-the-tutorials">After the Tutorials</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts/index.html">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/ecs-basics.html">ECS Basics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/ecs-basics.html#overview">Overview</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/tick-cycle.html">Tick Cycle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/tick-cycle.html#the-tick-lifecycle">The Tick Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/tick-cycle.html#tick-control">Tick Control</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/containers.html">Execution Containers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/containers.html#what-is-a-container">What is a Container?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/containers.html#container-lifecycle">Container Lifecycle</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/modules.html">Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/modules.html#what-modules-provide">What Modules Provide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/modules.html#module-lifecycle">Module Lifecycle</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Thunder (Backend)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Thunder Backend Services</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#overview">Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../index.html#architecture-pattern">Architecture Pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#id1">Services</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../index.html#thunder-engine">Thunder Engine</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../engine/index.html">Thunder Engine</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../index.html#thunder-auth">Thunder Auth</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../auth/index.html">Thunder Auth Service</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#thunder-control-plane">Thunder Control Plane</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Thunder Control Plane</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#docker-images">Docker Images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Lightning (Tools)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../lightning/index.html">Lightning Tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/cli/index.html">Lightning CLI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/commands.html">CLI Command Reference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#auth-authentication">auth - Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#deploy-game-deployment">deploy - Game Deployment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#cluster-cluster-management">cluster - Cluster Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#match-match-management">match - Match Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#node-node-operations">node - Node Operations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#module-module-management">module - Module Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#command-game-commands">command - Game Commands</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#snapshot-ecs-snapshots">snapshot - ECS Snapshots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#ws-websocket-connections">ws - WebSocket Connections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#config-cli-configuration">config - CLI Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#version-version-information">version - Version Information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#common-workflows">Common Workflows</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/configuration.html">CLI Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#configuration-file">Configuration File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#configuration-options">Configuration Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#context-options">Context Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#setting-values">Setting Values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#precedence-order">Precedence Order</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#node-proxy-setting">Node Proxy Setting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#multiple-environments">Multiple Environments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#output-formats">Output Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#global-flags">Global Flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/webpanel/index.html">Lightning Web Panel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/dashboard.html">Web Panel Dashboard Features</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#control-plane-features">Control Plane Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#engine-node-features">Engine (Node) Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#authentication-features">Authentication Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#access-via-docker">Access via Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#the-admin-dashboard-section">The Admin Dashboard section</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/index.html#control-plane-section">Control Plane Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/index.html#engine-node-section">Engine (Node) Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/index.html#authentication-section">Authentication Section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#key-features">Key Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#api-client">API Client</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#customization">Customization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/rendering/index.html">Lightning Rendering Engine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#package-structure">Package Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#component-library">Component Library</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#window">Window</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#panel">Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#button">Button</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#label">Label</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#textfield">TextField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#listview">ListView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#treeview">TreeView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#contextmenu">ContextMenu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#filedialog">FileDialog</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#sprite-rendering">Sprite Rendering</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#shaders">Shaders</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#colour-class">Colour Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#input-handling">Input Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#example-application">Example Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#headless-testing">Headless Testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#building">Building</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#running-on-macos">Running on macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#integration-with-thunder">Integration with Thunder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#resources">Resources</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/index.html#choosing-your-interface">Choosing Your Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/index.html#quick-start">Quick Start</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#api-overview">API Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#authentication">Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#api-sections">API Sections</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/rest-api.html">REST API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#authentication-endpoints">Authentication Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#container-endpoints">Container Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#match-endpoints">Match Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#command-endpoints">Command Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#simulation-endpoints">Simulation Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#snapshot-endpoints">Snapshot Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#module-endpoints">Module Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#control-plane-endpoints">Control Plane Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#error-codes">Error Codes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/websocket-api.html">WebSocket API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#snapshot-streaming">Snapshot Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#command-websocket">Command WebSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#connection-management">Connection Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#quick-reference">Quick Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#engine-endpoints-port-8080">Engine Endpoints (port 8080)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#control-plane-endpoints-port-8081">Control Plane Endpoints (port 8081)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#websocket-endpoints">WebSocket Endpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#response-formats">Response Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#rate-limiting">Rate Limiting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../architecture/index.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/ecs-internals.html">ECS Internals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/ecs-internals.html#array-pool-memory-layout">Array Pool Memory Layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/ecs-internals.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/delta-compression.html">Delta Compression</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#how-it-works">How It Works</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#delta-snapshot-format">Delta Snapshot Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/two-module-pattern.html">Two-Module Pattern</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#the-pattern">The Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#benefits">Benefits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing/index.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/code-style.html">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#java-code-style">Java Code Style</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../contributing/code-style.html#core-module-rules">Core Module Rules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../contributing/code-style.html#provider-module-rules">Provider Module Rules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#go-code-style">Go Code Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#typescript-react">TypeScript/React</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#development-environment">Development Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#ide-setup">IDE Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#build-commands">Build Commands</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#project-structure">Project Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#code-style">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#java">Java</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#go-cli">Go (CLI)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#typescript-frontend">TypeScript (Frontend)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#architecture-principles">Architecture Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#submitting-changes">Submitting Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#quality-checklist">Quality Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#testing">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#e2e-tests">E2E Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#getting-help">Getting Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">StormStack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Thunder Backend Services</a></li>
+      <li class="breadcrumb-item active">Thunder Control Plane</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/samanthaireland/stormstack/blob/main/docs/source/thunder/control-plane/index.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="thunder-control-plane">
+<h1>Thunder Control Plane<a class="headerlink" href="#thunder-control-plane" title="Link to this heading"></a></h1>
+<p>Thunder Control Plane manages distributed StormStack deployments, handling node registration,
+match scheduling, module distribution, and autoscaling.</p>
+<nav class="contents local" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#overview" id="id1">Overview</a></p>
+<ul>
+<li><p><a class="reference internal" href="#architecture" id="id2">Architecture</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#quick-start" id="id3">Quick Start</a></p>
+<ul>
+<li><p><a class="reference internal" href="#starting-control-plane" id="id4">Starting Control Plane</a></p></li>
+<li><p><a class="reference internal" href="#registering-a-node" id="id5">Registering a Node</a></p></li>
+<li><p><a class="reference internal" href="#creating-a-match-via-control-plane" id="id6">Creating a Match via Control Plane</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#documentation" id="id7">Documentation</a></p></li>
+<li><p><a class="reference internal" href="#core-services" id="id8">Core Services</a></p>
+<ul>
+<li><p><a class="reference internal" href="#node-registry" id="id9">Node Registry</a></p></li>
+<li><p><a class="reference internal" href="#scheduler" id="id10">Scheduler</a></p></li>
+<li><p><a class="reference internal" href="#match-registry" id="id11">Match Registry</a></p></li>
+<li><p><a class="reference internal" href="#module-registry" id="id12">Module Registry</a></p></li>
+<li><p><a class="reference internal" href="#autoscaler" id="id13">Autoscaler</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#configuration" id="id14">Configuration</a></p>
+<ul>
+<li><p><a class="reference internal" href="#application-configuration" id="id15">Application Configuration</a></p></li>
+<li><p><a class="reference internal" href="#redis-configuration" id="id16">Redis Configuration</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#api-endpoints" id="id17">API Endpoints</a></p>
+<ul>
+<li><p><a class="reference internal" href="#node-management" id="id18">Node Management</a></p></li>
+<li><p><a class="reference internal" href="#cluster-status" id="id19">Cluster Status</a></p></li>
+<li><p><a class="reference internal" href="#match-management" id="id20">Match Management</a></p></li>
+<li><p><a class="reference internal" href="#deployment" id="id21">Deployment</a></p></li>
+<li><p><a class="reference internal" href="#module-management" id="id22">Module Management</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#security" id="id23">Security</a></p></li>
+<li><p><a class="reference internal" href="#next-steps" id="id24">Next Steps</a></p></li>
+</ul>
+</nav>
+<section id="overview">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>The Control Plane is the central coordinator for multi-node StormStack clusters.
+It provides:</p>
+<ul class="simple">
+<li><p><strong>Node Registry</strong> - Track engine nodes with health status and capacity</p></li>
+<li><p><strong>Scheduler</strong> - Route match creation to optimal nodes</p></li>
+<li><p><strong>Module Registry</strong> - Store and distribute game modules</p></li>
+<li><p><strong>Match Registry</strong> - Track all matches across the cluster</p></li>
+<li><p><strong>Autoscaler</strong> - Recommend scaling actions based on load</p></li>
+</ul>
+<section id="architecture">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Architecture</a><a class="headerlink" href="#architecture" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>  +-------------------+
+  |   Control Plane   |
+  |  (Single Master)  |
+  +--------+----------+
+           |
+  +--------+--------+--------+
+  |        |        |        |
+  v        v        v        v
++----+  +----+  +----+  +----+
+|Node|  |Node|  |Node|  |Node|
+| 1  |  | 2  |  | 3  |  | 4  |
++----+  +----+  +----+  +----+
+</pre></div>
+</div>
+<p>Each engine node registers with the control plane and sends periodic heartbeats.
+The control plane tracks node health, capacity, and current load to make scheduling decisions.</p>
+</section>
+</section>
+<section id="quick-start">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Quick Start</a><a class="headerlink" href="#quick-start" title="Link to this heading"></a></h2>
+<section id="starting-control-plane">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Starting Control Plane</a><a class="headerlink" href="#starting-control-plane" title="Link to this heading"></a></h3>
+<p>Via Docker:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">run</span> <span class="o">-</span><span class="n">d</span> \
+  <span class="o">-</span><span class="n">p</span> <span class="mi">8081</span><span class="p">:</span><span class="mi">8081</span> \
+  <span class="o">-</span><span class="n">e</span> <span class="n">REDIS_HOST</span><span class="o">=</span><span class="n">redis</span> \
+  <span class="n">samanthacireland</span><span class="o">/</span><span class="n">thunder</span><span class="o">-</span><span class="n">control</span><span class="o">-</span><span class="n">plane</span>
+</pre></div>
+</div>
+<p>Via Docker Compose (recommended):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">compose</span> <span class="n">up</span> <span class="o">-</span><span class="n">d</span> <span class="n">control</span><span class="o">-</span><span class="n">plane</span>
+</pre></div>
+</div>
+</section>
+<section id="registering-a-node">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Registering a Node</a><a class="headerlink" href="#registering-a-node" title="Link to this heading"></a></h3>
+<p>Engine nodes register automatically on startup. Manual registration:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">curl</span> <span class="o">-</span><span class="n">X</span> <span class="n">POST</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="p">:</span><span class="mi">8081</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">nodes</span><span class="o">/</span><span class="n">register</span> \
+  <span class="o">-</span><span class="n">H</span> <span class="s2">&quot;Authorization: Bearer &lt;token&gt;&quot;</span> \
+  <span class="o">-</span><span class="n">H</span> <span class="s2">&quot;Content-Type: application/json&quot;</span> \
+  <span class="o">-</span><span class="n">d</span> <span class="s1">&#39;{</span>
+    <span class="s2">&quot;nodeId&quot;</span><span class="p">:</span> <span class="s2">&quot;node-1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;advertiseAddress&quot;</span><span class="p">:</span> <span class="s2">&quot;http://node-1:8080&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;capacity&quot;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s2">&quot;maxContainers&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+      <span class="s2">&quot;maxMatches&quot;</span><span class="p">:</span> <span class="mi">1000</span>
+    <span class="p">}</span>
+  <span class="p">}</span><span class="s1">&#39;</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-a-match-via-control-plane">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Creating a Match via Control Plane</a><a class="headerlink" href="#creating-a-match-via-control-plane" title="Link to this heading"></a></h3>
+<p>The control plane automatically selects the best node:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">curl</span> <span class="o">-</span><span class="n">X</span> <span class="n">POST</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="p">:</span><span class="mi">8081</span><span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">deploy</span> \
+  <span class="o">-</span><span class="n">H</span> <span class="s2">&quot;Authorization: Bearer &lt;token&gt;&quot;</span> \
+  <span class="o">-</span><span class="n">H</span> <span class="s2">&quot;Content-Type: application/json&quot;</span> \
+  <span class="o">-</span><span class="n">d</span> <span class="s1">&#39;{</span>
+    <span class="s2">&quot;matchId&quot;</span><span class="p">:</span> <span class="s2">&quot;match-123&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;modules&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;chess-core:1.0.0&quot;</span><span class="p">],</span>
+    <span class="s2">&quot;maxPlayers&quot;</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="p">}</span><span class="s1">&#39;</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;matchId&quot;</span><span class="p">:</span> <span class="s2">&quot;match-123&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nodeId&quot;</span><span class="p">:</span> <span class="s2">&quot;node-2&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nodeAddress&quot;</span><span class="p">:</span> <span class="s2">&quot;http://node-2:8080&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ACTIVE&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="documentation">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Documentation</a><a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cluster.html">Cluster Management</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html#node-lifecycle">Node Lifecycle</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html#capacity-planning">Capacity Planning</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html#monitoring">Monitoring</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html#scheduling">Scheduling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html#high-availability">High Availability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="core-services">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Core Services</a><a class="headerlink" href="#core-services" title="Link to this heading"></a></h2>
+<section id="node-registry">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Node Registry</a><a class="headerlink" href="#node-registry" title="Link to this heading"></a></h3>
+<p>Manages node registration and health monitoring.</p>
+<p><strong>Key Operations:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">register()</span></code> - Register or re-register a node (idempotent)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">heartbeat()</span></code> - Refresh TTL and update metrics</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">drain()</span></code> - Mark node as draining (no new matches)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">deregister()</span></code> - Remove node from cluster</p></li>
+</ul>
+<p><strong>Node States:</strong></p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 80.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>State</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>HEALTHY</p></td>
+<td><p>Node is responding to heartbeats and accepting work</p></td>
+</tr>
+<tr class="row-odd"><td><p>UNHEALTHY</p></td>
+<td><p>Node missed heartbeats but still registered</p></td>
+</tr>
+<tr class="row-even"><td><p>DRAINING</p></td>
+<td><p>Node accepts no new work but existing matches continue</p></td>
+</tr>
+<tr class="row-odd"><td><p>OFFLINE</p></td>
+<td><p>Node deregistered or TTL expired</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="scheduler">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Scheduler</a><a class="headerlink" href="#scheduler" title="Link to this heading"></a></h3>
+<p>Selects nodes for new match creation using a least-loaded algorithm.</p>
+<p><strong>Selection Criteria:</strong></p>
+<ol class="arabic simple">
+<li><p>Node must be HEALTHY</p></li>
+<li><p>Node must have available capacity</p></li>
+<li><p>Prefers nodes with lower saturation (active/max containers)</p></li>
+<li><p>Optional: Prefer specified node if provided</p></li>
+</ol>
+<p><strong>Saturation Calculation:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">saturation</span> <span class="o">=</span> <span class="n">activeContainers</span> <span class="o">/</span> <span class="n">maxContainers</span>
+</pre></div>
+</div>
+<p>Lower saturation = preferred for new matches.</p>
+</section>
+<section id="match-registry">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Match Registry</a><a class="headerlink" href="#match-registry" title="Link to this heading"></a></h3>
+<p>Tracks all matches across the cluster.</p>
+<p><strong>Match Entry:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;matchId&quot;</span><span class="p">:</span> <span class="s2">&quot;match-123&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nodeId&quot;</span><span class="p">:</span> <span class="s2">&quot;node-2&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;nodeAddress&quot;</span><span class="p">:</span> <span class="s2">&quot;http://node-2:8080&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ACTIVE&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;modules&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;chess-core:1.0.0&quot;</span><span class="p">],</span>
+  <span class="s2">&quot;currentPlayers&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="s2">&quot;maxPlayers&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="s2">&quot;createdAt&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-03T12:00:00Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Match Statuses:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PENDING</span></code> - Match creation in progress</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ACTIVE</span></code> - Match running and accepting players</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FULL</span></code> - Match at max capacity</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FINISHED</span></code> - Match completed</p></li>
+</ul>
+</section>
+<section id="module-registry">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Module Registry</a><a class="headerlink" href="#module-registry" title="Link to this heading"></a></h3>
+<p>Stores and distributes game modules to nodes.</p>
+<p><strong>Operations:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">upload()</span></code> - Upload a module JAR</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">download()</span></code> - Download module for installation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">distribute()</span></code> - Push module to all nodes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">delete()</span></code> - Remove module from registry</p></li>
+</ul>
+<p><strong>Module Metadata:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;chess-core&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;1.0.0&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="mi">1048576</span><span class="p">,</span>
+  <span class="s2">&quot;checksum&quot;</span><span class="p">:</span> <span class="s2">&quot;sha256:abc123...&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;uploadedAt&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-03T12:00:00Z&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;uploadedBy&quot;</span><span class="p">:</span> <span class="s2">&quot;admin&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="autoscaler">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Autoscaler</a><a class="headerlink" href="#autoscaler" title="Link to this heading"></a></h3>
+<p>Analyzes cluster load and recommends scaling actions.</p>
+<p><strong>Recommendations:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;SCALE_UP&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;currentNodes&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+  <span class="s2">&quot;recommendedNodes&quot;</span><span class="p">:</span> <span class="mi">5</span><span class="p">,</span>
+  <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="s2">&quot;Cluster saturation at 85%, above threshold of 70%&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;totalCapacity&quot;</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
+    <span class="s2">&quot;activeContainers&quot;</span><span class="p">:</span> <span class="mi">255</span><span class="p">,</span>
+    <span class="s2">&quot;saturation&quot;</span><span class="p">:</span> <span class="mf">0.85</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><strong>Scaling Actions:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">SCALE_UP</span></code> - Add more nodes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SCALE_DOWN</span></code> - Remove nodes (after draining)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NONE</span></code> - Cluster is balanced</p></li>
+</ul>
+</section>
+</section>
+<section id="configuration">
+<h2><a class="toc-backref" href="#id14" role="doc-backlink">Configuration</a><a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<section id="application-configuration">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Application Configuration</a><a class="headerlink" href="#application-configuration" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stormstack</span><span class="p">:</span>
+  <span class="n">control</span><span class="o">-</span><span class="n">plane</span><span class="p">:</span>
+    <span class="n">node</span><span class="o">-</span><span class="n">ttl</span><span class="o">-</span><span class="n">seconds</span><span class="p">:</span> <span class="mi">60</span>
+    <span class="n">heartbeat</span><span class="o">-</span><span class="n">interval</span><span class="o">-</span><span class="n">seconds</span><span class="p">:</span> <span class="mi">15</span>
+
+  <span class="n">autoscaler</span><span class="p">:</span>
+    <span class="n">enabled</span><span class="p">:</span> <span class="n">true</span>
+    <span class="n">scale</span><span class="o">-</span><span class="n">up</span><span class="o">-</span><span class="n">threshold</span><span class="p">:</span> <span class="mf">0.7</span>
+    <span class="n">scale</span><span class="o">-</span><span class="n">down</span><span class="o">-</span><span class="n">threshold</span><span class="p">:</span> <span class="mf">0.3</span>
+    <span class="nb">min</span><span class="o">-</span><span class="n">nodes</span><span class="p">:</span> <span class="mi">2</span>
+    <span class="nb">max</span><span class="o">-</span><span class="n">nodes</span><span class="p">:</span> <span class="mi">20</span>
+    <span class="n">cooldown</span><span class="o">-</span><span class="n">seconds</span><span class="p">:</span> <span class="mi">300</span>
+
+  <span class="n">proxy</span><span class="p">:</span>
+    <span class="n">enabled</span><span class="p">:</span> <span class="n">true</span>
+    <span class="n">timeout</span><span class="o">-</span><span class="n">ms</span><span class="p">:</span> <span class="mi">30000</span>
+
+  <span class="n">module</span><span class="o">-</span><span class="n">storage</span><span class="p">:</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">filesystem</span>
+    <span class="n">path</span><span class="p">:</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">stormstack</span><span class="o">/</span><span class="n">modules</span>
+</pre></div>
+</div>
+</section>
+<section id="redis-configuration">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Redis Configuration</a><a class="headerlink" href="#redis-configuration" title="Link to this heading"></a></h3>
+<p>Control Plane uses Redis for node and match state:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">quarkus</span><span class="p">:</span>
+  <span class="n">redis</span><span class="p">:</span>
+    <span class="n">hosts</span><span class="p">:</span> <span class="n">redis</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="p">:</span><span class="mi">6379</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="api-endpoints">
+<h2><a class="toc-backref" href="#id17" role="doc-backlink">API Endpoints</a><a class="headerlink" href="#api-endpoints" title="Link to this heading"></a></h2>
+<section id="node-management">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Node Management</a><a class="headerlink" href="#node-management" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/nodes/register</span></code></p></td>
+<td><p>Register a node</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">PUT</span> <span class="pre">/api/nodes/{nodeId}/heartbeat</span></code></p></td>
+<td><p>Send heartbeat</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/nodes/{nodeId}/drain</span></code></p></td>
+<td><p>Mark node as draining</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DELETE</span> <span class="pre">/api/nodes/{nodeId}</span></code></p></td>
+<td><p>Deregister node</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="cluster-status">
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">Cluster Status</a><a class="headerlink" href="#cluster-status" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/cluster/nodes</span></code></p></td>
+<td><p>List all nodes</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/cluster/nodes/{nodeId}</span></code></p></td>
+<td><p>Get node details</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/cluster/status</span></code></p></td>
+<td><p>Get cluster overview</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="match-management">
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">Match Management</a><a class="headerlink" href="#match-management" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/matches/create</span></code></p></td>
+<td><p>Create a match</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/matches</span></code></p></td>
+<td><p>List matches</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/matches/{matchId}</span></code></p></td>
+<td><p>Get match details</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DELETE</span> <span class="pre">/api/matches/{matchId}</span></code></p></td>
+<td><p>Delete match</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="deployment">
+<h3><a class="toc-backref" href="#id21" role="doc-backlink">Deployment</a><a class="headerlink" href="#deployment" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/v1/deploy</span></code></p></td>
+<td><p>Deploy a match</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/v1/deploy/{matchId}</span></code></p></td>
+<td><p>Get deployment status</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DELETE</span> <span class="pre">/api/v1/deploy/{matchId}</span></code></p></td>
+<td><p>Undeploy a match</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-management">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Module Management</a><a class="headerlink" href="#module-management" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/modules</span></code></p></td>
+<td><p>Upload module</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/modules</span></code></p></td>
+<td><p>List modules</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/modules/{name}/{version}/download</span></code></p></td>
+<td><p>Download module</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/modules/{name}/{version}/distribute</span></code></p></td>
+<td><p>Distribute to nodes</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">DELETE</span> <span class="pre">/api/modules/{name}/{version}</span></code></p></td>
+<td><p>Delete module</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="security">
+<h2><a class="toc-backref" href="#id23" role="doc-backlink">Security</a><a class="headerlink" href="#security" title="Link to this heading"></a></h2>
+<p>All Control Plane endpoints require authentication. Required scopes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">control-plane.cluster.read</span></code> - View cluster status</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">control-plane.node.register</span></code> - Register nodes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">control-plane.node.manage</span></code> - Drain/deregister nodes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">control-plane.match.*</span></code> - Match operations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">control-plane.module.*</span></code> - Module operations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">control-plane.deploy.*</span></code> - Deployment operations</p></li>
+</ul>
+<p>See <a class="reference internal" href="../auth/authorization.html"><span class="doc">Authorization</span></a> for the complete scope matrix.</p>
+</section>
+<section id="next-steps">
+<h2><a class="toc-backref" href="#id24" role="doc-backlink">Next Steps</a><a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="cluster.html"><span class="doc">Cluster Management</span></a> - Detailed cluster management</p></li>
+<li><p><a class="reference internal" href="../auth/index.html"><span class="doc">Thunder Auth Service</span></a> - Authentication setup</p></li>
+<li><p><a class="reference internal" href="../../api/rest-api.html"><span class="doc">REST API</span></a> - Full API reference</p></li>
+<li><p><a class="reference internal" href="../../lightning/cli/commands.html"><span class="doc">CLI Command Reference</span></a> - CLI for cluster management</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../auth/authorization.html" class="btn btn-neutral float-left" title="Authorization" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cluster.html" class="btn btn-neutral float-right" title="Cluster Management" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Samantha Ireland.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

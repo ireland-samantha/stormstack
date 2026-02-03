@@ -1,0 +1,793 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial: Your First Module &mdash; StormStack 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Concepts" href="../concepts/index.html" />
+    <link rel="prev" title="Tutorial: Hello StormStack" href="hello-stormstack.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            StormStack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../getting-started/index.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting-started/index.html#time-required">Time Required</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting-started/index.html#prerequisites-overview">Prerequisites Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../getting-started/installation.html">Installation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#quick-install-docker-compose">Quick Install (Docker Compose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#multi-node-cluster">Multi-Node Cluster</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#build-from-source-development">Build from Source (Development)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../getting-started/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-1-configure-the-cli">Step 1: Configure the CLI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-2-authenticate">Step 2: Authenticate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-3-check-cluster-health">Step 3: Check Cluster Health</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-4-deploy-a-match">Step 4: Deploy a Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-5-view-the-match">Step 5: View the Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-6-get-game-state">Step 6: Get Game State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-7-start-the-simulation">Step 7: Start the Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-8-send-a-command">Step 8: Send a Command</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-9-see-the-result">Step 9: See the Result</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#you-ve-done-it">You’ve Done It!</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#what-s-happening-behind-the-scenes">What’s Happening Behind the Scenes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#next-steps">Next Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#web-dashboard">Web Dashboard</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../getting-started/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#tutorial-path">Tutorial Path</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hello-stormstack.html">Tutorial: Hello StormStack</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#part-1-understanding-containers">Part 1: Understanding Containers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#part-2-the-tick-cycle">Part 2: The Tick Cycle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#part-3-spawning-entities">Part 3: Spawning Entities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#part-4-real-time-simulation">Part 4: Real-Time Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#part-5-websocket-streaming">Part 5: WebSocket Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#part-6-cleanup">Part 6: Cleanup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hello-stormstack.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Tutorial: Your First Module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-overview">Module Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#part-1-project-setup">Part 1: Project Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#part-2-create-components">Part 2: Create Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#part-3-create-the-module">Part 3: Create the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#part-4-register-the-module">Part 4: Register the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#part-5-build-the-module">Part 5: Build the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#part-6-deploy-the-module">Part 6: Deploy the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#part-7-test-the-module">Part 7: Test the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#part-8-enhance-the-module">Part 8: Enhance the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#learning-objectives">Learning Objectives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#after-the-tutorials">After the Tutorials</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../concepts/index.html">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/ecs-basics.html">ECS Basics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/ecs-basics.html#overview">Overview</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/tick-cycle.html">Tick Cycle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/tick-cycle.html#the-tick-lifecycle">The Tick Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/tick-cycle.html#tick-control">Tick Control</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/containers.html">Execution Containers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/containers.html#what-is-a-container">What is a Container?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/containers.html#container-lifecycle">Container Lifecycle</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/modules.html">Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/modules.html#what-modules-provide">What Modules Provide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/modules.html#module-lifecycle">Module Lifecycle</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Thunder (Backend)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../thunder/index.html">Thunder Backend Services</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#overview">Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../thunder/index.html#architecture-pattern">Architecture Pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#id1">Services</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../thunder/index.html#thunder-engine">Thunder Engine</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../thunder/engine/index.html">Thunder Engine</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../thunder/index.html#thunder-auth">Thunder Auth</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../thunder/auth/index.html">Thunder Auth Service</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../thunder/index.html#thunder-control-plane">Thunder Control Plane</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../thunder/control-plane/index.html">Thunder Control Plane</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#docker-images">Docker Images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Lightning (Tools)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../lightning/index.html">Lightning Tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/cli/index.html">Lightning CLI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/commands.html">CLI Command Reference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#auth-authentication">auth - Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#deploy-game-deployment">deploy - Game Deployment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#cluster-cluster-management">cluster - Cluster Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#match-match-management">match - Match Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#node-node-operations">node - Node Operations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#module-module-management">module - Module Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#command-game-commands">command - Game Commands</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#snapshot-ecs-snapshots">snapshot - ECS Snapshots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#ws-websocket-connections">ws - WebSocket Connections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#config-cli-configuration">config - CLI Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#version-version-information">version - Version Information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#common-workflows">Common Workflows</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/configuration.html">CLI Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#configuration-file">Configuration File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#configuration-options">Configuration Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#context-options">Context Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#setting-values">Setting Values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#precedence-order">Precedence Order</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#node-proxy-setting">Node Proxy Setting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#multiple-environments">Multiple Environments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#output-formats">Output Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#global-flags">Global Flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/webpanel/index.html">Lightning Web Panel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/dashboard.html">Web Panel Dashboard Features</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#control-plane-features">Control Plane Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#engine-node-features">Engine (Node) Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#authentication-features">Authentication Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#access-via-docker">Access via Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#the-admin-dashboard-section">The Admin Dashboard section</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/index.html#control-plane-section">Control Plane Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/index.html#engine-node-section">Engine (Node) Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/index.html#authentication-section">Authentication Section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#key-features">Key Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#api-client">API Client</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#customization">Customization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/rendering/index.html">Lightning Rendering Engine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#package-structure">Package Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#component-library">Component Library</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#window">Window</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#panel">Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#button">Button</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#label">Label</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#textfield">TextField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#listview">ListView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#treeview">TreeView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#contextmenu">ContextMenu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#filedialog">FileDialog</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#sprite-rendering">Sprite Rendering</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#shaders">Shaders</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#colour-class">Colour Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#input-handling">Input Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#example-application">Example Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#headless-testing">Headless Testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#building">Building</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#running-on-macos">Running on macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#integration-with-thunder">Integration with Thunder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#resources">Resources</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/index.html#choosing-your-interface">Choosing Your Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/index.html#quick-start">Quick Start</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#api-overview">API Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#authentication">Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#api-sections">API Sections</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/rest-api.html">REST API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#authentication-endpoints">Authentication Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#container-endpoints">Container Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#match-endpoints">Match Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#command-endpoints">Command Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#simulation-endpoints">Simulation Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#snapshot-endpoints">Snapshot Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#module-endpoints">Module Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#control-plane-endpoints">Control Plane Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#error-codes">Error Codes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/websocket-api.html">WebSocket API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#snapshot-streaming">Snapshot Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#command-websocket">Command WebSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#connection-management">Connection Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#quick-reference">Quick Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/index.html#engine-endpoints-port-8080">Engine Endpoints (port 8080)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/index.html#control-plane-endpoints-port-8081">Control Plane Endpoints (port 8081)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/index.html#websocket-endpoints">WebSocket Endpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#response-formats">Response Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#rate-limiting">Rate Limiting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../architecture/index.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../architecture/ecs-internals.html">ECS Internals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/ecs-internals.html#array-pool-memory-layout">Array Pool Memory Layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/ecs-internals.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../architecture/delta-compression.html">Delta Compression</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/delta-compression.html#how-it-works">How It Works</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/delta-compression.html#delta-snapshot-format">Delta Snapshot Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/delta-compression.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../architecture/two-module-pattern.html">Two-Module Pattern</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/two-module-pattern.html#the-pattern">The Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/two-module-pattern.html#benefits">Benefits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../architecture/two-module-pattern.html#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing/index.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/code-style.html">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/code-style.html#java-code-style">Java Code Style</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../contributing/code-style.html#core-module-rules">Core Module Rules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../contributing/code-style.html#provider-module-rules">Provider Module Rules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/code-style.html#go-code-style">Go Code Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/code-style.html#typescript-react">TypeScript/React</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#development-environment">Development Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#ide-setup">IDE Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#build-commands">Build Commands</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#project-structure">Project Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#code-style">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#java">Java</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#go-cli">Go (CLI)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#typescript-frontend">TypeScript (Frontend)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#architecture-principles">Architecture Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#submitting-changes">Submitting Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#quality-checklist">Quality Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#testing">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#e2e-tests">E2E Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#getting-help">Getting Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">StormStack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Tutorial: Your First Module</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/samanthaireland/stormstack/blob/main/docs/source/tutorials/first-module.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="tutorial-your-first-module">
+<h1>Tutorial: Your First Module<a class="headerlink" href="#tutorial-your-first-module" title="Link to this heading"></a></h1>
+<p>In this tutorial, you’ll create a HealthModule that adds HP tracking to entities.</p>
+<p>Time Required: 30 minutes</p>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Completed <a class="reference internal" href="hello-stormstack.html"><span class="doc">Tutorial: Hello StormStack</span></a></p></li>
+<li><p>Java 25 installed</p></li>
+<li><p>Maven 3.9+ installed</p></li>
+</ul>
+</section>
+<section id="what-you-ll-learn">
+<h2>What You’ll Learn<a class="headerlink" href="#what-you-ll-learn" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Module structure (Factory, Module, Components)</p></li>
+<li><p>Creating custom components</p></li>
+<li><p>Implementing systems that run every tick</p></li>
+<li><p>Defining commands for external interaction</p></li>
+</ul>
+</section>
+<section id="module-overview">
+<h2>Module Overview<a class="headerlink" href="#module-overview" title="Link to this heading"></a></h2>
+<p>Modules in StormStack define:</p>
+<ul class="simple">
+<li><p><strong>Components</strong> - Data attached to entities (floats stored in the ECS)</p></li>
+<li><p><strong>Systems</strong> - Logic that runs every tick</p></li>
+<li><p><strong>Commands</strong> - External API for modifying game state</p></li>
+</ul>
+<p>We’ll create a HealthModule with:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MAX_HP</span></code> component - Maximum health</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CURRENT_HP</span></code> component - Current health</p></li>
+<li><p>A system that removes entities when HP reaches 0</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">damage</span></code> command to reduce HP</p></li>
+</ul>
+</section>
+<section id="part-1-project-setup">
+<h2>Part 1: Project Setup<a class="headerlink" href="#part-1-project-setup" title="Link to this heading"></a></h2>
+<section id="create-module-project">
+<h3>Create Module Project<a class="headerlink" href="#create-module-project" title="Link to this heading"></a></h3>
+<p>Create a new Maven project:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>health-module
+<span class="nb">cd</span><span class="w"> </span>health-module
+</pre></div>
+</div>
+<p>Create <code class="docutils literal notranslate"><span class="pre">pom.xml</span></code>:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="nt">&lt;project</span><span class="w"> </span><span class="na">xmlns=</span><span class="s">&quot;http://maven.apache.org/POM/4.0.0&quot;</span>
+<span class="w">         </span><span class="na">xmlns:xsi=</span><span class="s">&quot;http://www.w3.org/2001/XMLSchema-instance&quot;</span>
+<span class="w">         </span><span class="na">xsi:schemaLocation=</span><span class="s">&quot;http://maven.apache.org/POM/4.0.0</span>
+<span class="s">         http://maven.apache.org/xsd/maven-4.0.0.xsd&quot;</span><span class="nt">&gt;</span>
+<span class="w">    </span><span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
+
+<span class="w">    </span><span class="nt">&lt;groupId&gt;</span>com.example<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">    </span><span class="nt">&lt;artifactId&gt;</span>health-module<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">    </span><span class="nt">&lt;version&gt;</span>1.0.0<span class="nt">&lt;/version&gt;</span>
+<span class="w">    </span><span class="nt">&lt;packaging&gt;</span>jar<span class="nt">&lt;/packaging&gt;</span>
+
+<span class="w">    </span><span class="nt">&lt;properties&gt;</span>
+<span class="w">        </span><span class="nt">&lt;maven.compiler.source&gt;</span>25<span class="nt">&lt;/maven.compiler.source&gt;</span>
+<span class="w">        </span><span class="nt">&lt;maven.compiler.target&gt;</span>25<span class="nt">&lt;/maven.compiler.target&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/properties&gt;</span>
+
+<span class="w">    </span><span class="nt">&lt;dependencies&gt;</span>
+<span class="w">        </span><span class="nt">&lt;dependency&gt;</span>
+<span class="w">            </span><span class="nt">&lt;groupId&gt;</span>ca.samanthaireland.stormstack<span class="nt">&lt;/groupId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;artifactId&gt;</span>thunder-engine-core<span class="nt">&lt;/artifactId&gt;</span>
+<span class="w">            </span><span class="nt">&lt;version&gt;</span>1.0.0<span class="nt">&lt;/version&gt;</span>
+<span class="w">            </span><span class="nt">&lt;scope&gt;</span>provided<span class="nt">&lt;/scope&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/dependency&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/dependencies&gt;</span>
+<span class="nt">&lt;/project&gt;</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">provided</span></code> scope means the engine provides this dependency at runtime.
+Your JAR won’t include it.</p>
+</div>
+</section>
+</section>
+<section id="part-2-create-components">
+<h2>Part 2: Create Components<a class="headerlink" href="#part-2-create-components" title="Link to this heading"></a></h2>
+<p>Components are float values attached to entities. Each component needs a unique ID.</p>
+<p>Create <code class="docutils literal notranslate"><span class="pre">src/main/java/com/example/health/HealthModuleFactory.java</span></code>:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nn">com.example.health</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ca.samanthaireland.stormstack.thunder.engine.core.ext.module.*</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HealthModuleFactory</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">ModuleFactory</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="c1">// Component definitions with unique IDs</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">BaseComponent</span><span class="w"> </span><span class="n">MAX_HP</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">BaseComponent</span><span class="p">(</span><span class="n">IdGeneratorV2</span><span class="p">.</span><span class="na">newId</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;MAX_HP&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{};</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="kd">static</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">BaseComponent</span><span class="w"> </span><span class="n">CURRENT_HP</span><span class="w"> </span><span class="o">=</span>
+<span class="w">        </span><span class="k">new</span><span class="w"> </span><span class="n">BaseComponent</span><span class="p">(</span><span class="n">IdGeneratorV2</span><span class="p">.</span><span class="na">newId</span><span class="p">(),</span><span class="w"> </span><span class="s">&quot;CURRENT_HP&quot;</span><span class="p">)</span><span class="w"> </span><span class="p">{};</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">EngineModule</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">ModuleContext</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">HealthModule</span><span class="p">(</span><span class="n">context</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="part-3-create-the-module">
+<h2>Part 3: Create the Module<a class="headerlink" href="#part-3-create-the-module" title="Link to this heading"></a></h2>
+<p>Create <code class="docutils literal notranslate"><span class="pre">src/main/java/com/example/health/HealthModule.java</span></code>:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kn">package</span><span class="w"> </span><span class="nn">com.example.health</span><span class="p">;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">ca.samanthaireland.stormstack.thunder.engine.core.ext.module.*</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ca.samanthaireland.stormstack.thunder.engine.core.command.*</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">ca.samanthaireland.stormstack.thunder.engine.core.store.*</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.List</span><span class="p">;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">java.util.Map</span><span class="p">;</span>
+
+<span class="kn">import static</span><span class="w"> </span><span class="nn">com.example.health.HealthModuleFactory.*</span><span class="p">;</span>
+
+<span class="kd">public</span><span class="w"> </span><span class="kd">class</span> <span class="nc">HealthModule</span><span class="w"> </span><span class="kd">implements</span><span class="w"> </span><span class="n">EngineModule</span><span class="w"> </span><span class="p">{</span>
+
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kd">final</span><span class="w"> </span><span class="n">ModuleContext</span><span class="w"> </span><span class="n">context</span><span class="p">;</span>
+
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="nf">HealthModule</span><span class="p">(</span><span class="n">ModuleContext</span><span class="w"> </span><span class="n">context</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">this</span><span class="p">.</span><span class="na">context</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">getName</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;HealthModule&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">String</span><span class="w"> </span><span class="nf">getVersion</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="s">&quot;1.0.0&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">BaseComponent</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">createComponents</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">MAX_HP</span><span class="p">,</span><span class="w"> </span><span class="n">CURRENT_HP</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">EngineSystem</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">createSystems</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="k">this</span><span class="p">::</span><span class="n">deathSystem</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="nd">@Override</span>
+<span class="w">    </span><span class="kd">public</span><span class="w"> </span><span class="n">List</span><span class="o">&lt;</span><span class="n">EngineCommand</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">createCommands</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">List</span><span class="p">.</span><span class="na">of</span><span class="p">(</span><span class="n">createDamageCommand</span><span class="p">());</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// System: Remove entities with HP &lt;= 0</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">deathSystem</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">EntityComponentStore</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getEntityComponentStore</span><span class="p">();</span>
+
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">entity</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">store</span><span class="p">.</span><span class="na">getEntitiesWithComponents</span><span class="p">(</span><span class="n">CURRENT_HP</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kt">float</span><span class="w"> </span><span class="n">hp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">store</span><span class="p">.</span><span class="na">getComponent</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span><span class="w"> </span><span class="n">CURRENT_HP</span><span class="p">);</span>
+<span class="w">            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">hp</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="n">store</span><span class="p">.</span><span class="na">deleteEntity</span><span class="p">(</span><span class="n">entity</span><span class="p">);</span>
+<span class="w">            </span><span class="p">}</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+
+<span class="w">    </span><span class="c1">// Command: Apply damage to an entity</span>
+<span class="w">    </span><span class="kd">private</span><span class="w"> </span><span class="n">EngineCommand</span><span class="w"> </span><span class="nf">createDamageCommand</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="k">return</span><span class="w"> </span><span class="n">CommandBuilder</span><span class="p">.</span><span class="na">newCommand</span><span class="p">()</span>
+<span class="w">            </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;damage&quot;</span><span class="p">)</span>
+<span class="w">            </span><span class="p">.</span><span class="na">withSchema</span><span class="p">(</span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
+<span class="w">                </span><span class="s">&quot;entityId&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Long</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
+<span class="w">                </span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Float</span><span class="p">.</span><span class="na">class</span>
+<span class="w">            </span><span class="p">))</span>
+<span class="w">            </span><span class="p">.</span><span class="na">withExecution</span><span class="p">(</span><span class="n">payload</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                </span><span class="kt">long</span><span class="w"> </span><span class="n">entityId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">((</span><span class="n">Number</span><span class="p">)</span><span class="w"> </span><span class="n">payload</span><span class="p">.</span><span class="na">getPayload</span><span class="p">()</span>
+<span class="w">                    </span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;entityId&quot;</span><span class="p">)).</span><span class="na">longValue</span><span class="p">();</span>
+<span class="w">                </span><span class="kt">float</span><span class="w"> </span><span class="n">amount</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">((</span><span class="n">Number</span><span class="p">)</span><span class="w"> </span><span class="n">payload</span><span class="p">.</span><span class="na">getPayload</span><span class="p">()</span>
+<span class="w">                    </span><span class="p">.</span><span class="na">get</span><span class="p">(</span><span class="s">&quot;amount&quot;</span><span class="p">)).</span><span class="na">floatValue</span><span class="p">();</span>
+
+<span class="w">                </span><span class="n">EntityComponentStore</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getEntityComponentStore</span><span class="p">();</span>
+
+<span class="w">                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">store</span><span class="p">.</span><span class="na">hasComponent</span><span class="p">(</span><span class="n">entityId</span><span class="p">,</span><span class="w"> </span><span class="n">CURRENT_HP</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">                    </span><span class="kt">float</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">store</span><span class="p">.</span><span class="na">getComponent</span><span class="p">(</span><span class="n">entityId</span><span class="p">,</span><span class="w"> </span><span class="n">CURRENT_HP</span><span class="p">);</span>
+<span class="w">                    </span><span class="n">store</span><span class="p">.</span><span class="na">attachComponent</span><span class="p">(</span><span class="n">entityId</span><span class="p">,</span><span class="w"> </span><span class="n">CURRENT_HP</span><span class="p">,</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">amount</span><span class="p">);</span>
+<span class="w">                </span><span class="p">}</span>
+<span class="w">            </span><span class="p">})</span>
+<span class="w">            </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="part-4-register-the-module">
+<h2>Part 4: Register the Module<a class="headerlink" href="#part-4-register-the-module" title="Link to this heading"></a></h2>
+<p>Create the service provider file for Java’s ServiceLoader:</p>
+<p><code class="docutils literal notranslate"><span class="pre">src/main/resources/META-INF/services/ca.samanthaireland.stormstack.thunder.engine.core.ext.module.ModuleFactory</span></code></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>com.example.health.HealthModuleFactory
+</pre></div>
+</div>
+</section>
+<section id="part-5-build-the-module">
+<h2>Part 5: Build the Module<a class="headerlink" href="#part-5-build-the-module" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mvn<span class="w"> </span>clean<span class="w"> </span>package
+</pre></div>
+</div>
+<p>This creates <code class="docutils literal notranslate"><span class="pre">target/health-module-1.0.0.jar</span></code>.</p>
+</section>
+<section id="part-6-deploy-the-module">
+<h2>Part 6: Deploy the Module<a class="headerlink" href="#part-6-deploy-the-module" title="Link to this heading"></a></h2>
+<section id="upload-to-control-plane">
+<h3>Upload to Control Plane<a class="headerlink" href="#upload-to-control-plane" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You must be authenticated before uploading modules. Run <code class="docutils literal notranslate"><span class="pre">lightning</span> <span class="pre">auth</span> <span class="pre">login</span></code>
+first if you haven’t already.</p>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>module<span class="w"> </span>upload<span class="w"> </span>HealthModule<span class="w"> </span><span class="m">1</span>.0.0<span class="w"> </span>./target/health-module-1.0.0.jar
+</pre></div>
+</div>
+</section>
+<section id="distribute-to-nodes">
+<h3>Distribute to Nodes<a class="headerlink" href="#distribute-to-nodes" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>module<span class="w"> </span>distribute<span class="w"> </span>HealthModule<span class="w"> </span><span class="m">1</span>.0.0
+</pre></div>
+</div>
+</section>
+</section>
+<section id="part-7-test-the-module">
+<h2>Part 7: Test the Module<a class="headerlink" href="#part-7-test-the-module" title="Link to this heading"></a></h2>
+<section id="create-a-match-with-your-module">
+<h3>Create a Match with Your Module<a class="headerlink" href="#create-a-match-with-your-module" title="Link to this heading"></a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">EntityModule</span></code> is a built-in module that ships with Thunder Engine. It provides
+basic entity management including the <code class="docutils literal notranslate"><span class="pre">spawn</span></code> command used below. Your custom
+<code class="docutils literal notranslate"><span class="pre">HealthModule</span></code> extends its functionality.</p>
+</div>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>deploy<span class="w"> </span>--modules<span class="w"> </span>EntityModule,HealthModule
+</pre></div>
+</div>
+</section>
+<section id="set-context">
+<h3>Set Context<a class="headerlink" href="#set-context" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>node<span class="w"> </span>context<span class="w"> </span>match<span class="w"> </span>&lt;your-match-id&gt;
+</pre></div>
+</div>
+</section>
+<section id="spawn-an-entity-with-health">
+<h3>Spawn an Entity with Health<a class="headerlink" href="#spawn-an-entity-with-health" title="Link to this heading"></a></h3>
+<p>First, we need to spawn an entity and give it health. Let’s extend the spawn command:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Spawn entity</span>
+lightning<span class="w"> </span><span class="nb">command</span><span class="w"> </span>send<span class="w"> </span>spawn<span class="w"> </span><span class="s1">&#39;{&quot;matchId&quot;:1,&quot;playerId&quot;:1,&quot;entityType&quot;:100}&#39;</span>
+
+<span class="c1"># Advance tick</span>
+lightning<span class="w"> </span>node<span class="w"> </span>tick<span class="w"> </span>advance
+
+<span class="c1"># Check snapshot to get entity ID</span>
+lightning<span class="w"> </span>snapshot<span class="w"> </span>get<span class="w"> </span>-o<span class="w"> </span>json
+</pre></div>
+</div>
+</section>
+<section id="initialize-health">
+<h3>Initialize Health<a class="headerlink" href="#initialize-health" title="Link to this heading"></a></h3>
+<p>After spawning, set the entity’s health (assuming entity ID is 1):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># This would require a setHealth command - for now, we&#39;ll test damage</span>
+<span class="c1"># In a real game, spawn would initialize health</span>
+</pre></div>
+</div>
+</section>
+<section id="test-the-damage-command">
+<h3>Test the Damage Command<a class="headerlink" href="#test-the-damage-command" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Apply 25 damage to entity 1</span>
+lightning<span class="w"> </span><span class="nb">command</span><span class="w"> </span>send<span class="w"> </span>damage<span class="w"> </span><span class="s1">&#39;{&quot;entityId&quot;:1,&quot;amount&quot;:25.0}&#39;</span>
+
+<span class="c1"># Advance tick</span>
+lightning<span class="w"> </span>node<span class="w"> </span>tick<span class="w"> </span>advance
+
+<span class="c1"># Check HP (should be reduced)</span>
+lightning<span class="w"> </span>snapshot<span class="w"> </span>get<span class="w"> </span>-o<span class="w"> </span>json
+</pre></div>
+</div>
+</section>
+<section id="test-death-system">
+<h3>Test Death System<a class="headerlink" href="#test-death-system" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Apply lethal damage</span>
+lightning<span class="w"> </span><span class="nb">command</span><span class="w"> </span>send<span class="w"> </span>damage<span class="w"> </span><span class="s1">&#39;{&quot;entityId&quot;:1,&quot;amount&quot;:1000.0}&#39;</span>
+
+<span class="c1"># Advance tick (death system runs)</span>
+lightning<span class="w"> </span>node<span class="w"> </span>tick<span class="w"> </span>advance
+
+<span class="c1"># Entity should be gone</span>
+lightning<span class="w"> </span>snapshot<span class="w"> </span>get<span class="w"> </span>-o<span class="w"> </span>json
+</pre></div>
+</div>
+</section>
+</section>
+<section id="part-8-enhance-the-module">
+<h2>Part 8: Enhance the Module<a class="headerlink" href="#part-8-enhance-the-module" title="Link to this heading"></a></h2>
+<p>Here are some ideas to extend your module:</p>
+<section id="add-a-heal-command">
+<h3>Add a Heal Command<a class="headerlink" href="#add-a-heal-command" title="Link to this heading"></a></h3>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kd">private</span><span class="w"> </span><span class="n">EngineCommand</span><span class="w"> </span><span class="nf">createHealCommand</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">CommandBuilder</span><span class="p">.</span><span class="na">newCommand</span><span class="p">()</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withName</span><span class="p">(</span><span class="s">&quot;heal&quot;</span><span class="p">)</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withSchema</span><span class="p">(</span><span class="n">Map</span><span class="p">.</span><span class="na">of</span><span class="p">(</span>
+<span class="w">            </span><span class="s">&quot;entityId&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Long</span><span class="p">.</span><span class="na">class</span><span class="p">,</span>
+<span class="w">            </span><span class="s">&quot;amount&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">Float</span><span class="p">.</span><span class="na">class</span>
+<span class="w">        </span><span class="p">))</span>
+<span class="w">        </span><span class="p">.</span><span class="na">withExecution</span><span class="p">(</span><span class="n">payload</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="c1">// Similar to damage, but add HP</span>
+<span class="w">            </span><span class="c1">// Don&#39;t exceed MAX_HP</span>
+<span class="w">        </span><span class="p">})</span>
+<span class="w">        </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="add-a-regeneration-system">
+<h3>Add a Regeneration System<a class="headerlink" href="#add-a-regeneration-system" title="Link to this heading"></a></h3>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kd">private</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="nf">regenSystem</span><span class="p">()</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="n">EntityComponentStore</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">context</span><span class="p">.</span><span class="na">getEntityComponentStore</span><span class="p">();</span>
+
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">long</span><span class="w"> </span><span class="n">entity</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="n">store</span><span class="p">.</span><span class="na">getEntitiesWithComponents</span><span class="p">(</span><span class="n">CURRENT_HP</span><span class="p">,</span><span class="w"> </span><span class="n">MAX_HP</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">current</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">store</span><span class="p">.</span><span class="na">getComponent</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span><span class="w"> </span><span class="n">CURRENT_HP</span><span class="p">);</span>
+<span class="w">        </span><span class="kt">float</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">store</span><span class="p">.</span><span class="na">getComponent</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span><span class="w"> </span><span class="n">MAX_HP</span><span class="p">);</span>
+
+<span class="w">        </span><span class="c1">// Regenerate 1 HP per tick, up to max</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">current</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">max</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">            </span><span class="n">store</span><span class="p">.</span><span class="na">attachComponent</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span><span class="w"> </span><span class="n">CURRENT_HP</span><span class="p">,</span>
+<span class="w">                </span><span class="n">Math</span><span class="p">.</span><span class="na">min</span><span class="p">(</span><span class="n">current</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="p">));</span>
+<span class="w">        </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="key-concepts-reviewed">
+<h2>Key Concepts Reviewed<a class="headerlink" href="#key-concepts-reviewed" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>ModuleFactory</strong> - Creates module instances, defines components</p></li>
+<li><p><strong>EngineModule</strong> - The module implementation with systems and commands</p></li>
+<li><p><strong>BaseComponent</strong> - Float data attached to entities</p></li>
+<li><p><strong>EngineSystem</strong> - Logic that runs every tick</p></li>
+<li><p><strong>EngineCommand</strong> - External API with schema validation</p></li>
+<li><p><strong>ModuleContext</strong> - Provides access to ECS store and other dependencies</p></li>
+</ul>
+</section>
+<section id="next-steps">
+<h2>Next Steps<a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
+<p>You’ve created your first module! Here’s where to go next:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../concepts/modules.html"><span class="doc">Modules</span></a> - Module system deep dive</p></li>
+<li><p><a class="reference internal" href="../concepts/ecs-basics.html"><span class="doc">ECS Basics</span></a> - ECS fundamentals</p></li>
+<li><p><a class="reference internal" href="../thunder/engine/commands.html"><span class="doc">Command System</span></a> - Advanced command patterns</p></li>
+<li><p><a class="reference internal" href="../architecture/ecs-internals.html"><span class="doc">ECS Internals</span></a> - How the ECS store works under the hood</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hello-stormstack.html" class="btn btn-neutral float-left" title="Tutorial: Hello StormStack" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../concepts/index.html" class="btn btn-neutral float-right" title="Concepts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Samantha Ireland.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

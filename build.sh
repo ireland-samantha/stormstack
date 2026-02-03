@@ -24,6 +24,7 @@ DOCKER_IMAGE_CONTROL_PLANE="samanthacireland/thunder-control-plane"
 DOCKER_TAG="latest"
 VERSION="0.0.3-SNAPSHOT"
 FRONTEND_DIR="lightning/webpanel"
+DOCS_DIR="docs"
 # Tailscale IP - set via environment variable or detect automatically
 if [ -z "$TAILSCALE_IP" ]; then
     TAILSCALE_IP=$(/Applications/Tailscale.app/Contents/MacOS/Tailscale ip -4 2>/dev/null || echo "")
@@ -273,14 +274,37 @@ do_e2e_test() {
     fi
 }
 
+do_build_docs() {
+    banner "BUILD SPHINX DOCS"
+
+    # Check if docs venv exists
+    if [ ! -d "${DOCS_DIR}/.venv" ]; then
+        echo "Creating Python virtual environment..."
+        python3 -m venv "${DOCS_DIR}/.venv"
+        source "${DOCS_DIR}/.venv/bin/activate"
+        pip install -r "${DOCS_DIR}/requirements.txt" 2>/dev/null || pip install sphinx sphinx-rtd-theme sphinxcontrib-httpdomain
+    else
+        source "${DOCS_DIR}/.venv/bin/activate"
+    fi
+
+    # Build the docs
+    sphinx-build -b html "${DOCS_DIR}/source" "${DOCS_DIR}/build/html"
+
+    echo ""
+    echo "Documentation built successfully!"
+    echo "Open: ${DOCS_DIR}/build/html/index.html"
+}
+
 do_all() {
     do_clean
     do_secrets
+    do_build_docs
     do_frontend
     do_frontend_test
     do_build
     do_test
     do_integration_test
+    do_e2e_test
 }
 
 # Main

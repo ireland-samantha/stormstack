@@ -1,0 +1,858 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thunder Engine &mdash; StormStack 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Command System" href="commands.html" />
+    <link rel="prev" title="Thunder Backend Services" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            StormStack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#time-required">Time Required</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#prerequisites-overview">Prerequisites Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../getting-started/installation.html">Installation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#quick-install-docker-compose">Quick Install (Docker Compose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#multi-node-cluster">Multi-Node Cluster</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#build-from-source-development">Build from Source (Development)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting-started/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-1-configure-the-cli">Step 1: Configure the CLI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-2-authenticate">Step 2: Authenticate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-3-check-cluster-health">Step 3: Check Cluster Health</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-4-deploy-a-match">Step 4: Deploy a Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-5-view-the-match">Step 5: View the Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-6-get-game-state">Step 6: Get Game State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-7-start-the-simulation">Step 7: Start the Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-8-send-a-command">Step 8: Send a Command</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-9-see-the-result">Step 9: See the Result</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#you-ve-done-it">You’ve Done It!</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#what-s-happening-behind-the-scenes">What’s Happening Behind the Scenes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#next-steps">Next Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#web-dashboard">Web Dashboard</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#tutorial-path">Tutorial Path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/hello-stormstack.html">Tutorial: Hello StormStack</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-1-understanding-containers">Part 1: Understanding Containers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-2-the-tick-cycle">Part 2: The Tick Cycle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-3-spawning-entities">Part 3: Spawning Entities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-4-real-time-simulation">Part 4: Real-Time Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-5-websocket-streaming">Part 5: WebSocket Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-6-cleanup">Part 6: Cleanup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/first-module.html">Tutorial: Your First Module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#module-overview">Module Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-1-project-setup">Part 1: Project Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-2-create-components">Part 2: Create Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-3-create-the-module">Part 3: Create the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-4-register-the-module">Part 4: Register the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-5-build-the-module">Part 5: Build the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-6-deploy-the-module">Part 6: Deploy the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-7-test-the-module">Part 7: Test the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-8-enhance-the-module">Part 8: Enhance the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#learning-objectives">Learning Objectives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#after-the-tutorials">After the Tutorials</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts/index.html">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/ecs-basics.html">ECS Basics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/ecs-basics.html#overview">Overview</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/tick-cycle.html">Tick Cycle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/tick-cycle.html#the-tick-lifecycle">The Tick Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/tick-cycle.html#tick-control">Tick Control</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/containers.html">Execution Containers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/containers.html#what-is-a-container">What is a Container?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/containers.html#container-lifecycle">Container Lifecycle</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/modules.html">Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/modules.html#what-modules-provide">What Modules Provide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/modules.html#module-lifecycle">Module Lifecycle</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Thunder (Backend)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Thunder Backend Services</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#overview">Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../index.html#architecture-pattern">Architecture Pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#id1">Services</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html#thunder-engine">Thunder Engine</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">Thunder Engine</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../index.html#thunder-auth">Thunder Auth</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../auth/index.html">Thunder Auth Service</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../index.html#thunder-control-plane">Thunder Control Plane</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../control-plane/index.html">Thunder Control Plane</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#docker-images">Docker Images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Lightning (Tools)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../lightning/index.html">Lightning Tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/cli/index.html">Lightning CLI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/commands.html">CLI Command Reference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#auth-authentication">auth - Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#deploy-game-deployment">deploy - Game Deployment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#cluster-cluster-management">cluster - Cluster Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#match-match-management">match - Match Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#node-node-operations">node - Node Operations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#module-module-management">module - Module Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#command-game-commands">command - Game Commands</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#snapshot-ecs-snapshots">snapshot - ECS Snapshots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#ws-websocket-connections">ws - WebSocket Connections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#config-cli-configuration">config - CLI Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#version-version-information">version - Version Information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/commands.html#common-workflows">Common Workflows</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/configuration.html">CLI Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#configuration-file">Configuration File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#configuration-options">Configuration Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#context-options">Context Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#setting-values">Setting Values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#precedence-order">Precedence Order</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#node-proxy-setting">Node Proxy Setting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#multiple-environments">Multiple Environments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/cli/configuration.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#output-formats">Output Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#global-flags">Global Flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/cli/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/webpanel/index.html">Lightning Web Panel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/dashboard.html">Web Panel Dashboard Features</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#control-plane-features">Control Plane Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#engine-node-features">Engine (Node) Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#authentication-features">Authentication Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/dashboard.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#access-via-docker">Access via Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#the-admin-dashboard-section">The Admin Dashboard section</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/index.html#control-plane-section">Control Plane Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/index.html#engine-node-section">Engine (Node) Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/webpanel/index.html#authentication-section">Authentication Section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#key-features">Key Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#api-client">API Client</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/webpanel/index.html#customization">Customization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/rendering/index.html">Lightning Rendering Engine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#package-structure">Package Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#component-library">Component Library</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#window">Window</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#panel">Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#button">Button</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#label">Label</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#textfield">TextField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#listview">ListView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#treeview">TreeView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#contextmenu">ContextMenu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#filedialog">FileDialog</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#sprite-rendering">Sprite Rendering</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../lightning/rendering/index.html#shaders">Shaders</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#colour-class">Colour Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#input-handling">Input Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#example-application">Example Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#headless-testing">Headless Testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#building">Building</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#running-on-macos">Running on macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#integration-with-thunder">Integration with Thunder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../lightning/rendering/index.html#resources">Resources</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/index.html#choosing-your-interface">Choosing Your Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../lightning/index.html#quick-start">Quick Start</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#api-overview">API Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#authentication">Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#api-sections">API Sections</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/rest-api.html">REST API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#authentication-endpoints">Authentication Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#container-endpoints">Container Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#match-endpoints">Match Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#command-endpoints">Command Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#simulation-endpoints">Simulation Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#snapshot-endpoints">Snapshot Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#module-endpoints">Module Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#control-plane-endpoints">Control Plane Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#error-codes">Error Codes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/websocket-api.html">WebSocket API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#snapshot-streaming">Snapshot Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#command-websocket">Command WebSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#connection-management">Connection Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#quick-reference">Quick Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#engine-endpoints-port-8080">Engine Endpoints (port 8080)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#control-plane-endpoints-port-8081">Control Plane Endpoints (port 8081)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#websocket-endpoints">WebSocket Endpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#response-formats">Response Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#rate-limiting">Rate Limiting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../architecture/index.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/ecs-internals.html">ECS Internals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/ecs-internals.html#array-pool-memory-layout">Array Pool Memory Layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/ecs-internals.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/delta-compression.html">Delta Compression</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#how-it-works">How It Works</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#delta-snapshot-format">Delta Snapshot Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/two-module-pattern.html">Two-Module Pattern</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#the-pattern">The Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#benefits">Benefits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing/index.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/code-style.html">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#java-code-style">Java Code Style</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../contributing/code-style.html#core-module-rules">Core Module Rules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../contributing/code-style.html#provider-module-rules">Provider Module Rules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#go-code-style">Go Code Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#typescript-react">TypeScript/React</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#development-environment">Development Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#ide-setup">IDE Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#build-commands">Build Commands</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#project-structure">Project Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#code-style">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#java">Java</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#go-cli">Go (CLI)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#typescript-frontend">TypeScript (Frontend)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#architecture-principles">Architecture Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#submitting-changes">Submitting Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#quality-checklist">Quality Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#testing">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#e2e-tests">E2E Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#getting-help">Getting Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">StormStack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Thunder Backend Services</a></li>
+      <li class="breadcrumb-item active">Thunder Engine</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/samanthaireland/stormstack/blob/main/docs/source/thunder/engine/index.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="thunder-engine">
+<h1>Thunder Engine<a class="headerlink" href="#thunder-engine" title="Link to this heading"></a></h1>
+<p>Thunder Engine is the core game execution service, providing ECS-based game state
+management, tick-based simulation, and real-time state streaming.</p>
+<div class="toctree-wrapper compound">
+</div>
+<nav class="contents local" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#overview" id="id1">Overview</a></p>
+<ul>
+<li><p><a class="reference internal" href="#architecture" id="id2">Architecture</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#quick-start" id="id3">Quick Start</a></p>
+<ul>
+<li><p><a class="reference internal" href="#creating-a-container" id="id4">Creating a Container</a></p></li>
+<li><p><a class="reference internal" href="#installing-a-module" id="id5">Installing a Module</a></p></li>
+<li><p><a class="reference internal" href="#creating-a-match" id="id6">Creating a Match</a></p></li>
+<li><p><a class="reference internal" href="#streaming-state" id="id7">Streaming State</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#documentation" id="id8">Documentation</a></p></li>
+<li><p><a class="reference internal" href="#rest-api-reference" id="id9">REST API Reference</a></p>
+<ul>
+<li><p><a class="reference internal" href="#container-operations" id="id10">Container Operations</a></p></li>
+<li><p><a class="reference internal" href="#match-operations" id="id11">Match Operations</a></p></li>
+<li><p><a class="reference internal" href="#simulation-control" id="id12">Simulation Control</a></p></li>
+<li><p><a class="reference internal" href="#command-operations" id="id13">Command Operations</a></p></li>
+<li><p><a class="reference internal" href="#snapshot-operations" id="id14">Snapshot Operations</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#security" id="id15">Security</a></p></li>
+<li><p><a class="reference internal" href="#fluent-api-java-sdk" id="id16">Fluent API (Java SDK)</a></p></li>
+<li><p><a class="reference internal" href="#configuration" id="id17">Configuration</a></p>
+<ul>
+<li><p><a class="reference internal" href="#docker-configuration" id="id18">Docker Configuration</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#next-steps" id="id19">Next Steps</a></p></li>
+</ul>
+</nav>
+<section id="overview">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>Thunder Engine provides:</p>
+<ul class="simple">
+<li><p><strong>Entity-Component-System (ECS)</strong> - Efficient game state management</p></li>
+<li><p><strong>Execution Containers</strong> - Isolated runtime environments for matches</p></li>
+<li><p><strong>Tick-Based Simulation</strong> - Deterministic game loops</p></li>
+<li><p><strong>Command Queue</strong> - Server-side action processing</p></li>
+<li><p><strong>Snapshot Streaming</strong> - Real-time state updates via WebSocket</p></li>
+</ul>
+<section id="architecture">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Architecture</a><a class="headerlink" href="#architecture" title="Link to this heading"></a></h3>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>+------------------------------------------+
+|            Thunder Engine                |
+|  +------------------------------------+  |
+|  |       Execution Container          |  |
+|  |  +-----------+  +-----------+     |  |
+|  |  |  Match 1  |  |  Match 2  |     |  |
+|  |  |  (ECS)    |  |  (ECS)    |     |  |
+|  |  +-----------+  +-----------+     |  |
+|  |                                    |  |
+|  |  Modules: [chess-core, physics]   |  |
+|  +------------------------------------+  |
+|                                          |
+|  REST API      WebSocket                |
+|  /api/...      /ws/...                  |
++------------------------------------------+
+</pre></div>
+</div>
+<p>Each <strong>Execution Container</strong> provides complete isolation:</p>
+<ul class="simple">
+<li><p>Separate ClassLoader for module code</p></li>
+<li><p>Independent ECS store per match</p></li>
+<li><p>Own tick rate and game loop</p></li>
+<li><p>Isolated command queue</p></li>
+</ul>
+</section>
+</section>
+<section id="quick-start">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Quick Start</a><a class="headerlink" href="#quick-start" title="Link to this heading"></a></h2>
+<section id="creating-a-container">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Creating a Container</a><a class="headerlink" href="#creating-a-container" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">POST</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">containers</span>
+<span class="n">Authorization</span><span class="p">:</span> <span class="n">Bearer</span> <span class="o">&lt;</span><span class="n">token</span><span class="o">&gt;</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">json</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;chess-server-1&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;ctr_abc123&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;chess-server-1&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;RUNNING&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;tickRate&quot;</span><span class="p">:</span> <span class="mi">20</span><span class="p">,</span>
+  <span class="s2">&quot;matchCount&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;createdAt&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-03T12:00:00Z&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="installing-a-module">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Installing a Module</a><a class="headerlink" href="#installing-a-module" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">POST</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">containers</span><span class="o">/</span><span class="p">{</span><span class="n">containerId</span><span class="p">}</span><span class="o">/</span><span class="n">modules</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">octet</span><span class="o">-</span><span class="n">stream</span>
+
+<span class="o">&lt;</span><span class="n">JAR</span> <span class="n">file</span> <span class="n">binary</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="creating-a-match">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Creating a Match</a><a class="headerlink" href="#creating-a-match" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">POST</span> <span class="o">/</span><span class="n">api</span><span class="o">/</span><span class="n">containers</span><span class="o">/</span><span class="p">{</span><span class="n">containerId</span><span class="p">}</span><span class="o">/</span><span class="n">matches</span>
+<span class="n">Content</span><span class="o">-</span><span class="n">Type</span><span class="p">:</span> <span class="n">application</span><span class="o">/</span><span class="n">json</span>
+
+<span class="p">{</span>
+  <span class="s2">&quot;maxPlayers&quot;</span><span class="p">:</span> <span class="mi">2</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Response:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+  <span class="s2">&quot;matchId&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+  <span class="s2">&quot;containerId&quot;</span><span class="p">:</span> <span class="s2">&quot;ctr_abc123&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;ACTIVE&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;currentPlayers&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+  <span class="s2">&quot;maxPlayers&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+  <span class="s2">&quot;tick&quot;</span><span class="p">:</span> <span class="mi">0</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="streaming-state">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Streaming State</a><a class="headerlink" href="#streaming-state" title="Link to this heading"></a></h3>
+<p>Connect to WebSocket for real-time updates:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ws</span><span class="p">:</span><span class="o">//</span><span class="n">localhost</span><span class="p">:</span><span class="mi">8080</span><span class="o">/</span><span class="n">ws</span><span class="o">/</span><span class="n">snapshots</span><span class="o">/</span><span class="p">{</span><span class="n">matchId</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="websocket.html"><span class="doc">WebSocket Streaming</span></a> for streaming documentation.</p>
+</section>
+</section>
+<section id="documentation">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Documentation</a><a class="headerlink" href="#documentation" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="websocket.html">WebSocket Streaming</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#websocket-endpoints">WebSocket Endpoints</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#connecting">Connecting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#full-snapshots">Full Snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#delta-snapshots">Delta Snapshots</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#player-filtered-streams">Player-Filtered Streams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#command-websocket">Command WebSocket</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#binary-protocol">Binary Protocol</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#connection-management">Connection Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#error-handling">Error Handling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#security">Security</a></li>
+<li class="toctree-l2"><a class="reference internal" href="websocket.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<p>For ECS concepts and architecture, see:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../../concepts/ecs-basics.html"><span class="doc">ECS Basics</span></a> - ECS for game developers</p></li>
+<li><p><a class="reference internal" href="../../concepts/tick-cycle.html"><span class="doc">Tick Cycle</span></a> - Tick lifecycle</p></li>
+<li><p><a class="reference internal" href="../../concepts/containers.html"><span class="doc">Execution Containers</span></a> - Container isolation</p></li>
+<li><p><a class="reference internal" href="../../architecture/ecs-internals.html"><span class="doc">ECS Internals</span></a> - ECS implementation details</p></li>
+</ul>
+</section>
+<section id="rest-api-reference">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">REST API Reference</a><a class="headerlink" href="#rest-api-reference" title="Link to this heading"></a></h2>
+<section id="container-operations">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Container Operations</a><a class="headerlink" href="#container-operations" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers</span></code></p></td>
+<td><p>List all containers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/containers</span></code></p></td>
+<td><p>Create a container</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}</span></code></p></td>
+<td><p>Get container details</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DELETE</span> <span class="pre">/api/containers/{id}</span></code></p></td>
+<td><p>Delete a container</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/containers/{id}/modules</span></code></p></td>
+<td><p>Install a module</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}/modules</span></code></p></td>
+<td><p>List installed modules</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="match-operations">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Match Operations</a><a class="headerlink" href="#match-operations" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}/matches</span></code></p></td>
+<td><p>List matches in container</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/containers/{id}/matches</span></code></p></td>
+<td><p>Create a match</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}/matches/{matchId}</span></code></p></td>
+<td><p>Get match details</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DELETE</span> <span class="pre">/api/containers/{id}/matches/{matchId}</span></code></p></td>
+<td><p>Finish/delete a match</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/containers/{id}/matches/{matchId}/join</span></code></p></td>
+<td><p>Join a match as player</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="simulation-control">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Simulation Control</a><a class="headerlink" href="#simulation-control" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/containers/{id}/ticks/advance</span></code></p></td>
+<td><p>Advance one tick (manual mode)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/containers/{id}/ticks/start</span></code></p></td>
+<td><p>Start auto-advance</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/containers/{id}/ticks/stop</span></code></p></td>
+<td><p>Stop auto-advance</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}/ticks</span></code></p></td>
+<td><p>Get tick status</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="command-operations">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Command Operations</a><a class="headerlink" href="#command-operations" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/api/containers/{id}/commands</span></code></p></td>
+<td><p>Send a command</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}/commands</span></code></p></td>
+<td><p>List available commands</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}/commands/{name}/schema</span></code></p></td>
+<td><p>Get command schema</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="snapshot-operations">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Snapshot Operations</a><a class="headerlink" href="#snapshot-operations" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Endpoint</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}/matches/{matchId}/snapshot</span></code></p></td>
+<td><p>Get current snapshot</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/api/containers/{id}/matches/{matchId}/history</span></code></p></td>
+<td><p>Get snapshot history</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="security">
+<h2><a class="toc-backref" href="#id15" role="doc-backlink">Security</a><a class="headerlink" href="#security" title="Link to this heading"></a></h2>
+<p>Engine endpoints require authentication. Common scopes:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Scope</p></th>
+<th class="head"><p>Operations</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">engine.container.create</span></code></p></td>
+<td><p>Create containers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">engine.container.read</span></code></p></td>
+<td><p>View containers and matches</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">engine.container.delete</span></code></p></td>
+<td><p>Delete containers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">engine.match.*</span></code></p></td>
+<td><p>Match operations</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">engine.command.send</span></code></p></td>
+<td><p>Send game commands</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">engine.snapshot.read</span></code></p></td>
+<td><p>Read ECS snapshots</p></td>
+</tr>
+</tbody>
+</table>
+<p>See <a class="reference internal" href="../auth/authorization.html"><span class="doc">Authorization</span></a> for the complete scope matrix.</p>
+</section>
+<section id="fluent-api-java-sdk">
+<h2><a class="toc-backref" href="#id16" role="doc-backlink">Fluent API (Java SDK)</a><a class="headerlink" href="#fluent-api-java-sdk" title="Link to this heading"></a></h2>
+<p>The engine provides a fluent Java API for integration:</p>
+<div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// Create container</span>
+<span class="n">ExecutionContainer</span><span class="w"> </span><span class="n">container</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ExecutionContainer</span><span class="p">.</span><span class="na">create</span><span class="p">()</span>
+<span class="w">    </span><span class="p">.</span><span class="na">withTickRate</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">build</span><span class="p">();</span>
+
+<span class="c1">// Install module</span>
+<span class="n">container</span><span class="p">.</span><span class="na">modules</span><span class="p">()</span>
+<span class="w">    </span><span class="p">.</span><span class="na">install</span><span class="p">(</span><span class="n">ModuleLoader</span><span class="p">.</span><span class="na">load</span><span class="p">(</span><span class="s">&quot;chess-core.jar&quot;</span><span class="p">));</span>
+
+<span class="c1">// Create match</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">matchId</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">container</span><span class="p">.</span><span class="na">matches</span><span class="p">().</span><span class="na">create</span><span class="p">();</span>
+
+<span class="c1">// Send command</span>
+<span class="n">container</span><span class="p">.</span><span class="na">commands</span><span class="p">()</span>
+<span class="w">    </span><span class="p">.</span><span class="na">named</span><span class="p">(</span><span class="s">&quot;SpawnEntity&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">forMatch</span><span class="p">(</span><span class="n">matchId</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">withParam</span><span class="p">(</span><span class="s">&quot;x&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">10.0f</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">withParam</span><span class="p">(</span><span class="s">&quot;y&quot;</span><span class="p">,</span><span class="w"> </span><span class="mf">20.0f</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">execute</span><span class="p">();</span>
+
+<span class="c1">// Advance simulation</span>
+<span class="n">container</span><span class="p">.</span><span class="na">ticks</span><span class="p">().</span><span class="na">advance</span><span class="p">();</span>
+
+<span class="c1">// Get snapshot</span>
+<span class="n">Snapshot</span><span class="w"> </span><span class="n">snapshot</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">container</span><span class="p">.</span><span class="na">snapshots</span><span class="p">()</span>
+<span class="w">    </span><span class="p">.</span><span class="na">forMatch</span><span class="p">(</span><span class="n">matchId</span><span class="p">)</span>
+<span class="w">    </span><span class="p">.</span><span class="na">get</span><span class="p">();</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="../../concepts/containers.html"><span class="doc">Execution Containers</span></a> for detailed API documentation.</p>
+</section>
+<section id="configuration">
+<h2><a class="toc-backref" href="#id17" role="doc-backlink">Configuration</a><a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p>Engine configuration in <code class="docutils literal notranslate"><span class="pre">application.yaml</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">stormstack</span><span class="p">:</span>
+  <span class="n">engine</span><span class="p">:</span>
+    <span class="n">default</span><span class="o">-</span><span class="n">tick</span><span class="o">-</span><span class="n">rate</span><span class="p">:</span> <span class="mi">20</span>
+    <span class="nb">max</span><span class="o">-</span><span class="n">containers</span><span class="p">:</span> <span class="mi">100</span>
+    <span class="nb">max</span><span class="o">-</span><span class="n">matches</span><span class="o">-</span><span class="n">per</span><span class="o">-</span><span class="n">container</span><span class="p">:</span> <span class="mi">50</span>
+    <span class="n">snapshot</span><span class="o">-</span><span class="n">retention</span><span class="p">:</span> <span class="mi">100</span>
+
+  <span class="n">control</span><span class="o">-</span><span class="n">plane</span><span class="p">:</span>
+    <span class="n">enabled</span><span class="p">:</span> <span class="n">true</span>
+    <span class="n">url</span><span class="p">:</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">control</span><span class="o">-</span><span class="n">plane</span><span class="p">:</span><span class="mi">8081</span>
+</pre></div>
+</div>
+<section id="docker-configuration">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Docker Configuration</a><a class="headerlink" href="#docker-configuration" title="Link to this heading"></a></h3>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">run</span> <span class="o">-</span><span class="n">d</span> \
+  <span class="o">-</span><span class="n">p</span> <span class="mi">8080</span><span class="p">:</span><span class="mi">8080</span> \
+  <span class="o">-</span><span class="n">e</span> <span class="n">MONGODB_URI</span><span class="o">=</span><span class="n">mongodb</span><span class="p">:</span><span class="o">//</span><span class="n">mongo</span><span class="p">:</span><span class="mi">27017</span><span class="o">/</span><span class="n">stormstack</span> \
+  <span class="o">-</span><span class="n">e</span> <span class="n">CONTROL_PLANE_URL</span><span class="o">=</span><span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">control</span><span class="o">-</span><span class="n">plane</span><span class="p">:</span><span class="mi">8081</span> \
+  <span class="n">samanthacireland</span><span class="o">/</span><span class="n">thunder</span><span class="o">-</span><span class="n">engine</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="next-steps">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">Next Steps</a><a class="headerlink" href="#next-steps" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="websocket.html"><span class="doc">WebSocket Streaming</span></a> - Real-time state streaming</p></li>
+<li><p><a class="reference internal" href="../../concepts/ecs-basics.html"><span class="doc">ECS Basics</span></a> - ECS fundamentals</p></li>
+<li><p><a class="reference internal" href="../../concepts/tick-cycle.html"><span class="doc">Tick Cycle</span></a> - Understanding ticks</p></li>
+<li><p><a class="reference internal" href="../../concepts/modules.html"><span class="doc">Modules</span></a> - Module development</p></li>
+<li><p><a class="reference internal" href="../../api/rest-api.html"><span class="doc">REST API</span></a> - Full API reference</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Thunder Backend Services" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="commands.html" class="btn btn-neutral float-right" title="Command System" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Samantha Ireland.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

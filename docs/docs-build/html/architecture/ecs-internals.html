@@ -1,0 +1,459 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ECS Internals &mdash; StormStack 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Delta Compression" href="delta-compression.html" />
+    <link rel="prev" title="Architecture" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            StormStack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting-started/index.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../getting-started/index.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting-started/index.html#time-required">Time Required</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../getting-started/index.html#prerequisites-overview">Prerequisites Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../getting-started/installation.html">Installation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#quick-install-docker-compose">Quick Install (Docker Compose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#multi-node-cluster">Multi-Node Cluster</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#build-from-source-development">Build from Source (Development)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/installation.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../getting-started/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-1-configure-the-cli">Step 1: Configure the CLI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-2-authenticate">Step 2: Authenticate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-3-check-cluster-health">Step 3: Check Cluster Health</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-4-deploy-a-match">Step 4: Deploy a Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-5-view-the-match">Step 5: View the Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-6-get-game-state">Step 6: Get Game State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-7-start-the-simulation">Step 7: Start the Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-8-send-a-command">Step 8: Send a Command</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#step-9-see-the-result">Step 9: See the Result</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#you-ve-done-it">You’ve Done It!</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#what-s-happening-behind-the-scenes">What’s Happening Behind the Scenes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#next-steps">Next Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../getting-started/quickstart.html#web-dashboard">Web Dashboard</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../getting-started/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/index.html#tutorial-path">Tutorial Path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/hello-stormstack.html">Tutorial: Hello StormStack</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#part-1-understanding-containers">Part 1: Understanding Containers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#part-2-the-tick-cycle">Part 2: The Tick Cycle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#part-3-spawning-entities">Part 3: Spawning Entities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#part-4-real-time-simulation">Part 4: Real-Time Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#part-5-websocket-streaming">Part 5: WebSocket Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#part-6-cleanup">Part 6: Cleanup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/hello-stormstack.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../tutorials/first-module.html">Tutorial: Your First Module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#module-overview">Module Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#part-1-project-setup">Part 1: Project Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#part-2-create-components">Part 2: Create Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#part-3-create-the-module">Part 3: Create the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#part-4-register-the-module">Part 4: Register the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#part-5-build-the-module">Part 5: Build the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#part-6-deploy-the-module">Part 6: Deploy the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#part-7-test-the-module">Part 7: Test the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#part-8-enhance-the-module">Part 8: Enhance the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../tutorials/first-module.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/index.html#learning-objectives">Learning Objectives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tutorials/index.html#after-the-tutorials">After the Tutorials</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../concepts/index.html">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/ecs-basics.html">ECS Basics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/ecs-basics.html#overview">Overview</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/tick-cycle.html">Tick Cycle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/tick-cycle.html#the-tick-lifecycle">The Tick Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/tick-cycle.html#tick-control">Tick Control</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/containers.html">Execution Containers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/containers.html#what-is-a-container">What is a Container?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/containers.html#container-lifecycle">Container Lifecycle</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../concepts/modules.html">Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/modules.html#what-modules-provide">What Modules Provide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../concepts/modules.html#module-lifecycle">Module Lifecycle</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Thunder (Backend)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../thunder/index.html">Thunder Backend Services</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#overview">Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../thunder/index.html#architecture-pattern">Architecture Pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#id1">Services</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../thunder/index.html#thunder-engine">Thunder Engine</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../thunder/engine/index.html">Thunder Engine</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../thunder/index.html#thunder-auth">Thunder Auth</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../thunder/auth/index.html">Thunder Auth Service</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../thunder/index.html#thunder-control-plane">Thunder Control Plane</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../thunder/control-plane/index.html">Thunder Control Plane</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#docker-images">Docker Images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../thunder/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Lightning (Tools)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../lightning/index.html">Lightning Tools</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/cli/index.html">Lightning CLI</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/commands.html">CLI Command Reference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#auth-authentication">auth - Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#deploy-game-deployment">deploy - Game Deployment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#cluster-cluster-management">cluster - Cluster Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#match-match-management">match - Match Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#node-node-operations">node - Node Operations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#module-module-management">module - Module Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#command-game-commands">command - Game Commands</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#snapshot-ecs-snapshots">snapshot - ECS Snapshots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#ws-websocket-connections">ws - WebSocket Connections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#config-cli-configuration">config - CLI Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#version-version-information">version - Version Information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/commands.html#common-workflows">Common Workflows</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/configuration.html">CLI Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#configuration-file">Configuration File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#configuration-options">Configuration Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#context-options">Context Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#setting-values">Setting Values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#precedence-order">Precedence Order</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#node-proxy-setting">Node Proxy Setting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#multiple-environments">Multiple Environments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/cli/configuration.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#output-formats">Output Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#global-flags">Global Flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/cli/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/webpanel/index.html">Lightning Web Panel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/dashboard.html">Web Panel Dashboard Features</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#control-plane-features">Control Plane Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#engine-node-features">Engine (Node) Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#authentication-features">Authentication Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/dashboard.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#access-via-docker">Access via Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#the-admin-dashboard-section">The Admin Dashboard section</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/index.html#control-plane-section">Control Plane Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/index.html#engine-node-section">Engine (Node) Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/webpanel/index.html#authentication-section">Authentication Section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#key-features">Key Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#api-client">API Client</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/webpanel/index.html#customization">Customization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/rendering/index.html">Lightning Rendering Engine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#package-structure">Package Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#component-library">Component Library</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#window">Window</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#panel">Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#button">Button</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#label">Label</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#textfield">TextField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#listview">ListView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#treeview">TreeView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#contextmenu">ContextMenu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#filedialog">FileDialog</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#sprite-rendering">Sprite Rendering</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../lightning/rendering/index.html#shaders">Shaders</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#colour-class">Colour Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#input-handling">Input Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#example-application">Example Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#headless-testing">Headless Testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#building">Building</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#running-on-macos">Running on macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#integration-with-thunder">Integration with Thunder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../lightning/rendering/index.html#resources">Resources</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/index.html#choosing-your-interface">Choosing Your Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../lightning/index.html#quick-start">Quick Start</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#api-overview">API Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#authentication">Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#api-sections">API Sections</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/rest-api.html">REST API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#authentication-endpoints">Authentication Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#container-endpoints">Container Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#match-endpoints">Match Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#command-endpoints">Command Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#simulation-endpoints">Simulation Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#snapshot-endpoints">Snapshot Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#module-endpoints">Module Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#control-plane-endpoints">Control Plane Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/rest-api.html#error-codes">Error Codes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../api/websocket-api.html">WebSocket API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#snapshot-streaming">Snapshot Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#command-websocket">Command WebSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#connection-management">Connection Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/websocket-api.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#quick-reference">Quick Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/index.html#engine-endpoints-port-8080">Engine Endpoints (port 8080)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/index.html#control-plane-endpoints-port-8081">Control Plane Endpoints (port 8081)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/index.html#websocket-endpoints">WebSocket Endpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#response-formats">Response Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/index.html#rate-limiting">Rate Limiting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Architecture</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ECS Internals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#array-pool-memory-layout">Array Pool Memory Layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="delta-compression.html">Delta Compression</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="delta-compression.html#how-it-works">How It Works</a></li>
+<li class="toctree-l3"><a class="reference internal" href="delta-compression.html#delta-snapshot-format">Delta Snapshot Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="delta-compression.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="two-module-pattern.html">Two-Module Pattern</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="two-module-pattern.html#the-pattern">The Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="two-module-pattern.html#benefits">Benefits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="two-module-pattern.html#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing/index.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/code-style.html">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/code-style.html#java-code-style">Java Code Style</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../contributing/code-style.html#core-module-rules">Core Module Rules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../contributing/code-style.html#provider-module-rules">Provider Module Rules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/code-style.html#go-code-style">Go Code Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/code-style.html#typescript-react">TypeScript/React</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#development-environment">Development Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#ide-setup">IDE Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#build-commands">Build Commands</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#project-structure">Project Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#code-style">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#java">Java</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#go-cli">Go (CLI)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#typescript-frontend">TypeScript (Frontend)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#architecture-principles">Architecture Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#submitting-changes">Submitting Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#quality-checklist">Quality Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#testing">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../contributing/index.html#e2e-tests">E2E Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#getting-help">Getting Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../contributing/index.html#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">StormStack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Architecture</a></li>
+      <li class="breadcrumb-item active">ECS Internals</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/samanthaireland/stormstack/blob/main/docs/source/architecture/ecs-internals.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="ecs-internals">
+<h1>ECS Internals<a class="headerlink" href="#ecs-internals" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This page is under development.</p>
+</div>
+<p>This document describes the internal implementation of StormStack’s ECS system.</p>
+<section id="array-pool-memory-layout">
+<h2>Array Pool Memory Layout<a class="headerlink" href="#array-pool-memory-layout" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">ArrayEntityComponentStore</span></code> uses a flat float array pool for O(1) component access:</p>
+<ul class="simple">
+<li><p><strong>Row-major storage</strong> - Each entity gets a contiguous memory block</p></li>
+<li><p><strong>Float.NaN sentinel</strong> - Used to mark null/unset values (no extra memory overhead)</p></li>
+<li><p><strong>Memory reclamation</strong> - <code class="docutils literal notranslate"><span class="pre">reclaimedRows</span></code> FIFO queue prevents fragmentation</p></li>
+</ul>
+</section>
+<section id="key-source-files">
+<h2>Key Source Files<a class="headerlink" href="#key-source-files" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">EntityComponentStore.java</span></code> - Core interface</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ArrayEntityComponentStore.java</span></code> - Flat array implementation</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">DirtyTrackingEntityComponentStore.java</span></code> - Change tracking decorator</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Architecture" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="delta-compression.html" class="btn btn-neutral float-right" title="Delta Compression" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Samantha Ireland.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,917 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CLI Command Reference &mdash; StormStack 2.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=51b770b3"></script>
+      <script src="../../_static/doctools.js?v=9a2dae69"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="CLI Configuration" href="configuration.html" />
+    <link rel="prev" title="Lightning CLI" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            StormStack
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-started/index.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#time-required">Time Required</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#prerequisites-overview">Prerequisites Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../getting-started/installation.html">Installation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#quick-install-docker-compose">Quick Install (Docker Compose)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#multi-node-cluster">Multi-Node Cluster</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#build-from-source-development">Build from Source (Development)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/installation.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../getting-started/quickstart.html">Quickstart</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-1-configure-the-cli">Step 1: Configure the CLI</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-2-authenticate">Step 2: Authenticate</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-3-check-cluster-health">Step 3: Check Cluster Health</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-4-deploy-a-match">Step 4: Deploy a Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-5-view-the-match">Step 5: View the Match</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-6-get-game-state">Step 6: Get Game State</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-7-start-the-simulation">Step 7: Start the Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-8-send-a-command">Step 8: Send a Command</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#step-9-see-the-result">Step 9: See the Result</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#you-ve-done-it">You’ve Done It!</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#what-s-happening-behind-the-scenes">What’s Happening Behind the Scenes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#next-steps">Next Steps</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../getting-started/quickstart.html#web-dashboard">Web Dashboard</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../getting-started/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials/index.html">Tutorials</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#tutorial-path">Tutorial Path</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/hello-stormstack.html">Tutorial: Hello StormStack</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-1-understanding-containers">Part 1: Understanding Containers</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-2-the-tick-cycle">Part 2: The Tick Cycle</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-3-spawning-entities">Part 3: Spawning Entities</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-4-real-time-simulation">Part 4: Real-Time Simulation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-5-websocket-streaming">Part 5: WebSocket Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#part-6-cleanup">Part 6: Cleanup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/hello-stormstack.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../tutorials/first-module.html">Tutorial: Your First Module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#what-you-ll-learn">What You’ll Learn</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#module-overview">Module Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-1-project-setup">Part 1: Project Setup</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-2-create-components">Part 2: Create Components</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-3-create-the-module">Part 3: Create the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-4-register-the-module">Part 4: Register the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-5-build-the-module">Part 5: Build the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-6-deploy-the-module">Part 6: Deploy the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-7-test-the-module">Part 7: Test the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#part-8-enhance-the-module">Part 8: Enhance the Module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#key-concepts-reviewed">Key Concepts Reviewed</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../tutorials/first-module.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#learning-objectives">Learning Objectives</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../tutorials/index.html#after-the-tutorials">After the Tutorials</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Core Concepts</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../concepts/index.html">Concepts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/ecs-basics.html">ECS Basics</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/ecs-basics.html#overview">Overview</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/tick-cycle.html">Tick Cycle</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/tick-cycle.html#the-tick-lifecycle">The Tick Lifecycle</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/tick-cycle.html#tick-control">Tick Control</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/containers.html">Execution Containers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/containers.html#what-is-a-container">What is a Container?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/containers.html#container-lifecycle">Container Lifecycle</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../concepts/modules.html">Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/modules.html#what-modules-provide">What Modules Provide</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../concepts/modules.html#module-lifecycle">Module Lifecycle</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Thunder (Backend)</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../thunder/index.html">Thunder Backend Services</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../thunder/index.html#overview">Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../thunder/index.html#architecture-pattern">Architecture Pattern</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../thunder/index.html#id1">Services</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../thunder/index.html#thunder-engine">Thunder Engine</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../thunder/engine/index.html">Thunder Engine</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../thunder/index.html#thunder-auth">Thunder Auth</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../thunder/auth/index.html">Thunder Auth Service</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../thunder/index.html#thunder-control-plane">Thunder Control Plane</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../thunder/control-plane/index.html">Thunder Control Plane</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../thunder/index.html#docker-images">Docker Images</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../thunder/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../thunder/index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Lightning (Tools)</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Lightning Tools</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">Lightning CLI</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">CLI Command Reference</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#auth-authentication">auth - Authentication</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deploy-game-deployment">deploy - Game Deployment</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#cluster-cluster-management">cluster - Cluster Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#match-match-management">match - Match Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#node-node-operations">node - Node Operations</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-module-management">module - Module Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#command-game-commands">command - Game Commands</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#snapshot-ecs-snapshots">snapshot - ECS Snapshots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ws-websocket-connections">ws - WebSocket Connections</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#config-cli-configuration">config - CLI Configuration</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#version-version-information">version - Version Information</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#common-workflows">Common Workflows</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="configuration.html">CLI Configuration</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="configuration.html#configuration-file">Configuration File</a></li>
+<li class="toctree-l4"><a class="reference internal" href="configuration.html#configuration-options">Configuration Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="configuration.html#context-options">Context Options</a></li>
+<li class="toctree-l4"><a class="reference internal" href="configuration.html#setting-values">Setting Values</a></li>
+<li class="toctree-l4"><a class="reference internal" href="configuration.html#precedence-order">Precedence Order</a></li>
+<li class="toctree-l4"><a class="reference internal" href="configuration.html#node-proxy-setting">Node Proxy Setting</a></li>
+<li class="toctree-l4"><a class="reference internal" href="configuration.html#multiple-environments">Multiple Environments</a></li>
+<li class="toctree-l4"><a class="reference internal" href="configuration.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#output-formats">Output Formats</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#global-flags">Global Flags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="index.html#next-steps">Next Steps</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../webpanel/index.html">Lightning Web Panel</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/dashboard.html">Web Panel Dashboard Features</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../webpanel/dashboard.html#control-plane-features">Control Plane Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../webpanel/dashboard.html#engine-node-features">Engine (Node) Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../webpanel/dashboard.html#authentication-features">Authentication Features</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../webpanel/dashboard.html#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../webpanel/dashboard.html#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#access-via-docker">Access via Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#the-admin-dashboard-section">The Admin Dashboard section</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../webpanel/index.html#control-plane-section">Control Plane Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../webpanel/index.html#engine-node-section">Engine (Node) Section</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../webpanel/index.html#authentication-section">Authentication Section</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#key-features">Key Features</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#api-client">API Client</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../webpanel/index.html#customization">Customization</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../rendering/index.html">Lightning Rendering Engine</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#technology-stack">Technology Stack</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#package-structure">Package Structure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#component-library">Component Library</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#window">Window</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#panel">Panel</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#button">Button</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#label">Label</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#textfield">TextField</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#listview">ListView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#treeview">TreeView</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#contextmenu">ContextMenu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#filedialog">FileDialog</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#sprite-rendering">Sprite Rendering</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../rendering/index.html#shaders">Shaders</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#colour-class">Colour Class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#input-handling">Input Handling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#example-application">Example Application</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#headless-testing">Headless Testing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#building">Building</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#running-on-macos">Running on macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#integration-with-thunder">Integration with Thunder</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../rendering/index.html#resources">Resources</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#choosing-your-interface">Choosing Your Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#quick-start">Quick Start</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#api-overview">API Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#authentication">Authentication</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#api-sections">API Sections</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/rest-api.html">REST API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#authentication-endpoints">Authentication Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#container-endpoints">Container Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#match-endpoints">Match Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#command-endpoints">Command Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#simulation-endpoints">Simulation Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#snapshot-endpoints">Snapshot Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#module-endpoints">Module Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#control-plane-endpoints">Control Plane Endpoints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/rest-api.html#error-codes">Error Codes</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/websocket-api.html">WebSocket API</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#overview">Overview</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#snapshot-streaming">Snapshot Streaming</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#command-websocket">Command WebSocket</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#connection-management">Connection Management</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../api/websocket-api.html#performance-considerations">Performance Considerations</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#quick-reference">Quick Reference</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#engine-endpoints-port-8080">Engine Endpoints (port 8080)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#control-plane-endpoints-port-8081">Control Plane Endpoints (port 8081)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../api/index.html#websocket-endpoints">WebSocket Endpoints</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#response-formats">Response Formats</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/index.html#rate-limiting">Rate Limiting</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Architecture</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../architecture/index.html">Architecture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/ecs-internals.html">ECS Internals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/ecs-internals.html#array-pool-memory-layout">Array Pool Memory Layout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/ecs-internals.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/delta-compression.html">Delta Compression</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#how-it-works">How It Works</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#delta-snapshot-format">Delta Snapshot Format</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/delta-compression.html#key-source-files">Key Source Files</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../architecture/two-module-pattern.html">Two-Module Pattern</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#the-pattern">The Pattern</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#benefits">Benefits</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../architecture/two-module-pattern.html#example">Example</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contributing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing/index.html">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/code-style.html">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#java-code-style">Java Code Style</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../contributing/code-style.html#core-module-rules">Core Module Rules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../contributing/code-style.html#provider-module-rules">Provider Module Rules</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#go-code-style">Go Code Style</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/code-style.html#typescript-react">TypeScript/React</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#getting-started">Getting Started</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#development-environment">Development Environment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#ide-setup">IDE Setup</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#build-commands">Build Commands</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#project-structure">Project Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#code-style">Code Style</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#java">Java</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#go-cli">Go (CLI)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#typescript-frontend">TypeScript (Frontend)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#architecture-principles">Architecture Principles</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#submitting-changes">Submitting Changes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#quality-checklist">Quality Checklist</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#testing">Testing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#unit-tests">Unit Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#integration-tests">Integration Tests</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../contributing/index.html#e2e-tests">E2E Tests</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#getting-help">Getting Help</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../contributing/index.html#license">License</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">StormStack</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Lightning Tools</a></li>
+          <li class="breadcrumb-item"><a href="index.html">Lightning CLI</a></li>
+      <li class="breadcrumb-item active">CLI Command Reference</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://github.com/samanthaireland/stormstack/blob/main/docs/source/lightning/cli/commands.rst" class="fa fa-github"> Edit on GitHub</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="cli-command-reference">
+<h1>CLI Command Reference<a class="headerlink" href="#cli-command-reference" title="Link to this heading"></a></h1>
+<p>Complete reference for all Lightning CLI commands.</p>
+<nav class="contents local" id="command-groups">
+<p class="topic-title">Command Groups</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#auth-authentication" id="id1">auth - Authentication</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-auth-login" id="id2">lightning auth login</a></p></li>
+<li><p><a class="reference internal" href="#lightning-auth-token" id="id3">lightning auth token</a></p></li>
+<li><p><a class="reference internal" href="#lightning-auth-status" id="id4">lightning auth status</a></p></li>
+<li><p><a class="reference internal" href="#lightning-auth-logout" id="id5">lightning auth logout</a></p></li>
+<li><p><a class="reference internal" href="#lightning-auth-refresh" id="id6">lightning auth refresh</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#deploy-game-deployment" id="id7">deploy - Game Deployment</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-deploy" id="id8">lightning deploy</a></p></li>
+<li><p><a class="reference internal" href="#lightning-deploy-undeploy" id="id9">lightning deploy undeploy</a></p></li>
+<li><p><a class="reference internal" href="#lightning-deploy-status" id="id10">lightning deploy status</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#cluster-cluster-management" id="id11">cluster - Cluster Management</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-cluster-status" id="id12">lightning cluster status</a></p></li>
+<li><p><a class="reference internal" href="#lightning-cluster-nodes" id="id13">lightning cluster nodes</a></p></li>
+<li><p><a class="reference internal" href="#lightning-cluster-node" id="id14">lightning cluster node</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#match-match-management" id="id15">match - Match Management</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-match-list" id="id16">lightning match list</a></p></li>
+<li><p><a class="reference internal" href="#lightning-match-get" id="id17">lightning match get</a></p></li>
+<li><p><a class="reference internal" href="#lightning-match-join" id="id18">lightning match join</a></p></li>
+<li><p><a class="reference internal" href="#lightning-match-finish" id="id19">lightning match finish</a></p></li>
+<li><p><a class="reference internal" href="#lightning-match-delete" id="id20">lightning match delete</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#node-node-operations" id="id21">node - Node Operations</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-node-context-set" id="id22">lightning node context set</a></p></li>
+<li><p><a class="reference internal" href="#lightning-node-context-show" id="id23">lightning node context show</a></p></li>
+<li><p><a class="reference internal" href="#lightning-node-context-clear" id="id24">lightning node context clear</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#module-module-management" id="id25">module - Module Management</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-module-list" id="id26">lightning module list</a></p></li>
+<li><p><a class="reference internal" href="#lightning-module-upload" id="id27">lightning module upload</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#command-game-commands" id="id28">command - Game Commands</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-command-send" id="id29">lightning command send</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#snapshot-ecs-snapshots" id="id30">snapshot - ECS Snapshots</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-snapshot-get" id="id31">lightning snapshot get</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#ws-websocket-connections" id="id32">ws - WebSocket Connections</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-ws-connect-snapshot" id="id33">lightning ws connect snapshot</a></p></li>
+<li><p><a class="reference internal" href="#lightning-ws-connect-command" id="id34">lightning ws connect command</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#config-cli-configuration" id="id35">config - CLI Configuration</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-config-set" id="id36">lightning config set</a></p></li>
+<li><p><a class="reference internal" href="#lightning-config-get" id="id37">lightning config get</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#version-version-information" id="id38">version - Version Information</a></p>
+<ul>
+<li><p><a class="reference internal" href="#lightning-version" id="id39">lightning version</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#common-workflows" id="id40">Common Workflows</a></p></li>
+</ul>
+</nav>
+<section id="auth-authentication">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">auth - Authentication</a><a class="headerlink" href="#auth-authentication" title="Link to this heading"></a></h2>
+<p>Manage CLI authentication and credentials.</p>
+<section id="lightning-auth-login">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">lightning auth login</a><a class="headerlink" href="#lightning-auth-login" title="Link to this heading"></a></h3>
+<p>Authenticate with username and password.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>auth<span class="w"> </span>login
+
+<span class="c1"># Non-interactive</span>
+lightning<span class="w"> </span>auth<span class="w"> </span>login<span class="w"> </span>--username<span class="w"> </span>admin<span class="w"> </span>--password<span class="w"> </span>admin
+</pre></div>
+</div>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-lightning-auth-login-username">
+<span class="sig-name descname"><span class="pre">--username</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;user&gt;</span></span><a class="headerlink" href="#cmdoption-lightning-auth-login-username" title="Link to this definition"></a></dt>
+<dd><p>Username for non-interactive login</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-lightning-auth-login-password">
+<span class="sig-name descname"><span class="pre">--password</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;pass&gt;</span></span><a class="headerlink" href="#cmdoption-lightning-auth-login-password" title="Link to this definition"></a></dt>
+<dd><p>Password for non-interactive login</p>
+</dd></dl>
+
+<p>The CLI stores tokens in <code class="docutils literal notranslate"><span class="pre">~/.lightning.yaml</span></code> for future use.</p>
+</section>
+<section id="lightning-auth-token">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">lightning auth token</a><a class="headerlink" href="#lightning-auth-token" title="Link to this heading"></a></h3>
+<p>Set an API token directly.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>auth<span class="w"> </span>token<span class="w"> </span>lat_abc123def456...
+</pre></div>
+</div>
+<p>Use this with API tokens generated from the Web Panel.</p>
+</section>
+<section id="lightning-auth-status">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">lightning auth status</a><a class="headerlink" href="#lightning-auth-status" title="Link to this heading"></a></h3>
+<p>Show current authentication status.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>auth<span class="w"> </span>status
+<span class="c1"># Output: Authenticated with JWT token</span>
+</pre></div>
+</div>
+</section>
+<section id="lightning-auth-logout">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">lightning auth logout</a><a class="headerlink" href="#lightning-auth-logout" title="Link to this heading"></a></h3>
+<p>Remove saved authentication.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>auth<span class="w"> </span><span class="nb">logout</span>
+</pre></div>
+</div>
+</section>
+<section id="lightning-auth-refresh">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">lightning auth refresh</a><a class="headerlink" href="#lightning-auth-refresh" title="Link to this heading"></a></h3>
+<p>Refresh the authentication token using the stored refresh token.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>auth<span class="w"> </span>refresh
+</pre></div>
+</div>
+<p>This command uses the OAuth2 refresh_token grant type to obtain new access
+and refresh tokens without requiring credentials. The refresh token must have
+been obtained from a previous <code class="docutils literal notranslate"><span class="pre">lightning</span> <span class="pre">auth</span> <span class="pre">login</span></code>.</p>
+<p>Use this when your access token is expiring or has expired, to avoid having to
+re-enter credentials.</p>
+</section>
+</section>
+<section id="deploy-game-deployment">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">deploy - Game Deployment</a><a class="headerlink" href="#deploy-game-deployment" title="Link to this heading"></a></h2>
+<p>Deploy and manage game matches on the cluster.</p>
+<section id="lightning-deploy">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">lightning deploy</a><a class="headerlink" href="#lightning-deploy" title="Link to this heading"></a></h3>
+<p>Deploy a new game match to the cluster.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Deploy with modules</span>
+lightning<span class="w"> </span>deploy<span class="w"> </span>--modules<span class="w"> </span>EntityModule,HealthModule
+
+<span class="c1"># Deploy to specific node</span>
+lightning<span class="w"> </span>deploy<span class="w"> </span>--modules<span class="w"> </span>EntityModule<span class="w"> </span>--node<span class="w"> </span>node-1
+
+<span class="c1"># JSON output for scripting</span>
+lightning<span class="w"> </span>deploy<span class="w"> </span>--modules<span class="w"> </span>EntityModule<span class="w"> </span>-o<span class="w"> </span>json
+</pre></div>
+</div>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-lightning-deploy-m">
+<span id="cmdoption-lightning-deploy-modules"></span><span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--modules</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;list&gt;</span></span><a class="headerlink" href="#cmdoption-lightning-deploy-m" title="Link to this definition"></a></dt>
+<dd><p>Comma-separated list of modules to enable (required)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-lightning-deploy-n">
+<span id="cmdoption-lightning-deploy-node"></span><span class="sig-name descname"><span class="pre">-n</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--node</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;node-id&gt;</span></span><a class="headerlink" href="#cmdoption-lightning-deploy-n" title="Link to this definition"></a></dt>
+<dd><p>Preferred node ID for deployment</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-lightning-deploy-auto-start">
+<span class="sig-name descname"><span class="pre">--auto-start</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-lightning-deploy-auto-start" title="Link to this definition"></a></dt>
+<dd><p>Auto-start the container (default: true)</p>
+</dd></dl>
+
+<p><strong>Output includes:</strong></p>
+<ul class="simple">
+<li><p>Match ID</p></li>
+<li><p>Node ID</p></li>
+<li><p>Container ID</p></li>
+<li><p>HTTP endpoint</p></li>
+<li><p>WebSocket endpoint</p></li>
+<li><p>Commands endpoint</p></li>
+</ul>
+</section>
+<section id="lightning-deploy-undeploy">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">lightning deploy undeploy</a><a class="headerlink" href="#lightning-deploy-undeploy" title="Link to this heading"></a></h3>
+<p>Remove a deployed game from the cluster.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>deploy<span class="w"> </span>undeploy<span class="w"> </span>node-1-42-7
+</pre></div>
+</div>
+</section>
+<section id="lightning-deploy-status">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">lightning deploy status</a><a class="headerlink" href="#lightning-deploy-status" title="Link to this heading"></a></h3>
+<p>Get deployment status.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>deploy<span class="w"> </span>status<span class="w"> </span>node-1-42-7<span class="w"> </span>-o<span class="w"> </span>json
+</pre></div>
+</div>
+</section>
+</section>
+<section id="cluster-cluster-management">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">cluster - Cluster Management</a><a class="headerlink" href="#cluster-cluster-management" title="Link to this heading"></a></h2>
+<p>Monitor and manage the Thunder Engine cluster.</p>
+<section id="lightning-cluster-status">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">lightning cluster status</a><a class="headerlink" href="#lightning-cluster-status" title="Link to this heading"></a></h3>
+<p>Show cluster health overview.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>cluster<span class="w"> </span>status
+</pre></div>
+</div>
+<p><strong>Output includes:</strong></p>
+<ul class="simple">
+<li><p>Total nodes</p></li>
+<li><p>Healthy nodes</p></li>
+<li><p>Draining nodes</p></li>
+<li><p>Total capacity</p></li>
+<li><p>Used capacity</p></li>
+<li><p>Average saturation</p></li>
+</ul>
+</section>
+<section id="lightning-cluster-nodes">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">lightning cluster nodes</a><a class="headerlink" href="#lightning-cluster-nodes" title="Link to this heading"></a></h3>
+<p>List all nodes in the cluster.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>cluster<span class="w"> </span>nodes
+lightning<span class="w"> </span>cluster<span class="w"> </span>nodes<span class="w"> </span>-o<span class="w"> </span>json
+</pre></div>
+</div>
+<p><strong>Output columns:</strong></p>
+<ul class="simple">
+<li><p>Node ID</p></li>
+<li><p>Status (HEALTHY, DRAINING, OFFLINE)</p></li>
+<li><p>Address</p></li>
+<li><p>Containers</p></li>
+<li><p>Matches</p></li>
+<li><p>CPU %</p></li>
+<li><p>Memory</p></li>
+</ul>
+</section>
+<section id="lightning-cluster-node">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">lightning cluster node</a><a class="headerlink" href="#lightning-cluster-node" title="Link to this heading"></a></h3>
+<p>Get details for a specific node.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>cluster<span class="w"> </span>node<span class="w"> </span>node-1
+</pre></div>
+</div>
+</section>
+</section>
+<section id="match-match-management">
+<h2><a class="toc-backref" href="#id15" role="doc-backlink">match - Match Management</a><a class="headerlink" href="#match-match-management" title="Link to this heading"></a></h2>
+<p>Manage game matches in the cluster.</p>
+<section id="lightning-match-list">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">lightning match list</a><a class="headerlink" href="#lightning-match-list" title="Link to this heading"></a></h3>
+<p>List all matches in the cluster.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># List all matches</span>
+lightning<span class="w"> </span>match<span class="w"> </span>list
+
+<span class="c1"># Filter by status</span>
+lightning<span class="w"> </span>match<span class="w"> </span>list<span class="w"> </span>--status<span class="w"> </span>RUNNING
+</pre></div>
+</div>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-lightning-match-list-s">
+<span id="cmdoption-lightning-match-list-status"></span><span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--status</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;status&gt;</span></span><a class="headerlink" href="#cmdoption-lightning-match-list-s" title="Link to this definition"></a></dt>
+<dd><p>Filter by status: <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>, <code class="docutils literal notranslate"><span class="pre">FINISHED</span></code>, <code class="docutils literal notranslate"><span class="pre">ERROR</span></code></p>
+</dd></dl>
+
+</section>
+<section id="lightning-match-get">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">lightning match get</a><a class="headerlink" href="#lightning-match-get" title="Link to this heading"></a></h3>
+<p>Get details for a specific match.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>match<span class="w"> </span>get<span class="w"> </span>node-1-42-7
+</pre></div>
+</div>
+</section>
+<section id="lightning-match-join">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">lightning match join</a><a class="headerlink" href="#lightning-match-join" title="Link to this heading"></a></h3>
+<p>Join a match and get a match token for WebSocket connections.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>match<span class="w"> </span>join<span class="w"> </span>node-1-42-7<span class="w"> </span>--player-name<span class="w"> </span><span class="s2">&quot;Alice&quot;</span><span class="w"> </span>--player-id<span class="w"> </span><span class="s2">&quot;alice-001&quot;</span>
+</pre></div>
+</div>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-lightning-match-join-n">
+<span id="cmdoption-lightning-match-join-player-name"></span><span class="sig-name descname"><span class="pre">-n</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--player-name</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;name&gt;</span></span><a class="headerlink" href="#cmdoption-lightning-match-join-n" title="Link to this definition"></a></dt>
+<dd><p>Player display name (required)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-lightning-match-join-p">
+<span id="cmdoption-lightning-match-join-player-id"></span><span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--player-id</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;id&gt;</span></span><a class="headerlink" href="#cmdoption-lightning-match-join-p" title="Link to this definition"></a></dt>
+<dd><p>Player unique ID (required)</p>
+</dd></dl>
+
+<p><strong>Output includes:</strong></p>
+<ul class="simple">
+<li><p>Match token (stored for <code class="docutils literal notranslate"><span class="pre">ws</span></code> commands)</p></li>
+<li><p>Command WebSocket URL</p></li>
+<li><p>Snapshot WebSocket URL</p></li>
+<li><p>Token expiration time</p></li>
+</ul>
+<p>After joining, use <code class="docutils literal notranslate"><span class="pre">lightning</span> <span class="pre">ws</span> <span class="pre">connect</span></code> to start streaming.</p>
+</section>
+<section id="lightning-match-finish">
+<h3><a class="toc-backref" href="#id19" role="doc-backlink">lightning match finish</a><a class="headerlink" href="#lightning-match-finish" title="Link to this heading"></a></h3>
+<p>Mark a match as finished.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>match<span class="w"> </span>finish<span class="w"> </span>node-1-42-7
+</pre></div>
+</div>
+</section>
+<section id="lightning-match-delete">
+<h3><a class="toc-backref" href="#id20" role="doc-backlink">lightning match delete</a><a class="headerlink" href="#lightning-match-delete" title="Link to this heading"></a></h3>
+<p>Delete a match from the cluster.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>match<span class="w"> </span>delete<span class="w"> </span>node-1-42-7
+</pre></div>
+</div>
+</section>
+</section>
+<section id="node-node-operations">
+<h2><a class="toc-backref" href="#id21" role="doc-backlink">node - Node Operations</a><a class="headerlink" href="#node-node-operations" title="Link to this heading"></a></h2>
+<p>Manage node context and direct node operations.</p>
+<section id="lightning-node-context-set">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">lightning node context set</a><a class="headerlink" href="#lightning-node-context-set" title="Link to this heading"></a></h3>
+<p>Set the current node context.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>node<span class="w"> </span>context<span class="w"> </span><span class="nb">set</span><span class="w"> </span>node-1
+</pre></div>
+</div>
+<p>After setting context, commands like <code class="docutils literal notranslate"><span class="pre">snapshot</span></code> and <code class="docutils literal notranslate"><span class="pre">command</span></code> operate on this node.</p>
+</section>
+<section id="lightning-node-context-show">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">lightning node context show</a><a class="headerlink" href="#lightning-node-context-show" title="Link to this heading"></a></h3>
+<p>Show the current node context.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>node<span class="w"> </span>context<span class="w"> </span>show
+</pre></div>
+</div>
+</section>
+<section id="lightning-node-context-clear">
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">lightning node context clear</a><a class="headerlink" href="#lightning-node-context-clear" title="Link to this heading"></a></h3>
+<p>Clear the current node context.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>node<span class="w"> </span>context<span class="w"> </span>clear
+</pre></div>
+</div>
+</section>
+</section>
+<section id="module-module-management">
+<h2><a class="toc-backref" href="#id25" role="doc-backlink">module - Module Management</a><a class="headerlink" href="#module-module-management" title="Link to this heading"></a></h2>
+<p>Manage game modules.</p>
+<section id="lightning-module-list">
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">lightning module list</a><a class="headerlink" href="#lightning-module-list" title="Link to this heading"></a></h3>
+<p>List available modules.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>module<span class="w"> </span>list
+</pre></div>
+</div>
+</section>
+<section id="lightning-module-upload">
+<h3><a class="toc-backref" href="#id27" role="doc-backlink">lightning module upload</a><a class="headerlink" href="#lightning-module-upload" title="Link to this heading"></a></h3>
+<p>Upload a module JAR file.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>module<span class="w"> </span>upload<span class="w"> </span>my-module.jar
+</pre></div>
+</div>
+</section>
+</section>
+<section id="command-game-commands">
+<h2><a class="toc-backref" href="#id28" role="doc-backlink">command - Game Commands</a><a class="headerlink" href="#command-game-commands" title="Link to this heading"></a></h2>
+<p>Send commands to matches. Commands use the current match context set by
+<code class="docutils literal notranslate"><span class="pre">lightning</span> <span class="pre">node</span> <span class="pre">context</span> <span class="pre">match</span></code>.</p>
+<section id="lightning-command-send">
+<h3><a class="toc-backref" href="#id29" role="doc-backlink">lightning command send</a><a class="headerlink" href="#lightning-command-send" title="Link to this heading"></a></h3>
+<p>Send a command to a match using the current context.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># First, set the match context</span>
+lightning<span class="w"> </span>node<span class="w"> </span>context<span class="w"> </span>match<span class="w"> </span>node-1-42-7
+
+<span class="c1"># Then send commands (context determines target match)</span>
+lightning<span class="w"> </span><span class="nb">command</span><span class="w"> </span>send<span class="w"> </span>spawn<span class="w"> </span><span class="s1">&#39;{&quot;matchId&quot;:1,&quot;playerId&quot;:1,&quot;entityType&quot;:100}&#39;</span>
+lightning<span class="w"> </span><span class="nb">command</span><span class="w"> </span>send<span class="w"> </span>damage<span class="w"> </span><span class="s1">&#39;{&quot;entityId&quot;:1,&quot;amount&quot;:25.0}&#39;</span>
+</pre></div>
+</div>
+<p>The first argument is the command name, and the second argument (optional)
+is a JSON string containing the command parameters.</p>
+</section>
+</section>
+<section id="snapshot-ecs-snapshots">
+<h2><a class="toc-backref" href="#id30" role="doc-backlink">snapshot - ECS Snapshots</a><a class="headerlink" href="#snapshot-ecs-snapshots" title="Link to this heading"></a></h2>
+<p>Get ECS state snapshots. Snapshots use the current match context set by
+<code class="docutils literal notranslate"><span class="pre">lightning</span> <span class="pre">node</span> <span class="pre">context</span> <span class="pre">match</span></code>.</p>
+<section id="lightning-snapshot-get">
+<h3><a class="toc-backref" href="#id31" role="doc-backlink">lightning snapshot get</a><a class="headerlink" href="#lightning-snapshot-get" title="Link to this heading"></a></h3>
+<p>Get current snapshot for a match using the current context.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># First, set the match context</span>
+lightning<span class="w"> </span>node<span class="w"> </span>context<span class="w"> </span>match<span class="w"> </span>node-1-42-7
+
+<span class="c1"># Then get snapshot (context determines target match)</span>
+lightning<span class="w"> </span>snapshot<span class="w"> </span>get
+
+<span class="c1"># With JSON output</span>
+lightning<span class="w"> </span>snapshot<span class="w"> </span>get<span class="w"> </span>-o<span class="w"> </span>json
+</pre></div>
+</div>
+</section>
+</section>
+<section id="ws-websocket-connections">
+<h2><a class="toc-backref" href="#id32" role="doc-backlink">ws - WebSocket Connections</a><a class="headerlink" href="#ws-websocket-connections" title="Link to this heading"></a></h2>
+<p>Manage real-time WebSocket connections.</p>
+<section id="lightning-ws-connect-snapshot">
+<h3><a class="toc-backref" href="#id33" role="doc-backlink">lightning ws connect snapshot</a><a class="headerlink" href="#lightning-ws-connect-snapshot" title="Link to this heading"></a></h3>
+<p>Connect to snapshot WebSocket stream.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Uses context from &#39;match join&#39;</span>
+lightning<span class="w"> </span>ws<span class="w"> </span>connect<span class="w"> </span>snapshot
+</pre></div>
+</div>
+</section>
+<section id="lightning-ws-connect-command">
+<h3><a class="toc-backref" href="#id34" role="doc-backlink">lightning ws connect command</a><a class="headerlink" href="#lightning-ws-connect-command" title="Link to this heading"></a></h3>
+<p>Connect to command WebSocket for sending commands.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>ws<span class="w"> </span>connect<span class="w"> </span><span class="nb">command</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="config-cli-configuration">
+<h2><a class="toc-backref" href="#id35" role="doc-backlink">config - CLI Configuration</a><a class="headerlink" href="#config-cli-configuration" title="Link to this heading"></a></h2>
+<p>Manage CLI configuration.</p>
+<section id="lightning-config-set">
+<h3><a class="toc-backref" href="#id36" role="doc-backlink">lightning config set</a><a class="headerlink" href="#lightning-config-set" title="Link to this heading"></a></h3>
+<p>Set a configuration value.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>control_plane_url<span class="w"> </span>http://prod.example.com:8081
+lightning<span class="w"> </span>config<span class="w"> </span><span class="nb">set</span><span class="w"> </span>output_format<span class="w"> </span>json
+</pre></div>
+</div>
+</section>
+<section id="lightning-config-get">
+<h3><a class="toc-backref" href="#id37" role="doc-backlink">lightning config get</a><a class="headerlink" href="#lightning-config-get" title="Link to this heading"></a></h3>
+<p>Get a configuration value.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>config<span class="w"> </span>get<span class="w"> </span>control_plane_url
+</pre></div>
+</div>
+</section>
+</section>
+<section id="version-version-information">
+<h2><a class="toc-backref" href="#id38" role="doc-backlink">version - Version Information</a><a class="headerlink" href="#version-version-information" title="Link to this heading"></a></h2>
+<section id="lightning-version">
+<h3><a class="toc-backref" href="#id39" role="doc-backlink">lightning version</a><a class="headerlink" href="#lightning-version" title="Link to this heading"></a></h3>
+<p>Show CLI version information.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>lightning<span class="w"> </span>version
+</pre></div>
+</div>
+</section>
+</section>
+<section id="common-workflows">
+<h2><a class="toc-backref" href="#id40" role="doc-backlink">Common Workflows</a><a class="headerlink" href="#common-workflows" title="Link to this heading"></a></h2>
+<p><strong>Deploy and Monitor:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Deploy</span>
+<span class="nv">MATCH</span><span class="o">=</span><span class="k">$(</span>lightning<span class="w"> </span>deploy<span class="w"> </span>--modules<span class="w"> </span>Entity,Health<span class="w"> </span>-o<span class="w"> </span>quiet<span class="k">)</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;Deployed: </span><span class="nv">$MATCH</span><span class="s2">&quot;</span>
+
+<span class="c1"># Monitor</span>
+lightning<span class="w"> </span>match<span class="w"> </span>get<span class="w"> </span><span class="nv">$MATCH</span><span class="w"> </span>-o<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;.status&#39;</span>
+</pre></div>
+</div>
+<p><strong>Join and Interact:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Join match</span>
+lightning<span class="w"> </span>match<span class="w"> </span>join<span class="w"> </span><span class="nv">$MATCH</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">&quot;Player1&quot;</span><span class="w"> </span>-p<span class="w"> </span><span class="s2">&quot;p1&quot;</span>
+
+<span class="c1"># Set context for the match</span>
+lightning<span class="w"> </span>node<span class="w"> </span>context<span class="w"> </span>match<span class="w"> </span><span class="nv">$MATCH</span>
+
+<span class="c1"># Send commands (uses context)</span>
+lightning<span class="w"> </span><span class="nb">command</span><span class="w"> </span>send<span class="w"> </span>spawn<span class="w"> </span><span class="s1">&#39;{&quot;matchId&quot;:1,&quot;playerId&quot;:1,&quot;entityType&quot;:100}&#39;</span>
+
+<span class="c1"># Watch snapshots</span>
+lightning<span class="w"> </span>ws<span class="w"> </span>connect<span class="w"> </span>snapshot
+</pre></div>
+</div>
+<p><strong>Scripted Health Check:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Check all nodes are healthy</span>
+<span class="nv">UNHEALTHY</span><span class="o">=</span><span class="k">$(</span>lightning<span class="w"> </span>cluster<span class="w"> </span>nodes<span class="w"> </span>-o<span class="w"> </span>json<span class="w"> </span><span class="p">|</span><span class="w"> </span>jq<span class="w"> </span><span class="s1">&#39;[.[] | select(.status != &quot;HEALTHY&quot;)] | length&#39;</span><span class="k">)</span>
+<span class="k">if</span><span class="w"> </span><span class="o">[</span><span class="w"> </span><span class="s2">&quot;</span><span class="nv">$UNHEALTHY</span><span class="s2">&quot;</span><span class="w"> </span>-gt<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="o">]</span><span class="p">;</span><span class="w"> </span><span class="k">then</span>
+<span class="w">  </span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;WARNING: </span><span class="nv">$UNHEALTHY</span><span class="s2"> unhealthy nodes&quot;</span>
+<span class="w">  </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+<span class="k">fi</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Lightning CLI" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="configuration.html" class="btn btn-neutral float-right" title="CLI Configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Samantha Ireland.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
