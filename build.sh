@@ -24,7 +24,7 @@ DOCKER_IMAGE_CONTROL_PLANE="samanthacireland/thunder-control-plane"
 DOCKER_TAG="latest"
 VERSION="0.0.3-SNAPSHOT"
 FRONTEND_DIR="lightning/webpanel"
-DOCS_DIR="docs"
+DOCS_DIR="docs/source"
 # Tailscale IP - set via environment variable or detect automatically
 if [ -z "$TAILSCALE_IP" ]; then
     TAILSCALE_IP=$(/Applications/Tailscale.app/Contents/MacOS/Tailscale ip -4 2>/dev/null || echo "")
