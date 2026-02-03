@@ -1,434 +1,365 @@
 # Feature Comparison: main (Java) vs rust-rewrite
 
 **Generated:** 2026-02-02
+**Last Updated:** 2026-02-02 (comprehensive analysis)
 **Purpose:** Identify gaps between Java and Rust implementations for complete parity
 
 ---
 
 ## Executive Summary
 
-| Metric | Java (main) | Rust (rust-rewrite) | Gap |
-|--------|-------------|---------------------|-----|
-| Source Files | 715 | ~85 | -630 |
-| Test Files | 296 | ~60 | -236 |
-| Lines of Code | ~32,250 | ~18,500 | -13,750 |
-| Tests | ~600+ | 335 | ~265 |
-| Completion | 100% | 92% | 8% |
+| Metric | Java (main) | Rust (rust-rewrite) | Parity |
+|--------|-------------|---------------------|--------|
+| Source Files | 917 | ~85 | 9% |
+| Test Files | 279 | ~60 | 22% |
+| Services | 47 | ~20 | 43% |
+| REST Endpoints | 23 resource classes | 12 routes | 52% |
+| WebSocket Handlers | 8 | 1 | 13% |
+| Tests | ~600+ | 335 | 56% |
+| **Core Feature Parity** | 100% | **78%** | |
 
-### Recent Progress (2026-02-02)
-- ✅ Container Service implemented (32 tests)
-- ✅ Match Service with player management (17 tests)
-- ✅ Command System with queue (20 tests + 7 integration)
-- ✅ WebSocket axum integration (8 tests)
-- ✅ Game Loop with snapshot broadcasting (12 tests)
-- ✅ Complete REST API (18 tests)
-- ✅ PostgreSQL persistence layer (17 tests)
+### Completed Features
+- ✅ ECS with Legion (15 tests)
+- ✅ WASM sandbox with wasmtime (23 tests) - **BETTER than Java**
+- ✅ Native module hot-reload (29 tests)
+- ✅ JWT authentication with RBAC (51 tests)
+- ✅ WebSocket infrastructure (15 tests)
+- ✅ Container management (32 tests)
+- ✅ Match management (17 tests)
+- ✅ Command system (27 tests)
+- ✅ Game loop (12 tests)
+- ✅ REST API core endpoints (30 tests)
+- ✅ PostgreSQL persistence (17 tests)
 - ✅ OAuth2 token service (20 tests)
 - ✅ Resource management (10 tests)
-- ✅ Command registry and execution
+
+### Major Gaps Remaining
+- ❌ Control Plane (95 Java files, 10 services)
+- ❌ Player Sessions
+- ❌ Snapshot Delta Compression
+- ❌ Additional WebSocket handlers (7 of 8)
+- ❌ OIDC/JWKS endpoints
+- ❌ 9 Builtin Game Modules
 
 ---
 
-## Feature Parity Matrix
+## Detailed Gap Analysis
 
-### Core Infrastructure
+### 1. Control Plane (NOT STARTED - 95 Java files)
 
+The entire control plane subsystem is not implemented in Rust.
+
+**Java Services:**
+| Service | Purpose | Rust Status |
+|---------|---------|-------------|
+| `ClusterService` | Cluster status aggregation | ❌ |
+| `NodeRegistryService` | Node registration & heartbeats | ❌ |
+| `SchedulerService` | Match placement across nodes | ❌ |
+| `MatchRoutingService` | Route requests to nodes | ❌ |
+| `AutoscalerService` | Scale cluster based on load | ❌ |
+| `ModuleDistributionService` | Distribute modules to nodes | ❌ |
+| `ModuleRegistryService` | Global module registry | ❌ |
+| `NodeProxyService` | Proxy requests to nodes | ❌ |
+| `DashboardService` | Dashboard metrics | ❌ |
+| `ClusterMetricsService` | Real-time metrics | ❌ |
+
+**Java REST Endpoints (Control Plane):**
+- `POST /cluster/nodes/register` - Node heartbeat
+- `GET /cluster/nodes` - List nodes
+- `POST /cluster/matches/create` - Cluster-wide match
+- `GET /cluster/matches/{id}` - Get match location
+- `POST /cluster/matches/{id}/join` - Join via control plane
+- `POST /cluster/deploy` - Module deployment
+- `GET /cluster/metrics/dashboard` - Dashboard metrics
+- `GET/POST /cluster/autoscale` - Autoscale settings
+
+**Priority:** LOW (single-node deployment works without this)
+
+---
+
+### 2. Player Sessions (NOT STARTED)
+
+**Java Implementation:**
+| Class | Purpose | Rust Status |
+|-------|---------|-------------|
+| `PlayerSession` | Player-match session entity | ❌ |
+| `PlayerSessionService` | Session lifecycle | ❌ |
+| `PlayerSessionRepository` | Session persistence | ❌ |
+| `InMemorySessionRepository` | In-memory store | ❌ |
+
+**REST Endpoints:**
+- `GET /api/containers/{id}/sessions` - List sessions
+- `GET /api/containers/{id}/sessions/{sessionId}` - Get session
+
+**Priority:** MEDIUM (needed for player state tracking)
+
+---
+
+### 3. Snapshot System (PARTIAL)
+
+**Java Implementation:**
+| Class | Rust Status | Notes |
+|-------|-------------|-------|
+| `Snapshot` | ✅ | `WorldSnapshot` |
+| `DeltaSnapshot` | ⚠️ | `WorldDelta` exists but no compression |
+| `SnapshotHistory` | ❌ | Not implemented |
+| `DeltaCompressionService` | ❌ | Not implemented |
+| `SnapshotRestoreService` | ❌ | Not implemented |
+| `SnapshotFilter` | ❌ | Player filtering not implemented |
+| `SnapshotPersistenceConfig` | ❌ | Not implemented |
+| `MongoSnapshotPersistence` | ❌ | Not implemented |
+
+**REST Endpoints:**
+- `GET /api/containers/{id}/snapshots/{matchId}` - ⚠️ Partial
+- `POST /api/containers/{id}/snapshots/restore` - ❌
+- `GET /api/containers/{id}/history` - ❌
+
+**Priority:** MEDIUM (delta compression improves bandwidth)
+
+---
+
+### 4. WebSocket Handlers (1 of 8 implemented)
+
+**Java WebSocket Endpoints:**
+| Endpoint | Purpose | Rust Status |
+|----------|---------|-------------|
+| `/ws/.../snapshot` | Full ECS snapshots | ✅ Basic |
+| `/ws/.../snapshot/delta` | Delta-compressed | ❌ |
+| `/ws/.../snapshot/player/{id}` | Player-scoped | ❌ |
+| `/ws/.../snapshot/player/{id}/delta` | Player delta | ❌ |
+| `/ws/.../commands` | Command streaming | ❌ |
+| `/ws/.../simulation` | Simulation state | ❌ |
+| `/ws/.../errors/{playerId}` | Error streaming | ❌ |
+
+**WebSocket Infrastructure (Java):**
+- `WebSocketMetrics` - Metrics per connection | ❌
+- `WebSocketConnectionLimiter` - Connection pooling | ❌
+- `WebSocketRateLimiter` - Rate limiting | ❌
+- JWT/API/Match token filters | ⚠️ Partial
+
+**Priority:** HIGH (needed for client communication)
+
+---
+
+### 5. Additional REST Endpoints (12 missing)
+
+**Container Operations:**
+| Endpoint | Java | Rust |
+|----------|:----:|:----:|
+| `POST /api/containers/{id}/ticks/auto` | ✅ | ❌ |
+| `GET /api/containers/{id}/commands/errors` | ✅ | ❌ |
+| `GET /api/containers/{id}/players` | ✅ | ❌ |
+| `GET /api/containers/{id}/sessions` | ✅ | ❌ |
+| `POST /api/containers/{id}/snapshots/restore` | ✅ | ❌ |
+| `GET /api/containers/{id}/history` | ✅ | ❌ |
+| `GET /api/containers/{id}/metrics` | ✅ | ❌ |
+
+**Auth Endpoints:**
+| Endpoint | Java | Rust |
+|----------|:----:|:----:|
+| `POST /auth/match-tokens` | ✅ | ❌ |
+| `GET /.well-known/openid-configuration` | ✅ | ❌ |
+| `GET /.well-known/jwks.json` | ✅ | ❌ |
+| `GET /userinfo` | ✅ | ❌ |
+| `POST /auth/token/exchange` | ✅ | ❌ |
+
+**Priority:** MEDIUM
+
+---
+
+### 6. Auth Features (MOSTLY COMPLETE)
+
+**JWT:**
 | Feature | Java | Rust | Status |
 |---------|:----:|:----:|--------|
-| ECS (Entity-Component-System) | ✅ | ✅ | **Complete** - Legion-backed, 15 tests |
-| Tick-based simulation | ✅ | ⚠️ | Partial - advance() works, no loop |
-| Component registry | ✅ | ✅ | Complete - type ID system |
-| Query caching | ✅ | ❌ | Not implemented |
-| Change tracking | ✅ | ✅ | Complete - delta generation |
-
-### Sandbox/Isolation
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| ClassLoader isolation | ✅ | N/A | Java-only approach |
-| WASM sandbox | ❌ | ✅ | **New** - wasmtime with security |
-| Fuel metering | N/A | ✅ | Complete - 13 security tests |
-| Epoch interruption | N/A | ✅ | Complete |
-| Memory limits | ⚠️ | ✅ | Better in Rust (StoreLimits) |
-| Host functions | N/A | ✅ | Complete - 10 functions, rate-limited |
-
-### Module System
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| Hot-reload (native) | ✅ | ✅ | **Complete** - libloading, 29 tests |
-| Module discovery | ✅ | ✅ | Complete - inventory crate |
-| ABI version checking | ✅ | ✅ | Complete |
-| Dependency resolution | ✅ | ✅ | Complete - topological sort |
-| Circular detection | ✅ | ✅ | Complete |
-| Module lifecycle | ✅ | ✅ | Complete - on_load/tick/unload |
-
-### Authentication & Authorization
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| JWT generation | ✅ | ✅ | **Complete** - HS256, 31 tests |
-| JWT validation | ✅ | ✅ | Complete |
+| HMAC-256 signing | ✅ | ✅ | Complete |
+| RSA-256 signing | ✅ | ❌ | Gap |
+| Token validation | ✅ | ✅ | Complete |
 | Token refresh | ✅ | ✅ | Complete |
-| Password hashing | ✅ BCrypt | ✅ Argon2id | **Better** - OWASP params |
-| RBAC | ✅ | ✅ | Complete |
-| OAuth2 grants | ✅ | ✅ | **Complete** - Client credentials, auth code |
-| Service-to-service auth | ✅ | ✅ | **Complete** - Client credentials flow |
-| API tokens | ✅ | ✅ | **Complete** - Token introspection |
-| Match tokens | ✅ | ⚠️ | Partial - Token scopes support it |
+| JWKS endpoint | ✅ | ❌ | Gap |
+| OIDC discovery | ✅ | ❌ | Gap |
 
-### Container Management
+**OAuth2:**
+| Grant Type | Java | Rust | Status |
+|------------|:----:|:----:|--------|
+| Password | ✅ | ✅ | Complete |
+| Refresh token | ✅ | ✅ | Complete |
+| Client credentials | ✅ | ✅ | Complete |
+| Authorization code | ✅ | ✅ | Complete |
+| Token exchange | ✅ | ❌ | Gap |
 
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| Container creation | ✅ | ✅ | **Complete** - ContainerService |
-| Container lifecycle | ✅ | ✅ | **Complete** - create/delete/tick |
-| Container isolation | ✅ | ✅ | **Complete** - Per-container ECS world |
-| Tenant scoping | ✅ | ✅ | **Complete** - Enforced in service |
-| Resource limits | ✅ | ⚠️ | Partial - Types exist |
+**Token Types:**
+| Type | Java | Rust | Status |
+|------|:----:|:----:|--------|
+| Access token | ✅ | ✅ | Complete |
+| Refresh token | ✅ | ✅ | Complete |
+| API token | ✅ | ✅ | Complete |
+| Match token | ✅ | ❌ | Gap |
 
-### Match Management
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| Match creation | ✅ | ✅ | **Complete** - In Container |
-| Player join/leave | ✅ | ✅ | **Complete** - join_match/leave_match |
-| Match state | ✅ | ✅ | **Complete** - Pending/Active/Completed |
-| Match completion | ✅ | ✅ | **Complete** - State transitions |
-
-### Command System
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| Command queue | ✅ | ✅ | **Complete** - CommandQueue |
-| Command execution | ✅ | ✅ | **Complete** - execute_all() |
-| Command builders | ✅ | ⚠️ | Partial - SpawnEntity, DespawnEntity |
-| Module-scoped commands | ✅ | ❌ | **Gap** - Not implemented |
-
-### WebSocket Streaming
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| Connection manager | ✅ | ✅ | Complete - DashMap |
-| Subscription manager | ✅ | ✅ | Complete |
-| Protocol types | ✅ | ✅ | Complete |
-| Ping/pong | ✅ | ✅ | Complete |
-| Full snapshots | ✅ | ⚠️ | Infrastructure only |
-| Delta snapshots | ✅ | ⚠️ | Infrastructure only |
-| **Axum integration** | N/A | ✅ | **Complete** - ws_upgrade handler |
-| Rate limiting | ✅ | ❌ | **Gap** - Not implemented |
-
-### REST API
-
-| Endpoint | Java | Rust | Status |
-|----------|:----:|:----:|--------|
-| `GET /health` | ✅ | ✅ | Complete |
-| `GET /api/containers` | ✅ | ✅ | **Complete** |
-| `POST /api/containers` | ✅ | ✅ | **Complete** |
-| `GET /api/containers/{id}` | ✅ | ✅ | **Complete** |
-| `DELETE /api/containers/{id}` | ✅ | ✅ | **Complete** |
-| `POST /api/containers/{id}/tick` | ✅ | ✅ | **Complete** |
-| `POST /api/containers/{id}/matches` | ✅ | ✅ | **Complete** |
-| `GET /api/containers/{id}/matches` | ✅ | ✅ | **Complete** |
-| `GET /api/containers/{id}/matches/{id}` | ✅ | ✅ | **Complete** |
-| `DELETE /api/containers/{id}/matches/{id}` | ✅ | ✅ | **Complete** |
-| `POST /.../matches/{id}/join` | ✅ | ✅ | **Complete** |
-| `POST /.../matches/{id}/leave` | ✅ | ✅ | **Complete** |
-| `POST /.../matches/{id}/start` | ✅ | ✅ | **Complete** |
-| `POST /api/containers/{id}/commands` | ✅ | ⚠️ | Partial - structure exists |
-| `POST /api/containers/{id}/modules` | ✅ | ⚠️ | Partial - structure exists |
-| `GET /api/resources` | ✅ | ✅ | **Complete** |
-| `POST /api/resources` | ✅ | ✅ | **Complete** |
-| `GET /api/resources/{id}` | ✅ | ✅ | **Complete** |
-| `DELETE /api/resources/{id}` | ✅ | ✅ | **Complete** |
-| `WS /ws/matches/{matchId}` | ✅ | ✅ | **Complete** |
-
-### Persistence
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| Database integration | ✅ MongoDB | ✅ PostgreSQL | **Complete** - sqlx |
-| User repository | ✅ | ✅ | **Complete** |
-| Container repository | ✅ | ✅ | **Complete** |
-| Match repository | ✅ | ✅ | **Complete** |
-| Snapshot persistence | ✅ | ⚠️ | Partial - structure exists |
-| History/restore | ✅ | ❌ | **Gap** |
-| User storage | ✅ | ❌ | **Gap** |
-
-### Control Plane
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| Node registry | ✅ | ❌ | **Gap** - Not started |
-| Cluster management | ✅ | ❌ | **Gap** |
-| Match routing | ✅ | ❌ | **Gap** |
-| Autoscaling | ✅ | ❌ | **Gap** |
-| Module deployment | ✅ | ❌ | **Gap** |
-
-### Admin Dashboard
-
-| Feature | Java | Rust | Status |
-|---------|:----:|:----:|--------|
-| React web UI | ✅ | ❌ | **Gap** - Shared frontend |
+**Priority:** LOW (core auth complete)
 
 ---
 
-## Test Coverage Comparison
+### 7. Game Modules (0 of 9 implemented)
 
-### Java Test Categories (~600 tests)
+**Java Builtin Modules:**
+| Module | Purpose | Components | Rust Status |
+|--------|---------|------------|-------------|
+| `EntityModule` | Base entity lifecycle | ENTITY_ID, OWNER_ID | ❌ |
+| `MovementModule` | Position/velocity | POSITION, VELOCITY | ❌ |
+| `HealthModule` | Health/damage | HEALTH, MAX_HEALTH | ❌ |
+| `BoxColliderModule` | AABB collision | BOX_COLLIDER, COLLISION | ❌ |
+| `ProjectileModule` | Projectile mechanics | PROJECTILE, DAMAGE | ❌ |
+| `ItemsModule` | Inventory system | ITEM, INVENTORY | ❌ |
+| `RenderModule` | Sprite rendering | SPRITE, Z_INDEX | ❌ |
+| `RigidBodyModule` | Physics simulation | MASS, FORCE | ❌ |
+| `GridMapModule` | Map/grid management | GRID_POSITION, TILE | ❌ |
 
-| Category | Count | Ported |
-|----------|-------|--------|
-| ECS unit tests | ~50 | 15 (30%) |
-| Auth unit tests | ~40 | 31 (78%) |
-| Module tests | ~30 | 29 (97%) |
-| WebSocket tests | ~25 | 15 (60%) |
-| Container tests | ~40 | 0 (0%) |
-| Match tests | ~35 | 0 (0%) |
-| Command tests | ~30 | 0 (0%) |
-| API acceptance | ~50 | 0 (0%) |
-| Playwright E2E | ~29 | 0 (0%) |
-| Integration | ~50 | 15 (30%) |
-| **TOTAL** | ~379 | 105 (28%) |
+**Module Features:**
+| Feature | Java | Rust | Status |
+|---------|:----:|:----:|--------|
+| Module interface | ✅ | ✅ | Complete |
+| Module context/DI | ✅ | ⚠️ | Partial |
+| Module exports | ✅ | ❌ | Gap |
+| Compound modules | ✅ | ❌ | Gap |
+| Module commands | ✅ | ❌ | Gap |
 
-### Rust-Only Tests (+56)
-
-| Category | Count | Notes |
-|----------|-------|-------|
-| WASM security | 13 | New - sandbox escape prevention |
-| WASM host functions | 10 | New - rate limiting |
-| Core types | 13 | New - strongly-typed IDs |
-| Net server | 16 | New - axum infrastructure |
-| Test utils | 1 | Harness |
-| Doc tests | 3 | Auth examples |
+**Priority:** HIGH (needed for game functionality)
 
 ---
 
-## Priority Gap List
+### 8. ECS Features (MOSTLY COMPLETE)
 
-### Priority 1: CRITICAL (Blocks MVP) - MOSTLY COMPLETE ✅
+| Feature | Java | Rust | Status |
+|---------|:----:|:----:|--------|
+| Entity creation | ✅ | ✅ | Complete |
+| Component storage | ✅ | ✅ | Complete (Legion) |
+| O(1) access | ✅ | ✅ | Complete |
+| Change tracking | ✅ | ✅ | Complete |
+| Columnar storage | ✅ | ✅ | Complete (Legion) |
+| Component permissions | ✅ | ❌ | Gap |
+| Module-specific components | ✅ | ❌ | Gap |
+| Player filtering | ✅ | ❌ | Gap |
 
-1. ~~**Container Service**~~ ✅ DONE
-   - Implemented: `ContainerService`, `Container` with ECS world
-   - 32 tests passing
-
-2. ~~**Match Service**~~ ✅ DONE
-   - Implemented: Match lifecycle, player join/leave, state transitions
-   - 17 tests passing
-
-3. ~~**Command System**~~ ✅ DONE
-   - Implemented: `CommandQueue`, `Command` trait, `SpawnEntityCommand`, `DespawnEntityCommand`
-   - 27 tests passing (20 core + 7 integration)
-
-4. ~~**WebSocket Integration**~~ ✅ DONE
-   - Implemented: `ws_upgrade` handler, message routing
-   - 8 tests passing
-
-5. ~~**Snapshot Streaming**~~ ✅ DONE
-   - Implemented: GameLoop broadcasts snapshots via broadcast channel
-   - WebSocket handlers can subscribe to receive updates
-   - 12 tests passing
-
-### Priority 2: HIGH (Full Feature Parity)
-
-6. **Player Session Management**
-   - Java: `PlayerSession`, `PlayerSessionService`
-   - Rust: Not implemented
-
-7. **REST API Completion** - All container/match endpoints
-   - Java: ~20 endpoints
-   - Rust: 3 endpoints (2 stubs)
-
-8. **Module Integration** - Wire modules to ECS/containers
-   - Java: Module commands affect ECS
-   - Rust: Modules load, don't integrate
-
-9. **Resource Management** - Upload/download game assets
-   - Java: `ResourceManager`, REST endpoints
-   - Rust: Not implemented
-
-### Priority 3: MEDIUM (Production Readiness)
-
-10. **MongoDB Persistence**
-    - Java: Full MongoDB layer
-    - Rust: Not started
-
-11. **OAuth2 Grants** - Client credentials, refresh
-    - Java: Full OAuth2 implementation
-    - Rust: JWT only
-
-12. **API Tokens** - Machine-to-machine auth
-    - Java: `ApiToken`, `ApiTokenService`
-    - Rust: Not implemented
-
-### Priority 4: LOW (Cluster Features)
-
-13. **Control Plane** - Multi-node orchestration
-    - Java: Full implementation
-    - Rust: Not started
-
-14. **Autoscaling** - Dynamic node management
-    - Java: Implemented
-    - Rust: Not started
+**Priority:** MEDIUM
 
 ---
 
-## Implementation Tasks
+### 9. Command System (MOSTLY COMPLETE)
 
-### Task 1: Container Service (stormstack-server)
-```rust
-// Need to implement:
-pub struct ContainerService {
-    containers: DashMap<ContainerId, Container>,
-}
+| Feature | Java | Rust | Status |
+|---------|:----:|:----:|--------|
+| Command queue | ✅ | ✅ | Complete |
+| Command execution | ✅ | ✅ | Complete |
+| Command builders | ✅ | ⚠️ | 2 of many |
+| Module commands | ✅ | ❌ | Gap |
+| Command errors | ✅ | ❌ | Gap |
+| Error collection | ✅ | ❌ | Gap |
 
-impl ContainerService {
-    pub fn create(&self, tenant_id: TenantId, config: ContainerConfig) -> Result<ContainerId>;
-    pub fn get(&self, id: ContainerId) -> Option<Container>;
-    pub fn delete(&self, id: ContainerId) -> Result<()>;
-    pub fn list(&self, tenant_id: TenantId) -> Vec<ContainerSummary>;
-}
+**Priority:** MEDIUM
 
-pub struct Container {
-    id: ContainerId,
-    tenant_id: TenantId,
-    world: SharedWorld,
-    matches: DashMap<MatchId, Match>,
-    modules: Vec<LoadedModule>,
-}
+---
+
+## Implementation Priority
+
+### Tier 1: CRITICAL (Blocks game functionality)
+1. **Game Modules** - At least EntityModule, MovementModule, HealthModule
+2. **Delta WebSocket** - For efficient state streaming
+3. **Player-scoped snapshots** - For client filtering
+
+### Tier 2: HIGH (Full feature parity)
+4. **Player Sessions** - Session tracking
+5. **Snapshot restoration** - State recovery
+6. **Match tokens** - Match-scoped auth
+7. **Auto-play toggle** - Continuous simulation
+
+### Tier 3: MEDIUM (Production features)
+8. **OIDC/JWKS** - Standard auth discovery
+9. **Command errors** - Error reporting
+10. **Metrics endpoints** - Observability
+11. **Component permissions** - Multi-tenant security
+
+### Tier 4: LOW (Cluster features)
+12. **Control Plane** - Multi-node deployment
+13. **Autoscaling** - Dynamic scaling
+14. **Module distribution** - Cluster-wide modules
+
+---
+
+## Test Coverage Gap
+
+| Category | Java Tests | Rust Tests | Gap |
+|----------|-----------|------------|-----|
+| ECS | ~50 | 22 | 28 |
+| Auth | ~60 | 51 | 9 |
+| Modules | ~30 | 29 | 1 |
+| WebSocket | ~40 | 15 | 25 |
+| Container | ~40 | 32 | 8 |
+| Match | ~35 | 17 | 18 |
+| Command | ~30 | 27 | 3 |
+| Snapshot | ~25 | 5 | 20 |
+| Control Plane | ~50 | 0 | 50 |
+| API acceptance | ~50 | 30 | 20 |
+| E2E | ~29 | 0 | 29 |
+| **TOTAL** | ~439 | 228 | 211 |
+
+**Note:** Rust has 107 additional tests (WASM security, core types, resources, OAuth2) not in Java.
+
+---
+
+## Recommended Implementation Order
+
+### Phase 1: Game Functionality (Est: 50 tests)
+```
+1. EntityModule with basic components
+2. MovementModule with position/velocity
+3. HealthModule with damage system
+4. Delta WebSocket endpoint
+5. Player-scoped snapshot filtering
 ```
 
-### Task 2: Match Service (stormstack-server)
-```rust
-pub struct MatchService;
-
-impl MatchService {
-    pub fn create(&self, container_id: ContainerId, config: MatchConfig) -> Result<MatchId>;
-    pub fn get(&self, match_id: MatchId) -> Option<Match>;
-    pub fn join(&self, match_id: MatchId, player: PlayerId) -> Result<()>;
-    pub fn leave(&self, match_id: MatchId, player: PlayerId) -> Result<()>;
-    pub fn snapshot(&self, match_id: MatchId) -> Result<WorldSnapshot>;
-}
-
-pub struct Match {
-    id: MatchId,
-    players: HashSet<PlayerId>,
-    state: MatchState,
-    created_at: Instant,
-}
+### Phase 2: Production Features (Est: 40 tests)
+```
+6. Player session management
+7. Snapshot persistence and restore
+8. Match tokens
+9. OIDC discovery and JWKS
+10. Command error collection
 ```
 
-### Task 3: Command System (stormstack-core or stormstack-server)
-```rust
-pub trait Command: Send + Sync {
-    fn execute(&self, world: &mut StormWorld) -> Result<CommandResult>;
-    fn name(&self) -> &'static str;
-}
-
-pub struct CommandQueue {
-    queue: VecDeque<Box<dyn Command>>,
-}
-
-impl CommandQueue {
-    pub fn push(&mut self, cmd: Box<dyn Command>);
-    pub fn execute_all(&mut self, world: &mut StormWorld) -> Vec<CommandResult>;
-}
+### Phase 3: Advanced Features (Est: 30 tests)
+```
+11. Remaining game modules (collision, projectiles, items)
+12. Component permissions
+13. Module exports/compound modules
+14. Additional WebSocket handlers
 ```
 
-### Task 4: WebSocket Integration (stormstack-server)
-```rust
-// Add to routes.rs:
-pub async fn ws_upgrade(
-    ws: WebSocketUpgrade,
-    State(state): State<SharedAppState>,
-    Path(match_id): Path<MatchId>,
-) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| handle_socket(socket, state, match_id))
-}
-
-async fn handle_socket(
-    socket: WebSocket,
-    state: SharedAppState,
-    match_id: MatchId,
-) {
-    let (sender, receiver) = socket.split();
-    let conn_id = ConnectionId::new();
-
-    state.ws.connections.add(conn_id, sender);
-    state.ws.subscriptions.subscribe(conn_id, match_id);
-
-    // Handle incoming messages
-    // Stream snapshots to subscribers
-}
+### Phase 4: Cluster (Est: 50 tests)
 ```
-
-### Task 5: Game Loop (stormstack-server)
-```rust
-pub struct GameLoop {
-    containers: Arc<ContainerService>,
-    tick_rate: Duration,
-}
-
-impl GameLoop {
-    pub async fn run(&self, shutdown: CancellationToken) {
-        let mut interval = tokio::time::interval(self.tick_rate);
-
-        while !shutdown.is_cancelled() {
-            interval.tick().await;
-
-            for container in self.containers.iter() {
-                container.tick();
-
-                for (match_id, match_) in container.matches.iter() {
-                    let snapshot = match_.world.snapshot()?;
-                    self.broadcast_snapshot(match_id, snapshot).await;
-                }
-            }
-        }
-    }
-}
+15. Node registry and heartbeats
+16. Match routing
+17. Module distribution
+18. Autoscaling
 ```
 
 ---
 
-## Recommended Parallel Implementation
+## Current Status Summary
 
-### Batch 1 (No dependencies - can run in parallel)
-- [ ] Container Service implementation
-- [ ] Match Service implementation
-- [ ] Command trait and queue
+| Component | Completion | Tests |
+|-----------|------------|-------|
+| stormstack-auth | 90% | 51 |
+| stormstack-core | 95% | 36 |
+| stormstack-db | 100% | 17 |
+| stormstack-ecs | 85% | 22 |
+| stormstack-modules | 80% | 29 |
+| stormstack-net | 100% | 16 |
+| stormstack-server | 75% | 122 |
+| stormstack-test-utils | 100% | 1 |
+| stormstack-wasm | 100% | 13 |
+| stormstack-wasm-host | 100% | 10 |
+| stormstack-ws | 70% | 15 |
+| **OVERALL** | **78%** | **335** |
 
-### Batch 2 (Depends on Batch 1)
-- [ ] REST API endpoints (container, match)
-- [ ] Game loop integration
-- [ ] WebSocket upgrade wiring
-
-### Batch 3 (Depends on Batch 2)
-- [ ] Snapshot streaming
-- [ ] Player session management
-- [ ] End-to-end integration tests
-
-### Batch 4 (Optional - Production features)
-- [ ] MongoDB persistence
-- [ ] OAuth2 grants
-- [ ] Control plane integration
-
----
-
-## Conclusion
-
-The Rust rewrite has successfully implemented the **foundational infrastructure** (61% complete):
-- ✅ ECS with change tracking
-- ✅ WASM sandbox with comprehensive security (BETTER than Java)
-- ✅ Native module hot-reload
-- ✅ JWT authentication
-- ✅ WebSocket infrastructure
-- ✅ HTTP server framework
-
-Critical gaps remaining for MVP:
-- ❌ Container/Match lifecycle management
-- ❌ Command system
-- ❌ WebSocket integration with snapshot streaming
-- ❌ Complete REST API
-
-Estimated effort: 4-6 days to reach feature parity with core Java functionality.
+The Rust rewrite has solid infrastructure and exceeds Java in WASM security. Primary gaps are game modules, advanced WebSocket features, and the control plane.
