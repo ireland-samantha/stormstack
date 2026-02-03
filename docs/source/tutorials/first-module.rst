@@ -227,6 +227,11 @@ Part 6: Deploy the Module
 Upload to Control Plane
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+.. note::
+
+   You must be authenticated before uploading modules. Run ``lightning auth login``
+   first if you haven't already.
+
 .. code-block:: bash
 
    lightning module upload HealthModule 1.0.0 ./target/health-module-1.0.0.jar
@@ -243,6 +248,12 @@ Part 7: Test the Module
 
 Create a Match with Your Module
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. note::
+
+   ``EntityModule`` is a built-in module that ships with Thunder Engine. It provides
+   basic entity management including the ``spawn`` command used below. Your custom
+   ``HealthModule`` extends its functionality.
 
 .. code-block:: bash
 
@@ -266,7 +277,7 @@ First, we need to spawn an entity and give it health. Let's extend the spawn com
    lightning command send spawn '{"matchId":1,"playerId":1,"entityType":100}'
 
    # Advance tick
-   lightning node simulation tick
+   lightning node tick advance
 
    # Check snapshot to get entity ID
    lightning snapshot get -o json
@@ -290,7 +301,7 @@ Test the Damage Command
    lightning command send damage '{"entityId":1,"amount":25.0}'
 
    # Advance tick
-   lightning node simulation tick
+   lightning node tick advance
 
    # Check HP (should be reduced)
    lightning snapshot get -o json
@@ -304,7 +315,7 @@ Test Death System
    lightning command send damage '{"entityId":1,"amount":1000.0}'
 
    # Advance tick (death system runs)
-   lightning node simulation tick
+   lightning node tick advance
 
    # Entity should be gone
    lightning snapshot get -o json

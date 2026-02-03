@@ -8,6 +8,17 @@ Configuration File
 
 **Location:** ``~/.lightning.yaml``
 
+.. warning::
+
+   The configuration file contains sensitive authentication tokens. For security,
+   ensure the file has restricted permissions:
+
+   .. code-block:: bash
+
+      chmod 600 ~/.lightning.yaml
+
+   This prevents other users on the system from reading your tokens.
+
 **Example configuration:**
 
 .. code-block:: yaml

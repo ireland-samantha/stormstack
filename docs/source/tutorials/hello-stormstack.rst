@@ -57,7 +57,7 @@ List Containers
 .. code-block:: bash
 
    # View all containers on the node
-   lightning node context node node-1
+   lightning node context set node-1
    # Then use the REST API or web dashboard to inspect
 
 Part 2: The Tick Cycle
@@ -87,7 +87,7 @@ Let's advance the simulation one tick at a time:
 .. code-block:: bash
 
    # Advance one tick
-   lightning node simulation tick
+   lightning node tick advance
 
    # Check the tick number again
    lightning snapshot get -o json | grep tick
@@ -108,7 +108,7 @@ Spawn an Entity
    lightning command send spawn '{"matchId":1,"playerId":1,"entityType":100}'
 
    # Advance a tick to process the command
-   lightning node simulation tick
+   lightning node tick advance
 
 View the Entity
 ~~~~~~~~~~~~~~~
@@ -153,7 +153,7 @@ Spawn More Entities
    lightning command send spawn '{"matchId":1,"playerId":2,"entityType":300}'
 
    # Process them
-   lightning node simulation tick
+   lightning node tick advance
 
    # View all entities
    lightning snapshot get -o json
@@ -165,6 +165,15 @@ Instead of advancing manually, let's run the simulation in real-time.
 
 Start Auto-Advance
 ~~~~~~~~~~~~~~~~~~
+
+.. note::
+
+   Before running simulation commands, ensure you have set both node and match context:
+
+   .. code-block:: bash
+
+      lightning node context set node-1
+      lightning node context match node-1-1-1
 
 .. code-block:: bash
 
@@ -201,14 +210,14 @@ The WebSocket endpoint is:
 
 .. code-block:: text
 
-   ws://localhost:8080/ws/containers/{containerId}/matches/{matchId}/snapshots
+   ws://localhost:8080/ws/containers/{containerId}/matches/{matchId}/snapshot
 
 You can test with the CLI:
 
 .. code-block:: bash
 
    # Stream snapshots to terminal
-   lightning ws connect --snapshot
+   lightning ws connect snapshot
 
 Part 6: Cleanup
 ---------------

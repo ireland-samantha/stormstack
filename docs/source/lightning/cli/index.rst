@@ -53,6 +53,9 @@ Quick Start
       # Or use API token
       lightning auth token lat_abc123...
 
+      # Refresh token when it expires (instead of re-logging in)
+      lightning auth refresh
+
 3. **Check cluster health:**
 
    .. code-block:: bash

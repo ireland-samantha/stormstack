@@ -41,6 +41,7 @@ quarkus-api/modules/
 
 ### Lightning CLI binary ###
 lightning/cli/lightning
+lightning/cli/thunder
 
 ### Frontend (React dashboard) ###
 **/node_modules/

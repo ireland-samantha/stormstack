@@ -72,6 +72,24 @@ Remove saved authentication.
 
    lightning auth logout
 
+.. program:: lightning auth refresh
+
+lightning auth refresh
+~~~~~~~~~~~~~~~~~~~~~~
+
+Refresh the authentication token using the stored refresh token.
+
+.. code-block:: bash
+
+   lightning auth refresh
+
+This command uses the OAuth2 refresh_token grant type to obtain new access
+and refresh tokens without requiring credentials. The refresh token must have
+been obtained from a previous ``lightning auth login``.
+
+Use this when your access token is expiring or has expired, to avoid having to
+re-enter credentials.
+
 deploy - Game Deployment
 ------------------------
 
@@ -351,46 +369,51 @@ Upload a module JAR file.
 command - Game Commands
 -----------------------
 
-Send commands to matches.
+Send commands to matches. Commands use the current match context set by
+``lightning node context match``.
 
 .. program:: lightning command send
 
 lightning command send
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Send a command to a match.
+Send a command to a match using the current context.
 
 .. code-block:: bash
 
-   lightning command send SpawnEntity --match node-1-42-7 --params '{"x": 10, "y": 20}'
+   # First, set the match context
+   lightning node context match node-1-42-7
 
-.. option:: --match <id>
+   # Then send commands (context determines target match)
+   lightning command send spawn '{"matchId":1,"playerId":1,"entityType":100}'
+   lightning command send damage '{"entityId":1,"amount":25.0}'
 
-   Target match ID
-
-.. option:: --params <json>
-
-   Command parameters as JSON
+The first argument is the command name, and the second argument (optional)
+is a JSON string containing the command parameters.
 
 snapshot - ECS Snapshots
 ------------------------
 
-Get ECS state snapshots.
+Get ECS state snapshots. Snapshots use the current match context set by
+``lightning node context match``.
 
 .. program:: lightning snapshot get
 
 lightning snapshot get
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Get current snapshot for a match.
+Get current snapshot for a match using the current context.
 
 .. code-block:: bash
 
-   lightning snapshot get --match node-1-42-7
+   # First, set the match context
+   lightning node context match node-1-42-7
 
-.. option:: --match <id>
+   # Then get snapshot (context determines target match)
+   lightning snapshot get
 
-   Target match ID
+   # With JSON output
+   lightning snapshot get -o json
 
 ws - WebSocket Connections
 --------------------------
@@ -483,8 +506,11 @@ Common Workflows
    # Join match
    lightning match join $MATCH -n "Player1" -p "p1"
 
-   # Send commands
-   lightning command send SpawnEntity --params '{"x": 0, "y": 0}'
+   # Set context for the match
+   lightning node context match $MATCH
+
+   # Send commands (uses context)
+   lightning command send spawn '{"matchId":1,"playerId":1,"entityType":100}'
 
    # Watch snapshots
    lightning ws connect snapshot
