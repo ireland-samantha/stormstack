@@ -1,4 +1,4 @@
-//! Error types for StormStack.
+//! Error types for `StormStack`.
 //!
 //! Provides a unified error hierarchy:
 //! - `StormError`: Top-level error type
@@ -8,7 +8,7 @@
 use crate::id::{ConnectionId, ContainerId, EntityId, MatchId, UserId};
 use thiserror::Error;
 
-/// Top-level error type for StormStack operations.
+/// Top-level error type for `StormStack` operations.
 #[derive(Debug, Error)]
 pub enum StormError {
     /// Entity was not found in the ECS world.

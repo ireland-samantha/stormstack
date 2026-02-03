@@ -9,14 +9,19 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Instant;
-use stormstack_core::{ContainerId, MatchConfig, MatchId, Result, StormError, TenantId, UserId};
+use stormstack_core::{
+    Command, CommandQueue, CommandResult, ContainerId, MatchConfig, MatchId, Result, StormError,
+    TenantId, UserId,
+};
 use stormstack_ecs::{shared_world, EcsWorld, SharedWorld};
 use tracing::{debug, trace, warn};
 
 /// Match state enumeration.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum MatchState {
     /// Match is created but not yet started.
+    #[default]
     Pending,
     /// Match is actively running.
     Active,
@@ -24,11 +29,6 @@ pub enum MatchState {
     Completed,
 }
 
-impl Default for MatchState {
-    fn default() -> Self {
-        Self::Pending
-    }
-}
 
 /// Summary information about a match.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,7 +48,6 @@ pub struct MatchSummary {
 }
 
 /// Match state within a container.
-#[derive(Debug)]
 pub struct Match {
     /// Match identifier.
     pub id: MatchId,
@@ -64,6 +63,8 @@ pub struct Match {
     players: HashSet<UserId>,
     /// Creation timestamp.
     created_at: Instant,
+    /// Command queue for pending commands.
+    command_queue: CommandQueue,
 }
 
 impl Match {
@@ -78,6 +79,7 @@ impl Match {
             state: MatchState::Pending,
             players: HashSet::new(),
             created_at: Instant::now(),
+            command_queue: CommandQueue::new(),
         }
     }
 
@@ -92,6 +94,7 @@ impl Match {
             state: MatchState::Pending,
             players: HashSet::new(),
             created_at: Instant::now(),
+            command_queue: CommandQueue::new(),
         }
     }
 
@@ -221,6 +224,44 @@ impl Match {
             game_mode: self.config.game_mode.clone(),
             current_tick: self.current_tick,
         }
+    }
+
+    /// Queue a command for execution on the next tick.
+    ///
+    /// Commands are executed in FIFO order when the match ticks.
+    pub fn queue_command(&mut self, command: Box<dyn Command>, user_id: UserId) {
+        self.command_queue.push(command, user_id);
+    }
+
+    /// Get the number of commands waiting in the queue.
+    #[must_use]
+    pub fn pending_command_count(&self) -> usize {
+        self.command_queue.len()
+    }
+
+    /// Get a reference to the command queue.
+    #[must_use]
+    pub fn command_queue(&self) -> &CommandQueue {
+        &self.command_queue
+    }
+
+    /// Get a mutable reference to the command queue.
+    pub fn command_queue_mut(&mut self) -> &mut CommandQueue {
+        &mut self.command_queue
+    }
+}
+
+impl std::fmt::Debug for Match {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Match")
+            .field("id", &self.id)
+            .field("config", &self.config)
+            .field("current_tick", &self.current_tick)
+            .field("running", &self.running)
+            .field("state", &self.state)
+            .field("player_count", &self.players.len())
+            .field("pending_commands", &self.command_queue.len())
+            .finish()
     }
 }
 
@@ -455,9 +496,39 @@ impl Container {
         self.modules.read().iter().any(|m| m.name == name)
     }
 
+    /// Queue a command for a specific match.
+    ///
+    /// The command will be executed on the next tick.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the match is not found.
+    pub fn queue_command(
+        &self,
+        match_id: MatchId,
+        command: Box<dyn Command>,
+        user_id: UserId,
+    ) -> Result<()> {
+        let mut entry = self
+            .matches
+            .get_mut(&match_id)
+            .ok_or(StormError::MatchNotFound(match_id))?;
+
+        entry.queue_command(command, user_id);
+        trace!(
+            "Queued command for match {:?} in container {:?}",
+            match_id,
+            self.id
+        );
+        Ok(())
+    }
+
     /// Execute a tick for all matches and the ECS world.
     ///
-    /// This advances the world simulation by one tick.
+    /// This:
+    /// 1. Advances the ECS world by one tick
+    /// 2. Executes all queued commands for each active match
+    /// 3. Ticks all running matches
     ///
     /// # Arguments
     ///
@@ -475,12 +546,87 @@ impl Container {
             world.advance(delta_time)?;
         }
 
-        // Tick all running matches
+        // Execute commands and tick all running matches
         for mut entry in self.matches.iter_mut() {
-            entry.value_mut().tick();
+            let game_match = entry.value_mut();
+            let match_id = game_match.id;
+
+            // Execute queued commands if match is active
+            if game_match.state() == MatchState::Active {
+                let command_results = {
+                    let mut world = self.world.write();
+                    game_match.command_queue_mut().execute_all(&mut *world, match_id)
+                };
+
+                // Log command results
+                for result in &command_results {
+                    if result.is_failure() {
+                        warn!(
+                            "Command failed in match {:?}: {:?}",
+                            match_id, result.message
+                        );
+                    }
+                }
+            }
+
+            // Tick the match
+            game_match.tick();
         }
 
         Ok(())
+    }
+
+    /// Execute a tick and return command results for all matches.
+    ///
+    /// Similar to `tick()` but returns the results of all executed commands.
+    ///
+    /// # Arguments
+    ///
+    /// * `delta_time` - Time elapsed since the last tick in seconds.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if tick execution fails.
+    pub fn tick_with_results(
+        &self,
+        delta_time: f64,
+    ) -> Result<Vec<(MatchId, Vec<CommandResult>)>> {
+        trace!(
+            "Ticking container {:?} with dt={} (with results)",
+            self.id,
+            delta_time
+        );
+
+        // Advance the ECS world
+        {
+            let mut world = self.world.write();
+            world.advance(delta_time)?;
+        }
+
+        let mut all_results = Vec::new();
+
+        // Execute commands and tick all running matches
+        for mut entry in self.matches.iter_mut() {
+            let game_match = entry.value_mut();
+            let match_id = game_match.id;
+
+            // Execute queued commands if match is active
+            if game_match.state() == MatchState::Active {
+                let command_results = {
+                    let mut world = self.world.write();
+                    game_match.command_queue_mut().execute_all(&mut *world, match_id)
+                };
+
+                if !command_results.is_empty() {
+                    all_results.push((match_id, command_results));
+                }
+            }
+
+            // Tick the match
+            game_match.tick();
+        }
+
+        Ok(all_results)
     }
 
     /// Get the current tick of the ECS world.

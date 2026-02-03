@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/stormstack-core",
+    "crates/stormstack-db",
     "crates/stormstack-ecs",
     "crates/stormstack-wasm",
     "crates/stormstack-wasm-host",
@@ -40,7 +41,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Web framework
-axum = { version = "0.8", features = ["ws", "macros"] }
+axum = { version = "0.8", features = ["ws", "macros", "multipart"] }
 axum-extra = { version = "0.10", features = ["typed-header"] }
 tower = { version = "0.5", features = ["full"] }
 tower-http = { version = "0.6", features = ["cors", "trace", "compression-gzip"] }
@@ -69,6 +70,9 @@ criterion = { version = "0.5", features = ["html_reports"] }
 proptest = "1.6"
 tokio-test = "0.4"
 
+# Cryptography
+sha2 = "0.10"
+
 # Utilities
 parking_lot = "0.12"
 dashmap = "6"
@@ -81,6 +85,7 @@ rand = "0.9"
 
 # Internal crates
 stormstack-core = { path = "crates/stormstack-core" }
+stormstack-db = { path = "crates/stormstack-db" }
 stormstack-ecs = { path = "crates/stormstack-ecs" }
 stormstack-wasm = { path = "crates/stormstack-wasm" }
 stormstack-wasm-host = { path = "crates/stormstack-wasm-host" }

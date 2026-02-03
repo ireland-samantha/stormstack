@@ -43,10 +43,15 @@
 
 pub mod claims;
 pub mod jwt;
+pub mod oauth2;
 pub mod password;
 pub mod rbac;
 
 pub use claims::Claims;
 pub use jwt::{JwtConfig, JwtService};
+pub use oauth2::{
+    grant_types, ClientCredentials, OAuth2Service, TokenError, TokenRequest, TokenResponse,
+    UserCredentials,
+};
 pub use password::{PasswordConfig, PasswordService};
 pub use rbac::{Permission, RbacService};

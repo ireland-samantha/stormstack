@@ -183,7 +183,7 @@ impl ModuleRegistry {
         let mut in_stack = HashSet::new();
 
         for name in names {
-            self.visit_for_order(*name, &mut result, &mut visited, &mut in_stack)?;
+            self.visit_for_order(name, &mut result, &mut visited, &mut in_stack)?;
         }
 
         Ok(result)

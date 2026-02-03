@@ -34,19 +34,30 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
+/// Command registry for mapping command names to factories.
+pub mod commands;
 pub mod container;
 /// Game loop for tick-based simulation.
 pub mod game_loop;
+/// Resource management for game assets (WASM modules, textures, etc.).
+pub mod resources;
 mod routes;
 mod state;
 /// WebSocket upgrade handler for real-time match streaming.
 pub mod ws;
 
+pub use commands::{
+    shared_command_registry, CommandProvider, CommandRegistry, SharedCommandRegistry,
+};
 pub use container::{
     Container, ContainerService, LoadedModule, Match, MatchState, MatchSummary, SharedContainer,
     SharedContainerService, shared_container_service,
 };
 pub use game_loop::{GameLoop, GameLoopConfig};
+pub use resources::{
+    shared_file_storage, shared_file_storage_with_path, verify_content_hash, FileSystemStorage,
+    ResourceMetadata, ResourceStorage, ResourceType, SharedResourceStorage,
+};
 pub use routes::create_router;
 pub use state::{AppState, SharedAppState};
 

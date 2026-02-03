@@ -1,18 +1,23 @@
 //! REST API route handlers.
 //!
-//! Provides the main router with health check, container, match, and WebSocket endpoints.
+//! Provides the main router with health check, container, match, resource, and WebSocket endpoints.
 
 use axum::{
-    extract::{Path, State},
+    body::Bytes,
+    extract::{Multipart, Path, State},
+    http::{header, StatusCode},
+    response::IntoResponse,
     routing::{delete, get, post},
-    Json, Router,
+    Form, Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use stormstack_core::{ContainerId, MatchConfig, MatchId};
+use stormstack_auth::{TokenError, TokenRequest, TokenResponse};
+use stormstack_core::{CommandResult, ContainerId, MatchConfig, MatchId, ResourceId};
 use stormstack_net::{ApiError, ApiResponse, AuthUser};
 use uuid::Uuid;
 
 use crate::container::MatchState;
+use crate::resources::{ResourceMetadata, ResourceType};
 use crate::state::SharedAppState;
 use crate::ws;
 
@@ -103,6 +108,88 @@ fn default_delta_time() -> f64 {
     0.016 // ~60 FPS
 }
 
+/// Request to submit a command.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubmitCommandRequest {
+    /// Type of command to execute.
+    pub command_type: String,
+    /// JSON payload for the command.
+    #[serde(default)]
+    pub payload: serde_json::Value,
+}
+
+/// Response after submitting a command.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandResponse {
+    /// Whether the command was queued successfully.
+    pub queued: bool,
+    /// Optional message.
+    pub message: Option<String>,
+}
+
+/// Response with command execution results.
+///
+/// This struct is used when returning synchronous command execution results.
+/// Currently commands are queued and executed on tick, but this enables
+/// immediate execution endpoints in the future.
+#[allow(dead_code)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CommandResultResponse {
+    /// Whether the command executed successfully.
+    pub success: bool,
+    /// Optional message about the result.
+    pub message: Option<String>,
+    /// Optional structured data returned by the command.
+    pub data: Option<serde_json::Value>,
+}
+
+impl From<CommandResult> for CommandResultResponse {
+    fn from(result: CommandResult) -> Self {
+        Self {
+            success: result.success,
+            message: result.message,
+            data: result.data,
+        }
+    }
+}
+
+/// Response listing available commands.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AvailableCommandsResponse {
+    /// List of available command types.
+    pub commands: Vec<String>,
+}
+
+/// Resource response for API endpoints.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ResourceResponse {
+    /// Resource ID.
+    pub id: String,
+    /// Resource name.
+    pub name: String,
+    /// Resource type.
+    pub resource_type: String,
+    /// Size in bytes.
+    pub size_bytes: u64,
+    /// SHA-256 content hash.
+    pub content_hash: String,
+    /// Creation timestamp.
+    pub created_at: String,
+}
+
+impl From<ResourceMetadata> for ResourceResponse {
+    fn from(meta: ResourceMetadata) -> Self {
+        Self {
+            id: meta.id.0.to_string(),
+            name: meta.name,
+            resource_type: meta.resource_type.to_string(),
+            size_bytes: meta.size_bytes,
+            content_hash: meta.content_hash,
+            created_at: meta.created_at.to_rfc3339(),
+        }
+    }
+}
+
 /// Helper to convert MatchState to string.
 fn match_state_to_string(state: MatchState) -> String {
     match state {
@@ -124,6 +211,13 @@ fn parse_match_id(id: &str) -> Result<MatchId, ApiError> {
     Uuid::parse_str(id)
         .map(MatchId)
         .map_err(|_| ApiError::validation(format!("Invalid match ID: {}", id)))
+}
+
+/// Helper to parse resource ID from path.
+fn parse_resource_id(id: &str) -> Result<ResourceId, ApiError> {
+    Uuid::parse_str(id)
+        .map(ResourceId)
+        .map_err(|_| ApiError::validation(format!("Invalid resource ID: {}", id)))
 }
 
 /// Create the main application router.
@@ -165,6 +259,20 @@ pub fn create_router(state: SharedAppState) -> Router {
             "/api/containers/{id}/matches/{match_id}/start",
             post(start_match_handler),
         )
+        // Command endpoints
+        .route(
+            "/api/containers/{id}/matches/{match_id}/commands",
+            post(submit_command_handler),
+        )
+        .route("/api/commands", get(list_commands_handler))
+        // Resource endpoints
+        .route("/api/resources", post(upload_resource_handler))
+        .route("/api/resources", get(list_resources_handler))
+        .route("/api/resources/{id}", get(download_resource_handler))
+        .route("/api/resources/{id}/metadata", get(get_resource_metadata_handler))
+        .route("/api/resources/{id}", delete(delete_resource_handler))
+        // OAuth2 token endpoint
+        .route("/auth/token", post(token_endpoint))
         // WebSocket endpoint for match streaming
         .route("/ws/matches/{match_id}", get(ws::ws_upgrade))
         .with_state(state)
@@ -549,6 +657,294 @@ async fn start_match_handler(
         max_players: match_ref.config.max_players,
         current_tick: match_ref.current_tick,
     }))
+}
+
+/// Submit command endpoint.
+///
+/// POST /api/containers/{id}/matches/{match_id}/commands
+///
+/// Submits a command to be executed on the next tick.
+async fn submit_command_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path((id, match_id_str)): Path<(String, String)>,
+    Json(request): Json<SubmitCommandRequest>,
+) -> Result<ApiResponse<CommandResponse>, ApiError> {
+    let container_id = parse_container_id(&id)?;
+    let match_id = parse_match_id(&match_id_str)?;
+
+    let container = state
+        .container_service()
+        .get_container_for_tenant(container_id, auth.tenant_id)
+        .map_err(|_| ApiError::not_found("Container"))?;
+
+    // Verify match exists
+    let _ = container
+        .get_match(match_id)
+        .ok_or_else(|| ApiError::not_found("Match"))?;
+
+    // Create the command from the registry
+    let command = {
+        let registry = state.command_registry().read();
+        registry
+            .create(&request.command_type, request.payload)
+            .map_err(|e| ApiError::validation(e.to_string()))?
+    };
+
+    // Queue the command
+    container
+        .queue_command(match_id, command, auth.user_id)
+        .map_err(|e| match e {
+            stormstack_core::StormError::MatchNotFound(_) => ApiError::not_found("Match"),
+            _ => ApiError::internal(e.to_string()),
+        })?;
+
+    Ok(ApiResponse::ok(CommandResponse {
+        queued: true,
+        message: Some(format!("Command '{}' queued for execution", request.command_type)),
+    }))
+}
+
+/// List available commands endpoint.
+///
+/// GET /api/commands
+///
+/// Returns a list of all registered command types.
+async fn list_commands_handler(
+    State(state): State<SharedAppState>,
+) -> ApiResponse<AvailableCommandsResponse> {
+    let registry = state.command_registry().read();
+    let commands: Vec<String> = registry
+        .available_commands()
+        .into_iter()
+        .map(|s| s.to_string())
+        .collect();
+
+    ApiResponse::ok(AvailableCommandsResponse { commands })
+}
+
+/// OAuth2 token endpoint.
+///
+/// POST /auth/token
+///
+/// Handles OAuth2 token requests supporting multiple grant types:
+/// - `client_credentials` - Machine-to-machine authentication
+/// - `password` - Resource owner password credentials
+/// - `refresh_token` - Token refresh
+///
+/// The endpoint accepts both application/x-www-form-urlencoded and application/json.
+async fn token_endpoint(
+    State(state): State<SharedAppState>,
+    Form(request): Form<TokenRequest>,
+) -> Result<Json<TokenResponse>, (StatusCode, Json<TokenError>)> {
+    let oauth2_service = state.oauth2().ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(TokenError::invalid_request("OAuth2 service not configured")),
+        )
+    })?;
+
+    let service = oauth2_service.read();
+    service.token(&request).map(Json).map_err(|e| {
+        let status = match e.error.as_str() {
+            "invalid_client" => StatusCode::UNAUTHORIZED,
+            "invalid_grant" => StatusCode::BAD_REQUEST,
+            "invalid_request" => StatusCode::BAD_REQUEST,
+            "unauthorized_client" => StatusCode::UNAUTHORIZED,
+            "unsupported_grant_type" => StatusCode::BAD_REQUEST,
+            "invalid_scope" => StatusCode::BAD_REQUEST,
+            _ => StatusCode::BAD_REQUEST,
+        };
+        (status, Json(e))
+    })
+}
+
+/// Upload resource endpoint.
+///
+/// POST /api/resources
+///
+/// Uploads a new resource (WASM module, game asset, or configuration).
+/// Expects multipart form data with:
+/// - `name`: Resource name
+/// - `type`: Resource type (wasm_module, game_asset, configuration)
+/// - `file`: Resource data
+async fn upload_resource_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    mut multipart: Multipart,
+) -> Result<ApiResponse<ResourceResponse>, ApiError> {
+    let mut name: Option<String> = None;
+    let mut resource_type: Option<ResourceType> = None;
+    let mut data: Option<Vec<u8>> = None;
+
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| ApiError::validation(format!("Failed to read multipart field: {}", e)))?
+    {
+        let field_name = field.name().unwrap_or("").to_string();
+
+        match field_name.as_str() {
+            "name" => {
+                name = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|e| ApiError::validation(format!("Failed to read name: {}", e)))?,
+                );
+            }
+            "type" => {
+                let type_str = field
+                    .text()
+                    .await
+                    .map_err(|e| ApiError::validation(format!("Failed to read type: {}", e)))?;
+                resource_type = Some(
+                    type_str
+                        .parse()
+                        .map_err(|_| ApiError::validation(format!("Invalid resource type: {}", type_str)))?,
+                );
+            }
+            "file" => {
+                data = Some(
+                    field
+                        .bytes()
+                        .await
+                        .map_err(|e| ApiError::validation(format!("Failed to read file: {}", e)))?
+                        .to_vec(),
+                );
+            }
+            _ => {
+                // Ignore unknown fields
+            }
+        }
+    }
+
+    let name = name.ok_or_else(|| ApiError::validation("Missing 'name' field"))?;
+    let resource_type =
+        resource_type.ok_or_else(|| ApiError::validation("Missing 'type' field"))?;
+    let data = data.ok_or_else(|| ApiError::validation("Missing 'file' field"))?;
+
+    if data.is_empty() {
+        return Err(ApiError::validation("File data is empty"));
+    }
+
+    let metadata = state
+        .resource_storage()
+        .store(auth.tenant_id, &name, resource_type, &data)
+        .await
+        .map_err(|e| ApiError::internal(e.to_string()))?;
+
+    Ok(ApiResponse::ok(ResourceResponse::from(metadata)))
+}
+
+/// List resources endpoint.
+///
+/// GET /api/resources
+///
+/// Lists all resources for the authenticated user's tenant.
+async fn list_resources_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+) -> Result<ApiResponse<Vec<ResourceResponse>>, ApiError> {
+    let resources = state
+        .resource_storage()
+        .list(auth.tenant_id)
+        .await
+        .map_err(|e| ApiError::internal(e.to_string()))?;
+
+    let responses: Vec<ResourceResponse> = resources.into_iter().map(ResourceResponse::from).collect();
+
+    Ok(ApiResponse::ok(responses))
+}
+
+/// Download resource endpoint.
+///
+/// GET /api/resources/{id}
+///
+/// Downloads the resource data.
+async fn download_resource_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> Result<impl IntoResponse, ApiError> {
+    let resource_id = parse_resource_id(&id)?;
+
+    // Get metadata first to determine content type
+    let metadata = state
+        .resource_storage()
+        .get_metadata(auth.tenant_id, resource_id)
+        .await
+        .map_err(|e| ApiError::internal(e.to_string()))?
+        .ok_or_else(|| ApiError::not_found("Resource"))?;
+
+    let data = state
+        .resource_storage()
+        .get(auth.tenant_id, resource_id)
+        .await
+        .map_err(|e| ApiError::internal(e.to_string()))?
+        .ok_or_else(|| ApiError::not_found("Resource"))?;
+
+    let content_type = match metadata.resource_type {
+        ResourceType::WasmModule => "application/wasm",
+        ResourceType::GameAsset => "application/octet-stream",
+        ResourceType::Configuration => "application/json",
+    };
+
+    let content_disposition = format!("attachment; filename=\"{}\"", metadata.name);
+    Ok((
+        [
+            (header::CONTENT_TYPE, content_type.to_string()),
+            (header::CONTENT_DISPOSITION, content_disposition),
+        ],
+        Bytes::from(data),
+    ))
+}
+
+/// Get resource metadata endpoint.
+///
+/// GET /api/resources/{id}/metadata
+///
+/// Gets metadata for a resource without downloading its content.
+async fn get_resource_metadata_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> Result<ApiResponse<ResourceResponse>, ApiError> {
+    let resource_id = parse_resource_id(&id)?;
+
+    let metadata = state
+        .resource_storage()
+        .get_metadata(auth.tenant_id, resource_id)
+        .await
+        .map_err(|e| ApiError::internal(e.to_string()))?
+        .ok_or_else(|| ApiError::not_found("Resource"))?;
+
+    Ok(ApiResponse::ok(ResourceResponse::from(metadata)))
+}
+
+/// Delete resource endpoint.
+///
+/// DELETE /api/resources/{id}
+///
+/// Deletes a resource.
+async fn delete_resource_handler(
+    State(state): State<SharedAppState>,
+    auth: AuthUser,
+    Path(id): Path<String>,
+) -> Result<ApiResponse<()>, ApiError> {
+    let resource_id = parse_resource_id(&id)?;
+
+    let deleted = state
+        .resource_storage()
+        .delete(auth.tenant_id, resource_id)
+        .await
+        .map_err(|e| ApiError::internal(e.to_string()))?;
+
+    if deleted {
+        Ok(ApiResponse::ok(()))
+    } else {
+        Err(ApiError::not_found("Resource"))
+    }
 }
 
 #[cfg(test)]
@@ -1126,5 +1522,236 @@ mod tests {
 
         let response = app.oneshot(request).await.unwrap();
         assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    // =========================================================================
+    // Command endpoint tests
+    // =========================================================================
+
+    #[tokio::test]
+    async fn submit_command_queues_successfully() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container with a match
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/matches/{}/commands", container_id.0, match_id.0))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(r#"{"command_type": "spawn_entity", "payload": {}}"#))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert!(json["success"].as_bool().unwrap());
+        assert!(json["data"]["queued"].as_bool().unwrap());
+    }
+
+    #[tokio::test]
+    async fn spawn_entity_via_command_executes_on_tick() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container with an active match
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+        container.start_match(match_id).unwrap();
+
+        // Initial entity count
+        let initial_count = container.entity_count();
+
+        let app = create_router(state.clone());
+
+        // Submit spawn command
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/matches/{}/commands", container_id.0, match_id.0))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(r#"{"command_type": "spawn_entity", "payload": {}}"#))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        // Tick to execute the command
+        container.tick(0.016).unwrap();
+
+        // Verify entity was spawned
+        assert_eq!(container.entity_count(), initial_count + 1);
+    }
+
+    #[tokio::test]
+    async fn despawn_entity_via_command() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container with an active match
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+        container.start_match(match_id).unwrap();
+
+        // Spawn an entity first
+        let entity_id = {
+            let mut world = container.world().write();
+            use stormstack_ecs::EcsWorld;
+            world.spawn()
+        };
+        assert_eq!(container.entity_count(), 1);
+
+        let app = create_router(state.clone());
+
+        // Submit despawn command
+        let payload = serde_json::json!({
+            "command_type": "despawn_entity",
+            "payload": { "entity_id": entity_id.0 }
+        });
+
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/matches/{}/commands", container_id.0, match_id.0))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(payload.to_string()))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        // Tick to execute the command
+        container.tick(0.016).unwrap();
+
+        // Verify entity was despawned
+        assert_eq!(container.entity_count(), 0);
+    }
+
+    #[tokio::test]
+    async fn unknown_command_returns_error() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container with a match
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/matches/{}/commands", container_id.0, match_id.0))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(r#"{"command_type": "nonexistent_command", "payload": {}}"#))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    }
+
+    #[tokio::test]
+    async fn command_registry_lists_available() {
+        let state = create_test_state();
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .uri("/api/commands")
+            .body(Body::empty())
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        assert!(json["success"].as_bool().unwrap());
+        let commands = json["data"]["commands"].as_array().unwrap();
+        assert!(commands.iter().any(|c| c.as_str() == Some("spawn_entity")));
+        assert!(commands.iter().any(|c| c.as_str() == Some("despawn_entity")));
+    }
+
+    #[tokio::test]
+    async fn command_queue_executed_on_tick() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        // Create a container with an active match
+        let container_id = state.container_service().create_container(tenant_id);
+        let container = state.container_service().get_container(container_id).unwrap();
+        let match_id = container.create_match(MatchConfig::default()).unwrap();
+        container.start_match(match_id).unwrap();
+
+        let app = create_router(state.clone());
+
+        // Queue multiple commands
+        for _ in 0..3 {
+            let request = Request::builder()
+                .method("POST")
+                .uri(format!("/api/containers/{}/matches/{}/commands", container_id.0, match_id.0))
+                .header("Content-Type", "application/json")
+                .header("Authorization", format!("Bearer {}", token))
+                .body(Body::from(r#"{"command_type": "spawn_entity", "payload": {}}"#))
+                .unwrap();
+
+            let response = app.clone().oneshot(request).await.unwrap();
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+
+        // Verify commands are pending
+        {
+            let match_ref = container.get_match(match_id).unwrap();
+            assert_eq!(match_ref.pending_command_count(), 3);
+        }
+
+        // Tick to execute all commands
+        container.tick(0.016).unwrap();
+
+        // Queue should be empty now
+        {
+            let match_ref = container.get_match(match_id).unwrap();
+            assert_eq!(match_ref.pending_command_count(), 0);
+        }
+
+        // Entities should be spawned
+        assert_eq!(container.entity_count(), 3);
+    }
+
+    #[tokio::test]
+    async fn submit_command_to_nonexistent_match_returns_not_found() {
+        let (state, jwt_service, tenant_id) = create_state_with_jwt();
+        let token = generate_token(&jwt_service, tenant_id);
+
+        let container_id = state.container_service().create_container(tenant_id);
+        let fake_match_id = uuid::Uuid::new_v4();
+
+        let app = create_router(state);
+
+        let request = Request::builder()
+            .method("POST")
+            .uri(format!("/api/containers/{}/matches/{}/commands", container_id.0, fake_match_id))
+            .header("Content-Type", "application/json")
+            .header("Authorization", format!("Bearer {}", token))
+            .body(Body::from(r#"{"command_type": "spawn_entity", "payload": {}}"#))
+            .unwrap();
+
+        let response = app.oneshot(request).await.unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 }

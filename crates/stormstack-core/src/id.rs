@@ -1,4 +1,4 @@
-//! Strongly-typed identifiers for StormStack entities.
+//! Strongly-typed identifiers for `StormStack` entities.
 //!
 //! Using newtype wrappers provides compile-time safety against
 //! mixing up different ID types (e.g., passing a `MatchId` where
@@ -185,6 +185,40 @@ impl fmt::Display for ConnectionId {
     }
 }
 
+/// Strongly-typed resource identifier.
+///
+/// Resources are uploaded assets like WASM modules, game assets, and configurations.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ResourceId(pub Uuid);
+
+impl ResourceId {
+    /// Create a new random resource ID.
+    #[must_use]
+    pub fn new() -> Self {
+        Self(Uuid::new_v4())
+    }
+}
+
+impl Default for ResourceId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Display for ResourceId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Resource({})", self.0)
+    }
+}
+
+impl FromStr for ResourceId {
+    type Err = uuid::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(Uuid::parse_str(s)?))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -208,5 +242,28 @@ mod tests {
         let json = serde_json::to_string(&entity_id).expect("serialize");
         let parsed: EntityId = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(entity_id, parsed);
+    }
+
+    #[test]
+    fn resource_id_unique() {
+        let id1 = ResourceId::new();
+        let id2 = ResourceId::new();
+        assert_ne!(id1, id2);
+    }
+
+    #[test]
+    fn resource_id_display() {
+        let id = ResourceId::new();
+        let display = format!("{id}");
+        assert!(display.starts_with("Resource("));
+        assert!(display.ends_with(")"));
+    }
+
+    #[test]
+    fn resource_id_from_str() {
+        let id = ResourceId::new();
+        let s = id.0.to_string();
+        let parsed: ResourceId = s.parse().expect("parse");
+        assert_eq!(id, parsed);
     }
 }

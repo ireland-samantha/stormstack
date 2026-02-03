@@ -255,16 +255,14 @@ impl ModuleLoader {
             .collect();
 
         for other_name in other_names {
-            if let Some(other) = self.modules.get_mut(&other_name) {
-                if other.initialized {
-                    if let Err(e) = other.module.on_dependency_loaded(name) {
+            if let Some(other) = self.modules.get_mut(&other_name)
+                && other.initialized
+                    && let Err(e) = other.module.on_dependency_loaded(name) {
                         warn!(
                             "Module '{}' failed to handle dependency load: {}",
                             other_name, e
                         );
                     }
-                }
-            }
         }
 
         Ok(())
@@ -281,8 +279,8 @@ impl ModuleLoader {
         let mut first_error = None;
 
         for name in &self.load_order.clone() {
-            if let Some(instance) = self.modules.get_mut(name) {
-                if instance.initialized {
+            if let Some(instance) = self.modules.get_mut(name)
+                && instance.initialized {
                     let mut ctx = ModuleContext::new(world, tick, delta_time);
                     if let Err(e) = instance.module.on_tick(&mut ctx) {
                         error!("Module '{}' tick failed: {}", name, e);
@@ -291,7 +289,6 @@ impl ModuleLoader {
                         }
                     }
                 }
-            }
         }
 
         if let Some(e) = first_error {
@@ -332,16 +329,14 @@ impl ModuleLoader {
             .collect();
 
         for other_name in other_names {
-            if let Some(other) = self.modules.get_mut(&other_name) {
-                if other.initialized {
-                    if let Err(e) = other.module.on_dependency_unloading(name) {
+            if let Some(other) = self.modules.get_mut(&other_name)
+                && other.initialized
+                    && let Err(e) = other.module.on_dependency_unloading(name) {
                         warn!(
                             "Module '{}' failed to handle dependency unload: {}",
                             other_name, e
                         );
                     }
-                }
-            }
         }
 
         // Remove and unload
@@ -351,12 +346,11 @@ impl ModuleLoader {
 
         self.load_order.retain(|n| n != name);
 
-        if instance.initialized {
-            if let Err(e) = instance.module.on_unload() {
+        if instance.initialized
+            && let Err(e) = instance.module.on_unload() {
                 error!("Module '{}' on_unload failed: {}", name, e);
                 // Continue with unload anyway
             }
-        }
 
         // Drop happens automatically
         debug!("Module '{}' unloaded", name);

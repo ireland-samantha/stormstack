@@ -1,7 +1,7 @@
 //! Test harness for isolated testing.
 
 use stormstack_core::TenantId;
-use stormstack_ecs::{EcsWorld, StormWorld};
+use stormstack_ecs::StormWorld;
 
 /// Test harness providing an isolated test environment.
 pub struct TestHarness {
@@ -40,6 +40,7 @@ impl Default for TestHarness {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use stormstack_ecs::EcsWorld;
 
     #[test]
     fn harness_creates_world() {

@@ -59,16 +59,14 @@ impl ModuleDependency {
     /// would use proper semver parsing and comparison.
     #[must_use]
     pub fn satisfies(&self, version: &str) -> bool {
-        if let Some(min) = self.min_version {
-            if version < min {
+        if let Some(min) = self.min_version
+            && version < min {
                 return false;
             }
-        }
-        if let Some(max) = self.max_version {
-            if version >= max {
+        if let Some(max) = self.max_version
+            && version >= max {
                 return false;
             }
-        }
         true
     }
 }

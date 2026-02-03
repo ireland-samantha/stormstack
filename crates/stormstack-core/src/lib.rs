@@ -1,6 +1,6 @@
-//! # StormStack Core
+//! # `StormStack` Core
 //!
-//! Core types, traits, and error definitions shared across all StormStack crates.
+//! Core types, traits, and error definitions shared across all `StormStack` crates.
 //!
 //! This crate provides:
 //! - Strongly-typed identifiers (`EntityId`, `ContainerId`, `MatchId`, etc.)
@@ -25,7 +25,7 @@ pub use command::{
 };
 pub use config::MatchConfig;
 pub use error::{AuthError, ModuleError, StormError, WasmError};
-pub use id::{ComponentTypeId, ConnectionId, ContainerId, EntityId, MatchId, TenantId, UserId};
+pub use id::{ComponentTypeId, ConnectionId, ContainerId, EntityId, MatchId, ResourceId, TenantId, UserId};
 pub use snapshot::{ComponentUpdate, EntitySnapshot, WorldDelta, WorldSnapshot};
 
 /// Re-export common result type

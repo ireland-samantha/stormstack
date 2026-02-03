@@ -5,16 +5,22 @@
 
 use std::sync::Arc;
 
-use stormstack_auth::JwtService;
+use parking_lot::RwLock;
+use stormstack_auth::{JwtService, OAuth2Service};
 use stormstack_ecs::SharedWorld;
 use stormstack_net::AuthState;
 use stormstack_wasm::WasmSandbox;
 use stormstack_ws::SharedConnectionManager;
 
+use crate::commands::{shared_command_registry, SharedCommandRegistry};
 use crate::container::{shared_container_service, SharedContainerService};
+use crate::resources::{shared_file_storage, SharedResourceStorage};
 
 /// Shared application state type alias.
 pub type SharedAppState = Arc<AppState>;
+
+/// Shared OAuth2 service type alias.
+pub type SharedOAuth2Service = Arc<RwLock<OAuth2Service>>;
 
 /// Application state for axum handlers.
 ///
@@ -24,6 +30,8 @@ pub type SharedAppState = Arc<AppState>;
 pub struct AppState {
     /// JWT authentication service.
     jwt_service: Arc<JwtService>,
+    /// OAuth2 token service.
+    oauth2_service: Option<SharedOAuth2Service>,
     /// Shared ECS world.
     world: SharedWorld,
     /// WASM sandbox for module execution.
@@ -32,6 +40,10 @@ pub struct AppState {
     connections: SharedConnectionManager,
     /// Container service for managing execution containers.
     container_service: SharedContainerService,
+    /// Command registry for mapping command names to factories.
+    command_registry: SharedCommandRegistry,
+    /// Resource storage for game assets.
+    resource_storage: SharedResourceStorage,
 }
 
 impl AppState {
@@ -44,11 +56,60 @@ impl AppState {
     ) -> Self {
         Self {
             jwt_service,
+            oauth2_service: None,
             world,
             sandbox,
             connections,
             container_service: shared_container_service(),
+            command_registry: shared_command_registry(),
+            resource_storage: shared_file_storage(),
         }
+    }
+
+    /// Create application state with OAuth2 service.
+    pub fn with_oauth2(
+        jwt_service: Arc<JwtService>,
+        oauth2_service: SharedOAuth2Service,
+        world: SharedWorld,
+        sandbox: Arc<WasmSandbox>,
+        connections: SharedConnectionManager,
+    ) -> Self {
+        Self {
+            jwt_service,
+            oauth2_service: Some(oauth2_service),
+            world,
+            sandbox,
+            connections,
+            container_service: shared_container_service(),
+            command_registry: shared_command_registry(),
+            resource_storage: shared_file_storage(),
+        }
+    }
+
+    /// Create application state with a custom command registry.
+    pub fn with_command_registry(
+        jwt_service: Arc<JwtService>,
+        world: SharedWorld,
+        sandbox: Arc<WasmSandbox>,
+        connections: SharedConnectionManager,
+        command_registry: SharedCommandRegistry,
+    ) -> Self {
+        Self {
+            jwt_service,
+            oauth2_service: None,
+            world,
+            sandbox,
+            connections,
+            container_service: shared_container_service(),
+            command_registry,
+            resource_storage: shared_file_storage(),
+        }
+    }
+
+    /// Get the resource storage.
+    #[must_use]
+    pub fn resource_storage(&self) -> &SharedResourceStorage {
+        &self.resource_storage
     }
 
     /// Get the JWT service.
@@ -79,6 +140,18 @@ impl AppState {
     #[must_use]
     pub fn container_service(&self) -> &SharedContainerService {
         &self.container_service
+    }
+
+    /// Get the OAuth2 service.
+    #[must_use]
+    pub fn oauth2(&self) -> Option<&SharedOAuth2Service> {
+        self.oauth2_service.as_ref()
+    }
+
+    /// Get the command registry.
+    #[must_use]
+    pub fn command_registry(&self) -> &SharedCommandRegistry {
+        &self.command_registry
     }
 }
 
