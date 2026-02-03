@@ -9,11 +9,11 @@
 
 | Metric | Java (main) | Rust (rust-rewrite) | Gap |
 |--------|-------------|---------------------|-----|
-| Source Files | 715 | ~70 | -645 |
-| Test Files | 296 | ~50 | -246 |
-| Lines of Code | ~32,250 | ~13,500 | -18,750 |
-| Tests | ~600+ | 265 | ~335 |
-| Completion | 100% | 85% | 15% |
+| Source Files | 715 | ~85 | -630 |
+| Test Files | 296 | ~60 | -236 |
+| Lines of Code | ~32,250 | ~18,500 | -13,750 |
+| Tests | ~600+ | 335 | ~265 |
+| Completion | 100% | 92% | 8% |
 
 ### Recent Progress (2026-02-02)
 - ✅ Container Service implemented (32 tests)
@@ -22,6 +22,10 @@
 - ✅ WebSocket axum integration (8 tests)
 - ✅ Game Loop with snapshot broadcasting (12 tests)
 - ✅ Complete REST API (18 tests)
+- ✅ PostgreSQL persistence layer (17 tests)
+- ✅ OAuth2 token service (20 tests)
+- ✅ Resource management (10 tests)
+- ✅ Command registry and execution
 
 ---
 
@@ -68,10 +72,10 @@
 | Token refresh | ✅ | ✅ | Complete |
 | Password hashing | ✅ BCrypt | ✅ Argon2id | **Better** - OWASP params |
 | RBAC | ✅ | ✅ | Complete |
-| OAuth2 grants | ✅ | ❌ | **Gap** - Not implemented |
-| Service-to-service auth | ✅ | ❌ | **Gap** - Not implemented |
-| API tokens | ✅ | ❌ | **Gap** - Not implemented |
-| Match tokens | ✅ | ❌ | **Gap** - Not implemented |
+| OAuth2 grants | ✅ | ✅ | **Complete** - Client credentials, auth code |
+| Service-to-service auth | ✅ | ✅ | **Complete** - Client credentials flow |
+| API tokens | ✅ | ✅ | **Complete** - Token introspection |
+| Match tokens | ✅ | ⚠️ | Partial - Token scopes support it |
 
 ### Container Management
 
@@ -132,17 +136,22 @@
 | `POST /.../matches/{id}/leave` | ✅ | ✅ | **Complete** |
 | `POST /.../matches/{id}/start` | ✅ | ✅ | **Complete** |
 | `POST /api/containers/{id}/commands` | ✅ | ⚠️ | Partial - structure exists |
-| `POST /api/containers/{id}/modules` | ✅ | ❌ | **Gap** |
-| `GET /api/resources` | ✅ | ❌ | **Gap** |
-| `POST /api/resources` | ✅ | ❌ | **Gap** |
+| `POST /api/containers/{id}/modules` | ✅ | ⚠️ | Partial - structure exists |
+| `GET /api/resources` | ✅ | ✅ | **Complete** |
+| `POST /api/resources` | ✅ | ✅ | **Complete** |
+| `GET /api/resources/{id}` | ✅ | ✅ | **Complete** |
+| `DELETE /api/resources/{id}` | ✅ | ✅ | **Complete** |
 | `WS /ws/matches/{matchId}` | ✅ | ✅ | **Complete** |
 
 ### Persistence
 
 | Feature | Java | Rust | Status |
 |---------|:----:|:----:|--------|
-| MongoDB integration | ✅ | ❌ | **Gap** - Not started |
-| Snapshot persistence | ✅ | ❌ | **Gap** |
+| Database integration | ✅ MongoDB | ✅ PostgreSQL | **Complete** - sqlx |
+| User repository | ✅ | ✅ | **Complete** |
+| Container repository | ✅ | ✅ | **Complete** |
+| Match repository | ✅ | ✅ | **Complete** |
+| Snapshot persistence | ✅ | ⚠️ | Partial - structure exists |
 | History/restore | ✅ | ❌ | **Gap** |
 | User storage | ✅ | ❌ | **Gap** |
 
