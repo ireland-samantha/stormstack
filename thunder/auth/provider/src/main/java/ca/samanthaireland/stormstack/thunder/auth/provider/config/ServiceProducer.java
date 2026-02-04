@@ -173,6 +173,18 @@ public class ServiceProducer {
         return new MatchTokenServiceImpl(matchTokenRepository, config);
     }
 
+    /**
+     * Produces the ModuleTokenService.
+     *
+     * @param config the auth configuration
+     * @return the module token service
+     */
+    @Produces
+    @Singleton
+    public ModuleTokenService moduleTokenService(AuthConfiguration config) {
+        return new ModuleTokenServiceImpl(config);
+    }
+
     // =========================================================================
     // OAuth2 Services
     // =========================================================================
@@ -322,6 +334,30 @@ public class ServiceProducer {
     }
 
     /**
+     * Produces the MatchTokenGrantHandler.
+     *
+     * @param matchTokenService the match token service
+     * @return the grant handler
+     */
+    @Produces
+    @Singleton
+    public MatchTokenGrantHandler matchTokenGrantHandler(MatchTokenService matchTokenService) {
+        return new MatchTokenGrantHandler(matchTokenService);
+    }
+
+    /**
+     * Produces the ModuleTokenGrantHandler.
+     *
+     * @param moduleTokenService the module token service
+     * @return the grant handler
+     */
+    @Produces
+    @Singleton
+    public ModuleTokenGrantHandler moduleTokenGrantHandler(ModuleTokenService moduleTokenService) {
+        return new ModuleTokenGrantHandler(moduleTokenService);
+    }
+
+    /**
      * Produces the OAuth2TokenService.
      *
      * @param clientRepository              the service client repository
@@ -330,6 +366,8 @@ public class ServiceProducer {
      * @param passwordGrantHandler          the password grant handler
      * @param refreshTokenGrantHandler      the refresh token grant handler
      * @param tokenExchangeGrantHandler     the token exchange grant handler
+     * @param matchTokenGrantHandler        the match token grant handler
+     * @param moduleTokenGrantHandler       the module token grant handler
      * @return the OAuth2 token service
      */
     @Produces
@@ -340,12 +378,16 @@ public class ServiceProducer {
             ClientCredentialsGrantHandler clientCredentialsGrantHandler,
             PasswordGrantHandler passwordGrantHandler,
             RefreshTokenGrantHandler refreshTokenGrantHandler,
-            TokenExchangeGrantHandler tokenExchangeGrantHandler) {
+            TokenExchangeGrantHandler tokenExchangeGrantHandler,
+            MatchTokenGrantHandler matchTokenGrantHandler,
+            ModuleTokenGrantHandler moduleTokenGrantHandler) {
         List<OAuth2GrantHandler> handlers = new ArrayList<>();
         handlers.add(clientCredentialsGrantHandler);
         handlers.add(passwordGrantHandler);
         handlers.add(refreshTokenGrantHandler);
         handlers.add(tokenExchangeGrantHandler);
+        handlers.add(matchTokenGrantHandler);
+        handlers.add(moduleTokenGrantHandler);
         return new OAuth2TokenServiceImpl(clientRepository, passwordService, handlers);
     }
 }

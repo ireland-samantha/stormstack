@@ -59,7 +59,23 @@ public enum GrantType {
      * <p>Used to exchange one token type for another (e.g., API token
      * for a session JWT).
      */
-    TOKEN_EXCHANGE("urn:ietf:params:oauth:grant-type:token-exchange");
+    TOKEN_EXCHANGE("urn:ietf:params:oauth:grant-type:token-exchange"),
+
+    /**
+     * Match Token Grant (StormStack extension).
+     *
+     * <p>Used by services to issue JWT tokens for players to connect
+     * to specific matches. Replaces the legacy /api/match-tokens endpoint.
+     */
+    MATCH_TOKEN("urn:stormstack:grant-type:match-token"),
+
+    /**
+     * Module Token Grant (StormStack extension).
+     *
+     * <p>Used by Thunder Engine to request JWT tokens for loaded modules.
+     * Each module receives a token containing its component permissions.
+     */
+    MODULE_TOKEN("urn:stormstack:grant-type:module-token");
 
     private final String value;
 
